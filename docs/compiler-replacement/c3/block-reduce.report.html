@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>TC: Reduce.blockSum</title>
+<style>
+:root { --bg: #fbfbfa; --fg: #1d1d1f; --muted: #6b6b70; --line: #e3e3e0; --code: #f3f3f1; --add: #dff3e3; --bar: #4a7bd0; --ok: #1f7a3a; --bad: #b3261e; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg: #17171a; --fg: #e8e8ea; --muted: #9a9aa2; --line: #2c2c31; --code: #1f1f23; --add: #1d3a26; --bar: #6f9be6; --ok: #6cc58a; --bad: #f08a80; color-scheme: dark; } }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 24px clamp(16px, 4vw, 48px); }
+h1 { font-size: 20px; margin: 0 0 4px; } h2 { font-size: 15px; margin: 28px 0 8px; } small { color: var(--muted); font-weight: normal; }
+.meta { color: var(--muted); margin: 0; } .ok { color: var(--ok); } .bad { color: var(--bad); }
+table { border-collapse: collapse; min-width: min(640px, 100%); } th, td { text-align: left; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--line); }
+.num { text-align: right; font-variant-numeric: tabular-nums; } .bar { display: inline-block; height: 8px; background: var(--bar); border-radius: 2px; }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; font: 12.5px/1.45 ui-monospace, Menlo, monospace; }
+.ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
+.diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
+</style></head><body>
+<header><h1>Reduce.blockSum</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 4.82 ms total &middot; entry <code>Reduce_blockSum</code></p></header>
+<section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class="num">Time</th><th class="num">IR instructions</th><th>Share</th></tr></thead><tbody>
+<tr><td>0</td><td><a href="#stage-0">input</a></td><td class="num">1.30 ms</td><td class="num">38</td><td><span class="bar" style="width:27%"></span></td></tr>
+<tr><td>1</td><td>verify.pre-abi</td><td class="num">0.54 ms</td><td class="num">38</td><td><span class="bar" style="width:11%"></span></td></tr>
+<tr><td>2</td><td><a href="#stage-2">abi</a></td><td class="num">0.64 ms</td><td class="num">50</td><td><span class="bar" style="width:13%"></span></td></tr>
+<tr><td>3</td><td>verify.post-abi</td><td class="num">0.59 ms</td><td class="num">50</td><td><span class="bar" style="width:12%"></span></td></tr>
+<tr><td>4</td><td><a href="#stage-4">structure</a></td><td class="num">0.68 ms</td><td class="num">50</td><td><span class="bar" style="width:14%"></span></td></tr>
+<tr><td>5</td><td><a href="#stage-5">emit</a></td><td class="num">1.00 ms</td><td class="num">50</td><td><span class="bar" style="width:21%"></span></td></tr>
+</tbody></table></section>
+<section id="stage-0"><h2>0 &middot; input <small>TC-SSA</small></h2>
+<pre class="code"><span class="ln">1</span>kernel @Reduce.blockSum(%in: array&lt;f32&gt;, %out: array&lt;f32&gt;) -&gt; void {
+<span class="ln">2</span>^entry:
+<span class="ln">3</span>  %gid = tornado.thread_id.global.x() : i32  loc(&quot;Reduce.java&quot;:40)
+<span class="ln">4</span>  %lid = tornado.thread_id.local.x() : i32  loc(&quot;Reduce.java&quot;:41)
+<span class="ln">5</span>  %grp = tornado.group_id.x() : i32  loc(&quot;Reduce.java&quot;:42)
+<span class="ln">6</span>  %lsz = tornado.group_size.local.x() : i32  loc(&quot;Reduce.java&quot;:43)
+<span class="ln">7</span>  %scratch = alloca.shared f32[256] : ptr&lt;shared&gt;  loc(&quot;Reduce.java&quot;:44)
+<span class="ln">8</span>  %v = array.load %in[%gid] : f32  loc(&quot;Reduce.java&quot;:45)
+<span class="ln">9</span>  %lw = sext %lid : i64
+<span class="ln">10</span>  %four = const 4 : i64
+<span class="ln">11</span>  %lo = mul %lw, %four : i64
+<span class="ln">12</span>  %slot = ptr.offset %scratch, %lo : ptr&lt;shared&gt;
+<span class="ln">13</span>  store %slot, %v  loc(&quot;Reduce.java&quot;:45)
+<span class="ln">14</span>  tornado.barrier.local()  loc(&quot;Reduce.java&quot;:46)
+<span class="ln">15</span>  %one = const 1 : i32
+<span class="ln">16</span>  %half0 = shr %lsz, %one : i32
+<span class="ln">17</span>  br ^head(%half0)
+<span class="ln">18</span>^head(%s: i32):
+<span class="ln">19</span>  %zero = const 0 : i32
+<span class="ln">20</span>  %more = icmp.sgt %s, %zero : i1  loc(&quot;Reduce.java&quot;:47)
+<span class="ln">21</span>  cond_br %more, ^step, ^write
+<span class="ln">22</span>^step:
+<span class="ln">23</span>  %active = icmp.slt %lid, %s : i1  loc(&quot;Reduce.java&quot;:48)
+<span class="ln">24</span>  cond_br %active, ^add, ^sync
+<span class="ln">25</span>^add:
+<span class="ln">26</span>  %peer = add %lid, %s : i32
+<span class="ln">27</span>  %pw = sext %peer : i64
+<span class="ln">28</span>  %po = mul %pw, %four : i64
+<span class="ln">29</span>  %pslot = ptr.offset %scratch, %po : ptr&lt;shared&gt;
+<span class="ln">30</span>  %mine = load %slot : f32  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">31</span>  %other = load %pslot : f32  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">32</span>  %sum = fadd %mine, %other : f32  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">33</span>  store %slot, %sum  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">34</span>  br ^sync
+<span class="ln">35</span>^sync:
+<span class="ln">36</span>  tornado.barrier.local()  loc(&quot;Reduce.java&quot;:51)
+<span class="ln">37</span>  %next = shr %s, %one : i32
+<span class="ln">38</span>  br ^head(%next)
+<span class="ln">39</span>^write:
+<span class="ln">40</span>  %first = icmp.eq %lid, %zero : i1  loc(&quot;Reduce.java&quot;:53)
+<span class="ln">41</span>  cond_br %first, ^store, ^done
+<span class="ln">42</span>^store:
+<span class="ln">43</span>  %total = load %scratch : f32  loc(&quot;Reduce.java&quot;:54)
+<span class="ln">44</span>  array.store %out[%grp], %total  loc(&quot;Reduce.java&quot;:54)
+<span class="ln">45</span>  br ^done
+<span class="ln">46</span>^done:
+<span class="ln">47</span>  ret
+<span class="ln">48</span>}
+</pre></section>
+<section id="stage-2"><h2>2 &middot; abi <small>TC-SSA &middot; 15 line(s) added since the previous IR stage</small></h2>
+<pre class="code"><span class="ln">1</span><span class="add">kernel @Reduce.blockSum(%in: ptr&lt;global&gt;, %out: ptr&lt;global&gt;) -&gt; void {</span>
+<span class="ln">2</span>^entry:
+<span class="ln">3</span>  %gid = tornado.thread_id.global.x() : i32  loc(&quot;Reduce.java&quot;:40)
+<span class="ln">4</span>  %lid = tornado.thread_id.local.x() : i32  loc(&quot;Reduce.java&quot;:41)
+<span class="ln">5</span>  %grp = tornado.group_id.x() : i32  loc(&quot;Reduce.java&quot;:42)
+<span class="ln">6</span>  %lsz = tornado.group_size.local.x() : i32  loc(&quot;Reduce.java&quot;:43)
+<span class="ln">7</span>  %scratch = alloca.shared f32[256] : ptr&lt;shared&gt;  loc(&quot;Reduce.java&quot;:44)
+<span class="ln">8</span><span class="add">  %0 = sext %gid : i64  loc(&quot;Reduce.java&quot;:45)</span>
+<span class="ln">9</span><span class="add">  %1 = const 4 : i64  loc(&quot;Reduce.java&quot;:45)</span>
+<span class="ln">10</span><span class="add">  %2 = mul %0, %1 : i64  loc(&quot;Reduce.java&quot;:45)</span>
+<span class="ln">11</span><span class="add">  %3 = const 16 : i64  loc(&quot;Reduce.java&quot;:45)</span>
+<span class="ln">12</span><span class="add">  %4 = add %2, %3 : i64  loc(&quot;Reduce.java&quot;:45)</span>
+<span class="ln">13</span><span class="add">  %5 = ptr.offset %in, %4 : ptr&lt;global&gt;  loc(&quot;Reduce.java&quot;:45)</span>
+<span class="ln">14</span><span class="add">  %v = load %5 : f32  loc(&quot;Reduce.java&quot;:45)</span>
+<span class="ln">15</span>  %lw = sext %lid : i64
+<span class="ln">16</span>  %four = const 4 : i64
+<span class="ln">17</span>  %lo = mul %lw, %four : i64
+<span class="ln">18</span>  %slot = ptr.offset %scratch, %lo : ptr&lt;shared&gt;
+<span class="ln">19</span>  store %slot, %v  loc(&quot;Reduce.java&quot;:45)
+<span class="ln">20</span>  tornado.barrier.local()  loc(&quot;Reduce.java&quot;:46)
+<span class="ln">21</span>  %one = const 1 : i32
+<span class="ln">22</span>  %half0 = shr %lsz, %one : i32
+<span class="ln">23</span>  br ^head(%half0)
+<span class="ln">24</span>^head(%s: i32):
+<span class="ln">25</span>  %zero = const 0 : i32
+<span class="ln">26</span>  %more = icmp.sgt %s, %zero : i1  loc(&quot;Reduce.java&quot;:47)
+<span class="ln">27</span>  cond_br %more, ^step, ^write
+<span class="ln">28</span>^step:
+<span class="ln">29</span>  %active = icmp.slt %lid, %s : i1  loc(&quot;Reduce.java&quot;:48)
+<span class="ln">30</span>  cond_br %active, ^add, ^sync
+<span class="ln">31</span>^add:
+<span class="ln">32</span>  %peer = add %lid, %s : i32
+<span class="ln">33</span>  %pw = sext %peer : i64
+<span class="ln">34</span>  %po = mul %pw, %four : i64
+<span class="ln">35</span>  %pslot = ptr.offset %scratch, %po : ptr&lt;shared&gt;
+<span class="ln">36</span>  %mine = load %slot : f32  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">37</span>  %other = load %pslot : f32  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">38</span>  %sum = fadd %mine, %other : f32  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">39</span>  store %slot, %sum  loc(&quot;Reduce.java&quot;:49)
+<span class="ln">40</span>  br ^sync
+<span class="ln">41</span>^sync:
+<span class="ln">42</span>  tornado.barrier.local()  loc(&quot;Reduce.java&quot;:51)
+<span class="ln">43</span>  %next = shr %s, %one : i32
+<span class="ln">44</span>  br ^head(%next)
+<span class="ln">45</span>^write:
+<span class="ln">46</span>  %first = icmp.eq %lid, %zero : i1  loc(&quot;Reduce.java&quot;:53)
+<span class="ln">47</span>  cond_br %first, ^store, ^done
+<span class="ln">48</span>^store:
+<span class="ln">49</span>  %total = load %scratch : f32  loc(&quot;Reduce.java&quot;:54)
+<span class="ln">50</span><span class="add">  %6 = sext %grp : i64  loc(&quot;Reduce.java&quot;:54)</span>
+<span class="ln">51</span><span class="add">  %7 = const 4 : i64  loc(&quot;Reduce.java&quot;:54)</span>
+<span class="ln">52</span><span class="add">  %8 = mul %6, %7 : i64  loc(&quot;Reduce.java&quot;:54)</span>
+<span class="ln">53</span><span class="add">  %9 = const 16 : i64  loc(&quot;Reduce.java&quot;:54)</span>
+<span class="ln">54</span><span class="add">  %10 = add %8, %9 : i64  loc(&quot;Reduce.java&quot;:54)</span>
+<span class="ln">55</span><span class="add">  %11 = ptr.offset %out, %10 : ptr&lt;global&gt;  loc(&quot;Reduce.java&quot;:54)</span>
+<span class="ln">56</span><span class="add">  store %11, %total  loc(&quot;Reduce.java&quot;:54)</span>
+<span class="ln">57</span>  br ^done
+<span class="ln">58</span>^done:
+<span class="ln">59</span>  ret
+<span class="ln">60</span>}
+</pre></section>
+<section id="stage-4"><h2>4 &middot; structure <small>TC-S (structured, non-SSA)</small></h2>
+<pre class="code"><span class="ln">1</span>kernel Reduce.blockSum(ptr&lt;global&gt; in, ptr&lt;global&gt; out) -&gt; void {
+<span class="ln">2</span>  shared f32 scratch[256];
+<span class="ln">3</span>  i32 gid;
+<span class="ln">4</span>  i32 lid;
+<span class="ln">5</span>  i32 grp;
+<span class="ln">6</span>  i32 lsz;
+<span class="ln">7</span>  f32 v;
+<span class="ln">8</span>  ptr&lt;shared&gt; slot;
+<span class="ln">9</span>  i32 s;
+<span class="ln">10</span>  f32 total;
+<span class="ln">11</span>  f32 mine;
+<span class="ln">12</span>  f32 other;
+<span class="ln">13</span>  gid = tornado.thread_id.global.x();
+<span class="ln">14</span>  lid = tornado.thread_id.local.x();
+<span class="ln">15</span>  grp = tornado.group_id.x();
+<span class="ln">16</span>  lsz = tornado.group_size.local.x();
+<span class="ln">17</span>  v = load&lt;f32&gt;(ptr.offset(in, ((sext&lt;i64&gt;(gid) * 4) + 16)));
+<span class="ln">18</span>  slot = ptr.offset(&amp;scratch, (sext&lt;i64&gt;(lid) * 4));
+<span class="ln">19</span>  store(slot, v);
+<span class="ln">20</span>  tornado.barrier.local();
+<span class="ln">21</span>  s = (lsz &gt;&gt; 1);
+<span class="ln">22</span>  block L_write {
+<span class="ln">23</span>    loop L_head {
+<span class="ln">24</span>      if ((s sgt 0)) {
+<span class="ln">25</span>        if ((lid slt s)) {
+<span class="ln">26</span>          mine = load&lt;f32&gt;(slot);
+<span class="ln">27</span>          other = load&lt;f32&gt;(ptr.offset(&amp;scratch, (sext&lt;i64&gt;((lid + s)) * 4)));
+<span class="ln">28</span>          store(slot, (mine + other));
+<span class="ln">29</span>        }
+<span class="ln">30</span>        tornado.barrier.local();
+<span class="ln">31</span>        s = (s &gt;&gt; 1);
+<span class="ln">32</span>      } else {
+<span class="ln">33</span>        break L_write;
+<span class="ln">34</span>      }
+<span class="ln">35</span>    }
+<span class="ln">36</span>  }
+<span class="ln">37</span>  if ((lid eq 0)) {
+<span class="ln">38</span>    total = load&lt;f32&gt;(&amp;scratch);
+<span class="ln">39</span>    store(ptr.offset(out, ((sext&lt;i64&gt;(grp) * 4) + 16)), total);
+<span class="ln">40</span>  }
+<span class="ln">41</span>  return;
+<span class="ln">42</span>}
+</pre></section>
+<section id="stage-5"><h2>5 &middot; emit <small>target source</small></h2>
+<pre class="code"><span class="ln">1</span>extern &quot;C&quot; __global__ void Reduce_blockSum(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
+<span class="ln">2</span>{
+<span class="ln">3</span>  __shared__ float scratch[256];
+<span class="ln">4</span>  int gid;
+<span class="ln">5</span>  int lid;
+<span class="ln">6</span>  int grp;
+<span class="ln">7</span>  int lsz;
+<span class="ln">8</span>  float v;
+<span class="ln">9</span>  unsigned char *slot;
+<span class="ln">10</span>  int s;
+<span class="ln">11</span>  float total;
+<span class="ln">12</span>  float mine;
+<span class="ln">13</span>  float other;
+<span class="ln">14</span>  gid = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // Reduce.java:40
+<span class="ln">15</span>  lid = (int) threadIdx.x;  // Reduce.java:41
+<span class="ln">16</span>  grp = (int) blockIdx.x;  // Reduce.java:42
+<span class="ln">17</span>  lsz = (int) blockDim.x;  // Reduce.java:43
+<span class="ln">18</span>  v = *((float *) (in + ((long long) gid * 4LL + 16LL)));  // Reduce.java:45
+<span class="ln">19</span>  slot = (unsigned char *) scratch + (long long) lid * 4LL;
+<span class="ln">20</span>  *((float *) slot) = v;  // Reduce.java:45
+<span class="ln">21</span>  __syncthreads();  // Reduce.java:46
+<span class="ln">22</span>  s = lsz &gt;&gt; 1;
+<span class="ln">23</span>  while (s &gt; 0) {
+<span class="ln">24</span>    if (lid &lt; s) {
+<span class="ln">25</span>      mine = *((float *) slot);  // Reduce.java:49
+<span class="ln">26</span>      other = *((float *) ((unsigned char *) scratch + (long long) (lid + s) * 4LL));  // Reduce.java:49
+<span class="ln">27</span>      *((float *) slot) = mine + other;  // Reduce.java:49
+<span class="ln">28</span>    }
+<span class="ln">29</span>    __syncthreads();  // Reduce.java:51
+<span class="ln">30</span>    s = s &gt;&gt; 1;
+<span class="ln">31</span>  }
+<span class="ln">32</span>  if (lid == 0) {
+<span class="ln">33</span>    total = *((float *) (unsigned char *) scratch);  // Reduce.java:54
+<span class="ln">34</span>    *((float *) (out + ((long long) grp * 4LL + 16LL))) = total;  // Reduce.java:54
+<span class="ln">35</span>  }
+<span class="ln">36</span>  return;
+<span class="ln">37</span>}
+</pre></section>
+<footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>
+</body></html>

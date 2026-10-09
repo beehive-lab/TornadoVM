@@ -18,12 +18,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tc-codegen</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tc-tornado</artifactId>
+            <artifactId>tc-debug</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

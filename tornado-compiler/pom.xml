@@ -25,6 +25,8 @@
         <module>tc-lower</module>
         <module>tc-codegen</module>
         <module>tc-tornado</module>
+        <module>tc-runtime</module>
+        <module>tc-debug</module>
         <module>tc-gpu</module>
     </modules>
 </project>

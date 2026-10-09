@@ -37,14 +37,11 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.tc.codegen.CEmitter;
+import uk.ac.manchester.tornado.tc.debug.HtmlReport;
 import uk.ac.manchester.tornado.tc.ir.IrParser;
-import uk.ac.manchester.tornado.tc.ir.IrPrinter;
-import uk.ac.manchester.tornado.tc.ir.Verifier;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
-import uk.ac.manchester.tornado.tc.lower.SPrinter;
-import uk.ac.manchester.tornado.tc.lower.Structurizer;
-import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
+import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
+import uk.ac.manchester.tornado.tc.runtime.TcOptions;
 
 /**
  * Gate C3 design test: three kernels written in TC-SSA are compiled by TC alone (verify, ABI
@@ -96,28 +93,27 @@ public final class DesignTest {
         System.exit(test.failures == 0 ? 0 : 1);
     }
 
-    /** TC pipeline: parse, verify, ABI-lower, verify, structure, emit; every stage is dumped. */
+    /** TC pipeline through {@link TcCompiler}; every stage is dumped and an HTML report is written. */
     private Compiled compile(String name) {
-        var text = resource("/c3/" + name + ".tcir");
-        long start = System.nanoTime();
-        var function = IrParser.parseFunction(text);
-        Verifier.check(function, Verifier.Stage.PRE_ABI);
-        var target = TargetCaps.CUDA_SM89;
-        var abi = AbiLowering.run(function, target);
-        if (!abi.isEmpty()) {
-            throw new IllegalStateException("ABI lowering failed: " + abi);
+        var function = IrParser.parseFunction(resource("/c3/" + name + ".tcir"));
+        var c = TcCompiler.compile(function, TargetCaps.CUDA_SM89, TcOptions.fromSystemProperties().withReport(true, out));
+        write(name + ".report.html", HtmlReport.render(c));
+        if (!c.succeeded()) {
+            throw new IllegalStateException(name + ": " + c.diagnostics());
         }
-        Verifier.check(function, Verifier.Stage.POST_ABI);
-        var structured = Structurizer.structure(function);
-        var emitted = CEmitter.emit(structured, target);
-        long nanos = System.nanoTime() - start;
-        write(name + ".post-abi.tcir", IrPrinter.print(function));
-        write(name + ".tcs", SPrinter.print(structured));
-        var cu = write(name + ".cu", emitted.source());
+        for (var stage : c.stages()) {
+            switch (stage.name()) {
+                case "abi" -> write(name + ".post-abi.tcir", stage.text());
+                case "structure" -> write(name + ".tcs", stage.text());
+                default -> {
+                }
+            }
+        }
+        var cu = write(name + ".cu", c.source());
         if (!quiet) {
-            System.out.println("---- " + name + ".cu ----\n" + emitted.source());
+            System.out.println("---- " + name + ".cu ----\n" + c.source());
         }
-        return new Compiled(emitted.entryName(), cu, nanos);
+        return new Compiled(c.entryName(), cu, c.nanos());
     }
 
     private void run(String name, Compiled kernel, int globalSize, AccessorParameters accessors, Object[] inputs, Object[] outputs, Runnable check) {

@@ -7,7 +7,7 @@ Each gate is go/no-go. Evidence and the profiling decision review are recorded p
 | C0 repo + builds + devices | **passed** | 2026-10-09 | private repo (`gh repo view` → PRIVATE); `make BACKEND=opencl,cuda` on JDK 21.0.2 and `make jdk25 BACKEND=opencl,cuda` on JDK 25.0.2: BUILD SUCCESS; `tornado --devices` (both): 0:0 OpenCL RTX 4090, 0:1 OpenCL UHD 770, 1:0 CUDA RTX 4090 |
 | C1 baseline reproducible | pending | | |
 | C2 ⚑ dependency + phase matrix | pending | | |
-| C3 ⚑ end-to-end design test | **design test passed**; debug-infra part (JFR events, `-Dtornado.tc.dump`, HTML report) pending; user review pending | 2026-10-09 | 3/3 kernels (grid-stride vector add, if/else diamond with block-argument merge and `sqrt`, KernelContext shared-memory tree reduction) compiled by TC only and run on the RTX 4090 via the prebuilt-task path, results equal to Java references; TC compile 4–21 ms per kernel; outputs in [c3/](c3/) |
+| C3 ⚑ end-to-end design test | **passed** (user review pending): design test 3/3 on GPU; `TcCompiler` with `-Dtornado.tc.dump/dumpDir/verify/only/report`, JFR events `tc.Compilation`/`tc.Stage`, HTML report per compilation ([c3/*.report.html](c3/)) | 2026-10-09 | 3/3 kernels (grid-stride vector add, if/else diamond with block-argument merge and `sqrt`, KernelContext shared-memory tree reduction) compiled by TC only and run on the RTX 4090 via the prebuilt-task path, results equal to Java references; TC compile 4–21 ms per kernel; outputs in [c3/](c3/) |
 | C4a/b/c frontend, passes, Access[] | pending | | |
 | C5a/b ⚑ structurizer, vertical slice | pending | | |
 | C6 differential parity | pending | | |
@@ -37,3 +37,25 @@ host-to-device transfer. Recorded in `compatibility-contract.md` §1.
 **Design decisions confirmed by C3:** block-argument SSA lowers to clean C (`while` loops, merges as
 plain assignments); `array<T>` until ABI lowering keeps the frontend-facing IR readable and the ABI in
 one pass; the four-region kernel signature and 16-byte header match the runtime.
+
+### Decision review 1 (C3, profiling)
+
+Measured with JFR (`jfr print --events tc.Stage`) on the GPU run and a warm headless benchmark
+(`tc-runtime/src/test/bench/CompileTimeBench.java`, 2000 warm-up + 500 measured compiles per kernel).
+
+| Measurement | Value |
+|---|---|
+| Cold first compile (TC classes loading and warming) | 21–24 ms |
+| Next kernels in the same JVM, per stage | 0.3–1.3 ms each; verification ~25% |
+| Warm compile per kernel, stage text rendered | 111 µs |
+| Warm compile per kernel, text only when dumped or reported | **76 µs** |
+
+Decisions:
+1. **Changed:** stage text (IR, TC-S printing) is rendered only when a dump or report asks for it;
+   it cost ~30% of a warm compile.
+2. **Kept:** verification after every IR stage by default (~1 ms cold, a fraction warm) is small
+   next to NVRTC (6–40 ms per kernel on first run). Revisit at C7 against the Graal compile time from
+   the Phase 1 profiler data.
+3. **Noted for Phase 9 (Leyden):** cold start dominates TC's own cost; CDS/AOT caching of TC classes
+   is the lever, not pass tuning.
+4. **Kept:** sealed records + pattern `switch` dispatch: no hot spot in dispatch showed up.

@@ -1,0 +1,154 @@
+/*
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.tc.debug;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import uk.ac.manchester.tornado.tc.runtime.TcCompiler.Compilation;
+import uk.ac.manchester.tornado.tc.runtime.TcCompiler.Kind;
+import uk.ac.manchester.tornado.tc.runtime.TcCompiler.Stage;
+
+/**
+ * Renders one {@link Compilation} as a self-contained HTML page (no external resources): a summary,
+ * a timing table, the diagnostics, and every stage's text. Lines that an IR stage adds compared with
+ * the previous IR stage are highlighted, so the effect of each lowering is visible at a glance.
+ */
+public final class HtmlReport {
+
+    private HtmlReport() {
+    }
+
+    public static String render(Compilation c) {
+        var html = new StringBuilder();
+        html.append("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>TC: ").append(escape(c.function())).append("</title>\n<style>\n").append(CSS).append("</style></head><body>\n");
+        html.append("<header><h1>").append(escape(c.function())).append("</h1><p class=\"meta\">")
+                .append(escape(c.target().dialect() + " sm_" + c.target().computeCapability())).append(" &middot; ")
+                .append(c.succeeded() ? "<span class=\"ok\">compiled</span>" : "<span class=\"bad\">failed</span>")
+                .append(" &middot; ").append(ms(c.nanos())).append(" total").append(c.entryName().isEmpty() ? "" : " &middot; entry <code>" + escape(c.entryName()) + "</code>")
+                .append("</p></header>\n");
+
+        html.append("<section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class=\"num\">Time</th><th class=\"num\">IR instructions</th><th>Share</th></tr></thead><tbody>\n");
+        long total = Math.max(1, c.stages().stream().mapToLong(Stage::nanos).sum());
+        for (int i = 0; i < c.stages().size(); i++) {
+            var s = c.stages().get(i);
+            var link = s.kind() == Kind.NONE ? escape(s.name()) : "<a href=\"#stage-" + i + "\">" + escape(s.name()) + "</a>";
+            html.append("<tr><td>").append(i).append("</td><td>").append(link).append("</td><td class=\"num\">").append(ms(s.nanos())).append("</td><td class=\"num\">").append(s.size())
+                    .append("</td><td><span class=\"bar\" style=\"width:").append(Math.max(1, 100 * s.nanos() / total)).append("%\"></span></td></tr>\n");
+        }
+        html.append("</tbody></table></section>\n");
+
+        if (!c.diagnostics().isEmpty()) {
+            html.append("<section><h2>Diagnostics</h2>\n");
+            for (var d : c.diagnostics()) {
+                html.append("<pre class=\"diag\">").append(escape(d.render())).append("</pre>\n");
+            }
+            html.append("</section>\n");
+        }
+
+        List<String> previousIr = List.of();
+        for (int i = 0; i < c.stages().size(); i++) {
+            var s = c.stages().get(i);
+            if (s.kind() == Kind.NONE) {
+                continue;
+            }
+            var lines = s.text().lines().toList();
+            var added = s.kind() == Kind.IR && !previousIr.isEmpty() ? addedLines(previousIr, lines) : Set.<Integer>of();
+            html.append("<section id=\"stage-").append(i).append("\"><h2>").append(i).append(" &middot; ").append(escape(s.name())).append(" <small>").append(label(s.kind()))
+                    .append(added.isEmpty() ? "" : " &middot; " + added.size() + " line(s) added since the previous IR stage").append("</small></h2>\n<pre class=\"code\">");
+            for (int k = 0; k < lines.size(); k++) {
+                html.append("<span class=\"ln\">").append(k + 1).append("</span>");
+                var text = escape(lines.get(k));
+                html.append(added.contains(k) ? "<span class=\"add\">" + text + "</span>" : text).append('\n');
+            }
+            html.append("</pre></section>\n");
+            if (s.kind() == Kind.IR) {
+                previousIr = lines;
+            }
+        }
+        html.append("<footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>\n</body></html>\n");
+        return html.toString();
+    }
+
+    /** Indices of lines in {@code after} that are not part of a longest common subsequence with {@code before}. */
+    static Set<Integer> addedLines(List<String> before, List<String> after) {
+        int n = before.size();
+        int m = after.size();
+        var lcs = new int[n + 1][m + 1];
+        for (int i = n - 1; i >= 0; i--) {
+            for (int j = m - 1; j >= 0; j--) {
+                lcs[i][j] = before.get(i).equals(after.get(j)) ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+            }
+        }
+        var kept = new HashSet<Integer>();
+        int i = 0;
+        int j = 0;
+        while (i < n && j < m) {
+            if (before.get(i).equals(after.get(j))) {
+                kept.add(j);
+                i++;
+                j++;
+            } else if (lcs[i + 1][j] >= lcs[i][j + 1]) {
+                i++;
+            } else {
+                j++;
+            }
+        }
+        var added = new HashSet<Integer>();
+        for (int k = 0; k < m; k++) {
+            if (!kept.contains(k)) {
+                added.add(k);
+            }
+        }
+        return added;
+    }
+
+    private static String label(Kind kind) {
+        return switch (kind) {
+            case IR -> "TC-SSA";
+            case STRUCTURED -> "TC-S (structured, non-SSA)";
+            case SOURCE -> "target source";
+            case NONE -> "check";
+        };
+    }
+
+    private static String ms(long nanos) {
+        return String.format("%.2f ms", nanos / 1e6);
+    }
+
+    static String escape(String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    private static final String CSS = """
+            :root { --bg: #fbfbfa; --fg: #1d1d1f; --muted: #6b6b70; --line: #e3e3e0; --code: #f3f3f1; --add: #dff3e3; --bar: #4a7bd0; --ok: #1f7a3a; --bad: #b3261e; color-scheme: light; }
+            @media (prefers-color-scheme: dark) { :root { --bg: #17171a; --fg: #e8e8ea; --muted: #9a9aa2; --line: #2c2c31; --code: #1f1f23; --add: #1d3a26; --bar: #6f9be6; --ok: #6cc58a; --bad: #f08a80; color-scheme: dark; } }
+            body { background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 24px clamp(16px, 4vw, 48px); }
+            h1 { font-size: 20px; margin: 0 0 4px; } h2 { font-size: 15px; margin: 28px 0 8px; } small { color: var(--muted); font-weight: normal; }
+            .meta { color: var(--muted); margin: 0; } .ok { color: var(--ok); } .bad { color: var(--bad); }
+            table { border-collapse: collapse; min-width: min(640px, 100%); } th, td { text-align: left; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--line); }
+            .num { text-align: right; font-variant-numeric: tabular-nums; } .bar { display: inline-block; height: 8px; background: var(--bar); border-radius: 2px; }
+            pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; font: 12.5px/1.45 ui-monospace, Menlo, monospace; }
+            .ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
+            .diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
+            """;
+}

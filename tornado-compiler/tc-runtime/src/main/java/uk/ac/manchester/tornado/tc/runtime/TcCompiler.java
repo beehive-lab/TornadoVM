@@ -1,0 +1,196 @@
+/*
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.tc.runtime;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+
+import uk.ac.manchester.tornado.tc.codegen.CEmitter;
+import uk.ac.manchester.tornado.tc.ir.Diagnostic;
+import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.IrPrinter;
+import uk.ac.manchester.tornado.tc.ir.Loc;
+import uk.ac.manchester.tornado.tc.ir.Verifier;
+import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.tc.lower.S;
+import uk.ac.manchester.tornado.tc.lower.SPrinter;
+import uk.ac.manchester.tornado.tc.lower.Structurizer;
+import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
+
+/**
+ * Drives one TC compilation from TC-SSA to target source and records every stage: its text form,
+ * time and IR size. Stages are dumped on request ({@link TcOptions}), verified after every IR change
+ * by default, and reported as JFR events ({@code tc.Compilation}, {@code tc.Stage}). A failure never
+ * escapes as an exception: it becomes a {@link Compilation} with diagnostics.
+ */
+public final class TcCompiler {
+
+    /** Kind of text a stage produced, which decides how it is displayed. */
+    public enum Kind {
+        IR, STRUCTURED, SOURCE, NONE
+    }
+
+    /** One pipeline stage: its output text (empty unless dumped or reported), duration and size. */
+    public record Stage(String name, Kind kind, String text, long nanos, int size) {
+    }
+
+    /** The result of compiling one function. */
+    public record Compilation(String function, TargetCaps target, boolean succeeded, String source, String entryName, List<Stage> stages, List<Diagnostic> diagnostics, long nanos) {
+    }
+
+    private static final class Failed extends RuntimeException {
+        private final transient List<Diagnostic> diagnostics;
+
+        Failed(List<Diagnostic> diagnostics) {
+            super(null, null, false, false);
+            this.diagnostics = diagnostics;
+        }
+    }
+
+    private final Function function;
+    private final TargetCaps target;
+    private final TcOptions options;
+    private final List<Stage> stages = new ArrayList<>();
+
+    private TcCompiler(Function function, TargetCaps target, TcOptions options) {
+        this.function = function;
+        this.target = target;
+        this.options = options;
+    }
+
+    /** Compiles {@code function} (pre-ABI TC-SSA); the function is lowered in place. */
+    public static Compilation compile(Function function, TargetCaps target, TcOptions options) {
+        return new TcCompiler(function, target, options).run();
+    }
+
+    private Compilation run() {
+        var event = new TcEvents.Compilation();
+        event.begin();
+        long start = System.nanoTime();
+        String source = "";
+        String entry = "";
+        List<Diagnostic> diagnostics = List.of();
+        boolean ok = true;
+        try {
+            stage("input", Kind.IR, () -> {
+            }, () -> IrPrinter.print(function));
+            check("verify.pre-abi", Verifier.Stage.PRE_ABI);
+            stage("abi", Kind.IR, () -> {
+                var problems = AbiLowering.run(function, target);
+                if (!problems.isEmpty()) {
+                    throw new Failed(problems);
+                }
+            }, () -> IrPrinter.print(function));
+            if (options.verifyEach()) {
+                check("verify.post-abi", Verifier.Stage.POST_ABI);
+            }
+            var structured = new S.Kernel[1];
+            stage("structure", Kind.STRUCTURED, () -> {
+                try {
+                    structured[0] = Structurizer.structure(function);
+                } catch (Structurizer.StructuringException e) {
+                    throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
+                }
+            }, () -> SPrinter.print(structured[0]));
+            var emitted = new CEmitter.Result[1];
+            stage("emit", Kind.SOURCE, () -> {
+                try {
+                    emitted[0] = CEmitter.emit(structured[0], target);
+                } catch (CEmitter.EmitException e) {
+                    throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
+                }
+            }, () -> emitted[0].source());
+            source = emitted[0].source();
+            entry = emitted[0].entryName();
+        } catch (Failed f) {
+            ok = false;
+            diagnostics = List.copyOf(f.diagnostics);
+        }
+        long nanos = System.nanoTime() - start;
+        event.end();
+        if (event.shouldCommit()) {
+            event.function = function.name();
+            event.target = target.dialect() + "/sm_" + target.computeCapability();
+            event.succeeded = ok;
+            event.sourceLines = (int) source.lines().count();
+            event.diagnostic = diagnostics.isEmpty() ? "" : diagnostics.get(0).code() + ": " + diagnostics.get(0).message();
+            event.commit();
+        }
+        return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos);
+    }
+
+    private void check(String name, Verifier.Stage stage) {
+        stage(name, Kind.NONE, () -> {
+            var problems = Verifier.verify(function, stage);
+            if (!problems.isEmpty()) {
+                throw new Failed(problems);
+            }
+        }, () -> "");
+    }
+
+    /**
+     * Runs one stage. Its text form is rendered only when a dump or report needs it: profiling the
+     * C3 kernels showed that printing the IR costs as much as a lowering (decision review, C3).
+     */
+    private void stage(String name, Kind kind, Runnable work, Supplier<String> render) {
+        var event = new TcEvents.Stage();
+        event.begin();
+        long start = System.nanoTime();
+        try {
+            work.run();
+        } finally {
+            event.end();
+        }
+        long nanos = System.nanoTime() - start;
+        var wanted = kind != Kind.NONE && (options.htmlReport() || options.dumps(name)) && options.selects(function.name());
+        var text = wanted ? render.get() : "";
+        int size = function.blocks().stream().mapToInt(b -> b.insts().size()).sum();
+        stages.add(new Stage(name, kind, text, nanos, size));
+        if (event.shouldCommit()) {
+            event.function = function.name();
+            event.stage = name;
+            event.sizeAfter = size;
+            event.commit();
+        }
+        if (wanted && options.dumps(name)) {
+            dump(name, kind, text);
+        }
+    }
+
+    private void dump(String name, Kind kind, String text) {
+        var extension = switch (kind) {
+            case IR -> "tcir";
+            case STRUCTURED -> "tcs";
+            case SOURCE -> target.dialect() == TargetCaps.Dialect.CUDA ? "cu" : "c";
+            case NONE -> "txt";
+        };
+        try {
+            var dir = Files.createDirectories(options.dumpDir());
+            Files.writeString(dir.resolve(String.format("%s.%02d-%s.%s", CEmitter.entryName(function), stages.size(), name, extension)), text);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+}

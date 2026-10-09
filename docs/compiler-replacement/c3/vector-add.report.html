@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>TC: VectorAdd.add</title>
+<style>
+:root { --bg: #fbfbfa; --fg: #1d1d1f; --muted: #6b6b70; --line: #e3e3e0; --code: #f3f3f1; --add: #dff3e3; --bar: #4a7bd0; --ok: #1f7a3a; --bad: #b3261e; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg: #17171a; --fg: #e8e8ea; --muted: #9a9aa2; --line: #2c2c31; --code: #1f1f23; --add: #1d3a26; --bar: #6f9be6; --ok: #6cc58a; --bad: #f08a80; color-scheme: dark; } }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 24px clamp(16px, 4vw, 48px); }
+h1 { font-size: 20px; margin: 0 0 4px; } h2 { font-size: 15px; margin: 28px 0 8px; } small { color: var(--muted); font-weight: normal; }
+.meta { color: var(--muted); margin: 0; } .ok { color: var(--ok); } .bad { color: var(--bad); }
+table { border-collapse: collapse; min-width: min(640px, 100%); } th, td { text-align: left; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--line); }
+.num { text-align: right; font-variant-numeric: tabular-nums; } .bar { display: inline-block; height: 8px; background: var(--bar); border-radius: 2px; }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 12px; overflow-x: auto; font: 12.5px/1.45 ui-monospace, Menlo, monospace; }
+.ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
+.diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
+</style></head><body>
+<header><h1>VectorAdd.add</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 23.59 ms total &middot; entry <code>VectorAdd_add</code></p></header>
+<section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class="num">Time</th><th class="num">IR instructions</th><th>Share</th></tr></thead><tbody>
+<tr><td>0</td><td><a href="#stage-0">input</a></td><td class="num">4.03 ms</td><td class="num">13</td><td><span class="bar" style="width:18%"></span></td></tr>
+<tr><td>1</td><td>verify.pre-abi</td><td class="num">2.84 ms</td><td class="num">13</td><td><span class="bar" style="width:13%"></span></td></tr>
+<tr><td>2</td><td><a href="#stage-2">abi</a></td><td class="num">2.95 ms</td><td class="num">32</td><td><span class="bar" style="width:13%"></span></td></tr>
+<tr><td>3</td><td>verify.post-abi</td><td class="num">1.15 ms</td><td class="num">32</td><td><span class="bar" style="width:5%"></span></td></tr>
+<tr><td>4</td><td><a href="#stage-4">structure</a></td><td class="num">6.00 ms</td><td class="num">32</td><td><span class="bar" style="width:28%"></span></td></tr>
+<tr><td>5</td><td><a href="#stage-5">emit</a></td><td class="num">4.36 ms</td><td class="num">32</td><td><span class="bar" style="width:20%"></span></td></tr>
+</tbody></table></section>
+<section id="stage-0"><h2>0 &middot; input <small>TC-SSA</small></h2>
+<pre class="code"><span class="ln">1</span>kernel @VectorAdd.add(%a: array&lt;f32&gt;, %b: array&lt;f32&gt;, %c: array&lt;f32&gt;) -&gt; void {
+<span class="ln">2</span>^entry:
+<span class="ln">3</span>  %n = array.length %a : i32  loc(&quot;VectorAdd.java&quot;:20)
+<span class="ln">4</span>  %i0 = tornado.thread_id.global.x() : i32
+<span class="ln">5</span>  %s = tornado.global_size.x() : i32
+<span class="ln">6</span>  br ^head(%i0)
+<span class="ln">7</span>^head(%i: i32) [parallel(dim=0)]:
+<span class="ln">8</span>  %more = icmp.slt %i, %n : i1  loc(&quot;VectorAdd.java&quot;:20)
+<span class="ln">9</span>  cond_br %more, ^body, ^exit
+<span class="ln">10</span>^body:
+<span class="ln">11</span>  %x = array.load %a[%i] : f32  loc(&quot;VectorAdd.java&quot;:21)
+<span class="ln">12</span>  %y = array.load %b[%i] : f32  loc(&quot;VectorAdd.java&quot;:21)
+<span class="ln">13</span>  %z = fadd %x, %y : f32  loc(&quot;VectorAdd.java&quot;:21)
+<span class="ln">14</span>  array.store %c[%i], %z  loc(&quot;VectorAdd.java&quot;:21)
+<span class="ln">15</span>  %next = add %i, %s : i32
+<span class="ln">16</span>  br ^head(%next)
+<span class="ln">17</span>^exit:
+<span class="ln">18</span>  ret
+<span class="ln">19</span>}
+</pre></section>
+<section id="stage-2"><h2>2 &middot; abi <small>TC-SSA &middot; 24 line(s) added since the previous IR stage</small></h2>
+<pre class="code"><span class="ln">1</span><span class="add">kernel @VectorAdd.add(%a: ptr&lt;global&gt;, %b: ptr&lt;global&gt;, %c: ptr&lt;global&gt;) -&gt; void {</span>
+<span class="ln">2</span>^entry:
+<span class="ln">3</span><span class="add">  %0 = load %a : i64  loc(&quot;VectorAdd.java&quot;:20)</span>
+<span class="ln">4</span><span class="add">  %n = trunc %0 : i32  loc(&quot;VectorAdd.java&quot;:20)</span>
+<span class="ln">5</span>  %i0 = tornado.thread_id.global.x() : i32
+<span class="ln">6</span>  %s = tornado.global_size.x() : i32
+<span class="ln">7</span>  br ^head(%i0)
+<span class="ln">8</span>^head(%i: i32) [parallel(dim=0)]:
+<span class="ln">9</span>  %more = icmp.slt %i, %n : i1  loc(&quot;VectorAdd.java&quot;:20)
+<span class="ln">10</span>  cond_br %more, ^body, ^exit
+<span class="ln">11</span>^body:
+<span class="ln">12</span><span class="add">  %1 = sext %i : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">13</span><span class="add">  %2 = const 4 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">14</span><span class="add">  %3 = mul %1, %2 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">15</span><span class="add">  %4 = const 16 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">16</span><span class="add">  %5 = add %3, %4 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">17</span><span class="add">  %6 = ptr.offset %a, %5 : ptr&lt;global&gt;  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">18</span><span class="add">  %x = load %6 : f32  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">19</span><span class="add">  %7 = sext %i : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">20</span><span class="add">  %8 = const 4 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">21</span><span class="add">  %9 = mul %7, %8 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">22</span><span class="add">  %10 = const 16 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">23</span><span class="add">  %11 = add %9, %10 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">24</span><span class="add">  %12 = ptr.offset %b, %11 : ptr&lt;global&gt;  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">25</span><span class="add">  %y = load %12 : f32  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">26</span>  %z = fadd %x, %y : f32  loc(&quot;VectorAdd.java&quot;:21)
+<span class="ln">27</span><span class="add">  %13 = sext %i : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">28</span><span class="add">  %14 = const 4 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">29</span><span class="add">  %15 = mul %13, %14 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">30</span><span class="add">  %16 = const 16 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">31</span><span class="add">  %17 = add %15, %16 : i64  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">32</span><span class="add">  %18 = ptr.offset %c, %17 : ptr&lt;global&gt;  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">33</span><span class="add">  store %18, %z  loc(&quot;VectorAdd.java&quot;:21)</span>
+<span class="ln">34</span>  %next = add %i, %s : i32
+<span class="ln">35</span>  br ^head(%next)
+<span class="ln">36</span>^exit:
+<span class="ln">37</span>  ret
+<span class="ln">38</span>}
+</pre></section>
+<section id="stage-4"><h2>4 &middot; structure <small>TC-S (structured, non-SSA)</small></h2>
+<pre class="code"><span class="ln">1</span>kernel VectorAdd.add(ptr&lt;global&gt; a, ptr&lt;global&gt; b, ptr&lt;global&gt; c) -&gt; void {
+<span class="ln">2</span>  i64 v0;
+<span class="ln">3</span>  i32 n;
+<span class="ln">4</span>  i32 i0;
+<span class="ln">5</span>  i32 s;
+<span class="ln">6</span>  i32 i;
+<span class="ln">7</span>  f32 x;
+<span class="ln">8</span>  f32 y;
+<span class="ln">9</span>  v0 = load&lt;i64&gt;(a);
+<span class="ln">10</span>  n = trunc&lt;i32&gt;(v0);
+<span class="ln">11</span>  i0 = tornado.thread_id.global.x();
+<span class="ln">12</span>  s = tornado.global_size.x();
+<span class="ln">13</span>  i = i0;
+<span class="ln">14</span>  block L_exit {
+<span class="ln">15</span>    loop L_head {
+<span class="ln">16</span>      if ((i slt n)) {
+<span class="ln">17</span>        x = load&lt;f32&gt;(ptr.offset(a, ((sext&lt;i64&gt;(i) * 4) + 16)));
+<span class="ln">18</span>        y = load&lt;f32&gt;(ptr.offset(b, ((sext&lt;i64&gt;(i) * 4) + 16)));
+<span class="ln">19</span>        store(ptr.offset(c, ((sext&lt;i64&gt;(i) * 4) + 16)), (x + y));
+<span class="ln">20</span>        i = (i + s);
+<span class="ln">21</span>      } else {
+<span class="ln">22</span>        break L_exit;
+<span class="ln">23</span>      }
+<span class="ln">24</span>    }
+<span class="ln">25</span>  }
+<span class="ln">26</span>  return;
+<span class="ln">27</span>}
+</pre></section>
+<section id="stage-5"><h2>5 &middot; emit <small>target source</small></h2>
+<pre class="code"><span class="ln">1</span>extern &quot;C&quot; __global__ void VectorAdd_add(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
+<span class="ln">2</span>{
+<span class="ln">3</span>  long long v0;
+<span class="ln">4</span>  int n;
+<span class="ln">5</span>  int i0;
+<span class="ln">6</span>  int s;
+<span class="ln">7</span>  int i;
+<span class="ln">8</span>  float x;
+<span class="ln">9</span>  float y;
+<span class="ln">10</span>  v0 = *((long long *) a);  // VectorAdd.java:20
+<span class="ln">11</span>  n = (int) v0;  // VectorAdd.java:20
+<span class="ln">12</span>  i0 = (int) (blockIdx.x * blockDim.x + threadIdx.x);
+<span class="ln">13</span>  s = (int) (gridDim.x * blockDim.x);
+<span class="ln">14</span>  i = i0;
+<span class="ln">15</span>  while (i &lt; n) {
+<span class="ln">16</span>    x = *((float *) (a + ((long long) i * 4LL + 16LL)));  // VectorAdd.java:21
+<span class="ln">17</span>    y = *((float *) (b + ((long long) i * 4LL + 16LL)));  // VectorAdd.java:21
+<span class="ln">18</span>    *((float *) (c + ((long long) i * 4LL + 16LL))) = x + y;  // VectorAdd.java:21
+<span class="ln">19</span>    i = i + s;
+<span class="ln">20</span>  }
+<span class="ln">21</span>  return;
+<span class="ln">22</span>}
+</pre></section>
+<footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>
+</body></html>
