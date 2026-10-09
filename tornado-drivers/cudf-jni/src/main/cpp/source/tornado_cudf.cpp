@@ -41,6 +41,7 @@
 #include <cudf/io/types.hpp>
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_view.hpp>
+#include <cudf/copying.hpp>
 #include <cudf/groupby.hpp>
 #include <cudf/filling.hpp>
 #include <cudf/join/join.hpp>
@@ -922,7 +923,12 @@ int tornado_cudf_contains_re(void* stream, int64_t rows, const void* offsets, co
  *
  * Kinds, which cross the ABI and so are fixed: 0 is a 32-bit integer (INT32, or TIMESTAMP_DAYS,
  * which is how Parquet DATE arrives), 1 is a 64-bit integer (INT64, or any TIMESTAMP with a 64-bit
- * representation), 2 is FP64. A column of another type is refused rather than cast.
+ * representation), 2 is FP64. A column of another type is refused rather than cast, except for the
+ * exact widenings a table format's schema evolution allows: an INT32 column read as kind 1 and a
+ * FLOAT32 column read as kind 2 are widened on the device.
+ *
+ * A column index of -1 is a column the file does not have -- one a table added after the file was
+ * written: its slot reads as all nulls (zeros under validity 0), which needs validity requested.
  *
  * With `nullable` set, out_valid receives one byte a row a column -- 1 for a value, 0 for a null --
  * at stride `stride` in request order; the payload under a null is whatever the decoder left there.
@@ -981,55 +987,93 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
 
         std::vector<std::string> names;
         for (int32_t c = 0; c < column_count; c++) {
+            if (columns[c] == -1) {
+                if (nullable == 0) {
+                    g_last_error = "readParquetColumns: an absent column (index -1) reads as nulls, which needs validity requested";
+                    return 5;
+                }
+                continue;
+            }
             if (columns[c] < 0 || columns[c] >= schema_columns) {
                 g_last_error = "readParquetColumns: column " + std::to_string(columns[c]) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
                 return 6;
             }
-            if (kinds[c] < 0 || kinds[c] > 3) {
-                g_last_error = "readParquetColumns: kind " + std::to_string(kinds[c]) + " is not 0 (INT32), 1 (INT64), 2 (FP64) or 3 (FP32 into FP64)";
+            if (kinds[c] < 0 || kinds[c] > 4) {
+                g_last_error = "readParquetColumns: kind " + std::to_string(kinds[c])
+                        + " is not 0 (INT32), 1 (INT64), 2 (FP64), 3 (FP32 into FP64) or 4 (DECIMAL into INT64)";
                 return 5;
             }
             names.push_back(root.child(columns[c]).name());
         }
 
-        auto options = cudf::io::parquet_reader_options::builder(source).columns(names).build();
-        if (row_group_count > 0) {
-            std::vector<cudf::size_type> groups;
-            for (int32_t g = 0; g < row_group_count; g++) {
-                groups.push_back(static_cast<cudf::size_type>(row_group_start + g));
-            }
-            options.set_row_groups({groups});
-        }
-
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
-        auto result = cudf::io::read_parquet(options, view);
-        const auto table = result.tbl->view();
-        if (static_cast<int64_t>(table.num_rows()) != rows) {
-            g_last_error = "readParquetColumns: file gave " + std::to_string(table.num_rows()) + " rows where the caller asked for " + std::to_string(rows);
-            return 7;
+        // Every requested column absent: nothing to read, the caller's row count stands.
+        std::unique_ptr<cudf::table> read;
+        if (!names.empty()) {
+            auto options = cudf::io::parquet_reader_options::builder(source).columns(names).build();
+            if (row_group_count > 0) {
+                std::vector<cudf::size_type> groups;
+                for (int32_t g = 0; g < row_group_count; g++) {
+                    groups.push_back(static_cast<cudf::size_type>(row_group_start + g));
+                }
+                options.set_row_groups({groups});
+            }
+            read = std::move(cudf::io::read_parquet(options, view).tbl);
+            if (static_cast<int64_t>(read->num_rows()) != rows) {
+                g_last_error = "readParquetColumns: file gave " + std::to_string(read->num_rows()) + " rows where the caller asked for " + std::to_string(rows);
+                return 7;
+            }
         }
 
         cudaStream_t raw = static_cast<cudaStream_t>(stream);
         int64_t slot[3] = {0, 0, 0};
         void* base[3] = {out_int32, out_int64, out_fp64};
         const size_t width[3] = {sizeof(int32_t), sizeof(int64_t), sizeof(double)};
+        int32_t next = 0;  // the next column of the table read
         for (int32_t c = 0; c < column_count; c++) {
-            const auto col = table.column(c);
+            if (columns[c] == -1) {
+                const int32_t kind = kinds[c] == 3 ? 2 : kinds[c] == 4 ? 1 : kinds[c];
+                if (base[kind] == nullptr || out_valid == nullptr) {
+                    g_last_error = "readParquetColumns: an absent column of kind " + std::to_string(kind) + " needs its buffer and validity";
+                    return 5;
+                }
+                if (rows > 0) {
+                    char* dst = static_cast<char*>(base[kind]) + static_cast<size_t>(slot[kind]) * static_cast<size_t>(stride) * width[kind];
+                    char* valid = static_cast<char*>(out_valid) + static_cast<size_t>(c) * static_cast<size_t>(stride);
+                    if (cudaMemsetAsync(dst, 0, static_cast<size_t>(rows) * width[kind], raw) != cudaSuccess
+                            || cudaMemsetAsync(valid, 0, static_cast<size_t>(rows), raw) != cudaSuccess) {
+                        g_last_error = "readParquetColumns: cannot fill an absent column with nulls";
+                        return 3;
+                    }
+                }
+                slot[kind]++;
+                continue;
+            }
+            const auto col = read->view().column(next++);
             const auto id = col.type().id();
             // Kind 3 is a FLOAT32 column widened, exactly, into the FP64 buffer: it shares that buffer's slots.
-            const int32_t kind = kinds[c] == 3 ? 2 : kinds[c];
+            // Kind 4 is a DECIMAL column of up to 18 digits, its unscaled values in the INT64 buffer:
+            // stored as INT32 (cuDF's DECIMAL32) or INT64 (DECIMAL64), as Parquet writers store them.
             const bool widen_float = kinds[c] == 3;
+            const bool decimal = kinds[c] == 4;
+            const int32_t kind = widen_float ? 2 : decimal ? 1 : kinds[c];
             bool accepted = false;
             switch (kind) {
                 case 0:
                     accepted = id == cudf::type_id::INT32 || id == cudf::type_id::TIMESTAMP_DAYS;
                     break;
                 case 1:
+                    if (decimal) {
+                        accepted = id == cudf::type_id::DECIMAL32 || id == cudf::type_id::DECIMAL64;
+                        break;
+                    }
                     accepted = id == cudf::type_id::INT64 || id == cudf::type_id::TIMESTAMP_SECONDS || id == cudf::type_id::TIMESTAMP_MILLISECONDS
-                            || id == cudf::type_id::TIMESTAMP_MICROSECONDS || id == cudf::type_id::TIMESTAMP_NANOSECONDS;
+                            || id == cudf::type_id::TIMESTAMP_MICROSECONDS || id == cudf::type_id::TIMESTAMP_NANOSECONDS
+                            || id == cudf::type_id::INT32;  // int promoted to long
                     break;
                 default:
-                    accepted = widen_float ? id == cudf::type_id::FLOAT32 : id == cudf::type_id::FLOAT64;
+                    // FLOAT32 is accepted for FP64 too: float promoted to double.
+                    accepted = widen_float ? id == cudf::type_id::FLOAT32 : id == cudf::type_id::FLOAT64 || id == cudf::type_id::FLOAT32;
                     break;
             }
             if (!accepted) {
@@ -1049,8 +1093,15 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 char* dst = static_cast<char*>(base[kind]) + static_cast<size_t>(slot[kind]) * static_cast<size_t>(stride) * width[kind];
                 std::unique_ptr<cudf::column> widened;
                 cudf::column_view source = col;
-                if (widen_float) {
+                if (widen_float || (kind == 2 && id == cudf::type_id::FLOAT32)) {
                     widened = cudf::cast(col, cudf::data_type{cudf::type_id::FLOAT64}, view);
+                    source = widened->view();
+                } else if (kind == 1 && !decimal && id == cudf::type_id::INT32) {
+                    widened = cudf::cast(col, cudf::data_type{cudf::type_id::INT64}, view);
+                    source = widened->view();
+                } else if (decimal && id != cudf::type_id::DECIMAL64) {
+                    // A DECIMAL32 widened at the same scale: the unscaled value itself, exactly.
+                    widened = cudf::cast(col, cudf::data_type{cudf::type_id::DECIMAL64, col.type().scale()}, view);
                     source = widened->view();
                 }
                 cudaError_t rc = copy_out(dst, source.head<char>() + static_cast<size_t>(source.offset()) * width[kind], static_cast<size_t>(rows) * width[kind], raw);
@@ -1155,7 +1206,10 @@ int tornado_cudf_contains(void* stream, int32_t kind, const void* set, int32_t m
  *
  * types, one a column, fix both the buffer and the Parquet type, and cross the ABI:
  *   0 INT32, 1 INT64, 2 FP64, 3 DATE (days, from the INT32 buffer), 4 TIMESTAMP in microseconds
- *   (from the INT64 buffer).
+ *   (from the INT64 buffer), 5 FLOAT (from the FP64 buffer, narrowed), 6 DECIMAL of up to 18 digits
+ *   (unscaled values from the INT64 buffer; precision in bits 8-15 of the code, scale in 16-23),
+ *   stored as INT32 up to 9 digits and INT64 above, as Parquet's convention has it; 7 STRING, only
+ *   through tornado_cudf_write_parquet_columns_with_strings.
  * field_ids, one a column, are written as Parquet field ids (-1 for none): a table format that
  * resolves columns by id -- Iceberg -- reads the file back by them. optional, one a column, makes
  * the column nullable, with its validity bytes as the null mask; a required column is written as
@@ -1166,9 +1220,29 @@ int tornado_cudf_contains(void* stream, int32_t kind, const void* set, int32_t m
  * plan runs. compression: 0 none, 1 Snappy, 2 ZSTD. row_group_rows <= 0 keeps libcudf's default.
  * Column names are one a line in names. Footer statistics are written per row group.
  */
-int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t column_count, const char* names, const int32_t* field_ids,
+}  // extern "C"
+
+namespace {
+
+/**
+ * The STRING columns a write takes, as a read left them: per string column k, read_rows + 1 INT32
+ * offsets at k * (stride + 1), its bytes at k * chars_stride, and one validity byte a read row at
+ * slot * stride of valid, the slot in bits 8-23 of the column's type code. gather_map holds, for
+ * each of the write's rows, the read row it takes -- what a compaction's selected indices are -- so
+ * cuDF gathers the strings of the live rows inside the write.
+ */
+struct StringInputs {
+    const void* offsets;
+    const void* chars;
+    int64_t chars_stride;
+    const void* valid;
+    const void* gather_map;
+    int64_t read_rows;
+};
+
+int write_parquet_columns(void* stream, const char* path, int32_t column_count, const char* names, const int32_t* field_ids,
         const int32_t* types, const int32_t* optional, int64_t rows, const void* device_rows, int64_t stride, const void* in_int32, const void* in_int64,
-        const void* in_fp64, const void* in_valid, int32_t compression, int32_t row_group_rows) {
+        const void* in_fp64, const void* in_valid, int32_t compression, int32_t row_group_rows, const StringInputs* strings) {
     ensure_pool();
     try {
         if (path == nullptr || names == nullptr || field_ids == nullptr || types == nullptr || optional == nullptr || column_count <= 0) {
@@ -1218,15 +1292,64 @@ int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t c
         const size_t width[3] = {sizeof(int32_t), sizeof(int64_t), sizeof(double)};
         std::vector<cudf::column_view> views;
         std::vector<std::unique_ptr<rmm::device_buffer>> masks;  // owned here until the write returns
+        std::vector<std::unique_ptr<cudf::column>> narrowed;     // FLOAT columns, cast from FP64
+        std::vector<std::unique_ptr<cudf::table>> gathered;     // STRING columns, gathered
+        std::vector<int32_t> precisions(column_count, 0);
+        int32_t string_column = 0;
         for (int32_t c = 0; c < column_count; c++) {
+            if ((types[c] & 0xff) == 7) {
+                // A STRING column: the read rows' offsets, bytes and validity, gathered to the
+                // write's rows by the map.
+                if (strings == nullptr || strings->offsets == nullptr || strings->chars == nullptr || strings->gather_map == nullptr) {
+                    g_last_error = "writeParquetColumns: a STRING column needs the string inputs and a gather map";
+                    return 5;
+                }
+                const int32_t slot = (types[c] >> 8) & 0xffff;
+                const int64_t read_rows = strings->read_rows;
+                const int32_t* offsets = static_cast<const int32_t*>(strings->offsets) + static_cast<size_t>(string_column) * static_cast<size_t>(stride + 1);
+                const char* chars = static_cast<const char*>(strings->chars) + static_cast<size_t>(string_column) * static_cast<size_t>(strings->chars_stride);
+                string_column++;
+                const cudf::bitmask_type* mask = nullptr;
+                cudf::size_type nulls = 0;
+                if (optional[c] != 0 && read_rows > 0) {
+                    if (strings->valid == nullptr) {
+                        g_last_error = "writeParquetColumns: an optional STRING column with no validity";
+                        return 5;
+                    }
+                    cudf::column_view flags(cudf::data_type{cudf::type_id::BOOL8}, static_cast<cudf::size_type>(read_rows),
+                            static_cast<const char*>(strings->valid) + static_cast<size_t>(slot) * static_cast<size_t>(stride), nullptr, 0);
+                    auto [buffer, null_count] = cudf::bools_to_mask(flags, view);
+                    nulls = null_count;
+                    mask = static_cast<const cudf::bitmask_type*>(buffer->data());
+                    masks.push_back(std::move(buffer));
+                }
+                cudf::column_view offsets_view(cudf::data_type{cudf::type_id::INT32}, static_cast<cudf::size_type>(read_rows + 1), offsets, nullptr, 0);
+                cudf::column_view read_strings(cudf::data_type{cudf::type_id::STRING}, static_cast<cudf::size_type>(read_rows), chars, mask, nulls, 0, {offsets_view});
+                cudf::column_view map(cudf::data_type{cudf::type_id::INT32}, static_cast<cudf::size_type>(rows), strings->gather_map, nullptr, 0);
+                gathered.push_back(cudf::gather(cudf::table_view{{read_strings}}, map, cudf::out_of_bounds_policy::DONT_CHECK, view));
+                views.push_back(gathered.back()->view().column(0));
+                continue;
+            }
             int32_t kind;
             cudf::type_id id;
-            switch (types[c]) {
+            int32_t scale = 0;
+            switch (types[c] & 0xff) {
                 case 0: kind = 0; id = cudf::type_id::INT32; break;
                 case 1: kind = 1; id = cudf::type_id::INT64; break;
                 case 2: kind = 2; id = cudf::type_id::FLOAT64; break;
                 case 3: kind = 0; id = cudf::type_id::TIMESTAMP_DAYS; break;
                 case 4: kind = 1; id = cudf::type_id::TIMESTAMP_MICROSECONDS; break;
+                case 5: kind = 2; id = cudf::type_id::FLOAT64; break;  // narrowed below
+                case 6:
+                    kind = 1;
+                    id = cudf::type_id::DECIMAL64;
+                    precisions[c] = (types[c] >> 8) & 0xff;
+                    scale = (types[c] >> 16) & 0xff;
+                    if (precisions[c] < 1 || precisions[c] > 18 || scale > precisions[c]) {
+                        g_last_error = "writeParquetColumns: DECIMAL(" + std::to_string(precisions[c]) + ", " + std::to_string(scale) + ") is not a decimal of up to 18 digits";
+                        return 5;
+                    }
+                    break;
                 default:
                     g_last_error = "writeParquetColumns: unknown type " + std::to_string(types[c]);
                     return 5;
@@ -1251,13 +1374,28 @@ int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t c
                 mask = static_cast<const cudf::bitmask_type*>(buffer->data());
                 masks.push_back(std::move(buffer));
             }
-            views.emplace_back(cudf::data_type{id}, static_cast<cudf::size_type>(rows), data, mask, nulls);
+            // cuDF's scale is the power of ten a unit stands for: -2 for two digits after the point.
+            cudf::column_view column(id == cudf::type_id::DECIMAL64 ? cudf::data_type{id, numeric::scale_type{-scale}} : cudf::data_type{id},
+                    static_cast<cudf::size_type>(rows), data, mask, nulls);
+            if ((types[c] & 0xff) == 5) {
+                narrowed.push_back(cudf::cast(column, cudf::data_type{cudf::type_id::FLOAT32}, view));
+                views.push_back(narrowed.back()->view());
+            } else if (id == cudf::type_id::DECIMAL64 && precisions[c] <= 9) {
+                // Up to 9 digits a decimal is stored as INT32 (cuDF's DECIMAL32), as Spark and Iceberg store it.
+                narrowed.push_back(cudf::cast(column, cudf::data_type{cudf::type_id::DECIMAL32, numeric::scale_type{-scale}}, view));
+                views.push_back(narrowed.back()->view());
+            } else {
+                views.push_back(column);
+            }
         }
 
         cudf::table_view table{views};
         cudf::io::table_input_metadata metadata(table);
         for (int32_t c = 0; c < column_count; c++) {
             metadata.column_metadata[c].set_name(column_names[c]).set_nullability(optional[c] != 0);
+            if (precisions[c] > 0) {
+                metadata.column_metadata[c].set_decimal_precision(static_cast<uint8_t>(precisions[c]));
+            }
             if (field_ids[c] >= 0) {
                 metadata.column_metadata[c].set_parquet_field_id(field_ids[c]);
             }
@@ -1278,6 +1416,31 @@ int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t c
     } catch (...) {
         return fail("writeParquetColumns");
     }
+}
+
+}  // namespace
+
+extern "C" {
+
+int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t column_count, const char* names, const int32_t* field_ids,
+        const int32_t* types, const int32_t* optional, int64_t rows, const void* device_rows, int64_t stride, const void* in_int32, const void* in_int64,
+        const void* in_fp64, const void* in_valid, int32_t compression, int32_t row_group_rows) {
+    return write_parquet_columns(stream, path, column_count, names, field_ids, types, optional, rows, device_rows, stride, in_int32, in_int64, in_fp64, in_valid,
+            compression, row_group_rows, nullptr);
+}
+
+/**
+ * tornado_cudf_write_parquet_columns, with STRING columns (type 7): see StringInputs. A string
+ * column's bytes are gathered from the read rows to the written ones on the device, as the numeric
+ * columns' values were before the call.
+ */
+int tornado_cudf_write_parquet_columns_with_strings(void* stream, const char* path, int32_t column_count, const char* names, const int32_t* field_ids,
+        const int32_t* types, const int32_t* optional, int64_t rows, const void* device_rows, int64_t stride, const void* in_int32, const void* in_int64,
+        const void* in_fp64, const void* in_valid, int32_t compression, int32_t row_group_rows, const void* in_string_offsets, const void* in_string_chars,
+        int64_t chars_stride, const void* in_string_valid, const void* gather_map, int64_t read_rows) {
+    StringInputs strings{in_string_offsets, in_string_chars, chars_stride, in_string_valid, gather_map, read_rows};
+    return write_parquet_columns(stream, path, column_count, names, field_ids, types, optional, rows, device_rows, stride, in_int32, in_int64, in_fp64, in_valid,
+            compression, row_group_rows, &strings);
 }
 
 /**

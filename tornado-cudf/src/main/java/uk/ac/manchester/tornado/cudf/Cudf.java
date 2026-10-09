@@ -406,9 +406,15 @@ public final class Cudf {
      * have no file for it.
      *
      * <p>An array for a type the read does not use still has to be an array; a one-element one
-     * does. Columns are refused, not cast, when the file's type is not the one requested.
+     * does. Columns are refused, not cast, when the file's type is not the one requested, except
+     * for the exact widenings a table's schema evolution allows: an INT32 column read as
+     * {@link CudfType#INT64} and a FLOAT column read as {@link CudfType#FLOAT64}.
      *
-     * @param columns schema indices of the columns to read, in the order the outputs are packed
+     * <p>A column index of -1 is a column the file does not have (one a table added later): it reads
+     * as all nulls, so validity must be requested.
+     *
+     * @param columns schema indices of the columns to read, in the order the outputs are packed, -1
+     *     for a column the file does not have
      * @param types the type each column is read as
      * @param rowsHolder {@code rowsHolder[0]} is the number of rows the range holds
      */
@@ -481,10 +487,37 @@ public final class Cudf {
     public static LibraryTaskDescriptor writeParquetColumns(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types, boolean[] optional,
             long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64, ByteArray inValid, int compression,
             int rowGroupRows) {
+        return writeParquetColumns(pathHolder, names, fieldIds, types, optional, null, null, rowsHolder, deviceRows, stride, inInt32, inInt64, inFloat64, inValid,
+                compression, rowGroupRows);
+    }
+
+    /**
+     * {@link #writeParquetColumns(StringBuilder, String, int[], ParquetColumnType[], boolean[], long[], IntArray, int, IntArray, LongArray, DoubleArray, ByteArray, int,
+     * int)} with the precision (1 to 18) and scale (0 to precision) of each {@link ParquetColumnType#DECIMAL64} column, at its index; other columns' entries are
+     * ignored.
+     */
+    public static LibraryTaskDescriptor writeParquetColumns(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types, boolean[] optional,
+            int[] decimalPrecision, int[] decimalScale, long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64,
+            ByteArray inValid, int compression, int rowGroupRows) {
         if (fieldIds.length != types.length || types.length != optional.length) {
             throw new IllegalArgumentException("writeParquetColumns: field ids, types and optional flags must be the same length");
         }
-        int[] codes = Arrays.stream(types).mapToInt(ParquetColumnType::code).toArray();
+        int[] codes = new int[types.length];
+        for (int i = 0; i < types.length; i++) {
+            codes[i] = types[i].code();
+            if (types[i] == ParquetColumnType.DECIMAL64) {
+                // The shim reads a decimal's precision and scale from the code's upper bytes.
+                if (decimalPrecision == null || decimalScale == null || decimalPrecision.length != types.length || decimalScale.length != types.length) {
+                    throw new IllegalArgumentException("writeParquetColumns: a DECIMAL64 column needs a precision and a scale");
+                }
+                int precision = decimalPrecision[i];
+                int scale = decimalScale[i];
+                if (precision < 1 || precision > 18 || scale < 0 || scale > precision) {
+                    throw new IllegalArgumentException("writeParquetColumns: DECIMAL(" + precision + ", " + scale + ") is not a decimal of up to 18 digits");
+                }
+                codes[i] |= (precision << 8) | (scale << 16);
+            }
+        }
         int[] nullable = new int[optional.length];
         for (int i = 0; i < optional.length; i++) {
             nullable[i] = optional[i] ? 1 : 0;
@@ -496,6 +529,62 @@ public final class Cudf {
                 .withFunction("writeParquetColumns") //
                 .withParameters(new Object[] { pathHolder, names, fieldIds, codes, nullable, rowsHolder, deviceRows, (long) stride, inInt32, inInt64, inFloat64, inValid,
                         compression, rowGroupRows }) //
+                .withAccess(access);
+    }
+
+    /**
+     * {@link #writeParquetColumns} with {@link ParquetColumnType#STRING} columns too: a compaction's
+     * live rows, numeric and string, written in the plan that found them.
+     *
+     * <p>The numeric columns are laid out as for {@link #writeParquetColumns}, already in the rows to
+     * write. The string columns are as {@link #readParquetStringColumns} read them -- per string
+     * column k, {@code readRows + 1} offsets at {@code k * (stride + 1)} and its bytes at
+     * {@code k * charsStride} -- with one validity byte a read row in {@code stringValid}, and
+     * {@code gatherMap} holds for each written row the read row it takes (what
+     * {@link #selectedIndices} writes): cuDF gathers the strings inside the write.
+     *
+     * @param columnDetail per column: a {@link ParquetColumnType#DECIMAL64}'s precision * 256 +
+     *     scale; a {@link ParquetColumnType#STRING}'s validity slot in {@code stringValid}, at
+     *     {@code slot * stride}; ignored otherwise
+     * @param settings read when the task runs: {compression (0 none, 1 Snappy, 2 ZSTD), rows a row
+     *     group (0 for libcudf's default), {@code charsStride}, the rows the string columns were read
+     *     for}
+     */
+    public static LibraryTaskDescriptor writeParquetColumnsWithStrings(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types,
+            boolean[] optional, int[] columnDetail, long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64,
+            ByteArray inValid, IntArray stringOffsets, ByteArray stringChars, ByteArray stringValid, IntArray gatherMap, long[] settings) {
+        if (fieldIds.length != types.length || types.length != optional.length || columnDetail.length != types.length) {
+            throw new IllegalArgumentException("writeParquetColumnsWithStrings: field ids, types, optional flags and details must be the same length");
+        }
+        if (settings.length != 4) {
+            throw new IllegalArgumentException("writeParquetColumnsWithStrings: settings are {compression, rowGroupRows, charsStride, readRows}");
+        }
+        int[] codes = new int[types.length];
+        int[] nullable = new int[optional.length];
+        for (int i = 0; i < types.length; i++) {
+            codes[i] = types[i].code();
+            nullable[i] = optional[i] ? 1 : 0;
+            if (types[i] == ParquetColumnType.DECIMAL64) {
+                int precision = columnDetail[i] >>> 8;
+                int scale = columnDetail[i] & 0xff;
+                if (precision < 1 || precision > 18 || scale > precision) {
+                    throw new IllegalArgumentException("writeParquetColumnsWithStrings: DECIMAL(" + precision + ", " + scale + ") is not a decimal of up to 18 digits");
+                }
+                codes[i] |= (precision << 8) | (scale << 16);
+            } else if (types[i] == ParquetColumnType.STRING) {
+                if (columnDetail[i] < 0 || columnDetail[i] > 0xffff) {
+                    throw new IllegalArgumentException("writeParquetColumnsWithStrings: validity slot " + columnDetail[i] + " out of range");
+                }
+                codes[i] |= columnDetail[i] << 8;
+            }
+        }
+        Access[] access = new Access[18];
+        Arrays.fill(access, Access.READ_ONLY);
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("writeParquetColumnsWithStrings") //
+                .withParameters(new Object[] { pathHolder, names, fieldIds, codes, nullable, rowsHolder, deviceRows, (long) stride, inInt32, inInt64, inFloat64, inValid,
+                        stringOffsets, stringChars, stringValid, gatherMap, settings }) //
                 .withAccess(access);
     }
 

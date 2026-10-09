@@ -79,6 +79,7 @@ public final class CudfNativeLib {
     private static final MethodHandle CONTAINS;
 
     private static final MethodHandle WRITE_PARQUET_COLUMNS;
+    private static final MethodHandle WRITE_PARQUET_COLUMNS_WITH_STRINGS;
 
     private static final MethodHandle SORT_KEYS;
     private static final MethodHandle SORTED_ORDER_LONGS;
@@ -104,6 +105,7 @@ public final class CudfNativeLib {
         MethodHandle readParquetColumns = null;
         MethodHandle contains = null;
         MethodHandle writeParquetColumns = null;
+        MethodHandle writeParquetColumnsWithStrings = null;
         MethodHandle sortKeys = null;
         MethodHandle sortedOrderLongs = null;
         MethodHandle readParquetStringColumns = null;
@@ -158,6 +160,10 @@ public final class CudfNativeLib {
             //         int compression, int rowGroupRows)
             writeParquetColumns = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_POINTER, C_POINTER, C_POINTER,
                     C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_INT), "tornado_cudf_write_parquet_columns");
+            // ... and the same with string inputs: offsets, chars, chars stride, validity, gather map, read rows
+            writeParquetColumnsWithStrings = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_INT, C_POINTER, C_POINTER,
+                    C_POINTER, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG),
+                    "tornado_cudf_write_parquet_columns_with_strings");
             // int (*)(void* stream, int kind, const void* keys, int n, void* out)
             sortKeys = FFMSupport.downcall(LIBTORNADO_CUDF, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_INT, C_LONG), "tornado_cudf_sort_keys");
             // int (*)(void* stream, const void* keys, int n, int keyColumns, long stride, void* outOrder)
@@ -188,6 +194,7 @@ public final class CudfNativeLib {
         READ_PARQUET_COLUMNS = readParquetColumns;
         CONTAINS = contains;
         WRITE_PARQUET_COLUMNS = writeParquetColumns;
+        WRITE_PARQUET_COLUMNS_WITH_STRINGS = writeParquetColumnsWithStrings;
         SORT_KEYS = sortKeys;
         SORTED_ORDER_LONGS = sortedOrderLongs;
         READ_PARQUET_STRING_COLUMNS = readParquetStringColumns;
@@ -339,6 +346,32 @@ public final class CudfNativeLib {
                     compression, rowGroupRows);
         } catch (Throwable t) {
             throw asRuntime(t, "writeParquetColumns");
+        }
+    }
+
+    /** Device buffers, string columns too, to a Parquet file; see {@code Cudf.writeParquetColumnsWithStrings}. */
+    public static int writeParquetColumnsWithStrings(long stream, String path, String names, int[] fieldIds, int[] types, int[] optional, long rows, long deviceRows,
+            long stride, long inInt32, long inInt64, long inFp64, long inValid, int compression, int rowGroupRows, long inStringOffsets, long inStringChars,
+            long charsStride, long inStringValid, long gatherMap, long readRows) {
+        if (WRITE_PARQUET_COLUMNS_WITH_STRINGS == null) {
+            throw new TornadoRuntimeException("[ERROR] the cuDF shim has no string-column write; rebuild it");
+        }
+        try (java.lang.foreign.Arena arena = java.lang.foreign.Arena.ofConfined()) {
+            java.lang.foreign.MemorySegment cPath = FFMSupport.allocateCString(arena, path);
+            java.lang.foreign.MemorySegment cNames = FFMSupport.allocateCString(arena, names);
+            int n = types.length;
+            java.lang.foreign.MemorySegment cIds = FFMSupport.allocateArray(arena, C_INT, Math.max(n, 1));
+            java.lang.foreign.MemorySegment cTypes = FFMSupport.allocateArray(arena, C_INT, Math.max(n, 1));
+            java.lang.foreign.MemorySegment cOptional = FFMSupport.allocateArray(arena, C_INT, Math.max(n, 1));
+            for (int i = 0; i < n; i++) {
+                cIds.setAtIndex(C_INT, i, fieldIds[i]);
+                cTypes.setAtIndex(C_INT, i, types[i]);
+                cOptional.setAtIndex(C_INT, i, optional[i]);
+            }
+            return (int) WRITE_PARQUET_COLUMNS_WITH_STRINGS.invokeExact(stream, cPath, n, cNames, cIds, cTypes, cOptional, rows, deviceRows, stride, inInt32, inInt64,
+                    inFp64, inValid, compression, rowGroupRows, inStringOffsets, inStringChars, charsStride, inStringValid, gatherMap, readRows);
+        } catch (Throwable t) {
+            throw asRuntime(t, "writeParquetColumnsWithStrings");
         }
     }
 

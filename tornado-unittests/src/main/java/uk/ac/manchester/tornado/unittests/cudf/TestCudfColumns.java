@@ -415,6 +415,59 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * DECIMAL64 and FLOAT32 columns written from the device and read back: a required DECIMAL(7,2),
+     * stored as INT32, a nullable DECIMAL(15,4), stored as INT64, and a FLOAT, with the decimal
+     * extremes, negatives and nulls. The decimals come back unscaled and exact through both of cuDF's
+     * decimal widths, the floats as Java narrows and widens them. The file is written by the test, so
+     * no fixture is needed.
+     */
+    @Test
+    public void testWriteParquetColumnsDecimalAndFloat() throws TornadoExecutionPlanException, IOException {
+        Path out = Files.createTempFile("tornado-cudf-write-decimals", ".parquet");
+        out.toFile().deleteOnExit();
+        long[] price = { 9999999, -9999999, 0, 1, -1, 12345, 42, 700, -4242, 10010 };
+        long[] amount = { 999999999999999L, -999999999999999L, 0, 31416, -27183, 1, 10000, -5, 123456789012345L, 77 };
+        double[] ratio = { 1.5, -2.25, 3.4028234663852886e38, 1e-3, 0.0, -0.0, 16777217.0, -1.0 / 3, 42.0, 0.1 };
+        int rows = price.length;
+        LongArray longs = new LongArray(2L * rows);
+        DoubleArray doubles = new DoubleArray(rows);
+        ByteArray valid = new ByteArray(3L * rows);
+        for (int i = 0; i < rows; i++) {
+            longs.set(i, price[i]);
+            longs.set(rows + i, amount[i]);
+            doubles.set(i, ratio[i]);
+            valid.set(i, (byte) 1);
+            valid.set(rows + i, (byte) (i % 3 == 1 ? 0 : 1));
+            valid.set(2 * rows + i, (byte) 1);
+        }
+        LongArray backLongs = new LongArray(2L * rows);
+        DoubleArray backDoubles = new DoubleArray(rows);
+        ByteArray backValid = new ByteArray(3L * rows);
+        ParquetColumnType[] types = { ParquetColumnType.DECIMAL64, ParquetColumnType.DECIMAL64, ParquetColumnType.FLOAT32 };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, longs, doubles, valid) //
+                .libraryTask("write", Cudf::writeParquetColumns, new StringBuilder(out.toString()), "price\namount\nratio", new int[] { 1, 2, 3 }, types,
+                        new boolean[] { false, true, false }, new int[] { 7, 15, 0 }, new int[] { 2, 4, 0 }, new long[] { rows }, new IntArray(1), rows, new IntArray(1),
+                        longs, doubles, valid, 2, 0) //
+                .libraryTask("reread", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0, 1, 2 },
+                        new CudfType[] { CudfType.DECIMAL64, CudfType.DECIMAL64, CudfType.FLOAT32 }, new long[] { rows }, rows, new IntArray(1), backLongs, backDoubles,
+                        backValid, true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, backLongs, backDoubles, backValid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < rows; i++) {
+            assertEquals("price " + i, price[i], backLongs.get(i));
+            boolean present = i % 3 != 1;
+            assertEquals("amount valid " + i, present ? 1 : 0, backValid.get(rows + i));
+            if (present) {
+                assertEquals("amount " + i, amount[i], backLongs.get(rows + i));
+            }
+            assertEquals("ratio " + i, Double.doubleToRawLongBits((float) ratio[i]), Double.doubleToRawLongBits(backDoubles.get(i)));
+        }
+    }
+
     /** Binary search of a sorted set: the probe a sorted set allows, as a kernel. */
     public static void probeSorted(LongArray sorted, IntArray size, LongArray keys, ByteArray found) {
         for (@Parallel int i = 0; i < keys.getSize(); i++) {
@@ -560,6 +613,72 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * STRING columns written from a read's offsets and bytes, gathered on the device to the rows a
+     * map picks -- in any order, nulls kept -- next to a numeric column, then read back: what a
+     * compaction writes for its live rows.
+     */
+    @Test
+    public void testWriteParquetColumnsWithStringsGathered() throws TornadoExecutionPlanException, IOException {
+        assumeTrue(Cudf.isStringColumnsAvailable() && Cudf.isWriterAvailable());
+        Path strings = Files.createTempFile("tornado-cudf-strings", ".parquet");
+        strings.toFile().deleteOnExit();
+        try (InputStream in = TestCudfColumns.class.getResourceAsStream("strings.parquet")) {
+            Files.copy(in, strings, StandardCopyOption.REPLACE_EXISTING);
+        }
+        Path out = Files.createTempFile("tornado-cudf-write-strings", ".parquet");
+        out.toFile().deleteOnExit();
+        String[] names = { "é0", null, "2", "xyz3", "Ωmega4", null, "ab6", "7", "xyz8", null };
+        int readRows = 20;
+        int stride = 24;
+        long charsStride = 256;
+        // Every other read row, last first.
+        int kept = 10;
+        IntArray map = new IntArray(kept);
+        LongArray positions = new LongArray(stride);
+        for (int j = 0; j < kept; j++) {
+            map.set(j, readRows - 1 - 2 * j);
+            positions.set(j, readRows - 1 - 2 * j);
+        }
+        IntArray offsets = new IntArray(2 * (stride + 1));
+        ByteArray chars = new ByteArray(2 * charsStride);
+        ByteArray valid = new ByteArray(3L * stride);
+        LongArray backPositions = new LongArray(kept);
+        IntArray backOffsets = new IntArray(2 * (kept + 1));
+        ByteArray backChars = new ByteArray(2 * charsStride);
+        ByteArray backValid = new ByteArray(3L * kept);
+        ParquetColumnType[] types = { ParquetColumnType.INT64, ParquetColumnType.STRING, ParquetColumnType.STRING };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, map, positions) //
+                .libraryTask("read", Cudf::readParquetStringColumns, new StringBuilder(strings + "\n" + strings), new int[] { 0, 1 }, new long[] { readRows }, stride,
+                        offsets, chars, charsStride, valid, 1) //
+                .libraryTask("write", Cudf::writeParquetColumnsWithStrings, new StringBuilder(out.toString()), "pos\nflag\nname", new int[] { 1, 2, 3 }, types,
+                        new boolean[] { false, false, true }, new int[] { 0, 1, 2 }, new long[] { kept }, new IntArray(1), stride, new IntArray(1), positions,
+                        new DoubleArray(1), new ByteArray(1), offsets, chars, valid, map, new long[] { 2, 0, charsStride, readRows }) //
+                .libraryTask("rereadNumbers", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0 }, new CudfType[] { CudfType.INT64 },
+                        new long[] { kept }, kept, new IntArray(1), backPositions, new DoubleArray(1), new ByteArray(1), false) //
+                .libraryTask("rereadStrings", Cudf::readParquetStringColumns, new StringBuilder(out.toString()), new int[] { 1, 2 }, new long[] { kept }, kept,
+                        backOffsets, backChars, charsStride, backValid, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, backPositions, backOffsets, backChars, backValid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int j = 0; j < kept; j++) {
+            int read = readRows - 1 - 2 * j;
+            int r = read % 10;
+            assertEquals("pos " + j, read, backPositions.get(j));
+            String flag = new String(slice(backChars, 0, backOffsets.get(j), backOffsets.get(j + 1)), java.nio.charset.StandardCharsets.UTF_8);
+            assertEquals("flag " + j, String.valueOf("RANRANRANR".charAt(r)), flag);
+            boolean present = names[r] != null;
+            assertEquals("name valid " + j, present ? 1 : 0, backValid.get(2 * kept + j));
+            if (present) {
+                int from = backOffsets.get(kept + 1 + j);
+                int to = backOffsets.get(kept + 1 + j + 1);
+                assertEquals("name " + j, names[r], new String(slice(backChars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8));
+            }
+        }
+    }
+
     private static byte[] slice(ByteArray chars, long base, int from, int to) {
         byte[] bytes = new byte[to - from];
         for (int b = from; b < to; b++) {
@@ -653,7 +772,63 @@ public class TestCudfColumns extends TornadoTestBase {
     /** An INT32 column requested as INT64 is refused, not widened. */
     @Test
     public void testReadParquetColumnsRefusesTypeMismatch() {
-        assertRefused(new int[] { K }, new CudfType[] { CudfType.INT64 }, true, "does not cast");
+        assertRefused(new int[] { V }, new CudfType[] { CudfType.INT64 }, true, "does not cast");
+    }
+
+    /**
+     * What a table's schema evolution leaves in its older files, read on the device: an INT32 column
+     * read as INT64 (int promoted to long) and a FLOAT32 column read as FP64 (float to double),
+     * both widened exactly, and columns the file does not have (index -1, added later) read as all
+     * nulls, in the same read as the columns it has.
+     */
+    @Test
+    public void testReadParquetColumnsSchemaEvolution() throws TornadoExecutionPlanException, IOException {
+        LongArray longs = new LongArray(3L * ROWS);
+        DoubleArray doubles = new DoubleArray(ROWS);
+        ByteArray valid = new ByteArray(4L * ROWS);
+        for (int i = 0; i < 3 * ROWS; i++) {
+            longs.set(i, 99);
+        }
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(fixture.toString()), 0, 0, new int[] { K, -1, ID, -1 },
+                        new CudfType[] { CudfType.INT64, CudfType.INT64, CudfType.INT64, CudfType.FLOAT64 }, new long[] { ROWS }, ROWS, new IntArray(1), longs, doubles,
+                        valid, true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, longs, doubles, valid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < ROWS; i++) {
+            assertEquals("k widened " + i, i % 3, longs.get(i));
+            assertEquals("k valid " + i, 1, valid.get(i));
+            assertEquals("absent long valid " + i, 0, valid.get(ROWS + i));
+            assertEquals("absent long " + i, 0, longs.get(ROWS + i));
+            assertEquals("id " + i, id(i), longs.get(2 * ROWS + i));
+            assertEquals("absent double valid " + i, 0, valid.get(3 * ROWS + i));
+        }
+
+        Path floats = Files.createTempFile("tornado-cudf-floats", ".parquet");
+        floats.toFile().deleteOnExit();
+        try (InputStream in = TestCudfColumns.class.getResourceAsStream("floats.parquet")) {
+            Files.copy(in, floats, StandardCopyOption.REPLACE_EXISTING);
+        }
+        DoubleArray widened = new DoubleArray(ROWS);
+        TaskGraph floatGraph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(floats.toString()), 0, 0, new int[] { 0 }, new CudfType[] { CudfType.FLOAT64 },
+                        new long[] { ROWS }, ROWS, new IntArray(1), new LongArray(1), widened, new ByteArray(ROWS), true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, widened);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(floatGraph.snapshot())) {
+            plan.execute();
+        }
+        float[] f = { 1.5f, -2.25f, 3.4028235e38f, 1.17549435e-38f, 0.0f, -0.0f, 16777217.0f, (float) (-1.0 / 3), 1e-3f, 42.0f };
+        for (int i = 0; i < ROWS; i++) {
+            assertEquals("float widened " + i, Double.doubleToRawLongBits(f[i]), Double.doubleToRawLongBits(widened.get(i)));
+        }
+    }
+
+    /** An absent column reads as nulls, which a read without validity cannot express. */
+    @Test
+    public void testReadParquetColumnsAbsentNeedsValidity() {
+        assertRefused(new int[] { ID, -1 }, new CudfType[] { CudfType.INT64, CudfType.INT64 }, false, "needs validity");
     }
 
     private static void assertRefused(int[] columns, CudfType[] types, boolean nullable, String reason) {

@@ -107,6 +107,14 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
                     (int[]) invocation.getArg(3), (int[]) invocation.getArg(4), ((long[]) invocation.getArg(5))[0], invocation.getDevicePointer(6), (Long) invocation.getArg(7),
                     invocation.getDevicePointer(8), invocation.getDevicePointer(9), invocation.getDevicePointer(10), invocation.getDevicePointer(11), (Integer) invocation.getArg(12),
                     (Integer) invocation.getArg(13));
+            case "writeParquetColumnsWithStrings" -> {
+                long[] settings = (long[]) invocation.getArg(16);
+                yield CudfNativeLib.writeParquetColumnsWithStrings(stream, pathOf(invocation.getArg(0)), pathOf(invocation.getArg(1)), (int[]) invocation.getArg(2),
+                        (int[]) invocation.getArg(3), (int[]) invocation.getArg(4), ((long[]) invocation.getArg(5))[0], invocation.getDevicePointer(6), (Long) invocation.getArg(7),
+                        invocation.getDevicePointer(8), invocation.getDevicePointer(9), invocation.getDevicePointer(10), invocation.getDevicePointer(11), (int) settings[0],
+                        (int) settings[1], invocation.getDevicePointer(12), invocation.getDevicePointer(13), settings[2], invocation.getDevicePointer(14),
+                        invocation.getDevicePointer(15), settings[3]);
+            }
             case "sortKeys" -> CudfNativeLib.sortKeys(stream, (Integer) invocation.getArg(3), invocation.getDevicePointer(1), ((int[]) invocation.getArg(0))[0],
                     invocation.getDevicePointer(2));
             case "readParquetStringColumns" -> CudfNativeLib.readParquetStringColumns(stream, pathOf(invocation.getArg(0)), (int[]) invocation.getArg(1),
