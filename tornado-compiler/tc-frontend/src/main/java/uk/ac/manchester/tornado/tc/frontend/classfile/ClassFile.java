@@ -34,7 +34,11 @@ import java.util.Optional;
  * with their {@code Code} attribute, line numbers, local variable names and raw type annotations
  * (where {@code @Parallel} lives). Any class-file version is accepted: unknown attributes are skipped.
  */
-public record ClassFile(String name, int majorVersion, ConstantPool constants, List<Method> methods) {
+public record ClassFile(String name, int majorVersion, ConstantPool constants, List<Method> methods, List<BootstrapMethod> bootstrapMethods) {
+
+    /** One entry of the {@code BootstrapMethods} attribute: the method handle and its static arguments. */
+    public record BootstrapMethod(int methodHandle, List<Integer> arguments) {
+    }
 
     /** A method and, unless abstract or native, its code. */
     public record Method(String name, String descriptor, int access, Optional<Code> code) {
@@ -127,8 +131,27 @@ public record ClassFile(String name, int majorVersion, ConstantPool constants, L
             }
             methods.add(new Method(methodName, descriptor, access, code));
         }
-        skipAttributes(in);
-        return new ClassFile(name, major, pool, List.copyOf(methods));
+        var bootstraps = new ArrayList<BootstrapMethod>();
+        int classAttributes = in.readUnsignedShort();
+        for (int a = 0; a < classAttributes; a++) {
+            var attributeName = pool.utf8(in.readUnsignedShort());
+            int length = in.readInt();
+            if (attributeName.equals("BootstrapMethods")) {
+                int n = in.readUnsignedShort();
+                for (int i = 0; i < n; i++) {
+                    int handle = in.readUnsignedShort();
+                    int argc = in.readUnsignedShort();
+                    var arguments = new ArrayList<Integer>();
+                    for (int k = 0; k < argc; k++) {
+                        arguments.add(in.readUnsignedShort());
+                    }
+                    bootstraps.add(new BootstrapMethod(handle, List.copyOf(arguments)));
+                }
+            } else {
+                in.skipNBytes(length);
+            }
+        }
+        return new ClassFile(name, major, pool, List.copyOf(methods), List.copyOf(bootstraps));
     }
 
     private static Code readCode(DataInputStream in, ConstantPool pool) throws IOException {

@@ -593,7 +593,16 @@ final class Translator {
                 };
                 push(b.alloca(AddressSpace.PRIVATE, element, constantLength(length, insn.bci())));
             }
-            case ARRAYLENGTH -> push(b.arrayLength(pop()));
+            case ARRAYLENGTH -> {
+                var array = pop();
+                if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
+                    push(b.constInt(Type.I32, count));
+                } else if (array.type() instanceof Type.PointerType) {
+                    throw error("TC-E1004", "the length of a local array is only known where it is allocated", insn.bci());
+                } else {
+                    push(b.arrayLength(array));
+                }
+            }
             case CHECKCAST -> {
             }
             default -> {
@@ -814,8 +823,17 @@ final class Translator {
                     push(result);
                 }
             }
-            case ArrayGet g -> push(builder.arrayLoad(args.get(0), args.get(1)));
-            case ArraySet s -> builder.arrayStore(args.get(0), args.get(1), args.get(2));
+            case ArrayGet g -> {
+                // Sub-int elements widen to int on the JVM operand stack (char unsigned, others signed).
+                var loaded = builder.arrayLoad(args.get(0), args.get(1));
+                var element = loaded.type();
+                push(element.equals(Type.I8) || element.equals(Type.I16) ? builder.convert(ref.descriptor().endsWith(")C") ? ConvertOp.ZEXT : ConvertOp.SEXT, loaded, Type.I32) : loaded);
+            }
+            case ArraySet s -> {
+                var element = args.get(0).type() instanceof Type.ArrayType(var e) ? e : args.get(2).type();
+                var value = args.get(2);
+                builder.arrayStore(args.get(0), args.get(1), element.equals(value.type()) ? value : builder.convert(ConvertOp.TRUNC, value, element));
+            }
             case ArraySize s -> push(builder.arrayLength(args.get(0)));
             case SharedArray(var element) -> push(builder.alloca(AddressSpace.SHARED, element, constantLength(args.get(1), insn.bci())));
             case Identity i -> push(args.get(0));

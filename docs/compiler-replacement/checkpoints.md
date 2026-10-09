@@ -59,3 +59,25 @@ Decisions:
 3. **Noted for Phase 9 (Leyden):** cold start dominates TC's own cost; CDS/AOT caching of TC classes
    is the lever, not pass tuning.
 4. **Kept:** sealed records + pattern `switch` dispatch: no hot spot in dispatch showed up.
+
+## C4a frontend coverage (2026-10-09)
+
+`tc-coverage <tornado-unittests.jar> uk.ac.manchester.tornado.unittests --tasks` translates exactly the
+methods registered as tasks (found statically from the `invokedynamic` sites that create
+`TornadoFunctions.Task*` objects; `TaskSites`).
+
+| | Kernels |
+|---|---:|
+| Task kernels in `tornado-unittests` | 1,317 |
+| Translate to verified TC-SSA, no unresolved calls | 623 (47.3%) |
+| … of which complete today (no `@Parallel`) | 190 |
+| … of which use `@Parallel` (need T2 parallel-loop lowering) | 433 |
+| Verified but call helper methods (need O1 inlining) | 95 |
+| Invalid IR (HalfFloat objects, T9) | 8 |
+| Rejected with a diagnostic | 591 |
+
+Rejections by cause: unsupported calls 441 (TileContext views 170, KernelContext atomics/SIMD/MMA/
+async copies, HalfFloat, vector/matrix/image collections, `AtomicInteger`), `new` 80 (value
+objects), field access 42 (object parameters), non-constant local-array sizes 11 (need T1), arrays of
+references 10, strings 3. Next by impact: T2 `@Parallel` (433), O1 inlining (95), then the API
+families in Phase 6 order.

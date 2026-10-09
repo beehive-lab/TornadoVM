@@ -63,7 +63,17 @@ public final class ConstantPool {
     private record NameAndType(int name, int descriptor) implements Entry {
     }
 
+    private record MethodHandleRef(int kind, int reference) implements Entry {
+    }
+
+    private record InvokeDynamicRef(int bootstrap, int nameAndType) implements Entry {
+    }
+
     private record Other(int tag) implements Entry {
+    }
+
+    /** An {@code invokedynamic} site: bootstrap-method index, name and descriptor. */
+    public record DynamicSite(int bootstrap, String name, String descriptor) {
     }
 
     private final Entry[] entries;
@@ -87,16 +97,13 @@ public final class ConstantPool {
                 case 8 -> new StringRef(in.readUnsignedShort());
                 case 9, 10, 11 -> new Member(in.readUnsignedShort(), in.readUnsignedShort());
                 case 12 -> new NameAndType(in.readUnsignedShort(), in.readUnsignedShort());
-                case 15 -> {
-                    in.readUnsignedByte();
-                    in.readUnsignedShort();
-                    yield new Other(tag);
-                }
+                case 15 -> new MethodHandleRef(in.readUnsignedByte(), in.readUnsignedShort());
                 case 16, 19, 20 -> {
                     in.readUnsignedShort();
                     yield new Other(tag);
                 }
-                case 17, 18 -> {
+                case 18 -> new InvokeDynamicRef(in.readUnsignedShort(), in.readUnsignedShort());
+                case 17 -> {
                     in.readUnsignedShort();
                     in.readUnsignedShort();
                     yield new Other(tag);
@@ -129,6 +136,18 @@ public final class ConstantPool {
             return new MemberRef(className(owner), utf8(name), utf8(descriptor));
         }
         throw new ClassFormatException("constant " + index + " is not a field or method reference");
+    }
+
+    /** The method or field a {@code CONSTANT_MethodHandle} refers to, if {@code index} is one. */
+    public java.util.Optional<MemberRef> methodHandle(int index) {
+        return entries[index] instanceof MethodHandleRef(var kind, var reference) ? java.util.Optional.of(member(reference)) : java.util.Optional.empty();
+    }
+
+    public DynamicSite dynamicSite(int index) {
+        if (entries[index] instanceof InvokeDynamicRef(var bootstrap, var nameAndType) && entries[nameAndType] instanceof NameAndType(var name, var descriptor)) {
+            return new DynamicSite(bootstrap, utf8(name), utf8(descriptor));
+        }
+        throw new ClassFormatException("constant " + index + " is not an invokedynamic site");
     }
 
     /** A loadable constant ({@code ldc}): Integer, Float, Long, Double or String. */
