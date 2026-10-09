@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.tc.ir.IrPrinter;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Verifier;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.tc.opt.Inliner;
 import uk.ac.manchester.tornado.tc.opt.PassManager;
 import uk.ac.manchester.tornado.tc.lower.S;
 import uk.ac.manchester.tornado.tc.lower.SPrinter;
@@ -61,7 +62,8 @@ public final class TcCompiler {
     }
 
     /** The result of compiling one function. */
-    public record Compilation(String function, TargetCaps target, boolean succeeded, String source, String entryName, List<Stage> stages, List<Diagnostic> diagnostics, long nanos) {
+    public record Compilation(String function, TargetCaps target, boolean succeeded, String source, String entryName, List<Stage> stages, List<Diagnostic> diagnostics, long nanos,
+            List<ParallelLoopLowering.Domain> domain) {
     }
 
     private static final class Failed extends RuntimeException {
@@ -104,22 +106,37 @@ public final class TcCompiler {
      * {@link ValueSpecialisation}). The result is only valid for those facts.
      */
     public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
+        return compileJava(source, className, methodName, null, target, options, facts);
+    }
+
+    /** As above for one overload: {@code descriptor} is the JVM method descriptor, {@code null} for the first match. */
+    public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
+            List<ValueSpecialisation.Fact> facts) {
         long start = System.nanoTime();
-        var translated = Frontend.translate(source, className, methodName, null);
+        var translated = Frontend.translateWithCallees(source, className, methodName, descriptor);
+        java.util.Optional<Function> kernel = translated.module().map(m -> m.functions().get(0));
+        List<Diagnostic> frontendDiagnostics = new ArrayList<>(translated.diagnostics());
+        if (kernel.isPresent() && translated.module().get().functions().size() > 1) {
+            var problems = Inliner.run(translated.module().get(), kernel.get());
+            if (!problems.isEmpty()) {
+                frontendDiagnostics.addAll(problems);
+                kernel = java.util.Optional.empty();
+            }
+        }
         long frontendNanos = System.nanoTime() - start;
         var bytecode = new Stage("bytecode", Kind.BYTECODE, options.htmlReport() || options.dumps("bytecode") ? translated.bytecode() : "", 0, 0);
-        if (translated.function().isEmpty()) {
+        if (kernel.isEmpty()) {
             var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
-            return new Compilation(name, target, false, "", "", List.of(bytecode), translated.diagnostics(), frontendNanos);
+            return new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of());
         }
-        var compiler = new TcCompiler(translated.function().get(), target, options);
+        var compiler = new TcCompiler(kernel.get(), target, options);
         compiler.facts = List.copyOf(facts);
         compiler.stages.add(bytecode);
         var c = compiler.run();
         var stages = new ArrayList<>(c.stages());
         var size = stages.size() > 1 ? stages.get(1).size() : 0;
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
-        return new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos);
+        return new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain());
     }
 
     private Compilation run() {
@@ -186,7 +203,7 @@ public final class TcCompiler {
             event.diagnostic = diagnostics.isEmpty() ? "" : diagnostics.get(0).code() + ": " + diagnostics.get(0).message();
             event.commit();
         }
-        return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos);
+        return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos, ParallelLoopLowering.domain(function));
     }
 
     private void check(String name, Verifier.Stage stage) {

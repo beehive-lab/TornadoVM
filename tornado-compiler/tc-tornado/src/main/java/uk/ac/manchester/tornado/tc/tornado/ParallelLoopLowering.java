@@ -115,6 +115,7 @@ public final class ParallelLoopLowering {
             return java.util.Optional.of(error(header, "the step of a @Parallel loop must not change inside the loop"));
         }
         var d = DIMENSIONS[dim];
+        recordDomain(header, iv, argumentOnEdge(entry, header, ivIndex), step, dim);
 
         var before = new IrBuilder(entry.block().orElseThrow()).before(entry).at(entry.loc());
         var gid = before.intrinsic("tornado.thread_id.global." + d, Type.I32, List.of());
@@ -131,6 +132,44 @@ public final class ParallelLoopLowering {
         }
         header.addAttribute(new Attribute("grid", "dim=" + dim));
         return java.util.Optional.empty();
+    }
+
+    /** A parallel dimension with constant bounds: {@code for (i = offset; i < upper; i += step)}. */
+    public record Domain(int dim, long offset, long step, long upper) {
+    }
+
+    /**
+     * The launch domain of the lowered loops (optimisation list item T3), read back from the function
+     * attributes {@code domain(dim,offset,step,upper)}; empty when a bound is not constant.
+     */
+    public static List<Domain> domain(Function function) {
+        var result = new ArrayList<Domain>();
+        for (var attribute : function.attributes()) {
+            if (attribute.name().equals("domain")) {
+                var v = attribute.args().split(",");
+                result.add(new Domain(Integer.parseInt(v[0].trim()), Long.parseLong(v[1].trim()), Long.parseLong(v[2].trim()), Long.parseLong(v[3].trim())));
+            }
+        }
+        result.sort(Comparator.comparingInt(Domain::dim));
+        return result;
+    }
+
+    /** Records offset, step and upper bound when all three are constants and the test is {@code i < upper}. */
+    private static void recordDomain(Block header, BlockArg iv, Value init, Value step, int dim) {
+        var offset = constant(init);
+        var stride = constant(step);
+        var term = header.terminator().orElse(null);
+        if (offset.isEmpty() || stride.isEmpty() || term == null || !(term.opcode() instanceof Opcode.CondBranch) || !(term.operand(0) instanceof Inst cmp)) {
+            return;
+        }
+        // javac tests the exit condition: `i >= upper` jumps out; `i < upper` stays in.
+        if (cmp.opcode() instanceof Opcode.ICmp(var p) && cmp.operand(0) == iv && (p == Opcode.IntPredicate.SGE || p == Opcode.IntPredicate.SLT)) {
+            constant(cmp.operand(1)).ifPresent(upper -> header.function().addAttribute(new Attribute("domain", dim + "," + offset.get() + "," + stride.get() + "," + upper)));
+        }
+    }
+
+    private static java.util.Optional<Long> constant(Value v) {
+        return v instanceof Inst i && i.opcode() instanceof Opcode.ConstInt(var c) ? java.util.Optional.of(c) : java.util.Optional.empty();
     }
 
     private static Value scaled(IrBuilder b, Value v, Value step) {

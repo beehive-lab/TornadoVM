@@ -17,7 +17,7 @@ comparison (kernel time, `ncu`) vs Graal baseline, **V** verifier after the pass
 
 | # | Optimisation | Replaces on the Graal path | Pri | Gate | Verify | Status |
 |---|---|---|---|---|---|---|
-| O1 | **Inline-all** for kernel-reachable methods, recursion check, size-cap diagnostic | `InliningPhase` + `TornadoFull/PartialInliningPolicy` | P0 | C5b | G V D | todo |
+| O1 | **Inline-all** for kernel-reachable methods, recursion check, size-cap diagnostic | `InliningPhase` + `TornadoFull/PartialInliningPolicy` | P0 | C5b | G V D | wip: frontend translates static callees transitively, `Inliner` splices them (recursion rejected, TC-E1009); size cap todo |
 | O2 | **Constant folding** with Java semantics (int overflow, `div`/`rem`, shifts masked, `f2i.sat`, NaN) | `CanonicalizerPhase` (folding) | P0 | C4b | G A V | done (C4b pending Alive2): `Canonicalizer`, lit `Canonicalize/java-folding.tcir` |
 | O3 | **Algebraic simplification** (identities, strength reduction `x*2^k→x<<k`, double negation, compare canonical forms) | `CanonicalizerPhase` (simplification) | P0 | C4b | G A V | wip: exact integer and float identities, `ptr+0`; strength reduction todo |
 | O4 | **Branch folding / CFG simplification** (constant conditions, empty blocks, block merging, jump threading of trivial blocks) | `CanonicalizerPhase` (control flow) | P0 | C4b | G V | wip: constant branches, straight-line merging, unreachable blocks (`CfgSimplify`) |

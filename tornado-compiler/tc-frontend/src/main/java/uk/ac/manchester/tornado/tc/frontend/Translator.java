@@ -113,10 +113,11 @@ final class Translator {
     private final Map<Block, List<Type>> entryStackTypes = new IdentityHashMap<>();
 
     private final Map<BlockArg, String> argumentKeys = new IdentityHashMap<>();
+    private final Map<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef> callees = new java.util.LinkedHashMap<>();
     private IrBuilder builder;
     private Deque<Value> stack;
 
-    private Translator(ClassFile classFile, ClassFile.Method method) {
+    private Translator(ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
         this.classFile = classFile;
         this.method = method;
         this.code = method.code().orElseThrow(() -> new IllegalArgumentException(method.name() + " has no code"));
@@ -127,11 +128,26 @@ final class Translator {
             indexOfBci.put(insns.get(i).bci(), i);
         }
         var returnDescriptor = method.descriptor().substring(method.descriptor().indexOf(')') + 1);
-        this.function = new Function(simpleClass + "." + method.name(), Function.Kind.KERNEL, Bindings.type(returnDescriptor));
+        var name = kind == Function.Kind.KERNEL ? simpleClass + "." + method.name() : calleeName(classFile.name(), method.name(), method.descriptor());
+        this.function = new Function(name, kind, Bindings.type(returnDescriptor));
     }
 
     static Function translate(ClassFile classFile, ClassFile.Method method) {
-        return new Translator(classFile, method).run();
+        return new Translator(classFile, method, Function.Kind.KERNEL).run();
+    }
+
+    /** The function and the static methods it calls (by TC function name), for transitive translation. */
+    record Translated(Function function, Map<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef> callees) {
+    }
+
+    static Translated translate(ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
+        var translator = new Translator(classFile, method, kind);
+        return new Translated(translator.run(), translator.callees);
+    }
+
+    /** The TC name of a Java static method: {@code Owner.name}, plus a descriptor hash for overloads. */
+    static String calleeName(String owner, String name, String descriptor) {
+        return owner.substring(owner.lastIndexOf('/') + 1).replace('$', '_') + "." + name + "_" + Integer.toHexString(descriptor.hashCode());
     }
 
     private Function run() {
@@ -842,7 +858,8 @@ final class Translator {
         var returnType = Bindings.type(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
         if (binding.isEmpty()) {
             if (insn.opcode() == INVOKESTATIC) {
-                var callee = ref.owner().substring(ref.owner().lastIndexOf('/') + 1) + "." + ref.name();
+                var callee = calleeName(ref.owner(), ref.name(), ref.descriptor());
+                callees.put(callee, ref);
                 var call = builder.call(callee, returnType, args);
                 if (call.producesValue()) {
                     push(call);

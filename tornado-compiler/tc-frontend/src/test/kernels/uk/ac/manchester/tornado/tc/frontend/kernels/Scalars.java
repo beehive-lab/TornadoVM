@@ -91,4 +91,21 @@ public final class Scalars {
         }
         return tmp[n & 7];
     }
+
+    private static float square(float x) {
+        return x * x;
+    }
+
+    private static float clampSquare(float x, float limit) {
+        float s = square(x);
+        return s > limit ? limit : s;
+    }
+
+    public static float helpers(float x) {
+        return clampSquare(x, 100f) + square(2f);
+    }
+
+    public static int recursive(int n) {
+        return n <= 1 ? 1 : n * recursive(n - 1);
+    }
 }

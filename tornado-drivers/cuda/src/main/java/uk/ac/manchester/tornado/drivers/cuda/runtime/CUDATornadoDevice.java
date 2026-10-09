@@ -68,6 +68,10 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
+import uk.ac.manchester.tornado.drivers.common.tc.TcHook;
+import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
@@ -269,6 +273,21 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
+        if (TcHook.ENABLED) {
+            // TC, the Graal-free compiler (docs/compiler-replacement). Falls back to Graal below when
+            // TC reports a diagnostic, unless -Dtornado.compiler.fallback=false.
+            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget());
+            if (kernel.isPresent()) {
+                TornadoProfiler profiler = task.getProfiler();
+                profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+                kernel.get().domain().ifPresent(taskMeta::setDomain);
+                var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());
+                profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+                profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+                return installed;
+            }
+        }
+
         try {
             CUDAProviders providers = (CUDAProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
@@ -310,6 +329,12 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 throw e;
             }
         }
+    }
+
+    /** What TC needs to know about this device. */
+    private TargetCaps tcTarget() {
+        int cc = getDeviceContext().getDevice() instanceof CUDADevice d ? d.getComputeCapabilityMajor() * 10 + d.getComputeCapabilityMinor() : 89;
+        return new TargetCaps(TargetCaps.Dialect.CUDA, cc, true, true, (int) TornadoNativeArray.ARRAY_HEADER, 1024, 48 * 1024, 32);
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {

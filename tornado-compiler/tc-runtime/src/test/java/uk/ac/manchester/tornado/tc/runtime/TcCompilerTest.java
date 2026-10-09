@@ -71,4 +71,20 @@ public class TcCompilerTest {
             assertEquals(java.util.List.of("K_scale.05-abi.tcir", "K_scale.09-emit.cu"), files.map(p -> p.getFileName().toString()).sorted().toList());
         }
     }
+
+    @Test
+    public void inlinesHelperMethodsAndFoldsThem() {
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
+        var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.Scalars", "helpers", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.source(), c.source().contains("return v3 + 4.0f;"));
+    }
+
+    @Test
+    public void rejectsRecursion() {
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
+        var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.Scalars", "recursive", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+        assertFalse(c.succeeded());
+        assertEquals("TC-E1009", c.diagnostics().get(0).code());
+    }
 }

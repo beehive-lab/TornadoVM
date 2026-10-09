@@ -129,6 +129,63 @@ public final class Frontend {
         }
     }
 
+    /** A kernel and every static method it calls, transitively: the kernel is the first function. */
+    public record ModuleResult(Optional<uk.ac.manchester.tornado.tc.ir.IrModule> module, List<Diagnostic> diagnostics, String bytecode) {
+    }
+
+    /**
+     * Translates the kernel and, transitively, the static methods it calls (for the inliner). Recursion
+     * is rejected with {@code TC-E1009}: GPU kernels cannot recurse.
+     */
+    public static ModuleResult translateWithCallees(BytecodeSource source, String className, String methodName, String descriptor) {
+        var kernel = translate(source, className, methodName, descriptor);
+        if (kernel.function().isEmpty()) {
+            return new ModuleResult(Optional.empty(), kernel.diagnostics(), kernel.bytecode());
+        }
+        var module = new uk.ac.manchester.tornado.tc.ir.IrModule();
+        var work = new java.util.ArrayDeque<java.util.Map.Entry<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef>>();
+        // Re-translate the kernel to learn its callees (translate() does not expose them).
+        var internal = className.replace('.', '/');
+        var classFile = ClassFile.parse(source.classBytes(internal).orElseThrow());
+        var method = classFile.method(methodName, descriptor).orElseThrow();
+        Translator.Translated root;
+        try {
+            root = Translator.translate(classFile, method, Function.Kind.KERNEL);
+        } catch (Translator.FrontendError e) {
+            return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.bytecode());
+        }
+        module.add(root.function());
+        work.addAll(root.callees().entrySet());
+        var seen = new java.util.HashSet<String>();
+        while (!work.isEmpty()) {
+            var entry = work.poll();
+            if (!seen.add(entry.getKey())) {
+                continue;
+            }
+            var ref = entry.getValue();
+            var bytes = source.classBytes(ref.owner());
+            if (bytes.isEmpty()) {
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", "class " + ref.owner().replace('/', '.') + " of called method " + ref.name() + " not found", "", Loc.UNKNOWN)), kernel.bytecode());
+            }
+            var calleeClass = ClassFile.parse(bytes.get());
+            var calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
+            if (calleeMethod.isEmpty() || calleeMethod.get().code().isEmpty()) {
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode", "", Loc.UNKNOWN)), kernel.bytecode());
+            }
+            try {
+                var translated = Translator.translate(calleeClass, calleeMethod.get(), Function.Kind.DEVICE);
+                module.add(translated.function());
+                work.addAll(translated.callees().entrySet());
+            } catch (Translator.FrontendError e) {
+                return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.bytecode());
+            }
+            if (seen.size() > 64) {
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", "more than 64 distinct callees: recursion or an unbounded call graph", "", Loc.UNKNOWN)), kernel.bytecode());
+            }
+        }
+        return new ModuleResult(Optional.of(module), List.of(), kernel.bytecode());
+    }
+
     private static Result failure(String code, String message) {
         return new Result(Optional.empty(), List.of(new Diagnostic(code, message, "", Loc.UNKNOWN)));
     }
