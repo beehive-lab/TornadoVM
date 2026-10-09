@@ -1,0 +1,22 @@
+; C3 kernel 1: grid-stride vector addition on TornadoVM FloatArrays.
+; The bound is read from an input array: the header of a write-only output is not initialised on the
+; device (finding of the C3 run, see checkpoints.md); the Graal path folds lengths instead (T1).
+kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
+^entry:
+  %n = array.length %a : i32                   loc("VectorAdd.java":20)
+  %i0 = tornado.thread_id.global.x() : i32
+  %s = tornado.global_size.x() : i32
+  br ^head(%i0)
+^head(%i: i32) [parallel(dim=0)]:
+  %more = icmp.slt %i, %n : i1                 loc("VectorAdd.java":20)
+  cond_br %more, ^body, ^exit
+^body:
+  %x = array.load %a[%i] : f32                 loc("VectorAdd.java":21)
+  %y = array.load %b[%i] : f32                 loc("VectorAdd.java":21)
+  %z = fadd %x, %y : f32                       loc("VectorAdd.java":21)
+  array.store %c[%i], %z                       loc("VectorAdd.java":21)
+  %next = add %i, %s : i32
+  br ^head(%next)
+^exit:
+  ret
+}

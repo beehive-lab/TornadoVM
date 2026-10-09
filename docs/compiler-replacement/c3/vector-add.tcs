@@ -1,0 +1,27 @@
+kernel VectorAdd.add(ptr<global> a, ptr<global> b, ptr<global> c) -> void {
+  i64 v0;
+  i32 n;
+  i32 i0;
+  i32 s;
+  i32 i;
+  f32 x;
+  f32 y;
+  v0 = load<i64>(a);
+  n = trunc<i32>(v0);
+  i0 = tornado.thread_id.global.x();
+  s = tornado.global_size.x();
+  i = i0;
+  block L_exit {
+    loop L_head {
+      if ((i slt n)) {
+        x = load<f32>(ptr.offset(a, ((sext<i64>(i) * 4) + 16)));
+        y = load<f32>(ptr.offset(b, ((sext<i64>(i) * 4) + 16)));
+        store(ptr.offset(c, ((sext<i64>(i) * 4) + 16)), (x + y));
+        i = (i + s);
+      } else {
+        break L_exit;
+      }
+    }
+  }
+  return;
+}

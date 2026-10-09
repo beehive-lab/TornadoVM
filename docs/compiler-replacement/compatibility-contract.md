@@ -18,7 +18,7 @@ contract.
 | Atomics | `AtomicInteger` parameters map to slots in `_atomics`; TC returns the slot map instead of the static map on a Graal node |
 | User parameters | Java order; primitives and `HalfFloat` by value; every reference as `unsigned char *`; `KernelContext`, `TileContext`, `AtomicInteger` dropped |
 | Names | from the local-variable table; clashes with CUDA built-ins get a `_` prefix |
-| Native arrays | header precedes data; element-count at offset 0; header size from `TargetCaps` (measured in `--printKernel` output: `int` element `i` at byte `(i + 4) << 2`, i.e. a 16-byte header) |
+| Native arrays | header precedes data; element-count at offset 0 (**only valid on the device for arrays transferred to it**: a write-only output's header is uninitialised, found at C3; lengths must be folded by T1); header size from `TargetCaps` (measured in `--printKernel` output: `int` element `i` at byte `(i + 4) << 2`, i.e. a 16-byte header) |
 
 OpenCL: same four regions with `__global`, `__constant`, `__local`, `__global` qualifiers and
 `__kernel`; `_local_region` is real dynamic local memory. Metal: `[[buffer(i)]]` /

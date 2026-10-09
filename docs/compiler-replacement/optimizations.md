@@ -39,13 +39,13 @@ that nothing the Graal path does is lost.
 
 | # | Transformation | Replaces | Pri | Gate | Verify | Status |
 |---|---|---|---|---|---|---|
-| T1 | **Value / task specialisation**: fold boxed-primitive arguments and array lengths into constants; under `GridScheduler` with dynamic bounds, read loop bounds from kernel-context slots instead | `TornadoTaskSpecialisation` | P0 | C5b | G D | todo |
+| T1 | **Value / task specialisation** (required: device headers of write-only arrays are uninitialised, C3 finding): fold boxed-primitive arguments and array lengths into constants; under `GridScheduler` with dynamic bounds, read loop bounds from kernel-context slots instead | `TornadoTaskSpecialisation` | P0 | C5b | G D | todo |
 | T2 | **Parallel loop scheduling**: `@Parallel` / auto loops → thread-id + grid-stride per `TargetCaps.schedule` | `TornadoParallelScheduler`, `TornadoApiReplacement` | P0 | C5b | G D | todo |
 | T3 | **Parallel domain (shape) analysis** for launch configuration | `TornadoShapeAnalysis` | P0 | C5b | D | todo |
 | T4 | **Reductions**: `@Reduce` pattern recognition → local-memory tree + barriers + partials/atomics | `TornadoReduceReplacement`, `ReduceGPUSnippets`, `TornadoLocalMemoryAllocation` | P0 | C6 | G D P | todo |
 | T5 | **KernelContext intrinsics** (ids, sizes, barriers, local arrays) | `TornadoKernelContextReplacement`, `TornadoCUDAIntrinsicsReplacements` | P0 | C5b | G D | todo |
 | T6 | **Access[] dataflow analysis** (READ/WRITE per parameter, merged across callees and launches) | `TornadoDataflowAnalysis`, sketcher merge | P0 | C4c | diff vs Graal for every unittest task | todo |
-| T7 | **ABI lowering**: `array<T>` → `ptr<global>` + header; parameter-object field flattening; native-array length at header offset 0 | `TornadoFieldAccessFixup`, `TornadoPanamaSegmentsHeaderPhase`, `TornadoNativeTypeElimination` | P0 | C3 | G D | todo |
+| T7 | **ABI lowering**: `array<T>` → `ptr<global>` + header; parameter-object field flattening; native-array length at header offset 0 | `TornadoFieldAccessFixup`, `TornadoPanamaSegmentsHeaderPhase`, `TornadoNativeTypeElimination` | P0 | C3 | G D | wip: arrays done and GPU-verified at C3; object/field flattening todo |
 | T8 | **Private and shared memory**: private arrays as fixed-size locals; phi/branch-selected private arrays via pointer copy | `TornadoNewArrayDevirtualizationReplacement`, `TornadoPrivateArrayPiRemoval`, `TornadoPanamaPrivateMemory`, `TornadoFixedArrayCopyPhase` | P0 | C6 | G D | todo |
 | T9 | **Half / bf16** values and vector offsets | `TornadoHalfFloatReplacement`, `TornadoHalfFloatVectorOffset`, `TornadoHalfFloatFixedGuardElimination` | P0 | C6 | G D | todo |
 | T10 | **Value types** (`@Vector` objects) as SSA vectors from the frontend | `TornadoValueTypeReplacement`, `PartialEscapePhase` (subset) | P0 | C6 | G D | todo |

@@ -1,0 +1,38 @@
+kernel @Branchy.compute(%in: ptr<global>, %out: ptr<global>) -> void {
+^entry:
+  %i = tornado.thread_id.global.x() : i32  loc("Branchy.java":30)
+  %0 = load %in : i64
+  %n = trunc %0 : i32
+  %inside = icmp.slt %i, %n : i1
+  cond_br %inside, ^load, ^done
+^load:
+  %1 = sext %i : i64  loc("Branchy.java":31)
+  %2 = const 4 : i64  loc("Branchy.java":31)
+  %3 = mul %1, %2 : i64  loc("Branchy.java":31)
+  %4 = const 16 : i64  loc("Branchy.java":31)
+  %5 = add %3, %4 : i64  loc("Branchy.java":31)
+  %6 = ptr.offset %in, %5 : ptr<global>  loc("Branchy.java":31)
+  %x = load %6 : f32  loc("Branchy.java":31)
+  %zero = const 0.0 : f32
+  %pos = fcmp.ogt %x, %zero : i1  loc("Branchy.java":32)
+  cond_br %pos, ^then, ^else
+^then:
+  %r = math.sqrt(%x) : f32  loc("Branchy.java":33)
+  %two = const 2.0 : f32
+  %d = fmul %r, %two : f32  loc("Branchy.java":33)
+  br ^join(%d)
+^else:
+  %m = fneg %x : f32  loc("Branchy.java":35)
+  br ^join(%m)
+^join(%v: f32):
+  %7 = sext %i : i64  loc("Branchy.java":37)
+  %8 = const 4 : i64  loc("Branchy.java":37)
+  %9 = mul %7, %8 : i64  loc("Branchy.java":37)
+  %10 = const 16 : i64  loc("Branchy.java":37)
+  %11 = add %9, %10 : i64  loc("Branchy.java":37)
+  %12 = ptr.offset %out, %11 : ptr<global>  loc("Branchy.java":37)
+  store %12, %v  loc("Branchy.java":37)
+  br ^done
+^done:
+  ret
+}

@@ -1,0 +1,42 @@
+kernel Reduce.blockSum(ptr<global> in, ptr<global> out) -> void {
+  shared f32 scratch[256];
+  i32 gid;
+  i32 lid;
+  i32 grp;
+  i32 lsz;
+  f32 v;
+  ptr<shared> slot;
+  i32 s;
+  f32 total;
+  f32 mine;
+  f32 other;
+  gid = tornado.thread_id.global.x();
+  lid = tornado.thread_id.local.x();
+  grp = tornado.group_id.x();
+  lsz = tornado.group_size.local.x();
+  v = load<f32>(ptr.offset(in, ((sext<i64>(gid) * 4) + 16)));
+  slot = ptr.offset(&scratch, (sext<i64>(lid) * 4));
+  store(slot, v);
+  tornado.barrier.local();
+  s = (lsz >> 1);
+  block L_write {
+    loop L_head {
+      if ((s sgt 0)) {
+        if ((lid slt s)) {
+          mine = load<f32>(slot);
+          other = load<f32>(ptr.offset(&scratch, (sext<i64>((lid + s)) * 4)));
+          store(slot, (mine + other));
+        }
+        tornado.barrier.local();
+        s = (s >> 1);
+      } else {
+        break L_write;
+      }
+    }
+  }
+  if ((lid eq 0)) {
+    total = load<f32>(&scratch);
+    store(ptr.offset(out, ((sext<i64>(grp) * 4) + 16)), total);
+  }
+  return;
+}
