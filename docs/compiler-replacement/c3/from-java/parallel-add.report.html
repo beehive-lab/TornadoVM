@@ -12,20 +12,20 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 .ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
 .diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
 </style></head><body>
-<header><h1>ParallelKernels.vectorAdd</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 6.57 ms total &middot; entry <code>ParallelKernels_vectorAdd</code></p></header>
+<header><h1>ParallelKernels.vectorAdd</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 9.41 ms total &middot; entry <code>ParallelKernels_vectorAdd</code></p></header>
 <section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class="num">Time</th><th class="num">IR instructions</th><th>Share</th></tr></thead><tbody>
 <tr><td>0</td><td><a href="#stage-0">bytecode</a></td><td class="num">0.00 ms</td><td class="num">0</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>1</td><td>frontend</td><td class="num">1.72 ms</td><td class="num">14</td><td><span class="bar" style="width:30%"></span></td></tr>
+<tr><td>1</td><td>frontend</td><td class="num">1.59 ms</td><td class="num">14</td><td><span class="bar" style="width:18%"></span></td></tr>
 <tr><td>2</td><td><a href="#stage-2">input</a></td><td class="num">0.00 ms</td><td class="num">14</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>3</td><td>verify.pre-abi</td><td class="num">0.30 ms</td><td class="num">14</td><td><span class="bar" style="width:5%"></span></td></tr>
-<tr><td>4</td><td><a href="#stage-4">specialise</a></td><td class="num">0.35 ms</td><td class="num">14</td><td><span class="bar" style="width:6%"></span></td></tr>
-<tr><td>5</td><td><a href="#stage-5">parallel</a></td><td class="num">0.40 ms</td><td class="num">17</td><td><span class="bar" style="width:7%"></span></td></tr>
-<tr><td>6</td><td><a href="#stage-6">optimize</a></td><td class="num">0.83 ms</td><td class="num">13</td><td><span class="bar" style="width:14%"></span></td></tr>
-<tr><td>7</td><td><a href="#stage-7">abi</a></td><td class="num">0.07 ms</td><td class="num">31</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>8</td><td>verify.post-abi</td><td class="num">0.15 ms</td><td class="num">31</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>9</td><td><a href="#stage-9">optimize.post-abi</a></td><td class="num">1.55 ms</td><td class="num">21</td><td><span class="bar" style="width:27%"></span></td></tr>
-<tr><td>10</td><td><a href="#stage-10">structure</a></td><td class="num">0.18 ms</td><td class="num">21</td><td><span class="bar" style="width:3%"></span></td></tr>
-<tr><td>11</td><td><a href="#stage-11">emit</a></td><td class="num">0.11 ms</td><td class="num">21</td><td><span class="bar" style="width:2%"></span></td></tr>
+<tr><td>3</td><td>verify.pre-abi</td><td class="num">0.15 ms</td><td class="num">14</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>4</td><td><a href="#stage-4">specialise</a></td><td class="num">0.33 ms</td><td class="num">14</td><td><span class="bar" style="width:3%"></span></td></tr>
+<tr><td>5</td><td><a href="#stage-5">parallel</a></td><td class="num">1.27 ms</td><td class="num">17</td><td><span class="bar" style="width:15%"></span></td></tr>
+<tr><td>6</td><td><a href="#stage-6">optimize</a></td><td class="num">1.09 ms</td><td class="num">13</td><td><span class="bar" style="width:12%"></span></td></tr>
+<tr><td>7</td><td><a href="#stage-7">abi</a></td><td class="num">0.06 ms</td><td class="num">31</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>8</td><td>verify.post-abi</td><td class="num">0.13 ms</td><td class="num">31</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>9</td><td><a href="#stage-9">optimize.post-abi</a></td><td class="num">2.30 ms</td><td class="num">23</td><td><span class="bar" style="width:27%"></span></td></tr>
+<tr><td>10</td><td><a href="#stage-10">structure</a></td><td class="num">1.34 ms</td><td class="num">23</td><td><span class="bar" style="width:15%"></span></td></tr>
+<tr><td>11</td><td><a href="#stage-11">emit</a></td><td class="num">0.14 ms</td><td class="num">23</td><td><span class="bar" style="width:1%"></span></td></tr>
 </tbody></table></section>
 <section id="stage-0"><h2>0 &middot; bytecode <small>Java bytecode</small></h2>
 <pre class="code"><span class="ln">1</span>// uk.ac.manchester.tornado.tc.gpu.kernels.ParallelKernels.vectorAdd(Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;)V
@@ -100,8 +100,8 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <span class="ln">20</span>  ret  loc(&quot;ParallelKernels.java&quot;:36, bci=32)
 <span class="ln">21</span>}
 </pre></section>
-<section id="stage-5"><h2>5 &middot; parallel <small>TC-SSA &middot; 14 line(s) added since the previous IR stage</small></h2>
-<pre class="code"><span class="ln">1</span>kernel @ParallelKernels.vectorAdd(%a: array&lt;f32&gt;, %b: array&lt;f32&gt;, %c: array&lt;f32&gt;) -&gt; void {
+<section id="stage-5"><h2>5 &middot; parallel <small>TC-SSA &middot; 15 line(s) added since the previous IR stage</small></h2>
+<pre class="code"><span class="ln">1</span><span class="add">kernel @ParallelKernels.vectorAdd(%a: array&lt;f32&gt;, %b: array&lt;f32&gt;, %c: array&lt;f32&gt;) -&gt; void [domain(0,0,1,1048576)] {</span>
 <span class="ln">2</span>^entry:
 <span class="ln">3</span>  br ^bci0
 <span class="ln">4</span>^bci0:
@@ -127,7 +127,7 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <span class="ln">24</span>}
 </pre></section>
 <section id="stage-6"><h2>6 &middot; optimize <small>TC-SSA &middot; 9 line(s) added since the previous IR stage</small></h2>
-<pre class="code"><span class="ln">1</span>kernel @ParallelKernels.vectorAdd(%a: array&lt;f32&gt;, %b: array&lt;f32&gt;, %c: array&lt;f32&gt;) -&gt; void {
+<pre class="code"><span class="ln">1</span>kernel @ParallelKernels.vectorAdd(%a: array&lt;f32&gt;, %b: array&lt;f32&gt;, %c: array&lt;f32&gt;) -&gt; void [domain(0,0,1,1048576)] {
 <span class="ln">2</span>^entry:
 <span class="ln">3</span>  %0 = tornado.thread_id.global.x() : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=1)
 <span class="ln">4</span><span class="add">  %1 = tornado.global_size.x() : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=29)</span>
@@ -148,7 +148,7 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <span class="ln">19</span>}
 </pre></section>
 <section id="stage-7"><h2>7 &middot; abi <small>TC-SSA &middot; 23 line(s) added since the previous IR stage</small></h2>
-<pre class="code"><span class="ln">1</span><span class="add">kernel @ParallelKernels.vectorAdd(%a: ptr&lt;global&gt;, %b: ptr&lt;global&gt;, %c: ptr&lt;global&gt;) -&gt; void {</span>
+<pre class="code"><span class="ln">1</span><span class="add">kernel @ParallelKernels.vectorAdd(%a: ptr&lt;global&gt;, %b: ptr&lt;global&gt;, %c: ptr&lt;global&gt;) -&gt; void [domain(0,0,1,1048576)] {</span>
 <span class="ln">2</span>^entry:
 <span class="ln">3</span>  %0 = tornado.thread_id.global.x() : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=1)
 <span class="ln">4</span>  %1 = tornado.global_size.x() : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
@@ -158,82 +158,84 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <span class="ln">8</span>  %3 = icmp.sge %i, %2 : i1  loc(&quot;ParallelKernels.java&quot;:33, bci=7)
 <span class="ln">9</span>  cond_br %3, ^bci32, ^bci10  loc(&quot;ParallelKernels.java&quot;:33, bci=7)
 <span class="ln">10</span>^bci10:
-<span class="ln">11</span><span class="add">  %4 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
-<span class="ln">12</span><span class="add">  %5 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
-<span class="ln">13</span><span class="add">  %6 = mul %4, %5 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
-<span class="ln">14</span><span class="add">  %7 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
-<span class="ln">15</span><span class="add">  %8 = add %6, %7 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
-<span class="ln">16</span><span class="add">  %9 = ptr.offset %a, %8 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
-<span class="ln">17</span><span class="add">  %10 = load %9 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
-<span class="ln">18</span><span class="add">  %11 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">19</span><span class="add">  %12 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">20</span><span class="add">  %13 = mul %11, %12 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">21</span><span class="add">  %14 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">22</span><span class="add">  %15 = add %13, %14 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">23</span><span class="add">  %16 = ptr.offset %b, %15 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">24</span><span class="add">  %17 = load %16 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">25</span><span class="add">  %18 = fadd %10, %17 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=22)</span>
-<span class="ln">26</span><span class="add">  %19 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">27</span><span class="add">  %20 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">28</span><span class="add">  %21 = mul %19, %20 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">29</span><span class="add">  %22 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">30</span><span class="add">  %23 = add %21, %22 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">31</span><span class="add">  %24 = ptr.offset %c, %23 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">32</span><span class="add">  store %24, %18  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">11</span><span class="add">  %4 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">12</span><span class="add">  %a_data = ptr.offset %a, %4 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">13</span><span class="add">  %5 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">14</span><span class="add">  %6 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">15</span><span class="add">  %7 = mul %5, %6 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">16</span><span class="add">  %8 = ptr.offset %a_data, %7 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">17</span><span class="add">  %9 = load %8 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">18</span><span class="add">  %10 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">19</span><span class="add">  %b_data = ptr.offset %b, %10 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">20</span><span class="add">  %11 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">21</span><span class="add">  %12 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">22</span><span class="add">  %13 = mul %11, %12 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">23</span><span class="add">  %14 = ptr.offset %b_data, %13 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">24</span><span class="add">  %15 = load %14 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">25</span><span class="add">  %16 = fadd %9, %15 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=22)</span>
+<span class="ln">26</span><span class="add">  %17 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">27</span><span class="add">  %c_data = ptr.offset %c, %17 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">28</span><span class="add">  %18 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">29</span><span class="add">  %19 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">30</span><span class="add">  %20 = mul %18, %19 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">31</span><span class="add">  %21 = ptr.offset %c_data, %20 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">32</span><span class="add">  store %21, %16  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
 <span class="ln">33</span>  %i.1 = add %i, %1 : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
 <span class="ln">34</span>  br ^bci2(%i.1)  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
 <span class="ln">35</span>^bci32:
 <span class="ln">36</span>  ret  loc(&quot;ParallelKernels.java&quot;:36, bci=32)
 <span class="ln">37</span>}
 </pre></section>
-<section id="stage-9"><h2>9 &middot; optimize.post-abi <small>TC-SSA &middot; 5 line(s) added since the previous IR stage</small></h2>
-<pre class="code"><span class="ln">1</span>kernel @ParallelKernels.vectorAdd(%a: ptr&lt;global&gt;, %b: ptr&lt;global&gt;, %c: ptr&lt;global&gt;) -&gt; void {
+<section id="stage-9"><h2>9 &middot; optimize.post-abi <small>TC-SSA &middot; 12 line(s) added since the previous IR stage</small></h2>
+<pre class="code"><span class="ln">1</span>kernel @ParallelKernels.vectorAdd(%a: ptr&lt;global&gt;, %b: ptr&lt;global&gt;, %c: ptr&lt;global&gt;) -&gt; void [domain(0,0,1,1048576)] {
 <span class="ln">2</span>^entry:
 <span class="ln">3</span>  %0 = tornado.thread_id.global.x() : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=1)
 <span class="ln">4</span>  %1 = tornado.global_size.x() : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
-<span class="ln">5</span>  br ^bci2(%0)  loc(&quot;ParallelKernels.java&quot;:33, bci=1)
-<span class="ln">6</span>^bci2(%i: i32) [parallel(iv=0), grid(dim=0)]:
-<span class="ln">7</span>  %2 = const 1048576 : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=4)
-<span class="ln">8</span>  %3 = icmp.sge %i, %2 : i1  loc(&quot;ParallelKernels.java&quot;:33, bci=7)
-<span class="ln">9</span>  cond_br %3, ^bci32, ^bci10  loc(&quot;ParallelKernels.java&quot;:33, bci=7)
-<span class="ln">10</span>^bci10:
-<span class="ln">11</span>  %4 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
-<span class="ln">12</span>  %5 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
-<span class="ln">13</span>  %6 = mul %4, %5 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
-<span class="ln">14</span>  %7 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
-<span class="ln">15</span>  %8 = add %6, %7 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
-<span class="ln">16</span>  %9 = ptr.offset %a, %8 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
-<span class="ln">17</span>  %10 = load %9 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
-<span class="ln">18</span><span class="add">  %11 = ptr.offset %b, %8 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">19</span><span class="add">  %12 = load %11 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
-<span class="ln">20</span><span class="add">  %13 = fadd %10, %12 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=22)</span>
-<span class="ln">21</span><span class="add">  %14 = ptr.offset %c, %8 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">22</span><span class="add">  store %14, %13  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
-<span class="ln">23</span>  %i.1 = add %i, %1 : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
-<span class="ln">24</span>  br ^bci2(%i.1)  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
-<span class="ln">25</span>^bci32:
-<span class="ln">26</span>  ret  loc(&quot;ParallelKernels.java&quot;:36, bci=32)
-<span class="ln">27</span>}
+<span class="ln">5</span><span class="add">  %2 = const 16 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">6</span><span class="add">  %a_data = ptr.offset %a, %2 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=14)</span>
+<span class="ln">7</span><span class="add">  %b_data = ptr.offset %b, %2 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">8</span><span class="add">  %c_data = ptr.offset %c, %2 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">9</span>  br ^bci2(%0)  loc(&quot;ParallelKernels.java&quot;:33, bci=1)
+<span class="ln">10</span>^bci2(%i: i32) [parallel(iv=0), grid(dim=0)]:
+<span class="ln">11</span><span class="add">  %3 = const 1048576 : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=4)</span>
+<span class="ln">12</span><span class="add">  %4 = icmp.sge %i, %3 : i1  loc(&quot;ParallelKernels.java&quot;:33, bci=7)</span>
+<span class="ln">13</span><span class="add">  cond_br %4, ^bci32, ^bci10  loc(&quot;ParallelKernels.java&quot;:33, bci=7)</span>
+<span class="ln">14</span>^bci10:
+<span class="ln">15</span>  %5 = sext %i : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
+<span class="ln">16</span>  %6 = const 4 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
+<span class="ln">17</span>  %7 = mul %5, %6 : i64  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
+<span class="ln">18</span>  %8 = ptr.offset %a_data, %7 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
+<span class="ln">19</span>  %9 = load %8 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=14)
+<span class="ln">20</span><span class="add">  %10 = ptr.offset %b_data, %7 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">21</span><span class="add">  %11 = load %10 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=19)</span>
+<span class="ln">22</span><span class="add">  %12 = fadd %9, %11 : f32  loc(&quot;ParallelKernels.java&quot;:34, bci=22)</span>
+<span class="ln">23</span><span class="add">  %13 = ptr.offset %c_data, %7 : ptr&lt;global&gt;  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">24</span><span class="add">  store %13, %12  loc(&quot;ParallelKernels.java&quot;:34, bci=23)</span>
+<span class="ln">25</span>  %i.1 = add %i, %1 : i32  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
+<span class="ln">26</span>  br ^bci2(%i.1)  loc(&quot;ParallelKernels.java&quot;:33, bci=29)
+<span class="ln">27</span>^bci32:
+<span class="ln">28</span>  ret  loc(&quot;ParallelKernels.java&quot;:36, bci=32)
+<span class="ln">29</span>}
 </pre></section>
 <section id="stage-10"><h2>10 &middot; structure <small>TC-S (structured, non-SSA)</small></h2>
 <pre class="code"><span class="ln">1</span>kernel ParallelKernels.vectorAdd(ptr&lt;global&gt; a, ptr&lt;global&gt; b, ptr&lt;global&gt; c) -&gt; void {
-<span class="ln">2</span>  i32 v1;
-<span class="ln">3</span>  i32 i;
-<span class="ln">4</span>  i64 v8;
-<span class="ln">5</span>  f32 v10;
-<span class="ln">6</span>  f32 v12;
-<span class="ln">7</span>  v1 = tornado.global_size.x();
-<span class="ln">8</span>  i = tornado.thread_id.global.x();
-<span class="ln">9</span>  block L_bci32 {
-<span class="ln">10</span>    loop L_bci2 {
-<span class="ln">11</span>      if ((i sge 1048576)) {
-<span class="ln">12</span>        break L_bci32;
-<span class="ln">13</span>      } else {
-<span class="ln">14</span>        v8 = ((sext&lt;i64&gt;(i) * 4) + 16);
-<span class="ln">15</span>        v10 = load&lt;f32&gt;(ptr.offset(a, v8));
-<span class="ln">16</span>        v12 = load&lt;f32&gt;(ptr.offset(b, v8));
-<span class="ln">17</span>        store(ptr.offset(c, v8), (v10 + v12));
-<span class="ln">18</span>        i = (i + v1);
+<span class="ln">2</span>  i32 gsize_x;
+<span class="ln">3</span>  ptr&lt;global&gt; a_data;
+<span class="ln">4</span>  ptr&lt;global&gt; b_data;
+<span class="ln">5</span>  ptr&lt;global&gt; c_data;
+<span class="ln">6</span>  i32 i;
+<span class="ln">7</span>  gsize_x = tornado.global_size.x();
+<span class="ln">8</span>  a_data = ptr.offset(a, 16);
+<span class="ln">9</span>  b_data = ptr.offset(b, 16);
+<span class="ln">10</span>  c_data = ptr.offset(c, 16);
+<span class="ln">11</span>  i = tornado.thread_id.global.x();
+<span class="ln">12</span>  block L_bci32 {
+<span class="ln">13</span>    loop L_bci2 {
+<span class="ln">14</span>      if ((i sge 1048576)) {
+<span class="ln">15</span>        break L_bci32;
+<span class="ln">16</span>      } else {
+<span class="ln">17</span>        store(ptr.offset(c_data, (sext&lt;i64&gt;(i) * 4)), (load&lt;f32&gt;(ptr.offset(a_data, (sext&lt;i64&gt;(i) * 4))) + load&lt;f32&gt;(ptr.offset(b_data, (sext&lt;i64&gt;(i) * 4)))));
+<span class="ln">18</span>        i = (i + gsize_x);
 <span class="ln">19</span>      }
 <span class="ln">20</span>    }
 <span class="ln">21</span>  }
@@ -243,22 +245,21 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <section id="stage-11"><h2>11 &middot; emit <small>target source</small></h2>
 <pre class="code"><span class="ln">1</span>extern &quot;C&quot; __global__ void ParallelKernels_vectorAdd(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
 <span class="ln">2</span>{
-<span class="ln">3</span>  int v1;
-<span class="ln">4</span>  int i;
-<span class="ln">5</span>  long long v8;
-<span class="ln">6</span>  float v10;
-<span class="ln">7</span>  float v12;
-<span class="ln">8</span>  v1 = (int) (gridDim.x * blockDim.x);  // ParallelKernels.java:33
-<span class="ln">9</span>  i = (int) (blockIdx.x * blockDim.x + threadIdx.x);
-<span class="ln">10</span>  while (i &lt; 1048576) {
-<span class="ln">11</span>    v8 = (long long) i * 4LL + 16LL;  // ParallelKernels.java:34
-<span class="ln">12</span>    v10 = *((float *) (a + v8));  // ParallelKernels.java:34
-<span class="ln">13</span>    v12 = *((float *) (b + v8));  // ParallelKernels.java:34
-<span class="ln">14</span>    *((float *) (c + v8)) = v10 + v12;  // ParallelKernels.java:34
-<span class="ln">15</span>    i = i + v1;
+<span class="ln">3</span>  int gsize_x;
+<span class="ln">4</span>  float *a_data;
+<span class="ln">5</span>  float *b_data;
+<span class="ln">6</span>  float *c_data;
+<span class="ln">7</span>  int i;
+<span class="ln">8</span>  gsize_x = (int) (gridDim.x * blockDim.x);  // ParallelKernels.java:33
+<span class="ln">9</span>  a_data = (float *) (a + 16LL);  // ParallelKernels.java:34
+<span class="ln">10</span>  b_data = (float *) (b + 16LL);  // ParallelKernels.java:34
+<span class="ln">11</span>  c_data = (float *) (c + 16LL);  // ParallelKernels.java:34
+<span class="ln">12</span>  i = (int) (blockIdx.x * blockDim.x + threadIdx.x);
+<span class="ln">13</span>  while (i &lt; 1048576) {
+<span class="ln">14</span>    c_data[i] = a_data[i] + b_data[i];  // ParallelKernels.java:34
+<span class="ln">15</span>    i = i + gsize_x;  // ParallelKernels.java:33
 <span class="ln">16</span>  }
-<span class="ln">17</span>  return;
-<span class="ln">18</span>}
+<span class="ln">17</span>}
 </pre></section>
 <footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>
 </body></html>

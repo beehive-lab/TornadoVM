@@ -1,5 +1,5 @@
-; ABI lowering turns Java-level arrays into byte pointers with the native-array header: elements at
-; header + index * size, the element count as the first 64-bit word.
+; ABI lowering turns Java-level arrays into byte pointers with the native-array header: the data
+; pointer `<array>_data` is base + header, elements at data + index * size; the element count as the first 64-bit word.
 ; RUN: tc-tornado --abi %s | FileCheck %s
 ; RUN: tc-tornado --abi --header=24 %s | FileCheck %s --check-prefix=UNCOMPRESSED
 
@@ -7,12 +7,12 @@
 ; CHECK:         %[[CNT:[0-9]+]] = load %c : i64
 ; CHECK-NEXT:    %n = trunc %[[CNT]] : i32
 ; CHECK:       ^body:
+; CHECK-NEXT:    %[[H:[0-9]+]] = const 16 : i64
+; CHECK-NEXT:    %a_data = ptr.offset %a, %[[H]] : ptr<global>
 ; CHECK-NEXT:    %[[W:[0-9]+]] = sext %i : i64
 ; CHECK-NEXT:    %[[SZ:[0-9]+]] = const 4 : i64
 ; CHECK-NEXT:    %[[SC:[0-9]+]] = mul %[[W]], %[[SZ]] : i64
-; CHECK-NEXT:    %[[H:[0-9]+]] = const 16 : i64
-; CHECK-NEXT:    %[[OFF:[0-9]+]] = add %[[SC]], %[[H]] : i64
-; CHECK-NEXT:    %[[PA:[0-9]+]] = ptr.offset %a, %[[OFF]] : ptr<global>
+; CHECK-NEXT:    %[[PA:[0-9]+]] = ptr.offset %a_data, %[[SC]] : ptr<global>
 ; CHECK-NEXT:    %x = load %[[PA]] : f32  loc("VectorAdd.java":21, bci=14)
 ; CHECK:         store %{{[0-9]+}}, %z
 ; CHECK-NOT:     array.

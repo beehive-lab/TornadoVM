@@ -1,21 +1,21 @@
 kernel C3Kernels.compute(ptr<global> in, ptr<global> out) -> void {
   i32 i;
-  i64 v0;
-  i64 v7;
+  ptr<global> in_data;
   f32 x;
-  f32 v_2;
+  f32 v;
+  ptr<global> out_data;
   i = tornado.thread_id.global.x();
-  v0 = load<i64>(in);
-  if ((i sge trunc<i32>(v0))) {
+  if ((i sge trunc<i32>(load<i64>(in)))) {
   } else {
-    v7 = ((sext<i64>(i) * 4) + 16);
-    x = load<f32>(ptr.offset(in, v7));
+    in_data = ptr.offset(in, 16);
+    x = load<f32>(ptr.offset(in_data, (sext<i64>(i) * 4)));
     if ((x ule 0.0)) {
-      v_2 = fneg(x);
+      v = fneg(x);
     } else {
-      v_2 = (math.sqrt(x) * 2.0);
+      v = (math.sqrt(x) * 2.0);
     }
-    store(ptr.offset(out, v7), v_2);
+    out_data = ptr.offset(out, 16);
+    store(ptr.offset(out_data, (sext<i64>(i) * 4)), v);
   }
   return;
 }

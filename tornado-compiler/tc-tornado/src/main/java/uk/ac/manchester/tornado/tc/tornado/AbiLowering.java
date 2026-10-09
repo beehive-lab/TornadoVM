@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  *
  * <ul>
  * <li>{@code array<T>} parameters become {@code ptr<global>} (the value is retyped in place).</li>
- * <li>{@code array.load %a[%i]} becomes {@code load(ptr.offset(%a, sext(%i) * sizeof(T) + header))}.</li>
+ * <li>{@code array.load %a[%i]} becomes {@code load(ptr.offset(ptr.offset(%a, header), sext(%i) * sizeof(T)))}.</li>
  * <li>{@code array.store} likewise becomes a {@code store}.</li>
  * <li>{@code array.length %a} becomes {@code trunc(load i64 %a)}.</li>
  * <li>An unused {@code KernelContext} parameter is removed from the signature.</li>
@@ -119,17 +119,22 @@ public final class AbiLowering {
         var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
         var count = b.load(inst.operand(0), Type.I64);
         var length = b.convert(ConvertOp.TRUNC, count, Type.I32);
-        length.setName(inst.name());
+        length.setName(!inst.name().isEmpty() && !inst.name().chars().allMatch(Character::isDigit) ? inst.name() : inst.operand(0).name() + "_len");
         inst.replaceAllUsesWith(length);
         inst.erase();
     }
 
-    /** {@code array + sext(index) * sizeof(element) + header}. */
+    /**
+     * {@code (array + header) + sext(index) * sizeof(element)}. The data pointer {@code array + header}
+     * is a separate value named {@code <array>_data}: GVN shares it and LICM hoists it, and the emitter
+     * prints accesses through it as {@code a_data[i]}.
+     */
     private Value elementAddress(IrBuilder b, Value array, Value index, Type element) {
+        var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
+        data.setName(array.name().isEmpty() ? "data" : array.name() + "_data");
         var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);
         var scaled = b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element)));
-        var offset = b.binary(BinaryOp.ADD, scaled, b.constInt(Type.I64, target.arrayHeaderBytes()));
-        return b.pointerOffset(array, offset);
+        return b.pointerOffset(data, scaled);
     }
 
     static int sizeOf(Type type) {

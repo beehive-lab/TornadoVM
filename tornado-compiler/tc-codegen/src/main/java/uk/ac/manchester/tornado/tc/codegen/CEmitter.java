@@ -111,6 +111,7 @@ public final class CEmitter {
     private final Set<String> helpers = new LinkedHashSet<>();
     private final Map<S.Var, String> names = new IdentityHashMap<>();
     private final Map<S.Alloca, String> allocaNames = new IdentityHashMap<>();
+    private Map<S.Var, Type> elementTypes = Map.of();
     private boolean usesHalf;
     private boolean usesBFloat16;
 
@@ -138,6 +139,7 @@ public final class CEmitter {
     // ---------------------------------------------------------------- kernel
 
     private Result kernel(S.Kernel k) {
+        elementTypes = k.elementTypes();
         var used = new HashSet<String>();
         k.params().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.locals().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
@@ -162,12 +164,17 @@ public final class CEmitter {
             line(1, (a.space() == AddressSpace.SHARED ? "__shared__ " : "") + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "];");
         }
         for (var v : k.locals()) {
-            line(1, declaration(v.type(), names.get(v)) + ";");
+            var element = elementTypes.get(v);
+            line(1, (element != null ? typeName(element) + " *" + names.get(v) : declaration(v.type(), names.get(v))) + ";");
         }
-        statements(k.body(), Set.of(), 1);
+        var body = k.body();
+        if (f.returnType() instanceof Type.VoidType && !body.isEmpty() && body.get(body.size() - 1) instanceof S.Return(var value) && value.isEmpty()) {
+            body = body.subList(0, body.size() - 1); // a void function ends anyway
+        }
+        statements(body, Set.of(), 1);
         out.append("}\n");
 
-        var body = resolveLoopLabels(out.toString());
+        var emitted = resolveLoopLabels(out.toString());
         var source = new StringBuilder();
         if (usesHalf) {
             source.append("#include <cuda_fp16.h>\n");
@@ -181,7 +188,7 @@ public final class CEmitter {
         for (var helper : helpers) {
             source.append(Helpers.source(helper, target.dialect())).append('\n');
         }
-        source.append(header).append(body);
+        source.append(header).append(emitted);
         return new Result(source.toString(), entry);
     }
 
@@ -196,7 +203,11 @@ public final class CEmitter {
 
     private void statement(S.Stmt stmt, Set<String> fallthrough, int depth) {
         switch (stmt) {
-            case S.Assign(var target, var value, var loc) -> line(depth, names.get(target) + " = " + expr(value).text + ";" + comment(loc));
+            case S.Assign(var target, var value, var loc) -> {
+                var element = elementTypes.get(target);
+                var text = element != null ? "(" + typeName(element) + " *) (" + expr(value).text + ")" : expr(value).text;
+                line(depth, names.get(target) + " = " + text + ";" + comment(loc));
+            }
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
             case S.If(var c, var t, var e) -> ifStatement(c, t, e, fallthrough, depth);
             case S.Labelled(var label, var b) -> {
@@ -364,7 +375,7 @@ public final class CEmitter {
         var inst = op.inst();
         var ops = op.operands();
         return switch (inst.opcode()) {
-            case Opcode.Store _s -> deref(ops.get(0), ops.get(1).type()) + " = " + expr(ops.get(1)).text;
+            case Opcode.Store _s -> deref(ops.get(0), ops.get(1).type()).text + " = " + expr(ops.get(1)).text;
             case Opcode.Intrinsic(var name) -> intrinsic(name, inst, ops).text;
             default -> expr(op).text;
         };
@@ -390,8 +401,12 @@ public final class CEmitter {
             case Opcode.FCmp(var p) -> fcmp(p, ops.get(0), ops.get(1));
             case Opcode.Select _s -> new R(wrap(expr(ops.get(0)), LOR) + " ? " + wrap(expr(ops.get(1)), COND) + " : " + wrap(expr(ops.get(2)), COND), COND);
             case Opcode.Convert(var op) -> convert(op, ops.get(0), inst.type());
-            case Opcode.PointerOffset _p -> new R(wrap(expr(ops.get(0)), ADD) + " + " + wrap(expr(ops.get(1)), ADD + 1), ADD);
-            case Opcode.Load _l -> new R(deref(ops.get(0), inst.type()), UNARY);
+            case Opcode.PointerOffset _p -> {
+                // Offsets are in bytes: a typed data pointer is converted back before adding.
+                var base = ops.get(0) instanceof S.VarRef(var v) && elementTypes.containsKey(v) ? "(unsigned char *) " + names.get(v) : wrap(expr(ops.get(0)), ADD);
+                yield new R(base + " + " + wrap(expr(ops.get(1)), ADD + 1), ADD);
+            }
+            case Opcode.Load _l -> deref(ops.get(0), inst.type());
             case Opcode.Intrinsic(var name) -> intrinsic(name, inst, ops);
             case Opcode.ArrayLoad _a -> throw unsupported(inst, "Java-level arrays must be lowered by TornadoVM ABI lowering first");
             case Opcode.ArrayStore _a -> throw unsupported(inst, "Java-level arrays must be lowered by TornadoVM ABI lowering first");
@@ -563,8 +578,61 @@ public final class CEmitter {
         return new R(text, text.startsWith("(") ? UNARY : ATOM);
     }
 
-    private String deref(S.Expr pointer, Type type) {
-        return "*((" + typeName(type) + " *) " + wrap(expr(pointer), UNARY) + ")";
+    /**
+     * A memory access of {@code type} through {@code pointer}. Element accesses through a typed data
+     * pointer or a local array print as {@code a_data[i]} / {@code scratch[i]}; anything else as a cast
+     * and dereference.
+     */
+    private R deref(S.Expr pointer, Type type) {
+        int size = sizeOf(type);
+        if (pointer instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.PointerOffset) {
+            var array = arrayName(ops.get(0), type);
+            var index = index(ops.get(1), size);
+            if (array != null && index != null) {
+                return new R(array + "[" + expr(index).text + "]", ATOM);
+            }
+        }
+        var array = arrayName(pointer, type);
+        if (array != null) {
+            return new R(array + "[0]", ATOM);
+        }
+        return new R("*((" + typeName(type) + " *) " + wrap(expr(pointer), UNARY) + ")", UNARY);
+    }
+
+    /** The C name of a typed data pointer or local array whose elements have {@code type}, else null. */
+    private String arrayName(S.Expr base, Type type) {
+        if (base instanceof S.VarRef(var v) && type.equals(elementTypes.get(v))) {
+            return names.get(v);
+        }
+        if (base instanceof S.AllocaRef(var alloca) && alloca.kind().element().equals(type)) {
+            return allocaNames.get(alloca);
+        }
+        return null;
+    }
+
+    /** The element index of a byte offset {@code sext(i) * size} (or {@code i * size}, or {@code sext(i)} for bytes). */
+    private static S.Expr index(S.Expr offset, int size) {
+        if (offset instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.Binary(var op) && op == BinaryOp.MUL && ops.get(1) instanceof S.Const(var c)
+                && c.opcode() instanceof Opcode.ConstInt(var s) && s == size) {
+            return stripSext(ops.get(0));
+        }
+        if (size == 1 && offset instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.Convert(var op) && op == Opcode.ConvertOp.SEXT) {
+            return ops.get(0);
+        }
+        return null;
+    }
+
+    private static S.Expr stripSext(S.Expr e) {
+        return e instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.Convert(var op) && op == Opcode.ConvertOp.SEXT ? ops.get(0) : e;
+    }
+
+    private static int sizeOf(Type type) {
+        return switch (type.text()) {
+            case "i8", "i1" -> 1;
+            case "i16", "f16", "bf16" -> 2;
+            case "i64", "f64" -> 8;
+            default -> 4;
+        };
     }
 
     private static String wrap(R r, int min) {

@@ -7,6 +7,7 @@
 ; CHECK-NEXT:  {
 ; CHECK-NEXT:    int i;
 ; CHECK-NEXT:    int j;
+; CHECK-NEXT:    int ij;
 ; CHECK-NEXT:    int idx;
 ; CHECK-NEXT:    int v;
 ; CHECK-NEXT:    int r;
@@ -18,13 +19,14 @@
 ; CHECK-NEXT:      }
 ; CHECK-NEXT:      j = 0;
 ; CHECK-NEXT:      while (j < n) {
-; CHECK-NEXT:        idx = i * n + j;
+; CHECK-NEXT:        ij = i * n;
+; CHECK-NEXT:        idx = ij + j;
 ; CHECK-NEXT:        v = *((int *) (grid + (long long) idx * 4LL));
+; CHECK-NEXT:        j = j + 1;
 ; CHECK-NEXT:        if (v == key) {
 ; CHECK-NEXT:          r = idx;
 ; CHECK-NEXT:          goto L_done;
 ; CHECK-NEXT:        }
-; CHECK-NEXT:        j = j + 1;
 ; CHECK-NEXT:      }
 ; CHECK-NEXT:      i = i + 1;
 ; CHECK-NEXT:    }

@@ -8,15 +8,17 @@
 ; CHECK-NEXT:    i32 i;
 ; CHECK-NEXT:    f32 x;
 ; CHECK-NEXT:    f32 y;
+; CHECK-NEXT:    f32 z;
 ; CHECK-NEXT:    n = array.length(c);
-; CHECK-NEXT:    s = tornado.global_size.x();
 ; CHECK-NEXT:    i = tornado.thread_id.global.x();
+; CHECK-NEXT:    s = tornado.global_size.x();
 ; CHECK-NEXT:    block L_exit {
 ; CHECK-NEXT:      loop L_head {
 ; CHECK-NEXT:        if ((i slt n)) {
 ; CHECK-NEXT:          x = a[i];
 ; CHECK-NEXT:          y = b[i];
-; CHECK-NEXT:          c[i] = (x + y);
+; CHECK-NEXT:          z = (x + y);
+; CHECK-NEXT:          c[i] = z;
 ; CHECK-NEXT:          i = (i + s);
 ; CHECK-NEXT:        } else {
 ; CHECK-NEXT:          break L_exit;
@@ -28,6 +30,7 @@
 ; CHECK-LABEL: device nested(i32 n, i32 m, array<i32> out) -> void {
 ; CHECK-NEXT:    i32 i;
 ; CHECK-NEXT:    i32 j;
+; CHECK-NEXT:    i32 v;
 ; CHECK-NEXT:    i = 0;
 ; CHECK-NEXT:    block L_done {
 ; CHECK-NEXT:      loop L_outer {
@@ -36,7 +39,8 @@
 ; CHECK-NEXT:          block L_inner_done {
 ; CHECK-NEXT:            loop L_inner {
 ; CHECK-NEXT:              if ((j slt m)) {
-; CHECK-NEXT:                out[j] = (i + j);
+; CHECK-NEXT:                v = (i + j);
+; CHECK-NEXT:                out[j] = v;
 ; CHECK-NEXT:                j = (j + 1);
 ; CHECK-NEXT:              } else {
 ; CHECK-NEXT:                break L_inner_done;
@@ -54,17 +58,19 @@
 ; CHECK-LABEL: device early_exit(i32 n, array<i32> a, i32 key) -> i32 {
 ; CHECK-NEXT:    i32 i;
 ; CHECK-NEXT:    i32 v;
+; CHECK-NEXT:    i32 next;
 ; CHECK-NEXT:    i32 r;
 ; CHECK-NEXT:    i = 0;
 ; CHECK-NEXT:    block L_notfound {
 ; CHECK-NEXT:      loop L_head {
 ; CHECK-NEXT:        if ((i slt n)) {
 ; CHECK-NEXT:          v = a[i];
+; CHECK-NEXT:          next = (i + 1);
 ; CHECK-NEXT:          if ((v eq key)) {
 ; CHECK-NEXT:            r = i;
 ; CHECK-NEXT:            break L_notfound;
 ; CHECK-NEXT:          } else {
-; CHECK-NEXT:            i = (i + 1);
+; CHECK-NEXT:            i = next;
 ; CHECK-NEXT:          }
 ; CHECK-NEXT:        } else {
 ; CHECK-NEXT:          r = -1;

@@ -12,19 +12,19 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 .ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
 .diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
 </style></head><body>
-<header><h1>C3Kernels.add</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 59.97 ms total &middot; entry <code>C3Kernels_add</code></p></header>
+<header><h1>C3Kernels.add</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 53.39 ms total &middot; entry <code>C3Kernels_add</code></p></header>
 <section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class="num">Time</th><th class="num">IR instructions</th><th>Share</th></tr></thead><tbody>
 <tr><td>0</td><td><a href="#stage-0">bytecode</a></td><td class="num">0.00 ms</td><td class="num">0</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>1</td><td>frontend</td><td class="num">19.79 ms</td><td class="num">14</td><td><span class="bar" style="width:40%"></span></td></tr>
+<tr><td>1</td><td>frontend</td><td class="num">18.41 ms</td><td class="num">14</td><td><span class="bar" style="width:40%"></span></td></tr>
 <tr><td>2</td><td><a href="#stage-2">input</a></td><td class="num">0.00 ms</td><td class="num">14</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>3</td><td>verify.pre-abi</td><td class="num">2.57 ms</td><td class="num">14</td><td><span class="bar" style="width:5%"></span></td></tr>
-<tr><td>4</td><td><a href="#stage-4">parallel</a></td><td class="num">1.20 ms</td><td class="num">14</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>5</td><td><a href="#stage-5">optimize</a></td><td class="num">9.55 ms</td><td class="num">13</td><td><span class="bar" style="width:19%"></span></td></tr>
-<tr><td>6</td><td><a href="#stage-6">abi</a></td><td class="num">1.27 ms</td><td class="num">32</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>7</td><td>verify.post-abi</td><td class="num">0.97 ms</td><td class="num">32</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>8</td><td><a href="#stage-8">optimize.post-abi</a></td><td class="num">4.64 ms</td><td class="num">22</td><td><span class="bar" style="width:9%"></span></td></tr>
-<tr><td>9</td><td><a href="#stage-9">structure</a></td><td class="num">5.10 ms</td><td class="num">22</td><td><span class="bar" style="width:10%"></span></td></tr>
-<tr><td>10</td><td><a href="#stage-10">emit</a></td><td class="num">4.29 ms</td><td class="num">22</td><td><span class="bar" style="width:8%"></span></td></tr>
+<tr><td>3</td><td>verify.pre-abi</td><td class="num">1.98 ms</td><td class="num">14</td><td><span class="bar" style="width:4%"></span></td></tr>
+<tr><td>4</td><td><a href="#stage-4">parallel</a></td><td class="num">0.90 ms</td><td class="num">14</td><td><span class="bar" style="width:2%"></span></td></tr>
+<tr><td>5</td><td><a href="#stage-5">optimize</a></td><td class="num">7.09 ms</td><td class="num">13</td><td><span class="bar" style="width:15%"></span></td></tr>
+<tr><td>6</td><td><a href="#stage-6">abi</a></td><td class="num">1.03 ms</td><td class="num">32</td><td><span class="bar" style="width:2%"></span></td></tr>
+<tr><td>7</td><td>verify.post-abi</td><td class="num">0.77 ms</td><td class="num">32</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>8</td><td><a href="#stage-8">optimize.post-abi</a></td><td class="num">4.80 ms</td><td class="num">24</td><td><span class="bar" style="width:10%"></span></td></tr>
+<tr><td>9</td><td><a href="#stage-9">structure</a></td><td class="num">6.18 ms</td><td class="num">24</td><td><span class="bar" style="width:13%"></span></td></tr>
+<tr><td>10</td><td><a href="#stage-10">emit</a></td><td class="num">3.91 ms</td><td class="num">24</td><td><span class="bar" style="width:8%"></span></td></tr>
 </tbody></table></section>
 <section id="stage-0"><h2>0 &middot; bytecode <small>Java bytecode</small></h2>
 <pre class="code"><span class="ln">1</span>// uk.ac.manchester.tornado.tc.gpu.kernels.C3Kernels.add(Luk/ac/manchester/tornado/api/KernelContext;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;)V
@@ -127,128 +127,125 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <span class="ln">18</span>  ret  loc(&quot;C3Kernels.java&quot;:37, bci=52)
 <span class="ln">19</span>}
 </pre></section>
-<section id="stage-6"><h2>6 &middot; abi <small>TC-SSA &middot; 29 line(s) added since the previous IR stage</small></h2>
+<section id="stage-6"><h2>6 &middot; abi <small>TC-SSA &middot; 26 line(s) added since the previous IR stage</small></h2>
 <pre class="code"><span class="ln">1</span><span class="add">kernel @C3Kernels.add(%a: ptr&lt;global&gt;, %b: ptr&lt;global&gt;, %c: ptr&lt;global&gt;) -&gt; void {</span>
 <span class="ln">2</span>^entry:
 <span class="ln">3</span>  %i = tornado.thread_id.global.x() : i32  loc(&quot;C3Kernels.java&quot;:34, bci=1)
 <span class="ln">4</span><span class="add">  %0 = load %a : i64  loc(&quot;C3Kernels.java&quot;:34, bci=12)</span>
-<span class="ln">5</span><span class="add">  %1 = trunc %0 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=12)</span>
-<span class="ln">6</span><span class="add">  %2 = tornado.global_size.x() : i32  loc(&quot;C3Kernels.java&quot;:34, bci=40)</span>
+<span class="ln">5</span><span class="add">  %a_len = trunc %0 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=12)</span>
+<span class="ln">6</span>  %1 = tornado.global_size.x() : i32  loc(&quot;C3Kernels.java&quot;:34, bci=40)
 <span class="ln">7</span>  br ^bci9(%i)  loc(&quot;C3Kernels.java&quot;:34, bci=7)
 <span class="ln">8</span>^bci9(%i.1: i32):
-<span class="ln">9</span><span class="add">  %3 = icmp.sge %i.1, %1 : i1  loc(&quot;C3Kernels.java&quot;:34, bci=15)</span>
-<span class="ln">10</span><span class="add">  cond_br %3, ^bci52, ^bci18  loc(&quot;C3Kernels.java&quot;:34, bci=15)</span>
+<span class="ln">9</span><span class="add">  %2 = icmp.sge %i.1, %a_len : i1  loc(&quot;C3Kernels.java&quot;:34, bci=15)</span>
+<span class="ln">10</span>  cond_br %2, ^bci52, ^bci18  loc(&quot;C3Kernels.java&quot;:34, bci=15)
 <span class="ln">11</span>^bci18:
-<span class="ln">12</span><span class="add">  %4 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
-<span class="ln">13</span><span class="add">  %5 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
-<span class="ln">14</span><span class="add">  %6 = mul %4, %5 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
-<span class="ln">15</span><span class="add">  %7 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
-<span class="ln">16</span><span class="add">  %8 = add %6, %7 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
-<span class="ln">17</span><span class="add">  %9 = ptr.offset %a, %8 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
-<span class="ln">18</span><span class="add">  %10 = load %9 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
-<span class="ln">19</span><span class="add">  %11 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">20</span><span class="add">  %12 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">21</span><span class="add">  %13 = mul %11, %12 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">22</span><span class="add">  %14 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">23</span><span class="add">  %15 = add %13, %14 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">24</span><span class="add">  %16 = ptr.offset %b, %15 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">25</span><span class="add">  %17 = load %16 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">26</span><span class="add">  %18 = fadd %10, %17 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=33)</span>
-<span class="ln">27</span><span class="add">  %19 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">28</span><span class="add">  %20 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">29</span><span class="add">  %21 = mul %19, %20 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">30</span><span class="add">  %22 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">31</span><span class="add">  %23 = add %21, %22 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">32</span><span class="add">  %24 = ptr.offset %c, %23 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">33</span><span class="add">  store %24, %18  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">34</span><span class="add">  %i.2 = add %i.1, %2 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=46)</span>
+<span class="ln">12</span><span class="add">  %3 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">13</span><span class="add">  %a_data = ptr.offset %a, %3 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">14</span><span class="add">  %4 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">15</span><span class="add">  %5 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">16</span><span class="add">  %6 = mul %4, %5 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">17</span><span class="add">  %7 = ptr.offset %a_data, %6 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">18</span><span class="add">  %8 = load %7 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">19</span><span class="add">  %9 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">20</span><span class="add">  %b_data = ptr.offset %b, %9 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">21</span><span class="add">  %10 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">22</span><span class="add">  %11 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">23</span><span class="add">  %12 = mul %10, %11 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">24</span><span class="add">  %13 = ptr.offset %b_data, %12 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">25</span><span class="add">  %14 = load %13 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">26</span><span class="add">  %15 = fadd %8, %14 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=33)</span>
+<span class="ln">27</span><span class="add">  %16 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">28</span><span class="add">  %c_data = ptr.offset %c, %16 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">29</span><span class="add">  %17 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">30</span><span class="add">  %18 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">31</span><span class="add">  %19 = mul %17, %18 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">32</span><span class="add">  %20 = ptr.offset %c_data, %19 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">33</span><span class="add">  store %20, %15  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">34</span>  %i.2 = add %i.1, %1 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=46)
 <span class="ln">35</span>  br ^bci9(%i.2)  loc(&quot;C3Kernels.java&quot;:34, bci=49)
 <span class="ln">36</span>^bci52:
 <span class="ln">37</span>  ret  loc(&quot;C3Kernels.java&quot;:37, bci=52)
 <span class="ln">38</span>}
 </pre></section>
-<section id="stage-8"><h2>8 &middot; optimize.post-abi <small>TC-SSA &middot; 5 line(s) added since the previous IR stage</small></h2>
+<section id="stage-8"><h2>8 &middot; optimize.post-abi <small>TC-SSA &middot; 11 line(s) added since the previous IR stage</small></h2>
 <pre class="code"><span class="ln">1</span>kernel @C3Kernels.add(%a: ptr&lt;global&gt;, %b: ptr&lt;global&gt;, %c: ptr&lt;global&gt;) -&gt; void {
 <span class="ln">2</span>^entry:
 <span class="ln">3</span>  %i = tornado.thread_id.global.x() : i32  loc(&quot;C3Kernels.java&quot;:34, bci=1)
 <span class="ln">4</span>  %0 = load %a : i64  loc(&quot;C3Kernels.java&quot;:34, bci=12)
-<span class="ln">5</span>  %1 = trunc %0 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=12)
-<span class="ln">6</span>  %2 = tornado.global_size.x() : i32  loc(&quot;C3Kernels.java&quot;:34, bci=40)
-<span class="ln">7</span>  br ^bci9(%i)  loc(&quot;C3Kernels.java&quot;:34, bci=7)
-<span class="ln">8</span>^bci9(%i.1: i32):
-<span class="ln">9</span>  %3 = icmp.sge %i.1, %1 : i1  loc(&quot;C3Kernels.java&quot;:34, bci=15)
-<span class="ln">10</span>  cond_br %3, ^bci52, ^bci18  loc(&quot;C3Kernels.java&quot;:34, bci=15)
-<span class="ln">11</span>^bci18:
-<span class="ln">12</span>  %4 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
-<span class="ln">13</span>  %5 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
-<span class="ln">14</span>  %6 = mul %4, %5 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
-<span class="ln">15</span>  %7 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
-<span class="ln">16</span>  %8 = add %6, %7 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
-<span class="ln">17</span>  %9 = ptr.offset %a, %8 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=24)
-<span class="ln">18</span>  %10 = load %9 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=24)
-<span class="ln">19</span><span class="add">  %11 = ptr.offset %b, %8 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">20</span><span class="add">  %12 = load %11 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
-<span class="ln">21</span><span class="add">  %13 = fadd %10, %12 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=33)</span>
-<span class="ln">22</span><span class="add">  %14 = ptr.offset %c, %8 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">23</span><span class="add">  store %14, %13  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
-<span class="ln">24</span>  %i.2 = add %i.1, %2 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=46)
-<span class="ln">25</span>  br ^bci9(%i.2)  loc(&quot;C3Kernels.java&quot;:34, bci=49)
-<span class="ln">26</span>^bci52:
-<span class="ln">27</span>  ret  loc(&quot;C3Kernels.java&quot;:37, bci=52)
-<span class="ln">28</span>}
+<span class="ln">5</span>  %a_len = trunc %0 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=12)
+<span class="ln">6</span>  %1 = tornado.global_size.x() : i32  loc(&quot;C3Kernels.java&quot;:34, bci=40)
+<span class="ln">7</span><span class="add">  %2 = const 16 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">8</span><span class="add">  %a_data = ptr.offset %a, %2 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=24)</span>
+<span class="ln">9</span><span class="add">  %b_data = ptr.offset %b, %2 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">10</span><span class="add">  %c_data = ptr.offset %c, %2 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">11</span>  br ^bci9(%i)  loc(&quot;C3Kernels.java&quot;:34, bci=7)
+<span class="ln">12</span>^bci9(%i.1: i32):
+<span class="ln">13</span><span class="add">  %3 = icmp.sge %i.1, %a_len : i1  loc(&quot;C3Kernels.java&quot;:34, bci=15)</span>
+<span class="ln">14</span><span class="add">  cond_br %3, ^bci52, ^bci18  loc(&quot;C3Kernels.java&quot;:34, bci=15)</span>
+<span class="ln">15</span>^bci18:
+<span class="ln">16</span>  %4 = sext %i.1 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
+<span class="ln">17</span>  %5 = const 4 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
+<span class="ln">18</span>  %6 = mul %4, %5 : i64  loc(&quot;C3Kernels.java&quot;:35, bci=24)
+<span class="ln">19</span>  %7 = ptr.offset %a_data, %6 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=24)
+<span class="ln">20</span>  %8 = load %7 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=24)
+<span class="ln">21</span><span class="add">  %9 = ptr.offset %b_data, %6 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">22</span><span class="add">  %10 = load %9 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=30)</span>
+<span class="ln">23</span><span class="add">  %11 = fadd %8, %10 : f32  loc(&quot;C3Kernels.java&quot;:35, bci=33)</span>
+<span class="ln">24</span><span class="add">  %12 = ptr.offset %c_data, %6 : ptr&lt;global&gt;  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">25</span><span class="add">  store %12, %11  loc(&quot;C3Kernels.java&quot;:35, bci=34)</span>
+<span class="ln">26</span>  %i.2 = add %i.1, %1 : i32  loc(&quot;C3Kernels.java&quot;:34, bci=46)
+<span class="ln">27</span>  br ^bci9(%i.2)  loc(&quot;C3Kernels.java&quot;:34, bci=49)
+<span class="ln">28</span>^bci52:
+<span class="ln">29</span>  ret  loc(&quot;C3Kernels.java&quot;:37, bci=52)
+<span class="ln">30</span>}
 </pre></section>
 <section id="stage-9"><h2>9 &middot; structure <small>TC-S (structured, non-SSA)</small></h2>
 <pre class="code"><span class="ln">1</span>kernel C3Kernels.add(ptr&lt;global&gt; a, ptr&lt;global&gt; b, ptr&lt;global&gt; c) -&gt; void {
-<span class="ln">2</span>  i64 v0;
-<span class="ln">3</span>  i32 v1;
-<span class="ln">4</span>  i32 v2;
-<span class="ln">5</span>  i32 i_1;
-<span class="ln">6</span>  i64 v8;
-<span class="ln">7</span>  f32 v10;
-<span class="ln">8</span>  f32 v12;
-<span class="ln">9</span>  v0 = load&lt;i64&gt;(a);
-<span class="ln">10</span>  v1 = trunc&lt;i32&gt;(v0);
-<span class="ln">11</span>  v2 = tornado.global_size.x();
-<span class="ln">12</span>  i_1 = tornado.thread_id.global.x();
-<span class="ln">13</span>  block L_bci52 {
-<span class="ln">14</span>    loop L_bci9 {
-<span class="ln">15</span>      if ((i_1 sge v1)) {
-<span class="ln">16</span>        break L_bci52;
-<span class="ln">17</span>      } else {
-<span class="ln">18</span>        v8 = ((sext&lt;i64&gt;(i_1) * 4) + 16);
-<span class="ln">19</span>        v10 = load&lt;f32&gt;(ptr.offset(a, v8));
-<span class="ln">20</span>        v12 = load&lt;f32&gt;(ptr.offset(b, v8));
-<span class="ln">21</span>        store(ptr.offset(c, v8), (v10 + v12));
-<span class="ln">22</span>        i_1 = (i_1 + v2);
-<span class="ln">23</span>      }
-<span class="ln">24</span>    }
-<span class="ln">25</span>  }
-<span class="ln">26</span>  return;
-<span class="ln">27</span>}
+<span class="ln">2</span>  i32 a_len;
+<span class="ln">3</span>  i32 gsize_x;
+<span class="ln">4</span>  ptr&lt;global&gt; a_data;
+<span class="ln">5</span>  ptr&lt;global&gt; b_data;
+<span class="ln">6</span>  ptr&lt;global&gt; c_data;
+<span class="ln">7</span>  i32 i;
+<span class="ln">8</span>  i = tornado.thread_id.global.x();
+<span class="ln">9</span>  a_len = trunc&lt;i32&gt;(load&lt;i64&gt;(a));
+<span class="ln">10</span>  gsize_x = tornado.global_size.x();
+<span class="ln">11</span>  a_data = ptr.offset(a, 16);
+<span class="ln">12</span>  b_data = ptr.offset(b, 16);
+<span class="ln">13</span>  c_data = ptr.offset(c, 16);
+<span class="ln">14</span>  block L_bci52 {
+<span class="ln">15</span>    loop L_bci9 {
+<span class="ln">16</span>      if ((i sge a_len)) {
+<span class="ln">17</span>        break L_bci52;
+<span class="ln">18</span>      } else {
+<span class="ln">19</span>        store(ptr.offset(c_data, (sext&lt;i64&gt;(i) * 4)), (load&lt;f32&gt;(ptr.offset(a_data, (sext&lt;i64&gt;(i) * 4))) + load&lt;f32&gt;(ptr.offset(b_data, (sext&lt;i64&gt;(i) * 4)))));
+<span class="ln">20</span>        i = (i + gsize_x);
+<span class="ln">21</span>      }
+<span class="ln">22</span>    }
+<span class="ln">23</span>  }
+<span class="ln">24</span>  return;
+<span class="ln">25</span>}
 </pre></section>
 <section id="stage-10"><h2>10 &middot; emit <small>target source</small></h2>
 <pre class="code"><span class="ln">1</span>extern &quot;C&quot; __global__ void C3Kernels_add(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
 <span class="ln">2</span>{
-<span class="ln">3</span>  long long v0;
-<span class="ln">4</span>  int v1;
-<span class="ln">5</span>  int v2;
-<span class="ln">6</span>  int i_1;
-<span class="ln">7</span>  long long v8;
-<span class="ln">8</span>  float v10;
-<span class="ln">9</span>  float v12;
-<span class="ln">10</span>  v0 = *((long long *) a);  // C3Kernels.java:34
-<span class="ln">11</span>  v1 = (int) v0;  // C3Kernels.java:34
-<span class="ln">12</span>  v2 = (int) (gridDim.x * blockDim.x);  // C3Kernels.java:34
-<span class="ln">13</span>  i_1 = (int) (blockIdx.x * blockDim.x + threadIdx.x);
-<span class="ln">14</span>  while (i_1 &lt; v1) {
-<span class="ln">15</span>    v8 = (long long) i_1 * 4LL + 16LL;  // C3Kernels.java:35
-<span class="ln">16</span>    v10 = *((float *) (a + v8));  // C3Kernels.java:35
-<span class="ln">17</span>    v12 = *((float *) (b + v8));  // C3Kernels.java:35
-<span class="ln">18</span>    *((float *) (c + v8)) = v10 + v12;  // C3Kernels.java:35
-<span class="ln">19</span>    i_1 = i_1 + v2;
-<span class="ln">20</span>  }
-<span class="ln">21</span>  return;
-<span class="ln">22</span>}
+<span class="ln">3</span>  int a_len;
+<span class="ln">4</span>  int gsize_x;
+<span class="ln">5</span>  float *a_data;
+<span class="ln">6</span>  float *b_data;
+<span class="ln">7</span>  float *c_data;
+<span class="ln">8</span>  int i;
+<span class="ln">9</span>  i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:34
+<span class="ln">10</span>  a_len = (int) *((long long *) a);  // C3Kernels.java:34
+<span class="ln">11</span>  gsize_x = (int) (gridDim.x * blockDim.x);  // C3Kernels.java:34
+<span class="ln">12</span>  a_data = (float *) (a + 16LL);  // C3Kernels.java:35
+<span class="ln">13</span>  b_data = (float *) (b + 16LL);  // C3Kernels.java:35
+<span class="ln">14</span>  c_data = (float *) (c + 16LL);  // C3Kernels.java:35
+<span class="ln">15</span>  while (i &lt; a_len) {
+<span class="ln">16</span>    c_data[i] = a_data[i] + b_data[i];  // C3Kernels.java:35
+<span class="ln">17</span>    i = i + gsize_x;  // C3Kernels.java:34
+<span class="ln">18</span>  }
+<span class="ln">19</span>}
 </pre></section>
 <footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>
 </body></html>

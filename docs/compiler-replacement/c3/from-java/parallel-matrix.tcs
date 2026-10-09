@@ -1,38 +1,38 @@
 kernel ParallelKernels.matrixAdd(ptr<global> a, ptr<global> b, ptr<global> c, i32 rows, i32 cols) -> void {
-  i32 v1;
-  i32 v2;
-  i32 v3;
+  i32 gid_x;
+  i32 gsize_x;
+  i32 gsize_y;
+  ptr<global> a_data;
+  ptr<global> b_data;
+  ptr<global> c_data;
   i32 i;
-  i32 v5;
+  i32 i_off;
   i32 j;
-  i64 v12;
-  f32 v14;
-  f32 v16;
-  v1 = tornado.thread_id.global.x();
-  v2 = tornado.global_size.x();
-  v3 = tornado.global_size.y();
+  gid_x = tornado.thread_id.global.x();
+  gsize_x = tornado.global_size.x();
+  gsize_y = tornado.global_size.y();
+  a_data = ptr.offset(a, 16);
+  b_data = ptr.offset(b, 16);
+  c_data = ptr.offset(c, 16);
   i = tornado.thread_id.global.y();
   block L_bci68 {
     loop L_bci3 {
       if ((i sge 512)) {
         break L_bci68;
       } else {
-        v5 = (i * 1024);
-        j = v1;
+        i_off = (i * 1024);
+        j = gid_x;
         block L_bci62 {
           loop L_bci12 {
             if ((j sge 1024)) {
               break L_bci62;
             } else {
-              v12 = ((sext<i64>((v5 + j)) * 4) + 16);
-              v14 = load<f32>(ptr.offset(a, v12));
-              v16 = load<f32>(ptr.offset(b, v12));
-              store(ptr.offset(c, v12), (v14 + v16));
-              j = (j + v2);
+              store(ptr.offset(c_data, (sext<i64>((i_off + j)) * 4)), (load<f32>(ptr.offset(a_data, (sext<i64>((i_off + j)) * 4))) + load<f32>(ptr.offset(b_data, (sext<i64>((i_off + j)) * 4)))));
+              j = (j + gsize_x);
             }
           }
         }
-        i = (i + v3);
+        i = (i + gsize_y);
       }
     }
   }

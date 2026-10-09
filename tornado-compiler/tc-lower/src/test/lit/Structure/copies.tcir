@@ -28,17 +28,17 @@
 ; CHECK-NEXT:    i32 a;
 ; CHECK-NEXT:    i32 b;
 ; CHECK-NEXT:    i32 i;
-; CHECK-NEXT:    i32 tmp0;
+; CHECK-NEXT:    i32 sum;
 ; CHECK-NEXT:    a = 0;
 ; CHECK-NEXT:    b = 1;
 ; CHECK-NEXT:    i = 0;
 ; CHECK-NEXT:    block L_exit {
 ; CHECK-NEXT:      loop L_head {
 ; CHECK-NEXT:        if ((i slt n)) {
+; CHECK-NEXT:          sum = (a + b);
 ; CHECK-NEXT:          i = (i + 1);
-; CHECK-NEXT:          tmp0 = a;
 ; CHECK-NEXT:          a = b;
-; CHECK-NEXT:          b = (tmp0 + b);
+; CHECK-NEXT:          b = sum;
 ; CHECK-NEXT:        } else {
 ; CHECK-NEXT:          break L_exit;
 ; CHECK-NEXT:        }

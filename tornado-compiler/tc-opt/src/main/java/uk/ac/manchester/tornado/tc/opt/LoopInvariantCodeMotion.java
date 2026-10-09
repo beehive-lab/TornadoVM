@@ -71,6 +71,12 @@ public final class LoopInvariantCodeMotion implements Pass {
                     for (var inst : List.copyOf(block.insts())) {
                         if (inst.producesValue() && inst.opcode().isPure() && !(inst.opcode() instanceof Opcode.ConstInt) && !(inst.opcode() instanceof Opcode.ConstFloat)
                                 && inst.operands().stream().allMatch(v -> definedOutside(v, loop))) {
+                            // Constants count as invariant wherever they are: bring along those defined in the loop.
+                            for (var operand : inst.operands()) {
+                                if (operand instanceof Inst c && (c.opcode() instanceof Opcode.ConstInt || c.opcode() instanceof Opcode.ConstFloat) && c.block().map(loop::contains).orElse(false)) {
+                                    c.moveBefore(anchor);
+                                }
+                            }
                             inst.moveBefore(anchor);
                             progress = true;
                             changed = true;

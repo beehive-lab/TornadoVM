@@ -43,8 +43,12 @@ public final class S {
     public record Var(String name, Type type) {
     }
 
-    /** One structured kernel or device function. */
-    public record Kernel(Function source, List<Var> params, List<Var> locals, List<Alloca> allocas, List<Stmt> body) {
+    /**
+     * One structured kernel or device function. {@code elementTypes} gives, for pointer variables that
+     * are only used to access elements of one type (array data pointers), that element type, so
+     * emitters can declare them typed and print {@code a_data[i]}.
+     */
+    public record Kernel(Function source, List<Var> params, List<Var> locals, List<Alloca> allocas, List<Stmt> body, java.util.Map<Var, Type> elementTypes) {
     }
 
     /** A private or shared allocation declared at the top of the kernel. */

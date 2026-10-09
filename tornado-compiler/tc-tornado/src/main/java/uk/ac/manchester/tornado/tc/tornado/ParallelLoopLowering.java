@@ -173,8 +173,9 @@ public final class ParallelLoopLowering {
     }
 
     private static Value scaled(IrBuilder b, Value v, Value step) {
-        if (step instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var k) && k == 1) {
-            return v;
+        if (step instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var k)) {
+            // A fresh constant at the use: the original may live in the loop latch.
+            return k == 1 ? v : b.binary(BinaryOp.MUL, v, b.constInt(step.type(), k));
         }
         return b.binary(BinaryOp.MUL, v, step);
     }

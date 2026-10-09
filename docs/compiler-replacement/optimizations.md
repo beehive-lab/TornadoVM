@@ -59,12 +59,12 @@ that nothing the Graal path does is lost.
 
 | # | Optimisation | Replaces | Pri | Gate | Verify | Status |
 |---|---|---|---|---|---|---|
-| Q1 | **Copy coalescing in out-of-SSA** (avoid redundant edge copies; parallel-copy sequencing with minimal temporaries) | Graal LIR moves | P0 | C5a | G | wip: sequencing with one temporary per cycle done (`tc-lower/…/Structure/copies.tcir`); coalescing of non-interfering variables todo |
-| Q2 | **Expression folding** of pure single-use values into C expression trees | — (TC-specific readability) | P0 | C5b | G | done (C5b pending): constants, allocas, pure single-use same-block values |
+| Q1 | **Copy coalescing in out-of-SSA** (avoid redundant edge copies; parallel-copy sequencing with minimal temporaries) | Graal LIR moves | P0 | C5a | G | done (C5b pending): parallel copies sequenced with one temporary per cycle (`Structure/copies.tcir`); a single-use value passed to a block argument on its block's edge is written straight into the argument's variable when nothing in the block reads the old value (`s = s / 2;`, `i = i + gsize_x;`) |
+| Q2 | **Expression folding** of pure single-use values into C expression trees | — (TC-specific readability) | P0 | C5b | G | done (C5b pending): constants, allocas, pure single-use same-block values, branch-only conditions, single-use loads with no side effect before their use, i64 address arithmetic; element accesses print as `a_data[i]` through typed data pointers |
 | Q3 | **Counted-loop recovery** to `for(init; cond; step)` | `TornadoLoopCanonicalization` + structured emitter | P0 | C5a | G | todo |
 | Q4 | **Global-load batching**: issue independent global loads of a block together (memory-level parallelism) | `CUDAGlobalLoadBatching` | P0 | C7 | G P | todo |
 | Q5 | **Infinity / NaN / special-constant spelling** per dialect | `InfinityReplacementPhase` | P0 | C5b | G | todo |
-| Q6 | **Variable naming from the local-variable table**, built-in name clash prefixing | Graal backend naming | P0 | C3 | G | todo |
+| Q6 | **Variable naming from the local-variable table**, built-in name clash prefixing | Graal backend naming | P0 | C3 | G | done (C5b pending): Java locals keep their names (SSA versions share one), named values stay variables; TC-derived values get role names (`gid_x`, `lid_x`, `gsize_x`, `<array>_data`, `<array>_len`, `<array>_val`, `<i>_off`); clashes get `_1`, `_2` |
 
 ## 4. Beyond parity (P2; only after C7 data)
 

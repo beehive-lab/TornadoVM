@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.tc.ir.IrPrinter;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Successor;
+import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
 import uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree;
 
@@ -83,6 +84,7 @@ public final class Structurizer {
     private final Map<Value, S.Var> vars = new IdentityHashMap<>();
     private final Set<String> usedNames = new HashSet<>();
     private final List<S.Var> locals = new ArrayList<>();
+    private final Map<Value, BlockArg> coalesced = new IdentityHashMap<>();
     private final List<S.Alloca> allocas = new ArrayList<>();
     private final Map<Inst, S.Alloca> allocaByInst = new IdentityHashMap<>();
     private int temporaries;
@@ -108,12 +110,20 @@ public final class Structurizer {
             params.add(variable(param));
         }
         for (var block : order) {
+            for (var inst : block.insts()) {
+                coalesceTarget(inst).ifPresent(arg -> coalesced.put(inst, arg));
+            }
+        }
+        for (var block : order) {
             for (var arg : block.args()) {
-                if (block != function.entry()) {
+                if (block != function.entry() && !locals.contains(variable(arg))) {
                     locals.add(variable(arg));
                 }
             }
             for (var inst : block.insts()) {
+                if (inst.producesValue() && !isInline(inst) && coalesced.containsKey(inst)) {
+                    continue; // shares the variable of the block argument it feeds
+                }
                 if (inst.opcode() instanceof Opcode.Alloca) {
                     var alloca = new S.Alloca(inst, unique(cName(names.name(inst))));
                     allocas.add(alloca);
@@ -125,7 +135,9 @@ public final class Structurizer {
         }
         var body = doTree(function.entry());
         var simplified = Simplifier.simplify(body);
-        return new S.Kernel(function, params, locals, allocas, simplified);
+        var elementTypes = new IdentityHashMap<S.Var, Type>();
+        vars.forEach((value, var) -> elementTypeOf(value).ifPresent(type -> elementTypes.put(var, type)));
+        return new S.Kernel(function, params, locals, allocas, simplified, elementTypes);
     }
 
     // ---------------------------------------------------------------- CFG facts
@@ -338,7 +350,7 @@ public final class Structurizer {
             }
             var op = new S.Op(inst, inst.operands().stream().map(this::expr).toList());
             if (inst.producesValue()) {
-                code.add(new S.Assign(vars.get(inst), op, inst.loc()));
+                code.add(new S.Assign(variable(inst), op, inst.loc()));
             } else {
                 code.add(new S.Effect(op, inst.loc()));
             }
@@ -352,6 +364,30 @@ public final class Structurizer {
         if (opcode instanceof Opcode.ConstInt || opcode instanceof Opcode.ConstFloat || opcode instanceof Opcode.Alloca) {
             return true;
         }
+        if (inst.type().equals(Type.I1) && inst.users().size() == 1 && inst.users().get(0).isTerminator()
+                && inst.users().get(0).block().equals(inst.block()) && inst.users().get(0).operand(0) == inst) {
+            // A condition consumed only by its block's branch prints inside the `if`/`while`.
+            return true;
+        }
+        if (opcode.isPure() && inst.type().equals(Type.I64) && feedsOnlyAddresses(inst, 0)) {
+            // Widened byte offsets are ABI plumbing, not program values: print them inside the access.
+            return true;
+        }
+        if (hasJavaName(inst) && !(opcode instanceof Opcode.PointerOffset)) {
+            // A value the programmer named stays a variable, so the C reads like the Java.
+            return false;
+        }
+        if (opcode instanceof Opcode.PointerOffset) {
+            // Element addresses print as `a_data[i]`; the data pointer itself (base + constant) is one variable.
+            return !isDataPointer(inst);
+        }
+        if (opcode instanceof Opcode.Load && inst.users().size() == 1) {
+            return loadCanMove(inst);
+        }
+        if (opcode.isPure() && feedsOnlyAddresses(inst, 0)) {
+            // Byte offsets print inside the access (`a_data[i]`), even when GVN shares them.
+            return true;
+        }
         if (!opcode.isPure() || inst.users().size() != 1) {
             return false;
         }
@@ -361,6 +397,110 @@ public final class Structurizer {
             return false;
         }
         return user.block().isPresent() && user.block().equals(inst.block());
+    }
+
+    /** Named from the class file's local variables (not a number, not a name TC derived). */
+    private static boolean hasJavaName(Inst inst) {
+        var name = inst.name();
+        return !name.isEmpty() && !name.chars().allMatch(Character::isDigit) && !name.endsWith("_data") && !name.endsWith("_len");
+    }
+
+    /** Integer arithmetic whose only purpose is to form byte offsets of element addresses. */
+    private static boolean feedsOnlyAddresses(Inst inst, int depth) {
+        if (depth > 8 || !inst.hasUses() || !inst.type().isInteger()) {
+            return false;
+        }
+        for (var user : inst.users()) {
+            boolean ok = switch (user.opcode()) {
+                case Opcode.PointerOffset p -> user.operand(1) == inst && user.operand(0) != inst;
+                case Opcode.Binary b -> user.operand(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt && feedsOnlyAddresses(user, depth + 1);
+                case Opcode.Convert c -> feedsOnlyAddresses(user, depth + 1);
+                default -> false;
+            };
+            if (!ok) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** A pointer to the first element of an array: a parameter or allocation plus a constant offset. */
+    static boolean isDataPointer(Inst inst) {
+        return inst.opcode() instanceof Opcode.PointerOffset && !(inst.operand(0) instanceof Inst base && base.opcode() instanceof Opcode.PointerOffset)
+                && inst.operand(1) instanceof Inst offset && offset.opcode() instanceof Opcode.ConstInt;
+    }
+
+    /**
+     * A single-use load may be evaluated where its value is finally used if no instruction with a side
+     * effect (store, barrier, call, atomic) lies between them in the block.
+     */
+    private boolean loadCanMove(Inst load) {
+        var block = load.block().orElse(null);
+        Inst point = evaluationPoint(load.users().get(0), 0);
+        if (block == null || point == null || !point.block().equals(load.block())) {
+            return false;
+        }
+        var insts = block.insts();
+        for (int k = insts.indexOf(load) + 1; k < insts.indexOf(point); k++) {
+            var between = insts.get(k);
+            if (!between.opcode().isPure() && !(between.opcode() instanceof Opcode.Load)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Where an inlined value is actually evaluated: the first user up the chain that is not inlined. */
+    private Inst evaluationPoint(Inst user, int depth) {
+        if (depth > 64 || user.isTerminator() || !user.producesValue() || !user.opcode().isPure() || user.users().size() != 1 || !user.block().equals(user.users().get(0).block())) {
+            return user;
+        }
+        return evaluationPoint(user.users().get(0), depth + 1);
+    }
+
+    /** The element type of a data pointer whose every use is an element access of one type and stride. */
+    private Optional<Type> elementTypeOf(Value value) {
+        if (!(value instanceof Inst data) || !isDataPointer(data)) {
+            return Optional.empty();
+        }
+        Type element = null;
+        for (var user : data.users()) {
+            if (!(user.opcode() instanceof Opcode.PointerOffset) || user.operand(0) != data || stride(user.operand(1)) <= 0) {
+                return Optional.empty();
+            }
+            for (var access : user.users()) {
+                var type = switch (access.opcode()) {
+                    case Opcode.Load l -> access.type();
+                    case Opcode.Store s -> access.operand(0) == user ? access.operand(1).type() : null;
+                    default -> null;
+                };
+                if (type == null || (element != null && !element.equals(type)) || sizeOf(type) != stride(user.operand(1))) {
+                    return Optional.empty();
+                }
+                element = type;
+            }
+        }
+        return Optional.ofNullable(element);
+    }
+
+    /** {@code S} when {@code offset} is {@code sext(i) * S}, {@code i * S} or {@code sext(i)} (S = 1); else -1. */
+    static long stride(Value offset) {
+        if (offset instanceof Inst mul && mul.opcode() instanceof Opcode.Binary(var op) && op == Opcode.BinaryOp.MUL && mul.operand(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var s)) {
+            return s;
+        }
+        if (offset instanceof Inst sext && sext.opcode() instanceof Opcode.Convert(var op) && op == Opcode.ConvertOp.SEXT) {
+            return 1;
+        }
+        return -1;
+    }
+
+    static int sizeOf(Type type) {
+        return switch (type.text()) {
+            case "i8", "i1" -> 1;
+            case "i16", "f16", "bf16" -> 2;
+            case "i64", "f64" -> 8;
+            default -> 4;
+        };
     }
 
     private S.Expr expr(Value value) {
@@ -379,7 +519,127 @@ public final class Structurizer {
     }
 
     private S.Var variable(Value value) {
-        return vars.computeIfAbsent(value, v -> new S.Var(unique(cName(names.name(v))), v.type()));
+        var target = coalesced.get(value);
+        if (target != null) {
+            return variable(target);
+        }
+        return vars.computeIfAbsent(value, v -> new S.Var(unique(cName(suggestedName(v))), v.type()));
+    }
+
+    /**
+     * Copy coalescing: a value whose only use is to be passed to block argument {@code A} on the edge
+     * that ends its block is written straight into A's variable, so {@code s2 = s1 / 2; s1 = s2;}
+     * becomes {@code s = s / 2;}. Only when nothing in the block can read A after the value is
+     * computed (conservatively: no later reader of A, and no folded reader of A at all).
+     */
+    private Optional<BlockArg> coalesceTarget(Inst inst) {
+        if (!inst.producesValue() || isInline(inst) || inst.users().size() != 1) {
+            return Optional.empty();
+        }
+        var user = inst.users().get(0);
+        if (!user.isTerminator() || !user.block().equals(inst.block()) || user.operands().contains(inst)) {
+            return Optional.empty();
+        }
+        BlockArg target = null;
+        for (var s : user.successors()) {
+            for (int i = 0; i < s.args().size(); i++) {
+                if (s.args().get(i) == inst) {
+                    if (target != null) {
+                        return Optional.empty();
+                    }
+                    target = s.target().args().get(i);
+                }
+            }
+        }
+        if (target == null || target.type() != inst.type() && !target.type().equals(inst.type())) {
+            return Optional.empty();
+        }
+        var arg = target;
+        // Between the definition and the end of the block, nothing may read A's old value: not a later
+        // instruction, not an expression folded into one, and not another argument of the edge.
+        var block = inst.block().orElseThrow();
+        var insts = block.insts();
+        for (int k = insts.indexOf(inst) + 1; k < insts.size(); k++) {
+            var later = insts.get(k);
+            if (!isInline(later) && later.operands().stream().anyMatch(v -> readsThrough(v, arg))) {
+                return Optional.empty();
+            }
+        }
+        for (var s : user.successors()) {
+            for (var passed : s.args()) {
+                if (passed != inst && readsThrough(passed, target)) {
+                    return Optional.empty();
+                }
+            }
+        }
+        // Two values of one block written into the same variable would clobber each other.
+        for (var other : coalesced.entrySet()) {
+            if (other.getValue() == target && other.getKey() instanceof Inst i && i.block().equals(inst.block())) {
+                return Optional.empty();
+            }
+        }
+        return Optional.of(target);
+    }
+
+    /** Whether evaluating {@code value} where it is used reads {@code target}, directly or through folded expressions. */
+    private boolean readsThrough(Value value, BlockArg target) {
+        if (value == target) {
+            return true;
+        }
+        return value instanceof Inst i && isInline(i) && i.operands().stream().anyMatch(v -> readsThrough(v, target));
+    }
+
+    /** The Java name when known; otherwise a name derived from what defines the value. */
+    private String suggestedName(Value value) {
+        var printed = names.name(value);
+        var hint = value.name();
+        if (!hint.isEmpty() && !hint.chars().allMatch(Character::isDigit)) {
+            return printed;
+        }
+        if (value instanceof Inst inst) {
+            switch (inst.opcode()) {
+                case Opcode.Intrinsic(var name) -> {
+                    var dim = name.substring(name.lastIndexOf('.') + 1);
+                    if (name.startsWith("tornado.thread_id.global.")) {
+                        return "gid_" + dim;
+                    }
+                    if (name.startsWith("tornado.thread_id.local.")) {
+                        return "lid_" + dim;
+                    }
+                    if (name.startsWith("tornado.group_id.")) {
+                        return "group_" + dim;
+                    }
+                    if (name.startsWith("tornado.global_size.")) {
+                        return "gsize_" + dim;
+                    }
+                    if (name.startsWith("tornado.group_size.local.")) {
+                        return "lsize_" + dim;
+                    }
+                    if (name.startsWith("math.")) {
+                        return name.substring("math.".length());
+                    }
+                }
+                case Opcode.Binary(var op) when op == Opcode.BinaryOp.MUL && inst.operand(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt
+                        && !inst.operand(0).name().isEmpty() && !inst.operand(0).name().chars().allMatch(Character::isDigit) -> {
+                    return cName(names.name(inst.operand(0))) + "_off"; // row offset of a flattened index, e.g. i * 1024
+                }
+                case Opcode.Load l -> {
+                    var base = inst.operand(0);
+                    while (base instanceof Inst b && b.opcode() instanceof Opcode.PointerOffset) {
+                        if (!b.name().isEmpty() && !b.name().chars().allMatch(Character::isDigit)) {
+                            return b.name().replaceAll("_data$", "") + "_val";
+                        }
+                        base = b.operand(0);
+                    }
+                    if (!base.name().isEmpty()) {
+                        return base.name() + "_val";
+                    }
+                }
+                default -> {
+                }
+            }
+        }
+        return printed;
     }
 
     private String label(Block block) {
@@ -396,7 +656,8 @@ public final class Structurizer {
 
     /** A C identifier for a TC name: dots and dollars become underscores, leading digits get a prefix. */
     static String cName(String name) {
-        var c = name.replace('.', '_').replace('$', '_');
+        // SSA versions of one Java local (`s`, `s.1`, `s.2`) share the Java name; unique() resolves clashes.
+        var c = name.replaceAll("\\.\\d+$", "").replace('.', '_').replace('$', '_');
         return c.isEmpty() || Character.isDigit(c.charAt(0)) ? "v" + c : c;
     }
 }

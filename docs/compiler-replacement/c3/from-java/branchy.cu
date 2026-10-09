@@ -1,21 +1,20 @@
 extern "C" __global__ void C3Kernels_compute(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
 {
   int i;
-  long long v0;
-  long long v7;
+  float *in_data;
   float x;
-  float v_2;
+  float v;
+  float *out_data;
   i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:40
-  v0 = *((long long *) in);  // C3Kernels.java:41
-  if (i < (int) v0) {
-    v7 = (long long) i * 4LL + 16LL;  // C3Kernels.java:42
-    x = *((float *) (in + v7));  // C3Kernels.java:42
+  if (i < (int) *((long long *) in)) {
+    in_data = (float *) (in + 16LL);  // C3Kernels.java:42
+    x = in_data[i];  // C3Kernels.java:42
     if (x > 0.0f) {
-      v_2 = sqrtf(x) * 2.0f;
+      v = sqrtf(x) * 2.0f;  // C3Kernels.java:45
     } else {
-      v_2 = -x;
+      v = -x;  // C3Kernels.java:47
     }
-    *((float *) (out + v7)) = v_2;  // C3Kernels.java:49
+    out_data = (float *) (out + 16LL);  // C3Kernels.java:49
+    out_data[i] = v;  // C3Kernels.java:49
   }
-  return;
 }
