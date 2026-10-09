@@ -169,8 +169,11 @@ public class MetalInstalledCode extends InstalledCode implements TornadoInstalle
 
         // Metal requires setArgRef (setBuffer:) for device/constant buffer parameters,
         // unlike OpenCL where metalSetKernelArg handles both buffer refs and inline data.
-        // kernel context buffer
-        kernel.setArgRef(index, kernelArgs.toBuffer());
+        // The kernel context is the exception: its slots (the grid sizes a kernel with dynamic loop
+        // bounds reads) are bound by value, so that each dispatch reads the values it was launched
+        // with even while earlier dispatches of the plan, which share the stack frame, are still
+        // pending in the same command buffer.
+        kernel.setArg(index, kernelArgs.contents());
         index++;
 
         if (isSPIRVBinary) {
