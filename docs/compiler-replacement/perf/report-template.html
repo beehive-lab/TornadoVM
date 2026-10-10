@@ -1,0 +1,171 @@
+<title>TC versus Graal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+:root{--ground:#f4f5f2;--panel:#ffffff;--ink:#1b1f24;--muted:#5d6670;--rule:#dfe2dc;--graal:#7a8591;--tc:#0e7c6b;--warn:#b54708;--bad:#b42318;--good:#18794e;--chip:#eceee9;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#121517;--panel:#191d20;--ink:#e6e8e5;--muted:#9aa3ab;--rule:#2b3135;--graal:#8c97a3;--tc:#3cc2a8;--warn:#f0a35e;--bad:#f2766b;--good:#5fd19c;--chip:#22282b;color-scheme:dark}}
+:root[data-theme="dark"]{--ground:#121517;--panel:#191d20;--ink:#e6e8e5;--muted:#9aa3ab;--rule:#2b3135;--graal:#8c97a3;--tc:#3cc2a8;--warn:#f0a35e;--bad:#f2766b;--good:#5fd19c;--chip:#22282b;color-scheme:dark}
+body{background:var(--ground);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif;margin:0}
+main{max-width:1080px;margin:0 auto;padding-block:40px 64px;padding-inline:20px;display:grid;gap:40px}
+h1{font:600 2.4rem/1.1 "Newsreader",Georgia,serif;margin:0;text-wrap:balance}
+h2{font:600 1.35rem/1.2 "Newsreader",Georgia,serif;margin:0 0 12px;text-wrap:balance}
+p{margin:0;max-width:70ch}
+.eyebrow{font:500 .72rem/1 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:14px}
+.status{display:inline-flex;gap:8px;align-items:center;font:500 .8rem "IBM Plex Mono",monospace;background:var(--chip);border:1px solid var(--rule);border-radius:999px;padding:5px 12px;width:fit-content;color:var(--warn)}
+.status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--warn)}
+.status.done{color:var(--good)}.status.done::before{background:var(--good)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;display:grid;gap:4px}
+.kpi b{font:600 1.6rem/1 "Newsreader",Georgia,serif}.kpi span{font-size:.82rem;color:var(--muted)}
+.wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font:500 .7rem "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+th:first-child,td:first-child{text-align:left}
+td.num{font-family:"IBM Plex Mono",monospace;font-size:.86rem}
+tr:last-child td{border-bottom:0}
+.bench{font-weight:600}.cfg{display:block;font:400 .74rem "IBM Plex Mono",monospace;color:var(--muted)}
+.good{color:var(--good)}.bad{color:var(--bad)}.even{color:var(--muted)}.ratio{font-weight:600}
+.tag{font:500 .7rem "IBM Plex Mono",monospace;padding:2px 7px;border-radius:4px;background:var(--chip);color:var(--muted);border:1px solid var(--rule)}
+.tag.warn{color:var(--warn)}
+.chart{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:16px}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font:12px "IBM Plex Mono",monospace}
+.chart .lbl{fill:var(--ink);font:500 12px "IBM Plex Sans",sans-serif}
+ul{margin:0;padding-left:20px;display:grid;gap:8px;max-width:76ch}
+code{font:.85em "IBM Plex Mono",monospace;background:var(--chip);padding:1px 5px;border-radius:3px}
+.note{font-size:.85rem;color:var(--muted);margin-top:10px}
+.pending{background:var(--panel);border:1px dashed var(--rule);border-radius:6px;padding:16px;color:var(--muted)}
+</style>
+<main>
+<header>
+  <div class="eyebrow">TornadoVM · CUDA · RTX 4090 · tornado-benchmarks · 2026-10-10</div>
+  <h1>TC versus Graal</h1>
+  <div class="status" id="status"></div>
+  <p>The same 16 tornado-benchmarks compiled by the Graal path and by TC, the Graal-free compiler. Kernel times come from nsys (median over 100–101 launches of each benchmark's main kernel), kernel metrics from ncu, compile times from the TornadoVM profiler's per-task timers.</p>
+  <div class="legend"><span style="--c:var(--graal)">Graal</span><span style="--c:var(--tc)">TC</span></div>
+</header>
+
+<section class="kpis" id="kpis"></section>
+
+<section>
+  <h2>Kernel time per benchmark</h2>
+  <div class="wrap"><table id="kt"><thead><tr><th>Benchmark</th><th>Graal (µs)</th><th>TC (µs)</th><th>TC / Graal</th><th>Kernel compiled by</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">"Fell back to Graal": TC refused the kernel (an unsupported type such as <code>ImageFloat</code>) and Graal compiled it, so that row compares Graal with itself.</p>
+</section>
+
+<section>
+  <h2>Kernel time, TC relative to Graal</h2>
+  <div class="chart" id="c1"></div>
+  <p class="note">Benchmarks whose kernel TC compiled. Left of the 1× line, TC is faster.</p>
+</section>
+
+<section>
+  <h2>Inside the kernels (ncu)</h2>
+  <div class="wrap"><table id="nt"><thead><tr><th>Benchmark</th><th>Duration G / TC (µs)</th><th>Registers G / TC</th><th>Instructions G / TC</th><th>Inst. ratio</th><th>SM throughput G / TC</th><th>Warps active G / TC</th><th>Grid × block</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">One profiled launch after five warm-up launches. Same grid and block for both compilers on every kernel measured.</p>
+</section>
+
+<section>
+  <h2>Compile time</h2>
+  <div id="compile"></div>
+</section>
+
+<section>
+  <h2>Findings</h2>
+  <ul>
+    <li><b>Kernel quality is at parity or better on most benchmarks.</b> Where TC is faster, ncu shows why: fewer registers on the GEMMs (40 vs 92–94 per thread) and fewer instructions on the convolutions and mandelbrot.</li>
+    <li><b>nbody is the exception.</b> Same grid and occupancy, but 1.82× the instructions: TC keeps the 3-trip <code>k</code> loops rolled, so the private <code>float[3]</code> arrays stay in local memory. Full unrolling of small constant-trip loops (optimisation O9) is implemented and being verified; <code>1/sqrt → rsqrt</code> (O12) is next.</li>
+    <li><b>Bugs this comparison found, fixed:</b> stencil and convolveimage ran on a single GPU thread (43× and ~22,600× slower) because loop bounds became constants only after TC recorded the launch grid (<code>3425f6496</code>); juliaset crashed TC's emitter with a StackOverflowError, which also showed that internal TC errors must fall back to Graal instead of ending the JVM (<code>b4569302b</code>).</li>
+    <li><b>juliaset</b> is 9% slower under TC (3.94 vs 3.61 ms): the escape-time loop, being looked at with the nbody work.</li>
+    <li>addImage, blurFilter and renderTrack use image and vector types TC does not support yet; they fall back to Graal.</li>
+    <li><b>Compile time, warm</b> (342 kernels, many per JVM): TC's median is 4.49 ms against Graal's 3.84 ms per kernel (1.2× over the 292 kernels both compiled; TC faster on 65). NVRTC is identical (18.2 ms median both): it compiles whatever source it is given, so the source TC emits costs no extra driver time.</li>
+    <li><b>Compile time, cold</b> (one kernel per fresh JVM): TC takes 65–98 ms where Graal takes 45–67 ms on most benchmarks, because a fresh JVM also loads and warms up TC's own classes; on the two convolution kernels TC is faster (83 vs 105 ms, 91 vs 111 ms). Cold-start cost is tracked for the C7 compile-latency gate.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Method</h2>
+  <ul>
+    <li>SDK from <code>mikepapadim/tornadovm-compiler</code> branch <code>compiler/main</code>, JDK 21.0.2, CUDA 12.6, driver 610.57.04; device 1:0 only (OpenCL devices blacklisted); default benchmark sizes; serial Java skipped.</li>
+    <li>Graal: default path. TC: <code>-Dtornado.compiler=tc</code>, fallback on.</li>
+    <li>Kernel time: <code>nsys profile -t cuda</code>, <code>cuda_gpu_kern_sum</code>, median of the benchmark's main kernel. ncu: <code>--launch-skip 5 --launch-count 1</code>.</li>
+    <li>Compile time: <code>-Dtornado.tc.compileTimes=true</code> prints the profiler's <code>TASK_COMPILE_GRAAL_TIME</code> (Graal or TC) and <code>TASK_COMPILE_DRIVER_TIME</code> (NVRTC) per task; TornadoVM's on-disk CUDA binary cache is disabled (<code>-Dtornado.cuda.codecache.enable=False</code>) so NVRTC really runs. Cold = one benchmark per fresh JVM, median of 3; warm = the 342 kernels of the C5b unit-test families, many per JVM.</li>
+  </ul>
+</section>
+</main>
+<script>
+const D = __DATA__;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const us = ns => ns == null ? "–" : (ns/1000).toLocaleString(undefined,{maximumFractionDigits: ns < 1e7 ? 1 : 0});
+const tcRows = D.rows.filter(r => r.by.includes("tc") && r.gK && r.tK);
+const ratios = tcRows.map(r => r.tK / r.gK);
+const done = D.cold.length >= 16 && D.warm;
+const st = document.getElementById("status");
+st.textContent = done ? "Complete · 16 benchmarks · kernel and compile times" : `Kernel times complete for ${tcRows.length} TC-compiled benchmarks · compile times ${D.cold.length ? "partial" : "pending"} (re-measuring with the binary cache off)`;
+if (done) st.classList.add("done");
+const geo = Math.exp(ratios.reduce((a,b)=>a+Math.log(b),0)/ratios.length);
+const kp = [
+  [`${tcRows.length}`, "benchmarks with a TC-compiled kernel"],
+  [`${ratios.filter(r => r <= 1.03).length} of ${ratios.length}`, "within 3% of Graal or faster"],
+  [`${geo.toFixed(2)}×`, "geometric mean, TC / Graal kernel time"],
+  [D.warm ? `${D.warm.tc.median.toFixed(1)} / ${D.warm.graal.median.toFixed(1)} ms` : "pending", "warm compile median, TC / Graal"],
+];
+document.getElementById("kpis").innerHTML = kp.map(([b,s]) => `<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join("");
+const kt = document.querySelector("#kt tbody");
+for (const r of D.rows) {
+  const tc = r.by.includes("tc"), ratio = r.gK && r.tK ? r.tK / r.gK : null;
+  const cls = !tc || ratio == null ? "even" : ratio < 0.97 ? "good" : ratio > 1.03 ? "bad" : "even";
+  const txt = ratio == null ? "–" : tc ? ratio.toFixed(2) + "×" : "same kernel";
+  const tag = tc ? '<span class="tag">TC</span>' : r.tK == null ? '<span class="tag warn">being re-measured</span>' : '<span class="tag warn">fell back to Graal</span>';
+  kt.insertAdjacentHTML("beforeend", `<tr><td><span class="bench">${r.bench}</span><span class="cfg">${r.config || ""}</span></td><td class="num">${us(r.gK)}</td><td class="num">${us(r.tK)}</td><td class="num ratio ${cls}">${txt}</td><td>${tag}</td></tr>`);
+}
+const nt = document.querySelector("#nt tbody");
+const f = (v, d=0) => v == null || v === "" ? "–" : Number(v).toLocaleString(undefined,{maximumFractionDigits:d});
+for (const [b, v] of Object.entries(D.ncu)) {
+  const g = v.graal || {}, t = v.tc || {};
+  const ir = g["smsp__inst_executed.sum"] && t["smsp__inst_executed.sum"] ? t["smsp__inst_executed.sum"] / g["smsp__inst_executed.sum"] : null;
+  const cls = ir == null ? "even" : ir < 0.97 ? "good" : ir > 1.03 ? "bad" : "even";
+  nt.insertAdjacentHTML("beforeend", `<tr><td class="bench">${b}</td>
+   <td class="num">${f(g["gpu__time_duration.sum"]/1000,1)} / ${f(t["gpu__time_duration.sum"]/1000,1)}</td>
+   <td class="num">${f(g["launch__registers_per_thread"])} / ${f(t["launch__registers_per_thread"])}</td>
+   <td class="num">${f(g["smsp__inst_executed.sum"]/1e6,1)}M / ${f(t["smsp__inst_executed.sum"]/1e6,1)}M</td>
+   <td class="num ratio ${cls}">${ir == null ? "–" : ir.toFixed(2) + "×"}</td>
+   <td class="num">${f(g["sm__throughput.avg.pct_of_peak_sustained_elapsed"],1)}% / ${f(t["sm__throughput.avg.pct_of_peak_sustained_elapsed"],1)}%</td>
+   <td class="num">${f(g["sm__warps_active.avg.pct_of_peak_sustained_active"],1)}% / ${f(t["sm__warps_active.avg.pct_of_peak_sustained_active"],1)}%</td>
+   <td class="num">${f(t["launch__grid_size"] || g["launch__grid_size"])} × ${f(t["launch__block_size"] || g["launch__block_size"])}</td></tr>`);
+}
+const comp = document.getElementById("compile");
+if (!D.cold.length && !D.warm) {
+  comp.innerHTML = `<div class="pending">Being re-measured. The first measurement was invalid: TornadoVM's on-disk CUDA binary cache (keyed by source hash, on by default) turned most NVRTC builds into cache hits. Cold (one compile per fresh JVM) and warm (342 kernels, many per JVM) compile times are re-run with the cache off; this section fills in when they finish.</div>`;
+} else {
+  let h = "";
+  if (D.warm) {
+    h += `<p>Warm, per kernel (${D.warm.graal.n} Graal and ${D.warm.tc.n} TC compilations of the same unit-test kernels, many per JVM): compiler median <b>${D.warm.graal.median.toFixed(2)} ms</b> Graal vs <b>${D.warm.tc.median.toFixed(2)} ms</b> TC (p10–p90 ${D.warm.graal.p10.toFixed(1)}–${D.warm.graal.p90.toFixed(1)} vs ${D.warm.tc.p10.toFixed(1)}–${D.warm.tc.p90.toFixed(1)} ms); NVRTC median ${D.warm.graal.driver.toFixed(1)} vs ${D.warm.tc.driver.toFixed(1)} ms. Over the ${D.warm.common} kernels both compiled, TC/Graal median ratio ${D.warm.ratio.toFixed(2)}×, TC faster on ${D.warm.tcFaster}.</p>`;
+  }
+  if (D.cold.length) {
+    h += `<div class="wrap" style="margin-top:14px"><table><thead><tr><th>Benchmark (cold, fresh JVM)</th><th>Compiler · Graal</th><th>Compiler · TC</th><th>NVRTC · Graal</th><th>NVRTC · TC</th><th>TC compiled it</th></tr></thead><tbody>` +
+      D.cold.map(c => `<tr><td class="bench">${c.bench}</td><td class="num">${c.gC.toFixed(1)}</td><td class="num">${c.tC.toFixed(1)}</td><td class="num">${c.gD.toFixed(1)}</td><td class="num">${c.tD.toFixed(1)}</td><td>${c.by.includes("tc") ? '<span class="tag">yes</span>' : '<span class="tag warn">fell back</span>'}</td></tr>`).join("") +
+      `</tbody></table></div><p class="note">Milliseconds, median of 3 fresh JVMs, code cache off. A cold compile includes the compiler's own class loading and JIT warm-up in a new JVM.</p>`;
+  }
+  comp.innerHTML = h;
+}
+function ratioChart(){
+  const rs = tcRows.slice().sort((a,b) => a.tK/a.gK - b.tK/b.gK);
+  const W=560,rowH=28,L=120,R=70,H=rs.length*rowH+40,lo=Math.log10(0.5),hi=Math.log10(2);
+  const x=v=>L+(Math.log10(Math.min(2,Math.max(0.5,v)))-lo)/(hi-lo)*(W-L-R);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="TC over Graal kernel time">`;
+  for (const t of [0.5,0.75,1,1.5,2]) s+=`<line x1="${x(t)}" x2="${x(t)}" y1="8" y2="${H-24}" stroke="${css('--rule')}" ${t===1?'stroke-width="2"':''}/><text x="${x(t)}" y="${H-8}" text-anchor="middle">${t}×</text>`;
+  rs.forEach((r,i)=>{ const v=r.tK/r.gK, y=12+i*rowH, c=v>1.03?css('--bad'):v<0.97?css('--good'):css('--graal');
+    s+=`<text class="lbl" x="${L-8}" y="${y+13}" text-anchor="end">${r.bench}</text>`;
+    s+=`<rect x="${Math.min(x(1),x(v))}" y="${y+2}" width="${Math.max(2,Math.abs(x(v)-x(1)))}" height="14" fill="${c}" rx="2"/>`;
+    s+=`<text x="${Math.max(x(1),x(v))+6}" y="${y+13}">${v.toFixed(2)}×</text>`; });
+  document.getElementById("c1").innerHTML=s+"</svg>";
+}
+ratioChart();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",ratioChart);
+new MutationObserver(ratioChart).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+</script>

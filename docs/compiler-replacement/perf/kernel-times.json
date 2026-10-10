@@ -1,0 +1,852 @@
+{
+ "addImage": {
+  "graal": {
+   "config": "add-image-101-2048-2048",
+   "methods": [
+    "GraphicsKernels.addImage"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 222208.0,
+   "kernelAvgNs": 227902.64788732395,
+   "compileMs": 51.054875,
+   "driverMs": 22.051817,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "addImage",
+     "instances": 101,
+     "medNs": 209760.0,
+     "avgNs": 209755.1,
+     "minNs": 188897.0,
+     "totalNs": 21185264.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "add-image-101-2048-2048",
+   "methods": [
+    "GraphicsKernels.addImage"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 221312.0,
+   "kernelAvgNs": 229397.6338028169,
+   "compileMs": 50.134942,
+   "driverMs": 21.324304,
+   "compileRuns": 3,
+   "tcKernels": 0,
+   "fallbacks": 1,
+   "nsys": [
+    {
+     "name": "addImage",
+     "instances": 101,
+     "medNs": 209729.0,
+     "avgNs": 209587.7,
+     "minNs": 190016.0,
+     "totalNs": 21168356.0
+    }
+   ]
+  }
+ },
+ "blackscholes": {
+  "graal": {
+   "config": "blackscholes-100-8192",
+   "methods": [
+    "ComputeKernels.blackscholes"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 9184.0,
+   "kernelAvgNs": 12199.771428571428,
+   "compileMs": 53.662386,
+   "driverMs": 21.925664,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "blackscholes",
+     "instances": 100,
+     "medNs": 1472.0,
+     "avgNs": 1469.1,
+     "minNs": 1439.0,
+     "totalNs": 146912.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "blackscholes-100-8192",
+   "methods": [
+    "ComputeKernels.blackscholes"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 8896.0,
+   "kernelAvgNs": 11977.585714285715,
+   "compileMs": 95.644756,
+   "driverMs": 23.264306,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "ComputeKernels_blackscholes",
+     "instances": 100,
+     "medNs": 1472.0,
+     "avgNs": 1472.0,
+     "minNs": 1440.0,
+     "totalNs": 147202.0
+    }
+   ]
+  }
+ },
+ "blurFilter": {
+  "graal": {
+   "config": "blurFilter-11-512",
+   "methods": [
+    "ComputeKernels.channelConvolution"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 395168.0,
+   "kernelAvgNs": 472416.0,
+   "compileMs": 25.643324,
+   "driverMs": 1.17529,
+   "compileRuns": 9,
+   "nsys": [
+    {
+     "name": "channelConvolution",
+     "instances": 33,
+     "medNs": 119840.0,
+     "avgNs": 119949.8,
+     "minNs": 118528.0,
+     "totalNs": 3958344.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "blurFilter-11-512",
+   "methods": [
+    "ComputeKernels.channelConvolution"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 394943.0,
+   "kernelAvgNs": 475103.8181818182,
+   "compileMs": 26.792644,
+   "driverMs": 0.908382,
+   "compileRuns": 9,
+   "tcKernels": 0,
+   "fallbacks": 3,
+   "nsys": [
+    {
+     "name": "channelConvolution",
+     "instances": 33,
+     "medNs": 119904.0,
+     "avgNs": 120018.7,
+     "minNs": 117761.0,
+     "totalNs": 3960617.0
+    }
+   ]
+  }
+ },
+ "convolvearray": {
+  "graal": {
+   "config": "convolve-array-100-2048-2048-5",
+   "methods": [
+    "GraphicsKernels.convolveImageArray"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 55296.0,
+   "kernelAvgNs": 60263.31428571429,
+   "compileMs": 105.180024,
+   "driverMs": 23.491373,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "convolveImageArray",
+     "instances": 100,
+     "medNs": 46752.0,
+     "avgNs": 46773.2,
+     "minNs": 46528.0,
+     "totalNs": 4677320.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "convolve-array-100-2048-2048-5",
+   "methods": [
+    "GraphicsKernels.convolveImageArray"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 51328.0,
+   "kernelAvgNs": 54833.37142857143,
+   "compileMs": 82.423301,
+   "driverMs": 22.321891,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "GraphicsKernels_convolveImageArray",
+     "instances": 100,
+     "medNs": 43201.0,
+     "avgNs": 43217.7,
+     "minNs": 43104.0,
+     "totalNs": 4321768.0
+    }
+   ]
+  }
+ },
+ "convolveimage": {
+  "graal": {
+   "config": "convolve-image-100-2048-2048-5",
+   "methods": [
+    "GraphicsKernels.convolveImage"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 94208.0,
+   "kernelAvgNs": 98240.91428571429,
+   "compileMs": 111.761241,
+   "driverMs": 23.587512,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "convolveImage",
+     "instances": 100,
+     "medNs": 85024.0,
+     "avgNs": 85023.8,
+     "minNs": 84544.0,
+     "totalNs": 8502384.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "convolve-image-100-2048-2048-5",
+   "methods": [
+    "GraphicsKernels.convolveImage"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 94176.0,
+   "kernelAvgNs": 98037.02857142857,
+   "compileMs": 89.547552,
+   "driverMs": 22.637544,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "GraphicsKernels_convolveImage",
+     "instances": 100,
+     "medNs": 84672.0,
+     "avgNs": 84674.4,
+     "minNs": 84288.0,
+     "totalNs": 8467435.0
+    }
+   ]
+  }
+ },
+ "dft": {
+  "graal": {
+   "config": "dft-15-8192",
+   "methods": [
+    "ComputeKernels.computeDFT"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 1120544.0,
+   "kernelAvgNs": 1152588.8,
+   "compileMs": 48.901526,
+   "driverMs": 21.235576,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "computeDFT",
+     "instances": 15,
+     "medNs": 1098274.0,
+     "avgNs": 1098329.5,
+     "minNs": 1097858.0,
+     "totalNs": 16474942.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "dft-15-8192",
+   "methods": [
+    "ComputeKernels.computeDFT"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 1141312.0,
+   "kernelAvgNs": 1164866.1333333333,
+   "compileMs": 77.385638,
+   "driverMs": 22.338553,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "ComputeKernels_computeDFT",
+     "instances": 15,
+     "medNs": 1117793.0,
+     "avgNs": 1117821.4,
+     "minNs": 1117537.0,
+     "totalNs": 16767321.0
+    }
+   ]
+  }
+ },
+ "dgemm": {
+  "graal": {
+   "config": "dgemm-20-512-512",
+   "methods": [
+    "LinearAlgebraArrays.dgemm"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 232096.0,
+   "kernelAvgNs": 266222.35,
+   "compileMs": 51.070546,
+   "driverMs": 22.676238,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "dgemm",
+     "instances": 20,
+     "medNs": 218433.0,
+     "avgNs": 218464.4,
+     "minNs": 218304.0,
+     "totalNs": 4369287.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "dgemm-20-512-512",
+   "methods": [
+    "LinearAlgebraArrays.dgemm"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 230432.0,
+   "kernelAvgNs": 262588.8,
+   "compileMs": 73.593526,
+   "driverMs": 21.766218,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "LinearAlgebraArrays_dgemm",
+     "instances": 20,
+     "medNs": 217424.5,
+     "avgNs": 217407.1,
+     "minNs": 217153.0,
+     "totalNs": 4348142.0
+    }
+   ]
+  }
+ },
+ "euler": {
+  "graal": {
+   "config": "euler-16-128",
+   "methods": [
+    "ComputeKernels.euler"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 14194400.0,
+   "kernelAvgNs": 14259964.0,
+   "compileMs": 56.468339,
+   "driverMs": 21.230945,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "euler",
+     "instances": 16,
+     "medNs": 14173385.5,
+     "avgNs": 14172839.4,
+     "minNs": 14166137.0,
+     "totalNs": 226765431.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "euler-16-128",
+   "methods": [
+    "ComputeKernels.euler"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 13655744.0,
+   "kernelAvgNs": 13751482.0,
+   "compileMs": 82.331178,
+   "driverMs": 22.718111,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "ComputeKernels_euler",
+     "instances": 16,
+     "medNs": 13621768.0,
+     "avgNs": 13622934.1,
+     "minNs": 13620120.0,
+     "totalNs": 217966945.0
+    }
+   ]
+  }
+ },
+ "juliaset": {
+  "graal": {
+   "config": "juliaset-50-8192-8192",
+   "methods": [
+    "GraphicsKernels.juliaSetTornado"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 3598720.0,
+   "kernelAvgNs": 3612435.2,
+   "compileMs": 52.050011,
+   "driverMs": 34.633219,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "juliaSetTornado",
+     "instances": 50,
+     "medNs": 3608885.0,
+     "avgNs": 3609257.6,
+     "minNs": 3605634.0,
+     "totalNs": 180462879.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "juliaset-50-8192-8192",
+   "methods": [
+    "GraphicsKernels.juliaSetTornado"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 3924992.0,
+   "kernelAvgNs": 3938344.0,
+   "compileMs": 79.338241,
+   "driverMs": 38.295226,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "GraphicsKernels_juliaSetTornado",
+     "instances": 50,
+     "medNs": 3940276.5,
+     "avgNs": 3940655.3,
+     "minNs": 3935907.0,
+     "totalNs": 197032764.0
+    }
+   ]
+  }
+ },
+ "mandelbrot": {
+  "graal": {
+   "config": "mandelbrot-131-512",
+   "methods": [
+    "ComputeKernels.mandelbrot"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 799872.0,
+   "kernelAvgNs": 806470.9702970297,
+   "compileMs": 61.14597,
+   "driverMs": 22.470787,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "mandelbrot",
+     "instances": 131,
+     "medNs": 852481.0,
+     "avgNs": 853555.2,
+     "minNs": 851297.0,
+     "totalNs": 111815733.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "mandelbrot-131-512",
+   "methods": [
+    "ComputeKernels.mandelbrot"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 759072.0,
+   "kernelAvgNs": 765709.3069306931,
+   "compileMs": 78.986096,
+   "driverMs": 22.877699,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "ComputeKernels_mandelbrot",
+     "instances": 131,
+     "medNs": 779649.0,
+     "avgNs": 779761.2,
+     "minNs": 778657.0,
+     "totalNs": 102148712.0
+    }
+   ]
+  }
+ },
+ "montecarlo": {
+  "graal": {
+   "config": "montecarlo-41-8192",
+   "methods": [
+    "ComputeKernels.monteCarlo"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 4716192.0,
+   "kernelAvgNs": 4718603.636363637,
+   "compileMs": 50.68912,
+   "driverMs": 21.303881,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "monteCarlo",
+     "instances": 41,
+     "medNs": 4705769.0,
+     "avgNs": 4705793.5,
+     "minNs": 4705129.0,
+     "totalNs": 192937535.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "montecarlo-41-8192",
+   "methods": [
+    "ComputeKernels.monteCarlo"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 4716256.0,
+   "kernelAvgNs": 4730615.2727272725,
+   "compileMs": 80.492727,
+   "driverMs": 26.422456,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "ComputeKernels_monteCarlo",
+     "instances": 41,
+     "medNs": 4705993.0,
+     "avgNs": 4706055.0,
+     "minNs": 4705513.0,
+     "totalNs": 192948253.0
+    }
+   ]
+  }
+ },
+ "nbody": {
+  "graal": {
+   "config": "nbody-51-16384",
+   "methods": [
+    "ComputeKernels.nBody"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 1395744.0,
+   "kernelAvgNs": 1398974.4761904762,
+   "compileMs": 68.089092,
+   "driverMs": 22.098779,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "nBody",
+     "instances": 51,
+     "medNs": 1387298.0,
+     "avgNs": 1387289.7,
+     "minNs": 1386338.0,
+     "totalNs": 70751774.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "nbody-51-16384",
+   "methods": [
+    "ComputeKernels.nBody"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 2179360.0,
+   "kernelAvgNs": 2182409.1428571427,
+   "compileMs": 89.87369,
+   "driverMs": 22.688132,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "ComputeKernels_nBody",
+     "instances": 51,
+     "medNs": 2170403.0,
+     "avgNs": 2170406.9,
+     "minNs": 2169700.0,
+     "totalNs": 110690753.0
+    }
+   ]
+  }
+ },
+ "renderTrack": {
+  "graal": {
+   "config": "renderTrack-51-8192",
+   "methods": [
+    "ComputeKernels.renderTrack"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 1098752.0,
+   "kernelAvgNs": 1107552.0,
+   "compileMs": 60.62572,
+   "driverMs": 23.150608,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "renderTrack",
+     "instances": 51,
+     "medNs": 1085123.0,
+     "avgNs": 1085663.5,
+     "minNs": 1070787.0,
+     "totalNs": 55368838.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "renderTrack-51-8192",
+   "methods": [
+    "ComputeKernels.renderTrack"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 1100800.0,
+   "kernelAvgNs": 1112565.3333333333,
+   "compileMs": 60.743027,
+   "driverMs": 21.476947,
+   "compileRuns": 3,
+   "tcKernels": 0,
+   "fallbacks": 1,
+   "nsys": [
+    {
+     "name": "renderTrack",
+     "instances": 51,
+     "medNs": 1085250.0,
+     "avgNs": 1085376.1,
+     "minNs": 1070850.0,
+     "totalNs": 55354179.0
+    }
+   ]
+  }
+ },
+ "saxpy": {
+  "graal": {
+   "config": "saxpy-101-16777216",
+   "methods": [
+    "LinearAlgebraArrays.saxpy"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 216864.0,
+   "kernelAvgNs": 226117.4084507042,
+   "compileMs": 44.837281,
+   "driverMs": 20.760363,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "saxpy",
+     "instances": 101,
+     "medNs": 210528.0,
+     "avgNs": 210466.3,
+     "minNs": 172193.0,
+     "totalNs": 21257095.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "saxpy-101-16777216",
+   "methods": [
+    "LinearAlgebraArrays.saxpy"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 217344.0,
+   "kernelAvgNs": 225013.6338028169,
+   "compileMs": 65.617174,
+   "driverMs": 22.444658,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "LinearAlgebraArrays_saxpy",
+     "instances": 101,
+     "medNs": 211392.0,
+     "avgNs": 211219.9,
+     "minNs": 172640.0,
+     "totalNs": 21333205.0
+    }
+   ]
+  }
+ },
+ "sgemm": {
+  "graal": {
+   "config": "sgemm-20-512-512",
+   "methods": [
+    "LinearAlgebraArrays.sgemm"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 71968.0,
+   "kernelAvgNs": 106318.4,
+   "compileMs": 51.381708,
+   "driverMs": 21.870412,
+   "compileRuns": 3,
+   "nsys": [
+    {
+     "name": "sgemm",
+     "instances": 20,
+     "medNs": 58864.0,
+     "avgNs": 58878.6,
+     "minNs": 58561.0,
+     "totalNs": 1177572.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "sgemm-20-512-512",
+   "methods": [
+    "LinearAlgebraArrays.sgemm"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 71264.0,
+   "kernelAvgNs": 108419.2,
+   "compileMs": 73.784639,
+   "driverMs": 22.495226,
+   "compileRuns": 3,
+   "tcKernels": 1,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "LinearAlgebraArrays_sgemm",
+     "instances": 20,
+     "medNs": 58272.0,
+     "avgNs": 58348.9,
+     "minNs": 58080.0,
+     "totalNs": 1166978.0
+    }
+   ]
+  }
+ },
+ "stencil": {
+  "graal": {
+   "config": "stencil-101-1048576",
+   "methods": [
+    "Stencil.stencil3d",
+    "Stencil.copy"
+   ],
+   "compiledBy": [
+    "graal"
+   ],
+   "kernelMinNs": 46784.0,
+   "kernelAvgNs": 53026.140845070426,
+   "compileMs": 32.826032,
+   "driverMs": 11.026324,
+   "compileRuns": 6,
+   "nsys": [
+    {
+     "name": "stencil3d",
+     "instances": 101,
+     "medNs": 31808.0,
+     "avgNs": 31804.9,
+     "minNs": 31552.0,
+     "totalNs": 3212298.0
+    },
+    {
+     "name": "copy",
+     "instances": 101,
+     "medNs": 1120.0,
+     "avgNs": 1129.5,
+     "minNs": 1119.0,
+     "totalNs": 114083.0
+    }
+   ]
+  },
+  "tc": {
+   "config": "stencil-101-1048576",
+   "methods": [
+    "Stencil.stencil3d",
+    "Stencil.copy"
+   ],
+   "compiledBy": [
+    "tc"
+   ],
+   "kernelMinNs": 46336.0,
+   "kernelAvgNs": 52522.74647887324,
+   "compileMs": 51.125734,
+   "driverMs": 11.4748965,
+   "compileRuns": 6,
+   "tcKernels": 2,
+   "fallbacks": 0,
+   "nsys": [
+    {
+     "name": "Stencil_stencil3d",
+     "instances": 101,
+     "medNs": 31552.0,
+     "avgNs": 31562.5,
+     "minNs": 31328.0,
+     "totalNs": 3187815.0
+    },
+    {
+     "name": "Stencil_copy",
+     "instances": 101,
+     "medNs": 1152.0,
+     "avgNs": 1170.7,
+     "minNs": 1151.0,
+     "totalNs": 118239.0
+    }
+   ]
+  }
+ }
+}
