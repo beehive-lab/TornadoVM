@@ -288,6 +288,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());
                 profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+                reportCompileTimes(executable, "tc", profiler, taskMeta.getId());
                 return installed;
             }
         }
@@ -322,6 +323,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             installedCode.setDeviceLaunchTree(result.getDeviceLaunchTree());
             profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+            reportCompileTimes(executable, "graal", profiler, taskMeta.getId());
 
             return installedCode;
         } catch (Exception e) {
@@ -332,6 +334,20 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             } else {
                 throw e;
             }
+        }
+    }
+
+    private static final boolean REPORT_COMPILE_TIMES = Boolean.getBoolean("tornado.tc.compileTimes");
+
+    /**
+     * With {@code -Dtornado.tc.compileTimes=true} (and the profiler enabled), one line per compiled task
+     * from the profiler's task timers: the compiler (Graal or TC) and the driver (NVRTC) time. Used to
+     * compare compile latency of the two compilers on the same tasks.
+     */
+    private static void reportCompileTimes(CompilableTask task, String compiler, TornadoProfiler profiler, String taskId) {
+        if (REPORT_COMPILE_TIMES) {
+            System.out.printf("[compile-times] compiler=%s method=%s.%s task=%s compilerNs=%d driverNs=%d%n", compiler, task.getMethod().getDeclaringClass().getSimpleName(),
+                    task.getMethod().getName(), taskId, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskId), profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskId));
         }
     }
 
