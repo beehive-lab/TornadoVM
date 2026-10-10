@@ -35,6 +35,11 @@ final class Helpers {
     }
 
     // Math.min/max (JLS, java.lang.Math): NaN if either argument is NaN; -0.0 is smaller than +0.0.
+    /** The names of all CUDA helpers (they live in the tc_ and java_ namespaces, which Naming reserves). */
+    static java.util.Set<String> cudaNames() {
+        return CUDA.keySet();
+    }
+
     private static final Map<String, String> CUDA = Map.ofEntries(
             Map.entry("java_fminf", """
                     __device__ static inline float java_fminf(float a, float b) {
