@@ -120,6 +120,11 @@ class TestEntry:
 
 
 ## List of classes to be tested. Include new unittest classes here
+# Graal's check that every compiler plugin registration resolves (graphbuilderconf, which consults
+# the Assertions class). It resolves methods through JVMCI, which on the jdk22plus profile is JVMCI 21
+# patched into a newer JDK and cannot run there, so the check is enabled on JDK 21 only; see main().
+__PLUGIN_CHECK_ASSERTIONS__ = ["-ea:tornado.graal.compiler.nodes.graphbuilderconf...", "-ea:tornado.graal.compiler.debug.Assertions"]
+
 __TEST_THE_WORLD__ = [
 
     ## SPIR-V, OpenCL and CUDA foundation tests
@@ -162,6 +167,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.TestPrebuiltTaskOrdering"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileElementwise"),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.tile.TestTileViewOverloads",
+              testParameters=__PLUGIN_CHECK_ASSERTIONS__),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileMatmul"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileChaining"),
     TestEntry("uk.ac.manchester.tornado.unittests.tile.TestTileRowKernels"),
@@ -941,6 +948,8 @@ def main():
         sys.exit(0)
     global javaVersion
     javaVersion = getJavaVersion()
+    if not javaVersion.startswith("21"):
+        __PLUGIN_CHECK_ASSERTIONS__.clear()
 
     if (args.enable_assertions):
         global TORNADO_CMD
