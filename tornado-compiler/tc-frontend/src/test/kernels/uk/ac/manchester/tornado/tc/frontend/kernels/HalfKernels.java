@@ -20,6 +20,7 @@
  */
 package uk.ac.manchester.tornado.tc.frontend.kernels;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -45,5 +46,15 @@ public final class HalfKernels {
             out.set(i, h);
             back.set(i, h.getHalfFloatValue());
         }
+    }
+
+    /** The local array is read after a branch merge, through a block argument of the merge block. */
+    public static void localAfterBranch(KernelContext context, FloatArray out) {
+        HalfFloat[] local = context.allocateHalfFloatLocalArray(32);
+        if (context.localIdx == 0) {
+            local[0] = new HalfFloat(1.5f);
+        }
+        context.localBarrier();
+        out.set(context.localIdx, local[0].getFloat32());
     }
 }

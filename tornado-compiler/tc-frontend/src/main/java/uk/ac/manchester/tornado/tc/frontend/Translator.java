@@ -890,11 +890,54 @@ final class Translator {
     }
 
     /** A local {@code HalfFloat[]} holds f16 values (HalfFloat is a value type): the only reference array kernels use. */
-    private static Optional<Type> halfElements(Value array) {
+    private Optional<Type> halfElements(Value array) {
         if (array.type() instanceof Type.ArrayType(var element) && element.equals(Type.F16)) {
             return Optional.of(Type.F16); // a HalfFloat[] parameter of an inlined helper
         }
-        return array instanceof Inst inst && LocalArrays.element(inst).filter(Type.F16::equals).isPresent() ? Optional.of(Type.F16) : Optional.empty();
+        return holdsHalfLocalArray(array, Collections.newSetFromMap(new IdentityHashMap<>())) ? Optional.of(Type.F16) : Optional.empty();
+    }
+
+    /**
+     * Whether {@code v} is a local {@code HalfFloat[]}. A block argument (the array read after an
+     * if or in a loop) is one when a definition reaching it on an incoming path is: block arguments
+     * only collapse to their single incoming value once translation has finished.
+     */
+    private boolean holdsHalfLocalArray(Value v, Set<Value> visited) {
+        if (!visited.add(v)) {
+            return false;
+        }
+        if (v instanceof Inst inst) {
+            return LocalArrays.element(inst).filter(Type.F16::equals).isPresent();
+        }
+        var key = argumentKeys.get(v);
+        if (key == null || !(v instanceof BlockArg arg)) {
+            return false;
+        }
+        for (var pred : preds.getOrDefault(arg.block(), List.of())) {
+            var reaching = reachingDefinition(key, pred, Collections.newSetFromMap(new IdentityHashMap<>()));
+            if (reaching != null && holdsHalfLocalArray(reaching, visited)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The value of {@code key} at the end of {@code block}, if defined on a path into it, without creating block arguments. */
+    private Value reachingDefinition(String key, Block block, Set<Block> seen) {
+        if (!seen.add(block)) {
+            return null;
+        }
+        var defs = currentDef.get(block);
+        if (defs != null && defs.containsKey(key)) {
+            return defs.get(key);
+        }
+        for (var pred : preds.getOrDefault(block, List.of())) {
+            var v = reachingDefinition(key, pred, seen);
+            if (v != null) {
+                return v;
+            }
+        }
+        return null;
     }
 
     /** Local (shared or private) arrays are pointers without a header: element i is at i * size. */
