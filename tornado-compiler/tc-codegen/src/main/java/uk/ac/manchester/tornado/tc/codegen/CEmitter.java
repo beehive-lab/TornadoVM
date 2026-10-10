@@ -43,7 +43,6 @@ import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Type.FloatType;
 import uk.ac.manchester.tornado.tc.ir.Type.IntType;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
-import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
 import uk.ac.manchester.tornado.tc.lower.S;
 
 /**
@@ -55,7 +54,7 @@ import uk.ac.manchester.tornado.tc.lower.S;
  * of the function, so a {@code goto} never skips an initialisation (required by CUDA C++).</p>
  *
  * <p>Java semantics: shift counts are masked, {@code >>>} shifts an unsigned value, float-to-integer
- * conversions saturate (CUDA {@code __float2int_rz} family), and {@code Math.min/max} on floating
+ * conversions saturate (the dialect names the conversion), and {@code Math.min/max} on floating
  * point use preamble helpers. Integer {@code + - *} are printed as C operators, as on the Graal path
  * (see {@code compatibility-contract.md} §3).</p>
  *
@@ -153,14 +152,12 @@ public final class CEmitter {
     private final Map<S.Var, String> names = new IdentityHashMap<>();
     private final Map<S.Alloca, String> allocaNames = new IdentityHashMap<>();
     private Map<S.Var, Type> elementTypes = Map.of();
-    private boolean usesHalf;
-    private boolean usesBFloat16;
+    private final CDialect dialect;
+    private final Set<CDialect.Feature> features = java.util.EnumSet.noneOf(CDialect.Feature.class);
     private final String task;
 
     private CEmitter(TargetCaps target, boolean lineComments, String task) {
-        if (target.dialect() != Dialect.CUDA) {
-            throw new EmitException("TC-E4001", "dialect " + target.dialect() + " is not implemented yet (CUDA first, then OpenCL and Metal)");
-        }
+        this.dialect = CDialect.of(target.dialect());
         this.target = target;
         this.lineComments = lineComments;
         this.task = task;
@@ -197,14 +194,16 @@ public final class CEmitter {
         var entry = entryName(f);
         var header = new StringBuilder();
         var tiles = f.blocks().stream().flatMap(b -> b.insts().stream()).anyMatch(i -> i.opcode() instanceof Opcode.Intrinsic(var n) && n.startsWith("tile."));
+        if (tiles) {
+            tileFeatures(f);
+        }
         if (f.kind() == Function.Kind.KERNEL) {
-            // A TileContext kernel is CUDA Tile C++, compiled by nvcc (the runtime looks for __tile_global__).
-            header.append(tiles ? "extern \"C\" __tile_global__ void " : "extern \"C\" __global__ void ").append(entry).append("(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics");
+            header.append(dialect.kernelPrefix(tiles)).append(entry).append('(').append(dialect.abiParameters());
             for (var p : k.params()) {
                 header.append(", ").append(declaration(p.type(), names.get(p)));
             }
         } else {
-            header.append("__device__ static ").append(typeName(f.returnType())).append(' ').append(entry).append('(');
+            header.append(dialect.functionPrefix()).append(typeName(f.returnType())).append(' ').append(entry).append('(');
             header.append(k.params().stream().map(p -> declaration(p.type(), names.get(p))).collect(Collectors.joining(", ")));
         }
         header.append(")\n{\n");
@@ -213,7 +212,7 @@ public final class CEmitter {
             var a = alloca.kind();
             // Java zero-fills `new T[n]` (private arrays); KernelContext local arrays start undefined, as on Graal.
             var init = a.space() == AddressSpace.PRIVATE ? " = {}" : "";
-            line(1, (a.space() == AddressSpace.SHARED ? "__shared__ " : "") + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "]" + init + ";");
+            line(1, dialect.arrayQualifier(a.space()) + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "]" + init + ";");
         }
         // Locals of one type share a declaration (`float x, v;`, `float *a_data, *b_data;`), in first-use order.
         var groups = new java.util.LinkedHashMap<String, List<String>>();
@@ -223,7 +222,7 @@ public final class CEmitter {
             }
             var element = elementTypes.get(v);
             var name = names.get(v);
-            var full = element != null ? typeName(element) + " *" + name : declaration(v.type(), name);
+            var full = element != null ? dataPointer(v, element) + name : declaration(v.type(), name);
             var prefix = full.substring(0, full.length() - name.length());
             var base = prefix.replaceAll("[\\s*]+$", "");
             var stars = prefix.substring(base.length()).replace(" ", "");
@@ -251,25 +250,7 @@ public final class CEmitter {
 
         var emitted = resolveLoopLabels(out.toString());
         var source = new StringBuilder();
-        var includes = new ArrayList<String>();
-        var text = header + emitted;
-        var fp8 = tiles && text.contains("__nv_fp8");
-        if (tiles) {
-            includes.add(TileSpellings.PRELUDE.strip());
-        }
-        // Tile element types are spelled by TileSpellings: their headers follow cuda_tile.h (fp8 builds on fp16).
-        if (usesHalf || tiles && text.contains("__half") || fp8) {
-            includes.add("#include <cuda_fp16.h>");
-        }
-        if (!usesBFloat16 && tiles && text.contains("__nv_bfloat16")) {
-            includes.add("#include <cuda_bf16.h>");
-        }
-        if (fp8) {
-            includes.add("#include <cuda_fp8.h>");
-        }
-        if (usesBFloat16) {
-            includes.add("#include <cuda_bf16.h>");
-        }
+        var includes = dialect.preamble(features);
         includes.forEach(i -> source.append(i).append('\n'));
         if (!includes.isEmpty()) {
             source.append('\n');
@@ -302,7 +283,7 @@ public final class CEmitter {
         switch (stmt) {
             case S.Assign(var target, var value, var loc) -> {
                 var element = elementTypes.get(target);
-                var text = element != null ? "(" + typeName(element) + " *) (" + expr(value).text + ")" : expr(value).text;
+                var text = element != null ? "(" + dataPointer(target, element) + ") (" + expr(value).text + ")" : expr(value).text;
                 var declare = target.type() instanceof Type.TileType t && t.view() ? "auto " : "";
                 line(depth, declare + names.get(target) + " = " + text + ";" + comment(loc));
             }
@@ -311,8 +292,9 @@ public final class CEmitter {
                 // Debug.printf: every thread prints, prefixed with its global id (as on the Graal path).
                 var format = cEscape(op.inst().immediates().requireString("format"));
                 var args = new StringBuilder();
-                for (var d : List.of("x", "y", "z")) {
-                    args.append(", (int) (blockIdx.").append(d).append(" * blockDim.").append(d).append(" + threadIdx.").append(d).append(")");
+                var globalId = Intrinsics.lookup("tornado.thread_id.global", target.dialect(), Type.I32).orElseThrow().template();
+                for (int d = 0; d < 3; d++) {
+                    args.append(", ").append(Intrinsics.fillImmediates(globalId, uk.ac.manchester.tornado.tc.ir.Immediates.of("dim", d)));
                 }
                 op.operands().forEach(o -> args.append(", ").append(expr(o).text));
                 line(depth, "printf(\"tornado[%3d,%3d,%3d]> " + format + "\"" + args + ");" + comment(loc));
@@ -343,7 +325,7 @@ public final class CEmitter {
                 frames.pop();
             }
             case S.Return(var value) -> line(depth, value.map(v -> "return " + expr(v).text + ";").orElse("return;"));
-            case S.Unreachable _u -> line(depth, "__builtin_unreachable();");
+            case S.Unreachable _u -> line(depth, dialect.unreachable());
         }
     }
 
@@ -475,37 +457,18 @@ public final class CEmitter {
         return sb.substring(0, sb.length() - 1);
     }
 
-    /**
-     * A launch from the device: grid = ceil(global / local) per dimension, the child gets the four
-     * ABI regions of its parent and the launch arguments; a failed launch is reported (as on the
-     * host, the child then does not run). TAIL and FIRE_AND_FORGET use the CUDA named streams.
-     */
+    /** A launch from the device ({@code KernelContext.launch}): the dialect prints it, in a block of its own. */
     private void deviceLaunch(Inst launch, List<S.Expr> operands, Loc loc, int depth) {
         var mode = launch.immediates().requireString("mode");
         var child = launch.immediates().requireString("callee");
         var e = operands.stream().map(o -> expr(o).text).toList();
-        var stream = switch (mode) {
-            case "tail" -> ", 0, cudaStreamTailLaunch";
-            case "fire_and_forget" -> ", 0, cudaStreamFireAndForget";
-            default -> "";
-        };
-        var args = new StringBuilder("_kernel_context, _constant_region, _local_region, _atomics");
-        e.subList(6, e.size()).forEach(a -> args.append(", ").append(a));
+        var unsigned = operands.subList(0, 3).stream().map(o -> "(unsigned) " + wrap(expr(o), UNARY)).toList();
         var shortName = child.substring(child.lastIndexOf('.', child.lastIndexOf('.') - 1) + 1);
-        helpers.add("tc_device_launch_check");
-        line(depth, "{" + comment(loc));
-        line(depth + 1, "dim3 _dp_block(" + e.get(3) + ", " + e.get(4) + ", " + e.get(5) + ");");
-        var grid = new ArrayList<String>();
-        for (int d = 0; d < 3; d++) {
-            var c = "xyz".charAt(d);
-            // Whole blocks covering the global size; a global size of 1 is one block.
-            grid.add(e.get(d).equals("1") ? "1" : "((unsigned) " + wrap(expr(operands.get(d)), UNARY) + " + _dp_block." + c + " - 1) / _dp_block." + c);
-        }
-        line(depth + 1, "dim3 _dp_grid(" + String.join(", ", grid) + ");");
-        line(depth + 1, deviceKernelEntry(child) + "<<<_dp_grid, _dp_block" + stream + ">>>(" + args + ");");
-        // --threadInfo: the launching thread reports the child's grid in the host's "Task info" format.
+        // --threadInfo reports the child in the host's "Task info" format, named by the task.
         var label = cEscape(task + " -> " + shortName + " (device launch, " + mode.toUpperCase(java.util.Locale.ROOT) + ")");
-        line(depth + 1, "tc_device_launch_check(_kernel_context, \"" + shortName + "\", \"" + label + "\", " + e.get(0) + ", " + e.get(1) + ", " + e.get(2) + ", _dp_grid, _dp_block);");
+        var site = new CDialect.Launch(child, mode, e.subList(0, 3), unsigned, e.subList(3, 6), e.subList(6, e.size()), label, shortName);
+        line(depth, "{" + comment(loc));
+        dialect.deviceLaunch(site, helpers).forEach(l -> line(depth + 1, l));
         line(depth, "}");
     }
 
@@ -554,7 +517,7 @@ public final class CEmitter {
         return switch (e) {
             case S.VarRef(var v) -> new R(names.get(v), ATOM);
             case S.Const(var inst) -> constant(inst);
-            case S.AllocaRef(var alloca) -> new R("(unsigned char *) " + allocaNames.get(alloca), UNARY);
+            case S.AllocaRef(var alloca) -> new R("(" + dialect.pointer(alloca.kind().space(), "unsigned char") + ") " + allocaNames.get(alloca), UNARY);
             case S.Op(var inst, var ops) -> op(inst, ops);
         };
     }
@@ -572,7 +535,7 @@ public final class CEmitter {
             case Opcode.Convert(var op) -> convert(op, ops.get(0), inst.type());
             case Opcode.PointerOffset _p -> {
                 // Offsets are in bytes: a typed data pointer is converted back before adding.
-                var base = ops.get(0) instanceof S.VarRef(var v) && elementTypes.containsKey(v) ? "(unsigned char *) " + names.get(v) : wrap(expr(ops.get(0)), ADD);
+                var base = ops.get(0) instanceof S.VarRef(var v) && elementTypes.containsKey(v) ? "(" + typeName(v.type()) + ") " + names.get(v) : wrap(expr(ops.get(0)), ADD);
                 yield new R(base + " + " + wrap(expr(ops.get(1)), ADD + 1), ADD);
             }
             case Opcode.Load _l -> deref(ops.get(0), inst.type());
@@ -674,34 +637,15 @@ public final class CEmitter {
         return switch (op) {
             case SEXT, TRUNC, I2F, FEXT, FTRUNC -> cast(to, v);
             case ZEXT -> from.equals(Type.I1) ? cast(to, v) : cast(to, new R("(" + unsignedName(from) + ") " + wrap(v, UNARY), UNARY));
-            case F2I_SAT -> {
-                var fn = (from.equals(Type.F64) ? "__double2" : "__float2") + (to.equals(Type.I64) ? "ll_rz" : "int_rz");
-                if (from.equals(Type.F16)) {
-                    usesHalf = true;
-                    fn = to.equals(Type.I64) ? "__half2ll_rz" : "__half2int_rz";
-                }
-                yield new R(fn + "(" + v.text + ")", ATOM);
-            }
-            case BITCAST -> {
-                usesHalf |= from.equals(Type.F16) || to.equals(Type.F16);
-                var fn = switch (from.text() + "->" + to.text()) {
-                    case "f32->i32" -> "__float_as_int";
-                    case "i32->f32" -> "__int_as_float";
-                    case "f64->i64" -> "__double_as_longlong";
-                    case "i64->f64" -> "__longlong_as_double";
-                    case "f16->i16" -> "__half_as_short";
-                    case "i16->f16" -> "__short_as_half";
-                    default -> throw new EmitException("TC-E4001", "bitcast " + from.text() + " to " + to.text() + " is not supported on CUDA yet");
-                };
-                yield new R(fn + "(" + v.text + ")", ATOM);
-            }
+            case F2I_SAT -> new R(dialect.saturatingToInt(from, to, features) + "(" + v.text + ")", ATOM);
+            case BITCAST -> new R(dialect.bitcast(from, to, features) + "(" + v.text + ")", ATOM);
         };
     }
 
     private R cast(Type to, R value) {
-        if (to.equals(Type.F16)) {
-            usesHalf = true;
-            return new R("__float2half_rn(" + value.text + ")", ATOM);
+        var special = dialect.convertTo(to, value.text, features);
+        if (special.isPresent()) {
+            return new R(special.get(), ATOM);
         }
         return new R("(" + typeName(to) + ") " + wrap(value, UNARY), UNARY);
     }
@@ -728,24 +672,15 @@ public final class CEmitter {
 
     private R floatConstant(double value, Type type) {
         boolean single = !type.equals(Type.F64);
-        if (Double.isNaN(value)) {
-            return new R(single ? "__int_as_float(0x7fc00000)" : "__longlong_as_double(0x7ff8000000000000LL)", ATOM);
-        }
-        if (Double.isInfinite(value)) {
-            var bits = single ? (value > 0 ? "__int_as_float(0x7f800000)" : "__int_as_float(0xff800000)") : (value > 0 ? "__longlong_as_double(0x7ff0000000000000LL)" : "__longlong_as_double(0xfff0000000000000LL)");
-            return new R(bits, ATOM);
+        if (Double.isNaN(value) || Double.isInfinite(value)) {
+            // NaN and infinities from their bits (C has no portable literal for them).
+            var bits = single ? (Double.isNaN(value) ? "0x7fc00000" : value > 0 ? "0x7f800000" : "0xff800000")
+                    : (Double.isNaN(value) ? "0x7ff8000000000000LL" : value > 0 ? "0x7ff0000000000000LL" : "0xfff0000000000000LL");
+            var fn = single ? dialect.bitcast(Type.I32, Type.F32, features) : dialect.bitcast(Type.I64, Type.F64, features);
+            return new R(fn + "(" + bits + ")", ATOM);
         }
         var text = single ? Float.toString((float) value) + "f" : Double.toString(value);
-        var literal = new R(text, text.startsWith("-") ? UNARY : ATOM);
-        if (type.equals(Type.F16)) {
-            usesHalf = true;
-            return new R("__float2half_rn(" + text + ")", ATOM);
-        }
-        if (type.equals(Type.BF16)) {
-            usesBFloat16 = true;
-            return new R("__float2bfloat16_rn(" + text + ")", ATOM);
-        }
-        return literal;
+        return dialect.convertTo(type, text, features).map(c -> new R(c, ATOM)).orElseGet(() -> new R(text, text.startsWith("-") ? UNARY : ATOM));
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
@@ -754,8 +689,8 @@ public final class CEmitter {
             return new R(TileSpellings.expression(name, inst, ops.stream().map(o -> wrap(expr(o), UNARY)).toList()), COND);
         }
         if (name.equals("tornado.vector.make")) {
-            // A vector value from its lanes: make_float4(x, y, z, w).
-            return new R("make_" + typeName(inst.type()) + "(" + String.join(", ", ops.stream().map(o -> expr(o).text).toList()) + ")", ATOM);
+            // A vector value from its lanes (CUDA: make_float4(x, y, z, w)).
+            return new R(dialect.vector(typeName(inst.type()), ops.stream().map(o -> expr(o).text).toList()), ATOM);
         }
         // A void intrinsic (an atomic update) is typed by its value operand, the last one.
         var type = inst.producesValue() ? inst.type() : (ops.isEmpty() ? Type.VOID : ops.get(ops.size() - 1).type());
@@ -765,7 +700,7 @@ public final class CEmitter {
         if (template.contains("$&0")) {
             // The address of the element operand 0 points to: `&a_data[i]`, or a typed cast of the pointer.
             var element = deref(ops.get(0), type);
-            var address = element.text.startsWith("*((") ? "((" + typeName(type) + " *) " + wrap(expr(ops.get(0)), UNARY) + ")" : "&" + element.text;
+            var address = element.text.startsWith("*((") ? "((" + pointerTo(ops.get(0), type) + ") " + wrap(expr(ops.get(0)), UNARY) + ")" : "&" + element.text;
             template = template.replace("$&0", address);
         }
         var operands = ops.stream().map(this::expr).toList();
@@ -791,7 +726,7 @@ public final class CEmitter {
         if (array != null) {
             return new R(array + "[0]", ATOM);
         }
-        return new R("*((" + typeName(type) + " *) " + wrap(expr(pointer), UNARY) + ")", UNARY);
+        return new R("*((" + pointerTo(pointer, type) + ") " + wrap(expr(pointer), UNARY) + ")", UNARY);
     }
 
     /** The C name of a typed data pointer or local array whose elements have {@code type}, else null. */
@@ -899,6 +834,7 @@ public final class CEmitter {
         return t.endsWith("*") ? t + name : t + " " + name;
     }
 
+    /** The C core's own types; the dialect spells the rest (pointers, half, bfloat16, vectors). */
     private String typeName(Type type) {
         return switch (type) {
             case IntType(var bits) -> switch (bits) {
@@ -908,30 +844,43 @@ public final class CEmitter {
                 case 32 -> "int";
                 default -> "long long";
             };
-            case FloatType f -> switch (f.kind()) {
-                case F16 -> {
-                    usesHalf = true;
-                    yield "half";
-                }
-                case BF16 -> {
-                    usesBFloat16 = true;
-                    yield "__nv_bfloat16";
-                }
-                case F32 -> "float";
-                case F64 -> "double";
-            };
-            case Type.PointerType p -> "unsigned char *";
+            case FloatType f when f.kind() == FloatType.Kind.F32 -> "float";
+            case FloatType f when f.kind() == FloatType.Kind.F64 -> "double";
+            case Type.PointerType(var space) -> dialect.pointer(space, "unsigned char");
             case Type.TileType t when !t.view() -> TileSpellings.tileType(t);
-            case Type.VectorType(var element, var length) when element.equals(Type.F16) && length == 2 -> {
-                usesHalf = true;
-                yield "half2";
-            }
-            // Register vectors (tensor-core fragments): the CUDA built-in vector types.
-            case Type.VectorType(var element, var length) when length >= 2 && length <= 4 && !element.equals(Type.F16) && !element.equals(Type.BF16) && !element.equals(Type.I1) ->
-                (element.equals(Type.I8) ? "char" : typeName(element).replace("long long", "longlong")) + length; // CUDA charN lanes are signed char
             case Type.VoidType v -> "void";
-            default -> throw new EmitException("TC-E4001", "type " + type.text() + " is not supported on CUDA yet");
+            default -> dialect.typeName(type, features).orElseThrow(() -> new EmitException("TC-E4001", "type " + type.text() + " is not supported on " + target.dialect() + " yet"));
         };
+    }
+
+    /** The typed data pointer of {@code v}, whose elements are {@code element}: {@code float *}. */
+    private String dataPointer(S.Var v, Type element) {
+        return dialect.pointer(space(v.type()), typeName(element));
+    }
+
+    /** A pointer to {@code element} in the address space of {@code pointer}. */
+    private String pointerTo(S.Expr pointer, Type element) {
+        return dialect.pointer(space(pointer.type()), typeName(element));
+    }
+
+    private static AddressSpace space(Type pointer) {
+        return pointer instanceof Type.PointerType(var space) ? space : AddressSpace.GLOBAL;
+    }
+
+    /** The element types of a CUDA Tile kernel's values: their headers follow the tile prelude. */
+    private void tileFeatures(Function f) {
+        features.add(CDialect.Feature.TILES);
+        f.blocks().stream().flatMap(b -> b.insts().stream()).forEach(i -> {
+            if (i.type() instanceof Type.TileType t) {
+                switch (t.dtype()) {
+                    case "F16" -> features.add(CDialect.Feature.HALF);
+                    case "BF16" -> features.add(CDialect.Feature.BFLOAT16);
+                    case "FP8_E4M3", "FP8_E5M2" -> features.add(CDialect.Feature.FP8);
+                    default -> {
+                    }
+                }
+            }
+        });
     }
 
     private static String unsignedName(Type type) {
