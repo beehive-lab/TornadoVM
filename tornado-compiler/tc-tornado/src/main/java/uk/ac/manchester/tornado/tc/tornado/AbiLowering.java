@@ -140,7 +140,7 @@ public final class AbiLowering {
                             if (elements.containsKey(inst.operand(k))) {
                                 var array = inst.operand(k);
                                 var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
-                                data.setName(array.name().isEmpty() ? "data" : array.name() + "_data");
+                                data.setDerivedName(array.name().isEmpty() ? "data" : array.name() + "_data");
                                 inst.setOperand(k, data);
                             }
                         }
@@ -278,7 +278,11 @@ public final class AbiLowering {
         var b = IrBuilder.insertingBefore(inst);
         var count = b.load(inst.operand(0), Type.I64);
         var length = inst.type().equals(Type.I64) ? count : b.convert(ConvertOp.TRUNC, count, Type.I32);
-        length.setName(!inst.name().isEmpty() && !inst.name().chars().allMatch(Character::isDigit) ? inst.name() : inst.operand(0).name() + "_len");
+        if (!inst.name().isEmpty() && !inst.name().chars().allMatch(Character::isDigit)) {
+            length.setName(inst.name());
+        } else {
+            length.setDerivedName(inst.operand(0).name() + "_len");
+        }
         inst.replaceAllUsesWith(length);
         inst.erase();
     }
@@ -295,7 +299,7 @@ public final class AbiLowering {
             return b.pointerOffset(array, b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element))));
         }
         var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
-        data.setName(array.name().isEmpty() ? "data" : array.name() + "_data");
+        data.setDerivedName(array.name().isEmpty() ? "data" : array.name() + "_data");
         var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);
         var scaled = b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element)));
         return b.pointerOffset(data, scaled);

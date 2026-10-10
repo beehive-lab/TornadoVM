@@ -90,9 +90,14 @@ public final class CEmitter {
     /** A kernel launch from the device ({@code KernelContext.launch}); immediates {@code callee} and {@code mode}. */
     public static final String DEVICE_LAUNCH = "tornado.device_launch";
 
-    /** The entry point of a kernel launched from the device ({@code Owner.method}): {@code Owner_method_dp}. */
+    /** The TC function name of a kernel launched from the device ({@code Owner.method}): {@code Owner.method_dp}. */
+    public static String deviceKernelName(String ownerDotMethod) {
+        return ownerDotMethod + "_dp";
+    }
+
+    /** Its entry point, as {@link #entryName} spells that function name: {@code Owner_method_dp}. */
     public static String deviceKernelEntry(String ownerDotMethod) {
-        return (ownerDotMethod + "_dp").replace('.', '_').replace('$', '_');
+        return deviceKernelName(ownerDotMethod).replace('.', '_').replace('$', '_');
     }
 
     /**
@@ -220,14 +225,9 @@ public final class CEmitter {
             if (v.type() instanceof Type.TileType t && t.view()) {
                 continue; // a view's C++ type cannot be named: `auto` at its definition
             }
-            var element = elementTypes.get(v);
-            var name = names.get(v);
-            var full = element != null ? dataPointer(v, element) + name : declaration(v.type(), name);
-            var prefix = full.substring(0, full.length() - name.length());
-            var base = prefix.replaceAll("[\\s*]+$", "");
-            var stars = prefix.substring(base.length()).replace(" ", "");
+            var d = declarator(v);
             // Pointers and scalars of one base type get separate lines: `float x, v;` and `float *a_data, *b_data;`.
-            groups.computeIfAbsent(base + (stars.isEmpty() ? "" : " *"), x -> new ArrayList<>()).add(stars + name);
+            groups.computeIfAbsent(d.base() + (d.pointer() ? " *" : ""), x -> new ArrayList<>()).add((d.pointer() ? "*" : "") + d.name());
         }
         groups.forEach((key, declarators) -> {
             var base = key.endsWith(" *") ? key.substring(0, key.length() - 2) : key;
@@ -501,7 +501,7 @@ public final class CEmitter {
         return switch (e) {
             case S.VarRef(var v) -> new R(names.get(v), ATOM);
             case S.Const(var inst) -> constant(inst);
-            case S.AllocaRef(var alloca) -> new R("(" + dialect.pointer(alloca.kind().space(), "unsigned char") + ") " + allocaNames.get(alloca), UNARY);
+            case S.AllocaRef(var alloca) -> new R("(" + pointer(alloca.kind().space(), "unsigned char") + ") " + allocaNames.get(alloca), UNARY);
             case S.ElementAddress address -> expr(address.address());
             case S.Op(var inst, var ops) -> op(inst, ops);
         };
@@ -788,8 +788,7 @@ public final class CEmitter {
     // ---------------------------------------------------------------- types and names
 
     private String declaration(Type type, String name) {
-        var t = typeName(type);
-        return t.endsWith("*") ? t + name : t + " " + name;
+        return type instanceof Type.PointerType ? typeName(type) + name : typeName(type) + " " + name;
     }
 
     /** The C core's own types; the dialect spells the rest (pointers, half, bfloat16, vectors). */
@@ -804,7 +803,7 @@ public final class CEmitter {
             };
             case FloatType f when f.kind() == FloatType.Kind.F32 -> "float";
             case FloatType f when f.kind() == FloatType.Kind.F64 -> "double";
-            case Type.PointerType(var space) -> dialect.pointer(space, "unsigned char");
+            case Type.PointerType(var space) -> pointer(space, "unsigned char");
             case Type.TileType t when !t.view() -> dialect.tileType(t);
             case Type.VoidType v -> "void";
             default -> dialect.typeName(type, features).orElseThrow(() -> new EmitException("TC-E4001", "type " + type.text() + " is not supported on " + target.dialect() + " yet"));
@@ -813,12 +812,36 @@ public final class CEmitter {
 
     /** The typed data pointer of {@code v}, whose elements are {@code element}: {@code float *}. */
     private String dataPointer(S.Var v, Type element) {
-        return dialect.pointer(space(v.type()), typeName(element));
+        return pointer(space(v.type()), typeName(element));
     }
 
     /** A pointer to {@code element} in the address space of {@code pointer}. */
     private String pointerTo(S.Expr pointer, Type element) {
-        return dialect.pointer(space(pointer.type()), typeName(element));
+        return pointer(space(pointer.type()), typeName(element));
+    }
+
+    /** A pointer type: the dialect's pointee and a star, {@code float *}. */
+    private String pointer(AddressSpace space, String element) {
+        return dialect.pointee(space, element) + " *";
+    }
+
+    /**
+     * A local's declaration split into the part a group shares and its own declarator: {@code float}
+     * and {@code *a_data} for a data pointer, {@code int} and {@code i} for a scalar.
+     */
+    private record Declarator(String base, boolean pointer, String name) {
+    }
+
+    private Declarator declarator(S.Var v) {
+        var name = names.get(v);
+        var element = elementTypes.get(v);
+        if (element != null) {
+            return new Declarator(dialect.pointee(space(v.type()), typeName(element)), true, name);
+        }
+        if (v.type() instanceof Type.PointerType(var space)) {
+            return new Declarator(dialect.pointee(space, "unsigned char"), true, name);
+        }
+        return new Declarator(typeName(v.type()), false, name);
     }
 
     private static AddressSpace space(Type pointer) {

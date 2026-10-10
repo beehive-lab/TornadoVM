@@ -200,7 +200,7 @@ public final class ValueSpecialisation {
                             for (var lengthUser : List.copyOf(user.users())) {
                                 if (lengthUser.opcode() instanceof Opcode.ArrayLength && (lengthUser.type().equals(Type.I64) || lengths.get(field) <= Integer.MAX_VALUE)) {
                                     var constant = IrBuilder.insertingBefore(lengthUser).constInt(lengthUser.type(), lengths.get(field));
-                                    constant.setName(field + "_len");
+                                    constant.setDerivedName(field + "_len");
                                     lengthUser.replaceAllUsesWith(constant);
                                     lengthUser.erase();
                                     folded++;

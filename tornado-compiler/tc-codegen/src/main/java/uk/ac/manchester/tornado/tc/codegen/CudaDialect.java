@@ -66,8 +66,8 @@ final class CudaDialect implements CDialect {
     }
 
     @Override
-    public String pointer(AddressSpace space, String element) {
-        return element + " *";
+    public String pointee(AddressSpace space, String element) {
+        return element; // generic addressing: CUDA pointers carry no address space
     }
 
     @Override

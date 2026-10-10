@@ -187,9 +187,14 @@ final class Translator {
         return new Translated(translator.run(), translator.callees);
     }
 
-    /** The TC name of a Java static method: {@code Owner.name}, plus a descriptor hash for overloads. */
+    /**
+     * The TC name of a Java method other than the kernel: the fully qualified owner, the name and the
+     * parameter descriptor spelled as identifier characters ({@code pkg.Utils.max_II}), so methods of
+     * same-named classes in different packages, and overloads, never share a name.
+     */
     static String calleeName(String owner, String name, String descriptor) {
-        return owner.substring(owner.lastIndexOf('/') + 1).replace('$', '_') + "." + name + "_" + Integer.toHexString(descriptor.hashCode());
+        var parameters = descriptor.substring(1, descriptor.indexOf(')')).replace('/', '_').replace(";", "").replace('[', 'A').replace('$', '_');
+        return owner.replace('/', '.') + "." + name.replace('<', '_').replace('>', '_') + "_" + parameters;
     }
 
     private Function run() {
@@ -280,9 +285,47 @@ final class Translator {
         }
     }
 
+    /**
+     * Whether instruction {@code index} is the {@code ifne} of an {@code assert}: javac tests the
+     * class's synthetic {@code $assertionsDisabled} and jumps over the check when it is set. Assertions
+     * are always disabled in kernels, so only the jump is kept and the check is never translated.
+     */
+    private boolean isAssertionGuard(int index) {
+        if (index < 1 || insns.get(index).opcode() != IFNE || insns.get(index - 1).opcode() != GETSTATIC) {
+            return false;
+        }
+        var ref = classFile.constants().member(insns.get(index - 1).index());
+        return ref.name().equals("$assertionsDisabled") && ref.descriptor().equals("Z");
+    }
+
+    /**
+     * {@code null} stored straight into a local declared as a TornadoVM vector ({@code Byte3 pixel =
+     * null;} before a switch assigns it): vectors are values, so the local starts as a zero vector.
+     * Java could only read it after an assignment (a read of null would throw).
+     */
+    private Optional<Value> nullVector(int index) {
+        if (index + 2 >= insns.size()) {
+            return Optional.empty();
+        }
+        var next = insns.get(index + 1);
+        int slot = next.opcode() == ASTORE ? next.index() : next.opcode() >= ASTORE_0 && next.opcode() <= ASTORE_3 ? next.opcode() - ASTORE_0 : -1;
+        if (slot < 0) {
+            return Optional.empty();
+        }
+        var local = code.localAt(slot, insns.get(index + 2).bci());
+        if (local.isEmpty() || !(Bindings.type(local.get().descriptor()) instanceof Type.VectorType(var element, var length))) {
+            return Optional.empty();
+        }
+        var zero = element instanceof Type.FloatType ? builder.constFloat(element, 0) : builder.constInt(element, 0);
+        return Optional.of(builder.intrinsic("tornado.vector.make", new Type.VectorType(element, length), java.util.Collections.nCopies(length, zero)));
+    }
+
     /** Bytecode successors of {@code block}, one entry per edge. */
     private List<Block> successorsOf(Block block) {
         var last = insns.get(lastIndex(block));
+        if (isAssertionGuard(lastIndex(block))) {
+            return List.of(blockAt.get(last.targets()[0]));
+        }
         var successors = new ArrayList<Block>();
         for (var target : last.targets()) {
             successors.add(blockAt.get(target));
@@ -574,7 +617,7 @@ final class Translator {
         switch (op) {
             case NOP -> {
             }
-            case ACONST_NULL -> throw error("TC-E1002", "null references are not supported in kernels", insn.bci());
+            case ACONST_NULL -> push(nullVector(i).orElseThrow(() -> error("TC-E1002", "null references are not supported in kernels", insn.bci())));
             case BIPUSH, SIPUSH -> push(b.constInt(Type.I32, insn.index()));
             case LDC, LDC_W, LDC2_W -> push(switch (classFile.constants().loadable(insn.index())) {
                 case Integer v -> b.constInt(Type.I32, v);
@@ -701,6 +744,10 @@ final class Translator {
                     push(enumField(receiver, enumInfo.get().fields().get(ref.name()), Bindings.type(ref.descriptor())));
                     break;
                 }
+                if (op == GETSTATIC && ref.name().equals("$assertionsDisabled") && ref.descriptor().equals("Z")) {
+                    push(b.constInt(Type.I32, 1)); // assertions are disabled in kernels (see isAssertionGuard)
+                    break;
+                }
                 if (op == GETSTATIC && ref.descriptor().equals("L" + Bindings.DEVICE_KERNEL + ";")) {
                     var child = source.deviceKernel(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1013", "the DeviceKernel " + ref.owner().replace('/', '.') + "." + ref.name()
                             + " cannot be resolved: KernelContext.launch needs a static final field, e.g. static final DeviceKernel CHILD = DeviceKernel.of(MyKernels::child)", insn.bci()));
@@ -710,8 +757,6 @@ final class Translator {
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
                 if (binding instanceof Intrinsic(var name, var type, var immediates)) {
                     push(b.intrinsic(name, immediates, type, List.of()));
-                } else if (binding instanceof Bindings.ConstantField(var value)) {
-                    push(b.constInt(Type.I32, value));
                 }
             }
             case PUTFIELD -> {
@@ -827,6 +872,10 @@ final class Translator {
     private void conditionalBranch(Block block, Value condition, Insn insn) {
         var successors = successorsOf(block);
         leaveTo(block, successors);
+        if (successors.size() == 1) {
+            builder.br(successors.get(0), List.of()); // an assertion guard: assertions are disabled
+            return;
+        }
         builder.condBr(condition, successors.get(0), List.of(), successors.get(1), List.of());
     }
 
@@ -1055,11 +1104,12 @@ final class Translator {
             if (!(args.get(next++) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var m))) {
                 throw error("TC-E1013", "the DeviceLaunchMode of KernelContext.launch must be a constant", bci);
             }
-            mode = switch ((int) m) {
-                case 1 -> "tail";
-                case 2 -> "fire_and_forget";
-                default -> "default";
-            };
+            // By the constant's name, not its position: DEFAULT, TAIL, FIRE_AND_FORGET.
+            var constants = source.enumInfo(Bindings.DEVICE_LAUNCH_MODE).orElseThrow(() -> error("TC-E1007", "DeviceLaunchMode is not on the class path of the task", bci)).constants();
+            if (m < 0 || m >= constants.size()) {
+                throw error("TC-E1013", "the DeviceLaunchMode of KernelContext.launch must be one of its constants", bci);
+            }
+            mode = constants.get((int) m).toLowerCase(java.util.Locale.ROOT);
         }
         var one = builder.constInt(Type.I32, 1);
         var operands = new ArrayList<Value>();
@@ -1078,7 +1128,7 @@ final class Translator {
             }
             operands.add(v);
         }
-        builder.intrinsic("tornado.device_launch", Immediates.of("mode", mode, "callee", child.owner().replace('/', '.') + "." + child.name()), Type.VOID, operands);
+        builder.intrinsic("tornado.device_launch", Immediates.of("mode", mode, "callee", child.owner().replace('/', '.') + "." + child.name(), "descriptor", child.descriptor()), Type.VOID, operands);
     }
 
     private static final String PARAM_UNCHANGED = "tc.vector_param_unchanged";
@@ -1348,7 +1398,6 @@ final class Translator {
                 stack = rebuilt;
             }
             case Bindings.InlineJava j -> throw error("TC-E9002", "inline-Java binding reached the intrinsic switch", insn.bci());
-            case Bindings.ConstantField c -> throw error("TC-E9002", "a constant field bound as a method", insn.bci());
             case Bindings.Atomic(var name, var value, var returnsPrevious) -> {
                 // args: context, array, index, values... A local array is a pointer: pass the element's
                 // address; a global array stays (array, index) until ABI lowering gives its address.

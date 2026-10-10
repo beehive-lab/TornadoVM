@@ -79,8 +79,11 @@ sealed interface CDialect permits CudaDialect {
     /** The qualifier of a kernel-local array declaration in {@code space} (with a trailing space). */
     String arrayQualifier(AddressSpace space);
 
-    /** A pointer to {@code element} (an already spelled type) in {@code space}: {@code float *}. */
-    String pointer(AddressSpace space, String element);
+    /**
+     * The pointee of a pointer to {@code element} (an already spelled type) in {@code space}, with any
+     * address-space qualifier: {@code float} on CUDA; the core adds the {@code *}.
+     */
+    String pointee(AddressSpace space, String element);
 
     /** A type the C core does not spell itself (half, bfloat16, vectors); empty if unsupported. */
     Optional<String> typeName(Type type, Set<Feature> features);

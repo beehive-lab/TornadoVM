@@ -32,6 +32,7 @@ public abstract sealed class Value permits Inst, BlockArg {
 
     private Type type;
     private String name;
+    private boolean derivedName;
     private final List<Inst> users = new ArrayList<>();
 
     protected Value(Type type, String name) {
@@ -54,6 +55,21 @@ public abstract sealed class Value permits Inst, BlockArg {
 
     public void setName(String name) {
         this.name = name == null ? "" : name;
+        this.derivedName = false;
+    }
+
+    /**
+     * Names the value after another one ({@code a_data} after {@code a}): a name TC made, which the
+     * structurizer does not treat as a Java variable the programmer named.
+     */
+    public void setDerivedName(String name) {
+        setName(name);
+        this.derivedName = !this.name.isEmpty();
+    }
+
+    /** Whether the name was made by TC ({@link #setDerivedName}) rather than taken from the source. */
+    public boolean hasDerivedName() {
+        return derivedName;
     }
 
     /** Users of this value, once per operand slot. */

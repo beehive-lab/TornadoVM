@@ -199,7 +199,11 @@ public final class Inst extends Value {
      */
     public Inst copyShell() {
         var copy = new Inst(opcode, type());
-        copy.setName(name());
+        if (hasDerivedName()) {
+            copy.setDerivedName(name());
+        } else {
+            copy.setName(name());
+        }
         copy.setLoc(loc);
         attributes.forEach(copy::addAttribute);
         copy.immediates = immediates;

@@ -131,10 +131,15 @@ public final class TcCompiler {
     public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
             List<ValueSpecialisation.Fact> facts) {
         var parent = compileJava(source, className, methodName, descriptor, target, options, facts, null);
-        return parent.compiler() == null || !parent.compilation().succeeded() ? parent.compilation() : withDeviceLaunches(source, parent, target, options);
+        return parent.function() == null || !parent.compilation().succeeded() ? parent.compilation() : withDeviceLaunches(source, parent, target, options);
     }
 
-    private record Compiled(Compilation compilation, TcCompiler compiler) {
+    /** A compilation, with the lowered function and the emitted parts when it succeeded (null otherwise). */
+    private record Compiled(Compilation compilation, Function function, CEmitter.Result emitted) {
+    }
+
+    /** A kernel launched from the device: {@code Owner.method} and its JVM descriptor. */
+    private record Launched(String callee, String descriptor) {
     }
 
     /**
@@ -143,23 +148,31 @@ public final class TcCompiler {
      * Each child is compiled once, so launch cycles (ping launches pong launches ping) terminate.
      */
     private static Compilation withDeviceLaunches(Frontend.BytecodeSource source, Compiled parent, TargetCaps target, TcOptions options) {
-        var work = new java.util.ArrayDeque<>(launchedKernels(parent.compiler().function));
+        var work = new java.util.ArrayDeque<>(launchedKernels(parent.function()));
         if (work.isEmpty()) {
             return parent.compilation();
         }
-        var seen = new java.util.HashSet<String>();
+        var seen = new java.util.HashMap<String, String>();
         var children = new ArrayList<CEmitter.Result>();
         long nanos = 0;
         while (!work.isEmpty()) {
-            var child = work.poll();
-            if (!seen.add(child)) {
+            var launch = work.poll();
+            var child = launch.callee();
+            var known = seen.putIfAbsent(child, launch.descriptor());
+            if (known != null) {
+                if (!known.equals(launch.descriptor())) {
+                    // Each launched kernel is one entry point named after its method (CEmitter.deviceKernelName).
+                    var p = parent.compilation();
+                    var problem = new Diagnostic("TC-E3208", "two overloads of " + child + " are launched from the device", "", Loc.UNKNOWN);
+                    return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics());
+                }
                 continue;
             }
             int dot = child.lastIndexOf('.');
-            var compiled = compileJava(source, child.substring(0, dot), child.substring(dot + 1), null, target, options, List.of(), child + "_dp");
+            var compiled = compileJava(source, child.substring(0, dot), child.substring(dot + 1), launch.descriptor(), target, options, List.of(), CEmitter.deviceKernelName(child));
             var c = compiled.compilation();
             nanos += c.nanos();
-            if (!c.succeeded() || compiled.compiler() == null) {
+            if (!c.succeeded() || compiled.function() == null) {
                 var problems = c.diagnostics().stream()
                         .map(d -> new Diagnostic(d.code(), "in " + child + ", launched from the device: " + d.message(), d.where(), d.loc(), d.line())).toList();
                 var p = parent.compilation();
@@ -172,21 +185,21 @@ public final class TcCompiler {
                 var problem = new Diagnostic("TC-E3207", "kernel " + child + ", launched from the device, uses atomic counters", "", Loc.UNKNOWN);
                 return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics());
             }
-            children.add(compiled.compiler().emitted);
-            work.addAll(launchedKernels(compiled.compiler().function));
+            children.add(compiled.emitted());
+            work.addAll(launchedKernels(compiled.function()));
         }
         var p = parent.compilation();
-        var source1 = CEmitter.link(parent.compiler().emitted, children, target);
+        var source1 = CEmitter.link(parent.emitted(), children, target);
         return new Compilation(p.function(), p.target(), true, source1, p.entryName(), p.stages(), p.diagnostics(), p.nanos() + nanos, p.domain(), p.atomics());
     }
 
-    /** The {@code Owner.method} names of the kernels {@code function} launches from the device. */
-    private static List<String> launchedKernels(Function function) {
-        var names = new ArrayList<String>();
+    /** The kernels {@code function} launches from the device. */
+    private static List<Launched> launchedKernels(Function function) {
+        var names = new ArrayList<Launched>();
         for (var block : function.blocks()) {
             for (var inst : block.insts()) {
                 if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(CEmitter.DEVICE_LAUNCH)) {
-                    names.add(inst.immediates().requireString("callee"));
+                    names.add(new Launched(inst.immediates().requireString("callee"), inst.immediates().requireString("descriptor")));
                 }
             }
         }
@@ -207,7 +220,7 @@ public final class TcCompiler {
         var bytecode = new Stage("bytecode", Kind.BYTECODE, options.htmlReport() || options.dumps("bytecode") ? translated.bytecode() : "", 0, 0);
         if (kernel.isEmpty()) {
             var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
-            return new Compiled(new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of())), null);
+            return new Compiled(new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of())), null, null);
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
         compiler.facts = List.copyOf(facts);
@@ -218,7 +231,7 @@ public final class TcCompiler {
         var size = stages.size() > 1 ? stages.get(1).size() : 0;
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
         return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics()),
-                compiler);
+                c.succeeded() ? compiler.function : null, c.succeeded() ? compiler.emitted : null);
     }
 
     /**

@@ -412,7 +412,7 @@ public final class Structurizer {
     /** Named from the class file's local variables (not a number, not a name TC derived). */
     private static boolean hasJavaName(Inst inst) {
         var name = inst.name();
-        return !name.isEmpty() && !name.chars().allMatch(Character::isDigit) && !name.endsWith("_data") && !name.endsWith("_len");
+        return !name.isEmpty() && !name.chars().allMatch(Character::isDigit) && !inst.hasDerivedName();
     }
 
     /** Integer arithmetic whose only purpose is to form byte offsets of element addresses. */
@@ -680,8 +680,9 @@ public final class Structurizer {
                 case Opcode.Load l -> {
                     var base = inst.operand(0);
                     while (base instanceof Inst b && b.opcode() instanceof Opcode.PointerOffset) {
-                        if (!b.name().isEmpty() && !b.name().chars().allMatch(Character::isDigit)) {
-                            return b.name().replaceAll("_data$", "") + "_val";
+                        // A data pointer TC named (a_data) reads as its array: a_val.
+                        if (!b.name().isEmpty() && !b.name().chars().allMatch(Character::isDigit) && !b.hasDerivedName()) {
+                            return b.name() + "_val";
                         }
                         base = b.operand(0);
                     }

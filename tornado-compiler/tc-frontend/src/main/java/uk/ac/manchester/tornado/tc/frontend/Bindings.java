@@ -153,10 +153,6 @@ final class Bindings {
 
     static final String ATOMIC_INTEGER = "java/util/concurrent/atomic/AtomicInteger";
 
-    /** A static final field with a known constant value (an enum constant passed as an option). */
-    record ConstantField(long value) implements Binding {
-    }
-
     /** Value classes: objects of these classes are their single scalar field. */
     static final String HALF_FLOAT = "uk/ac/manchester/tornado/api/types/HalfFloat";
 
@@ -303,11 +299,6 @@ final class Bindings {
         }
         METHODS.put(KERNEL_CONTEXT + ".mma([" + half + "[" + half + "[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k16", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaStore([FL" + ARRAYS + "FloatArray;III)V", new Intrinsic("tornado.mma.store", Type.VOID));
-        FIELDS.put(DEVICE_LAUNCH_MODE + ".DEFAULT", new ConstantField(0));
-        FIELDS.put(DEVICE_LAUNCH_MODE + ".TAIL", new ConstantField(1));
-        FIELDS.put(DEVICE_LAUNCH_MODE + ".FIRE_AND_FORGET", new ConstantField(2));
-        FIELDS.put("uk/ac/manchester/tornado/api/enums/MMAShape.M16N8K16", new ConstantField(16));
-        FIELDS.put("uk/ac/manchester/tornado/api/enums/MMAShape.M16N8K32", new ConstantField(32));
         var vecI = new Type.VectorType(Type.I32, 4);
         METHODS.put(KERNEL_CONTEXT + ".mmaFragmentInt(I)[I", new Intrinsic("tornado.mma.fragment_int", vecI));
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadAInt8([II)[B", new Intrinsic("tornado.mma.load_a_s8", vecI));
