@@ -150,6 +150,8 @@ def main():
     ap.add_argument("--families")
     ap.add_argument("--compilers", default="graal,tc")
     ap.add_argument("--exclude", default="", help="regex of class names to skip")
+    ap.add_argument("--with-memory-leak", action="store_true",
+                    help="also run memory.leak.TestMemoryLeak (300 s loops): only for the final validation of the CUDA backend work")
     a = ap.parse_args()
     if a.mode == "run":
         bindir = sdk_bin()
@@ -162,6 +164,8 @@ def main():
             entries = [e for e in entries if e[0].startswith(fams)]
         if a.exclude:
             entries = [e for e in entries if not re.search(a.exclude, e[0])]
+        if not a.with_memory_leak:
+            entries = [e for e in entries if e[0] not in NO_THREAD_INFO]
         for c in a.compilers.split(","):
             os.makedirs(os.path.join(a.out, c), exist_ok=True)
         print(f"{len(entries)} classes -> {a.out}", flush=True)
