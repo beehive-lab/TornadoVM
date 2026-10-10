@@ -78,9 +78,9 @@ code{font:.85em "IBM Plex Mono",monospace;background:var(--chip);padding:1px 5px
   <h2>Findings</h2>
   <ul>
     <li><b>Kernel quality is at parity or better on most benchmarks.</b> Where TC is faster, ncu shows why: fewer registers on the GEMMs (40 vs 92–94 per thread) and fewer instructions on the convolutions and mandelbrot.</li>
-    <li><b>nbody is the exception.</b> Same grid and occupancy, but 1.82× the instructions: TC keeps the 3-trip <code>k</code> loops rolled, so the private <code>float[3]</code> arrays stay in local memory. Full unrolling of small constant-trip loops (optimisation O9) is implemented and being verified; <code>1/sqrt → rsqrt</code> (O12) is next.</li>
+    <li><b>nbody went from 1.56× slower to 1.39× faster.</b> ncu showed the same grid and occupancy but 1.82× the instructions. Two causes, both fixed in <code>2db1ee655</code>: Graal emits <code>rsqrt</code> for <code>1/sqrt(x)</code> under <code>tornado.enable.mathOptimizations</code> (default on) while TC did an IEEE square root and division (now the same rewrite, optimisation O12); and TC kept the 3-trip loops rolled with the private <code>float[3]</code> arrays in local memory (now fully unrolled, O9, printed as <code>r[1]</code> so nvcc keeps them in registers).</li>
     <li><b>Bugs this comparison found, fixed:</b> stencil and convolveimage ran on a single GPU thread (43× and ~22,600× slower) because loop bounds became constants only after TC recorded the launch grid (<code>3425f6496</code>); juliaset crashed TC's emitter with a StackOverflowError, which also showed that internal TC errors must fall back to Graal instead of ending the JVM (<code>b4569302b</code>).</li>
-    <li><b>juliaset</b> is 9% slower under TC (3.94 vs 3.61 ms): the escape-time loop, being looked at with the nbody work.</li>
+    <li><b>juliaset</b> is the one TC-compiled benchmark still slower: 9% (3.94 vs 3.61 ms), 1.10× the instructions in its escape-time loop; next on the kernel-quality list.</li>
     <li>addImage, blurFilter and renderTrack use image and vector types TC does not support yet; they fall back to Graal.</li>
     <li><b>Compile time, warm</b> (342 kernels, many per JVM): TC's median is 4.49 ms against Graal's 3.84 ms per kernel (1.2× over the 292 kernels both compiled; TC faster on 65). NVRTC is identical (18.2 ms median both): it compiles whatever source it is given, so the source TC emits costs no extra driver time.</li>
     <li><b>Compile time, cold</b> (one kernel per fresh JVM): TC takes 65–98 ms where Graal takes 45–67 ms on most benchmarks, because a fresh JVM also loads and warms up TC's own classes; on the two convolution kernels TC is faster (83 vs 105 ms, 91 vs 111 ms). Cold-start cost is tracked for the C7 compile-latency gate.</li>
@@ -149,7 +149,7 @@ if (!D.cold.length && !D.warm) {
   if (D.cold.length) {
     h += `<div class="wrap" style="margin-top:14px"><table><thead><tr><th>Benchmark (cold, fresh JVM)</th><th>Compiler · Graal</th><th>Compiler · TC</th><th>NVRTC · Graal</th><th>NVRTC · TC</th><th>TC compiled it</th></tr></thead><tbody>` +
       D.cold.map(c => `<tr><td class="bench">${c.bench}</td><td class="num">${c.gC.toFixed(1)}</td><td class="num">${c.tC.toFixed(1)}</td><td class="num">${c.gD.toFixed(1)}</td><td class="num">${c.tD.toFixed(1)}</td><td>${c.by.includes("tc") ? '<span class="tag">yes</span>' : '<span class="tag warn">fell back</span>'}</td></tr>`).join("") +
-      `</tbody></table></div><p class="note">Milliseconds, median of 3 fresh JVMs, code cache off. A cold compile includes the compiler's own class loading and JIT warm-up in a new JVM.</p>`;
+      `</tbody></table></div><p class="note">Milliseconds, median of 3 fresh JVMs, code cache off. A cold compile includes the compiler's own class loading and JIT warm-up in a new JVM. Compile times were measured before the unroll and rsqrt passes were added (kernel times above are after).</p>`;
   }
   comp.innerHTML = h;
 }

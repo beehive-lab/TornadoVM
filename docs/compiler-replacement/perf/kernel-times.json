@@ -9,18 +9,18 @@
     "graal"
    ],
    "kernelMinNs": 222208.0,
-   "kernelAvgNs": 227902.64788732395,
-   "compileMs": 51.054875,
-   "driverMs": 22.051817,
+   "kernelAvgNs": 228962.22535211267,
+   "compileMs": 51.133532,
+   "driverMs": 42.970067,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "addImage",
      "instances": 101,
-     "medNs": 209760.0,
-     "avgNs": 209755.1,
-     "minNs": 188897.0,
-     "totalNs": 21185264.0
+     "medNs": 209951.0,
+     "avgNs": 209864.0,
+     "minNs": 191103.0,
+     "totalNs": 21196259.0
     }
    ]
   },
@@ -32,10 +32,10 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 221312.0,
-   "kernelAvgNs": 229397.6338028169,
-   "compileMs": 50.134942,
-   "driverMs": 21.324304,
+   "kernelMinNs": 221184.0,
+   "kernelAvgNs": 229161.45070422534,
+   "compileMs": 50.272132,
+   "driverMs": 42.85333,
    "compileRuns": 3,
    "tcKernels": 0,
    "fallbacks": 1,
@@ -43,10 +43,10 @@
     {
      "name": "addImage",
      "instances": 101,
-     "medNs": 209729.0,
-     "avgNs": 209587.7,
-     "minNs": 190016.0,
-     "totalNs": 21168356.0
+     "medNs": 209919.0,
+     "avgNs": 209947.3,
+     "minNs": 190719.0,
+     "totalNs": 21204675.0
     }
    ]
   }
@@ -60,19 +60,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 9184.0,
-   "kernelAvgNs": 12199.771428571428,
-   "compileMs": 53.662386,
-   "driverMs": 21.925664,
+   "kernelMinNs": 8672.0,
+   "kernelAvgNs": 10934.4,
+   "compileMs": 54.09389,
+   "driverMs": 44.505323,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "blackscholes",
      "instances": 100,
      "medNs": 1472.0,
-     "avgNs": 1469.1,
+     "avgNs": 1468.8,
      "minNs": 1439.0,
-     "totalNs": 146912.0
+     "totalNs": 146880.0
     }
    ]
   },
@@ -84,10 +84,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 8896.0,
-   "kernelAvgNs": 11977.585714285715,
-   "compileMs": 95.644756,
-   "driverMs": 23.264306,
+   "kernelMinNs": 8480.0,
+   "kernelAvgNs": 11202.285714285714,
+   "compileMs": 100.191593,
+   "driverMs": 45.573242,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -96,9 +96,9 @@
      "name": "ComputeKernels_blackscholes",
      "instances": 100,
      "medNs": 1472.0,
-     "avgNs": 1472.0,
-     "minNs": 1440.0,
-     "totalNs": 147202.0
+     "avgNs": 1474.5,
+     "minNs": 1439.0,
+     "totalNs": 147454.0
     }
    ]
   }
@@ -112,19 +112,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 395168.0,
-   "kernelAvgNs": 472416.0,
-   "compileMs": 25.643324,
-   "driverMs": 1.17529,
+   "kernelMinNs": 390944.0,
+   "kernelAvgNs": 464514.9090909091,
+   "compileMs": 26.058863,
+   "driverMs": 0.499838,
    "compileRuns": 9,
    "nsys": [
     {
      "name": "channelConvolution",
      "instances": 33,
-     "medNs": 119840.0,
-     "avgNs": 119949.8,
-     "minNs": 118528.0,
-     "totalNs": 3958344.0
+     "medNs": 119968.0,
+     "avgNs": 120013.4,
+     "minNs": 118912.0,
+     "totalNs": 3960441.0
     }
    ]
   },
@@ -136,10 +136,10 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 394943.0,
-   "kernelAvgNs": 475103.8181818182,
-   "compileMs": 26.792644,
-   "driverMs": 0.908382,
+   "kernelMinNs": 394528.0,
+   "kernelAvgNs": 460517.7272727273,
+   "compileMs": 27.994783,
+   "driverMs": 0.516778,
    "compileRuns": 9,
    "tcKernels": 0,
    "fallbacks": 3,
@@ -147,10 +147,10 @@
     {
      "name": "channelConvolution",
      "instances": 33,
-     "medNs": 119904.0,
-     "avgNs": 120018.7,
-     "minNs": 117761.0,
-     "totalNs": 3960617.0
+     "medNs": 119839.0,
+     "avgNs": 119942.5,
+     "minNs": 118528.0,
+     "totalNs": 3958102.0
     }
    ]
   }
@@ -165,18 +165,18 @@
     "graal"
    ],
    "kernelMinNs": 55296.0,
-   "kernelAvgNs": 60263.31428571429,
-   "compileMs": 105.180024,
-   "driverMs": 23.491373,
+   "kernelAvgNs": 60303.07142857143,
+   "compileMs": 106.412115,
+   "driverMs": 56.27091,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "convolveImageArray",
      "instances": 100,
-     "medNs": 46752.0,
-     "avgNs": 46773.2,
+     "medNs": 46816.0,
+     "avgNs": 46841.5,
      "minNs": 46528.0,
-     "totalNs": 4677320.0
+     "totalNs": 4684147.0
     }
    ]
   },
@@ -188,10 +188,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 51328.0,
-   "kernelAvgNs": 54833.37142857143,
-   "compileMs": 82.423301,
-   "driverMs": 22.321891,
+   "kernelMinNs": 51488.0,
+   "kernelAvgNs": 55103.08571428571,
+   "compileMs": 87.366629,
+   "driverMs": 48.556648,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -199,10 +199,10 @@
     {
      "name": "GraphicsKernels_convolveImageArray",
      "instances": 100,
-     "medNs": 43201.0,
-     "avgNs": 43217.7,
-     "minNs": 43104.0,
-     "totalNs": 4321768.0
+     "medNs": 43264.0,
+     "avgNs": 43262.0,
+     "minNs": 43136.0,
+     "totalNs": 4326203.0
     }
    ]
   }
@@ -217,18 +217,18 @@
     "graal"
    ],
    "kernelMinNs": 94208.0,
-   "kernelAvgNs": 98240.91428571429,
-   "compileMs": 111.761241,
-   "driverMs": 23.587512,
+   "kernelAvgNs": 100292.57142857143,
+   "compileMs": 115.062533,
+   "driverMs": 68.993218,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "convolveImage",
      "instances": 100,
-     "medNs": 85024.0,
-     "avgNs": 85023.8,
-     "minNs": 84544.0,
-     "totalNs": 8502384.0
+     "medNs": 85088.0,
+     "avgNs": 85078.8,
+     "minNs": 84768.0,
+     "totalNs": 8507883.0
     }
    ]
   },
@@ -240,10 +240,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 94176.0,
-   "kernelAvgNs": 98037.02857142857,
-   "compileMs": 89.547552,
-   "driverMs": 22.637544,
+   "kernelMinNs": 94208.0,
+   "kernelAvgNs": 97701.02857142857,
+   "compileMs": 92.844074,
+   "driverMs": 42.748924,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -251,10 +251,10 @@
     {
      "name": "GraphicsKernels_convolveImage",
      "instances": 100,
-     "medNs": 84672.0,
-     "avgNs": 84674.4,
-     "minNs": 84288.0,
-     "totalNs": 8467435.0
+     "medNs": 84751.5,
+     "avgNs": 84761.1,
+     "minNs": 84320.0,
+     "totalNs": 8476106.0
     }
    ]
   }
@@ -268,19 +268,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 1120544.0,
-   "kernelAvgNs": 1152588.8,
-   "compileMs": 48.901526,
-   "driverMs": 21.235576,
+   "kernelMinNs": 1121184.0,
+   "kernelAvgNs": 1155315.2,
+   "compileMs": 49.202439,
+   "driverMs": 44.02417,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "computeDFT",
      "instances": 15,
-     "medNs": 1098274.0,
-     "avgNs": 1098329.5,
-     "minNs": 1097858.0,
-     "totalNs": 16474942.0
+     "medNs": 1098205.0,
+     "avgNs": 1098273.7,
+     "minNs": 1097853.0,
+     "totalNs": 16474106.0
     }
    ]
   },
@@ -292,10 +292,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 1141312.0,
-   "kernelAvgNs": 1164866.1333333333,
-   "compileMs": 77.385638,
-   "driverMs": 22.338553,
+   "kernelMinNs": 1140768.0,
+   "kernelAvgNs": 1171731.2,
+   "compileMs": 78.851672,
+   "driverMs": 45.054387,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -303,10 +303,10 @@
     {
      "name": "ComputeKernels_computeDFT",
      "instances": 15,
-     "medNs": 1117793.0,
-     "avgNs": 1117821.4,
-     "minNs": 1117537.0,
-     "totalNs": 16767321.0
+     "medNs": 1117853.0,
+     "avgNs": 1117840.5,
+     "minNs": 1117405.0,
+     "totalNs": 16767608.0
     }
    ]
   }
@@ -320,19 +320,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 232096.0,
-   "kernelAvgNs": 266222.35,
-   "compileMs": 51.070546,
-   "driverMs": 22.676238,
+   "kernelMinNs": 231840.0,
+   "kernelAvgNs": 264716.8,
+   "compileMs": 50.813267,
+   "driverMs": 40.680473,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "dgemm",
      "instances": 20,
-     "medNs": 218433.0,
-     "avgNs": 218464.4,
-     "minNs": 218304.0,
-     "totalNs": 4369287.0
+     "medNs": 218511.5,
+     "avgNs": 218558.0,
+     "minNs": 218335.0,
+     "totalNs": 4371160.0
     }
    ]
   },
@@ -344,10 +344,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 230432.0,
-   "kernelAvgNs": 262588.8,
-   "compileMs": 73.593526,
-   "driverMs": 21.766218,
+   "kernelMinNs": 232096.0,
+   "kernelAvgNs": 266331.2,
+   "compileMs": 81.970325,
+   "driverMs": 42.551102,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -355,10 +355,10 @@
     {
      "name": "LinearAlgebraArrays_dgemm",
      "instances": 20,
-     "medNs": 217424.5,
-     "avgNs": 217407.1,
-     "minNs": 217153.0,
-     "totalNs": 4348142.0
+     "medNs": 217503.5,
+     "avgNs": 217501.8,
+     "minNs": 217247.0,
+     "totalNs": 4350035.0
     }
    ]
   }
@@ -372,19 +372,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 14194400.0,
-   "kernelAvgNs": 14259964.0,
-   "compileMs": 56.468339,
-   "driverMs": 21.230945,
+   "kernelMinNs": 14195904.0,
+   "kernelAvgNs": 14246034.0,
+   "compileMs": 56.117587,
+   "driverMs": 43.125013,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "euler",
      "instances": 16,
-     "medNs": 14173385.5,
-     "avgNs": 14172839.4,
-     "minNs": 14166137.0,
-     "totalNs": 226765431.0
+     "medNs": 14171054.0,
+     "avgNs": 14171136.1,
+     "minNs": 14162271.0,
+     "totalNs": 226738178.0
     }
    ]
   },
@@ -396,10 +396,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 13655744.0,
-   "kernelAvgNs": 13751482.0,
-   "compileMs": 82.331178,
-   "driverMs": 22.718111,
+   "kernelMinNs": 13642496.0,
+   "kernelAvgNs": 13725352.0,
+   "compileMs": 85.380576,
+   "driverMs": 44.713374,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -407,10 +407,10 @@
     {
      "name": "ComputeKernels_euler",
      "instances": 16,
-     "medNs": 13621768.0,
-     "avgNs": 13622934.1,
-     "minNs": 13620120.0,
-     "totalNs": 217966945.0
+     "medNs": 13617407.5,
+     "avgNs": 13618457.8,
+     "minNs": 13614720.0,
+     "totalNs": 217895325.0
     }
    ]
   }
@@ -424,19 +424,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 3598720.0,
-   "kernelAvgNs": 3612435.2,
-   "compileMs": 52.050011,
-   "driverMs": 34.633219,
+   "kernelMinNs": 3598688.0,
+   "kernelAvgNs": 3608718.4,
+   "compileMs": 52.579206,
+   "driverMs": 35.524558,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "juliaSetTornado",
      "instances": 50,
-     "medNs": 3608885.0,
-     "avgNs": 3609257.6,
-     "minNs": 3605634.0,
-     "totalNs": 180462879.0
+     "medNs": 3613351.0,
+     "avgNs": 3613650.4,
+     "minNs": 3611034.0,
+     "totalNs": 180682518.0
     }
    ]
   },
@@ -448,10 +448,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 3924992.0,
-   "kernelAvgNs": 3938344.0,
-   "compileMs": 79.338241,
-   "driverMs": 38.295226,
+   "kernelMinNs": 3925376.0,
+   "kernelAvgNs": 3936606.4,
+   "compileMs": 83.426063,
+   "driverMs": 36.945139,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -459,10 +459,10 @@
     {
      "name": "GraphicsKernels_juliaSetTornado",
      "instances": 50,
-     "medNs": 3940276.5,
-     "avgNs": 3940655.3,
-     "minNs": 3935907.0,
-     "totalNs": 197032764.0
+     "medNs": 3940455.0,
+     "avgNs": 3940957.1,
+     "minNs": 3935863.0,
+     "totalNs": 197047854.0
     }
    ]
   }
@@ -476,19 +476,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 799872.0,
-   "kernelAvgNs": 806470.9702970297,
-   "compileMs": 61.14597,
-   "driverMs": 22.470787,
+   "kernelMinNs": 799424.0,
+   "kernelAvgNs": 805674.7722772277,
+   "compileMs": 60.552268,
+   "driverMs": 32.392768,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "mandelbrot",
      "instances": 131,
-     "medNs": 852481.0,
-     "avgNs": 853555.2,
-     "minNs": 851297.0,
-     "totalNs": 111815733.0
+     "medNs": 792734.0,
+     "avgNs": 793628.7,
+     "minNs": 791166.0,
+     "totalNs": 103965362.0
     }
    ]
   },
@@ -500,10 +500,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 759072.0,
-   "kernelAvgNs": 765709.3069306931,
-   "compileMs": 78.986096,
-   "driverMs": 22.877699,
+   "kernelMinNs": 786240.0,
+   "kernelAvgNs": 791163.8811881188,
+   "compileMs": 82.903404,
+   "driverMs": 33.202366,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -511,10 +511,10 @@
     {
      "name": "ComputeKernels_mandelbrot",
      "instances": 131,
-     "medNs": 779649.0,
-     "avgNs": 779761.2,
-     "minNs": 778657.0,
-     "totalNs": 102148712.0
+     "medNs": 724095.0,
+     "avgNs": 724157.1,
+     "minNs": 722206.0,
+     "totalNs": 94864586.0
     }
    ]
   }
@@ -528,19 +528,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 4716192.0,
-   "kernelAvgNs": 4718603.636363637,
-   "compileMs": 50.68912,
-   "driverMs": 21.303881,
+   "kernelMinNs": 4718656.0,
+   "kernelAvgNs": 4751944.7272727275,
+   "compileMs": 50.933997,
+   "driverMs": 44.625847,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "monteCarlo",
      "instances": 41,
-     "medNs": 4705769.0,
-     "avgNs": 4705793.5,
-     "minNs": 4705129.0,
-     "totalNs": 192937535.0
+     "medNs": 4707348.0,
+     "avgNs": 4707335.5,
+     "minNs": 4706356.0,
+     "totalNs": 193000755.0
     }
    ]
   },
@@ -552,10 +552,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 4716256.0,
-   "kernelAvgNs": 4730615.2727272725,
-   "compileMs": 80.492727,
-   "driverMs": 26.422456,
+   "kernelMinNs": 4717408.0,
+   "kernelAvgNs": 4763825.454545454,
+   "compileMs": 80.311944,
+   "driverMs": 41.033838,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -563,10 +563,10 @@
     {
      "name": "ComputeKernels_monteCarlo",
      "instances": 41,
-     "medNs": 4705993.0,
-     "avgNs": 4706055.0,
-     "minNs": 4705513.0,
-     "totalNs": 192948253.0
+     "medNs": 4708532.0,
+     "avgNs": 4708539.1,
+     "minNs": 4707476.0,
+     "totalNs": 193050102.0
     }
    ]
   }
@@ -580,19 +580,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 1395744.0,
-   "kernelAvgNs": 1398974.4761904762,
-   "compileMs": 68.089092,
-   "driverMs": 22.098779,
+   "kernelMinNs": 1395840.0,
+   "kernelAvgNs": 1400461.7142857143,
+   "compileMs": 66.862657,
+   "driverMs": 38.212075,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "nBody",
      "instances": 51,
-     "medNs": 1387298.0,
-     "avgNs": 1387289.7,
-     "minNs": 1386338.0,
-     "totalNs": 70751774.0
+     "medNs": 1387292.0,
+     "avgNs": 1387186.1,
+     "minNs": 1386077.0,
+     "totalNs": 70746492.0
     }
    ]
   },
@@ -604,10 +604,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 2179360.0,
-   "kernelAvgNs": 2182409.1428571427,
-   "compileMs": 89.87369,
-   "driverMs": 22.688132,
+   "kernelMinNs": 1004640.0,
+   "kernelAvgNs": 1008743.380952381,
+   "compileMs": 104.829989,
+   "driverMs": 38.518102,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -615,10 +615,10 @@
     {
      "name": "ComputeKernels_nBody",
      "instances": 51,
-     "medNs": 2170403.0,
-     "avgNs": 2170406.9,
-     "minNs": 2169700.0,
-     "totalNs": 110690753.0
+     "medNs": 997054.0,
+     "avgNs": 997053.6,
+     "minNs": 995165.0,
+     "totalNs": 50849736.0
     }
    ]
   }
@@ -633,18 +633,18 @@
     "graal"
    ],
    "kernelMinNs": 1098752.0,
-   "kernelAvgNs": 1107552.0,
-   "compileMs": 60.62572,
-   "driverMs": 23.150608,
+   "kernelAvgNs": 1108248.380952381,
+   "compileMs": 61.210291,
+   "driverMs": 48.299778,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "renderTrack",
      "instances": 51,
-     "medNs": 1085123.0,
-     "avgNs": 1085663.5,
-     "minNs": 1070787.0,
-     "totalNs": 55368838.0
+     "medNs": 1084957.0,
+     "avgNs": 1085613.7,
+     "minNs": 1070365.0,
+     "totalNs": 55366297.0
     }
    ]
   },
@@ -657,9 +657,9 @@
     "graal"
    ],
    "kernelMinNs": 1100800.0,
-   "kernelAvgNs": 1112565.3333333333,
-   "compileMs": 60.743027,
-   "driverMs": 21.476947,
+   "kernelAvgNs": 1109892.5714285714,
+   "compileMs": 61.823264,
+   "driverMs": 48.58273,
    "compileRuns": 3,
    "tcKernels": 0,
    "fallbacks": 1,
@@ -667,10 +667,10 @@
     {
      "name": "renderTrack",
      "instances": 51,
-     "medNs": 1085250.0,
-     "avgNs": 1085376.1,
-     "minNs": 1070850.0,
-     "totalNs": 55354179.0
+     "medNs": 1084862.0,
+     "avgNs": 1085658.3,
+     "minNs": 1076605.0,
+     "totalNs": 55368572.0
     }
    ]
   }
@@ -684,19 +684,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 216864.0,
-   "kernelAvgNs": 226117.4084507042,
-   "compileMs": 44.837281,
-   "driverMs": 20.760363,
+   "kernelMinNs": 216352.0,
+   "kernelAvgNs": 223416.77464788733,
+   "compileMs": 44.972018,
+   "driverMs": 33.093281,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "saxpy",
      "instances": 101,
-     "medNs": 210528.0,
-     "avgNs": 210466.3,
-     "minNs": 172193.0,
-     "totalNs": 21257095.0
+     "medNs": 211199.0,
+     "avgNs": 210991.2,
+     "minNs": 172287.0,
+     "totalNs": 21310113.0
     }
    ]
   },
@@ -708,10 +708,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 217344.0,
-   "kernelAvgNs": 225013.6338028169,
-   "compileMs": 65.617174,
-   "driverMs": 22.444658,
+   "kernelMinNs": 218048.0,
+   "kernelAvgNs": 224528.67605633804,
+   "compileMs": 67.933775,
+   "driverMs": 34.848749,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -719,10 +719,10 @@
     {
      "name": "LinearAlgebraArrays_saxpy",
      "instances": 101,
-     "medNs": 211392.0,
-     "avgNs": 211219.9,
-     "minNs": 172640.0,
-     "totalNs": 21333205.0
+     "medNs": 211808.0,
+     "avgNs": 211698.1,
+     "minNs": 175136.0,
+     "totalNs": 21381506.0
     }
    ]
   }
@@ -736,19 +736,19 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 71968.0,
-   "kernelAvgNs": 106318.4,
-   "compileMs": 51.381708,
-   "driverMs": 21.870412,
+   "kernelMinNs": 72864.0,
+   "kernelAvgNs": 106835.2,
+   "compileMs": 49.997179,
+   "driverMs": 40.919444,
    "compileRuns": 3,
    "nsys": [
     {
      "name": "sgemm",
      "instances": 20,
-     "medNs": 58864.0,
-     "avgNs": 58878.6,
-     "minNs": 58561.0,
-     "totalNs": 1177572.0
+     "medNs": 58816.0,
+     "avgNs": 58871.8,
+     "minNs": 58655.0,
+     "totalNs": 1177435.0
     }
    ]
   },
@@ -760,10 +760,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 71264.0,
-   "kernelAvgNs": 108419.2,
-   "compileMs": 73.784639,
-   "driverMs": 22.495226,
+   "kernelMinNs": 71616.0,
+   "kernelAvgNs": 104523.2,
+   "compileMs": 78.898325,
+   "driverMs": 41.556672,
    "compileRuns": 3,
    "tcKernels": 1,
    "fallbacks": 0,
@@ -771,10 +771,10 @@
     {
      "name": "LinearAlgebraArrays_sgemm",
      "instances": 20,
-     "medNs": 58272.0,
-     "avgNs": 58348.9,
-     "minNs": 58080.0,
-     "totalNs": 1166978.0
+     "medNs": 58368.0,
+     "avgNs": 58396.7,
+     "minNs": 57856.0,
+     "totalNs": 1167933.0
     }
    ]
   }
@@ -789,27 +789,27 @@
    "compiledBy": [
     "graal"
    ],
-   "kernelMinNs": 46784.0,
-   "kernelAvgNs": 53026.140845070426,
-   "compileMs": 32.826032,
-   "driverMs": 11.026324,
+   "kernelMinNs": 46944.0,
+   "kernelAvgNs": 52093.69014084507,
+   "compileMs": 33.6319245,
+   "driverMs": 31.095588,
    "compileRuns": 6,
    "nsys": [
     {
      "name": "stencil3d",
      "instances": 101,
-     "medNs": 31808.0,
-     "avgNs": 31804.9,
+     "medNs": 31776.0,
+     "avgNs": 31794.9,
      "minNs": 31552.0,
-     "totalNs": 3212298.0
+     "totalNs": 3211289.0
     },
     {
      "name": "copy",
      "instances": 101,
      "medNs": 1120.0,
-     "avgNs": 1129.5,
+     "avgNs": 1133.0,
      "minNs": 1119.0,
-     "totalNs": 114083.0
+     "totalNs": 114430.0
     }
    ]
   },
@@ -822,10 +822,10 @@
    "compiledBy": [
     "tc"
    ],
-   "kernelMinNs": 46336.0,
-   "kernelAvgNs": 52522.74647887324,
-   "compileMs": 51.125734,
-   "driverMs": 11.4748965,
+   "kernelMinNs": 46528.0,
+   "kernelAvgNs": 51680.380281690144,
+   "compileMs": 56.387542,
+   "driverMs": 29.707565,
    "compileRuns": 6,
    "tcKernels": 2,
    "fallbacks": 0,
@@ -834,17 +834,17 @@
      "name": "Stencil_stencil3d",
      "instances": 101,
      "medNs": 31552.0,
-     "avgNs": 31562.5,
-     "minNs": 31328.0,
-     "totalNs": 3187815.0
+     "avgNs": 31552.0,
+     "minNs": 31264.0,
+     "totalNs": 3186749.0
     },
     {
      "name": "Stencil_copy",
      "instances": 101,
-     "medNs": 1152.0,
-     "avgNs": 1170.7,
+     "medNs": 1183.0,
+     "avgNs": 1173.2,
      "minNs": 1151.0,
-     "totalNs": 118239.0
+     "totalNs": 118492.0
     }
    ]
   }
