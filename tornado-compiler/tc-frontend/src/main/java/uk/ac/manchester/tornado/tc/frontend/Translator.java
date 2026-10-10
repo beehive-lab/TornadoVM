@@ -733,7 +733,10 @@ final class Translator {
                 } else if (op == NEW && classFile.constants().className(insn.index()).equals(Bindings.HALF_FLOAT)) {
                     // Placeholder until the constructor call gives the value (see Bindings.ValueInit).
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), Type.F16));
-                } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && stack.peek() != null && stack.peek().type().equals(Type.F16)) {
+                } else if (op == NEW && Bindings.type("L" + classFile.constants().className(insn.index()) + ";") instanceof Type.VectorType vec) {
+                    push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), vec)); // a vector value, made by its constructor
+                } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && stack.peek() != null
+                        && (stack.peek().type().equals(Type.F16) || stack.peek().type() instanceof Type.VectorType)) {
                     b.ret(pop());
                 } else {
                     throw error("TC-E1002", "bytecode '" + Bytecode.name(op) + "' is not supported in kernels", insn.bci());
@@ -820,6 +823,55 @@ final class Translator {
         } else {
             builder.arrayStore(array, index, stored);
         }
+    }
+
+    /**
+     * Value semantics for vector objects: after {@code v.setX(s)} (or a constructor), every local
+     * slot and stack entry that held the old value holds the new one.
+     */
+    private void rebind(Value old, Value replacement) {
+        var rebuilt = new ArrayDeque<Value>();
+        for (var v : stack) {
+            rebuilt.addLast(v == old ? replacement : v);
+        }
+        stack = rebuilt;
+        if (old instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tc.uninitialised")) {
+            return; // a fresh object is only on the stack
+        }
+        var current = builder.block();
+        for (int slot = 0; slot < code.maxLocals(); slot++) {
+            var key = localKey(slot, 'A');
+            if (definedSomewhere(key) && readVariable(key, current, old.type(), "") == old) {
+                writeVariable(key, current, replacement);
+            }
+        }
+    }
+
+    private boolean definedSomewhere(String key) {
+        for (var defs : currentDef.values()) {
+            if (defs.containsKey(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Value narrow(Value v, Type element) {
+        if (v.type().equals(element)) {
+            return v;
+        }
+        return element.equals(Type.I8) || element.equals(Type.I16) ? builder.convert(ConvertOp.TRUNC, v, element) : v;
+    }
+
+    private Value zero(Type element) {
+        return element.isFloat() ? builder.constFloat(element, 0.0) : builder.constInt(element, 0);
+    }
+
+    private int constantLane(Value index, int bci) {
+        if (index instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var l)) {
+            return (int) l;
+        }
+        throw error("TC-E1006", "vector lanes can only be accessed at a constant index", bci);
     }
 
     /** A local {@code HalfFloat[]} holds f16 values (HalfFloat is a value type): the only reference array kernels use. */
@@ -988,6 +1040,29 @@ final class Translator {
                 } else {
                     push(builder.arrayLoad(args.get(0), args.get(1), type));
                 }
+            }
+            case Bindings.VectorInit(var vec) -> {
+                var element = vec.element();
+                var lanes = new ArrayList<Value>();
+                for (int l = 0; l < vec.length(); l++) {
+                    lanes.add(args.size() > 1 ? narrow(args.get(1 + l), element) : zero(element));
+                }
+                var value = builder.intrinsic("tornado.vector.make", vec, lanes);
+                rebind(args.get(0), value);
+            }
+            case Bindings.VectorGet(var lane) -> {
+                var vector = args.get(0);
+                int l = lane >= 0 ? lane : constantLane(args.get(1), insn.bci());
+                var element = ((Type.VectorType) vector.type()).element();
+                var value = builder.intrinsic("tornado.vector.lane." + l, element, List.of(vector));
+                push(element.equals(Type.I8) || element.equals(Type.I16) ? builder.convert(ConvertOp.SEXT, value, Type.I32) : value);
+            }
+            case Bindings.VectorSet(var lane) -> {
+                var vector = args.get(0);
+                int l = lane >= 0 ? lane : constantLane(args.get(1), insn.bci());
+                var element = ((Type.VectorType) vector.type()).element();
+                var updated = builder.intrinsic("tornado.vector.insert." + l, vector.type(), List.of(vector, narrow(args.get(args.size() - 1), element)));
+                rebind(vector, updated);
             }
             case Bindings.HalfBits h -> push(builder.convert(ConvertOp.SEXT, builder.convert(ConvertOp.BITCAST, args.get(0), Type.I16), Type.I32));
             case Bindings.HalfArith(var op) -> {

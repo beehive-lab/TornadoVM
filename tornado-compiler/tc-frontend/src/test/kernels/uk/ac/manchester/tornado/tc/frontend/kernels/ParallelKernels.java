@@ -71,4 +71,11 @@ public final class ParallelKernels {
             }
         }
     }
+
+    /** A vector type as a value: a parameter, a static helper, a setter, lane reads. */
+    public static void vectorValue(uk.ac.manchester.tornado.api.types.vectors.Float4 v, FloatArray out) {
+        var w = uk.ac.manchester.tornado.api.types.vectors.Float4.mult(v, 2f);
+        w.setY(0f);
+        out.set(0, w.getX() + w.getY() + w.getW());
+    }
 }

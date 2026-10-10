@@ -71,10 +71,12 @@ public final class Intrinsics {
         cuda("tornado.simd.any", "(__any_sync(0xffffffffu, $0) != 0)");
         cuda("tornado.simd.all", "(__all_sync(0xffffffffu, $0) != 0)");
         cuda("tornado.simd.ballot", "(int) __ballot_sync(0xffffffffu, $0)");
-        // Lanes of a register vector (fragment element reads at a constant index).
+        // Lanes of a register vector (vector types, fragment element reads at a constant index), and
+        // a vector with one lane replaced (setX on a vector value).
         var components = List.of("x", "y", "z", "w");
         for (int lane = 0; lane < 4; lane++) {
             cuda("tornado.vector.lane." + lane, "$0." + components.get(lane));
+            TABLE.put(new Key("tornado.vector.insert." + lane, Dialect.CUDA, ""), Spelling.withHelper("tc_with_" + components.get(lane) + "($0, $1)", "tc_with"));
         }
         // @Reduce: work-group reduction of each thread's value (Helpers.blockReduce).
         for (var op : List.of("add", "mul", "max", "min")) {

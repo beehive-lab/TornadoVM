@@ -317,7 +317,7 @@ public sealed interface Opcode {
         @Override
         public boolean isPure() {
             return name.startsWith("tornado.thread_id.") || name.startsWith("tornado.group_id.") || name.startsWith("tornado.group_size.") || name.startsWith("tornado.global_size.")
-                    || name.startsWith("tornado.group_count.") || name.startsWith("math.") || name.startsWith("tornado.vector.lane.");
+                    || name.startsWith("tornado.group_count.") || name.startsWith("math.") || name.startsWith("tornado.vector.");
         }
     }
 

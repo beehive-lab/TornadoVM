@@ -91,6 +91,18 @@ public class TcCompilerTest {
     }
 
     @Test
+    public void vectorTypesAreValues() {
+        // Float4 is a register vector: the parameter is loaded from the lanes the runtime copies,
+        // Float4.mult inlines to make_float4, setY replaces one lane.
+        // The helpers' bytecode comes from the TornadoVM API classes.
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
+        var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "vectorValue", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.source(), c.source().contains("make_float4(") && c.source().contains("tc_with_y(") && c.source().contains(".w"));
+        assertTrue(c.source(), c.source().contains("unsigned char *v"));
+    }
+
+    @Test
     public void rejectsRecursion() {
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.Scalars", "recursive", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());

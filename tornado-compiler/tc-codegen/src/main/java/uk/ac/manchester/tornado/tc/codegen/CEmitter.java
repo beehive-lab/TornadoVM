@@ -608,6 +608,10 @@ public final class CEmitter {
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
+        if (name.equals("tornado.vector.make")) {
+            // A vector value from its lanes: make_float4(x, y, z, w).
+            return new R("make_" + typeName(inst.type()) + "(" + String.join(", ", ops.stream().map(o -> expr(o).text).toList()) + ")", ATOM);
+        }
         // A void intrinsic (an atomic update) is typed by its value operand, the last one.
         var type = inst.producesValue() ? inst.type() : (ops.isEmpty() ? Type.VOID : ops.get(ops.size() - 1).type());
         var spelling = Intrinsics.lookup(name, target.dialect(), type).orElseThrow(() -> new EmitException("TC-E4002", "no " + target.dialect() + " spelling for intrinsic " + name + " on " + type.text()));
@@ -772,8 +776,8 @@ public final class CEmitter {
             };
             case Type.PointerType p -> "unsigned char *";
             // Register vectors (tensor-core fragments): the CUDA built-in vector types.
-            case Type.VectorType(var element, var length) when length >= 1 && length <= 4 && (element.equals(Type.F32) || element.equals(Type.I32)) ->
-                (element.equals(Type.F32) ? "float" : "int") + length;
+            case Type.VectorType(var element, var length) when length >= 2 && length <= 4 && !element.equals(Type.F16) && !element.equals(Type.BF16) && !element.equals(Type.I1) ->
+                (element.equals(Type.I8) ? "char" : typeName(element).replace("long long", "longlong")) + length;
             case Type.VoidType v -> "void";
             default -> throw new EmitException("TC-E4001", "type " + type.text() + " is not supported on CUDA yet");
         };

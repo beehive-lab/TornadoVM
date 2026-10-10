@@ -21,6 +21,7 @@
 package uk.ac.manchester.tornado.tc.frontend;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -107,6 +108,22 @@ final class Bindings {
     record InlineJava() implements Binding {
     }
 
+    /** Constructor of a TornadoVM vector type: {@code new Float4(x, y, z, w)} or the zero vector {@code new Float4()}. */
+    record VectorInit(Type.VectorType type) implements Binding {
+    }
+
+    /** {@code v.getX()} … {@code v.get(i)} (constant {@code i}): a lane of a vector value. */
+    record VectorGet(int lane) implements Binding {
+    }
+
+    /** {@code v.setX(s)} … {@code v.set(i, s)}: a new vector with one lane replaced, rebound to every slot holding {@code v}. */
+    record VectorSet(int lane) implements Binding {
+    }
+
+    /** TornadoVM vector types (api.types.vectors) as register vectors: class simple name -> type. */
+    static final Map<String, Type.VectorType> VECTORS = new HashMap<>();
+    static final String VECTOR_PACKAGE = "uk/ac/manchester/tornado/api/types/vectors/";
+
     /** A static final field with a known constant value (an enum constant passed as an option). */
     record ConstantField(long value) implements Binding {
     }
@@ -156,6 +173,33 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".simdAny(Z)Z", new Intrinsic("tornado.simd.any", Type.I32));
         METHODS.put(KERNEL_CONTEXT + ".simdAll(Z)Z", new Intrinsic("tornado.simd.all", Type.I32));
         METHODS.put(KERNEL_CONTEXT + ".simdBallot(Z)I", new Intrinsic("tornado.simd.ballot", Type.I32));
+        for (var e : Map.of("Float", Type.F32, "Double", Type.F64, "Int", Type.I32, "Short", Type.I16, "Byte", Type.I8).entrySet()) {
+            for (int lanes = 2; lanes <= 4; lanes++) {
+                var name = e.getKey() + lanes;
+                if ((name.equals("Short4")) || name.equals("Byte2")) {
+                    continue; // not in the API
+                }
+                var vec = new Type.VectorType(e.getValue(), lanes);
+                VECTORS.put(name, vec);
+                var owner = VECTOR_PACKAGE + name;
+                var d = switch (e.getKey()) {
+                    case "Float" -> "F";
+                    case "Double" -> "D";
+                    case "Int" -> "I";
+                    case "Short" -> "S";
+                    default -> "B";
+                };
+                METHODS.put(owner + ".<init>()V", new VectorInit(vec));
+                METHODS.put(owner + ".<init>(" + d.repeat(lanes) + ")V", new VectorInit(vec));
+                var lanesNames = List.of("X", "Y", "Z", "W");
+                for (int l = 0; l < lanes; l++) {
+                    METHODS.put(owner + ".get" + lanesNames.get(l) + "()" + d, new VectorGet(l));
+                    METHODS.put(owner + ".set" + lanesNames.get(l) + "(" + d + ")V", new VectorSet(l));
+                }
+                METHODS.put(owner + ".get(I)" + d, new VectorGet(-1));
+                METHODS.put(owner + ".set(I" + d + ")V", new VectorSet(-1));
+            }
+        }
         // Tensor cores (m16n8k16, f16 inputs, f32 accumulators): fragments are register vectors -
         // C/D four floats per lane, A four and B two 32-bit registers of packed halves.
         var half = "L" + HALF_FLOAT + ";";
@@ -283,6 +327,9 @@ final class Bindings {
                 var cls = descriptor.substring(1, descriptor.length() - 1);
                 if (cls.equals(HALF_FLOAT)) {
                     yield Type.F16;
+                }
+                if (cls.startsWith(VECTOR_PACKAGE) && VECTORS.containsKey(cls.substring(VECTOR_PACKAGE.length()))) {
+                    yield VECTORS.get(cls.substring(VECTOR_PACKAGE.length()));
                 }
                 if (cls.startsWith(ARRAYS) && NATIVE_ARRAYS.containsKey(cls.substring(ARRAYS.length()))) {
                     yield new Type.ArrayType(NATIVE_ARRAYS.get(cls.substring(ARRAYS.length())));

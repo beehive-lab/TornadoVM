@@ -96,6 +96,7 @@ public final class AbiLowering {
                 }
                 // The ABI drops KernelContext: its uses were replaced by intrinsics in the frontend.
                 case Type.ObjectType o when o.className().equals("KernelContext") && !param.hasUses() -> function.entry().removeArg(param);
+                case Type.VectorType vec -> lowerVectorParam(function, param, vec);
                 case Type.ObjectType o when layouts.containsKey(o.className()) -> {
                     classes.put(param, o.className());
                     param.setType(new Type.PointerType(AddressSpace.GLOBAL));
@@ -181,6 +182,32 @@ public final class AbiLowering {
         result.setName(inst.name().isEmpty() || inst.name().chars().allMatch(Character::isDigit) ? object.name() + "_" + field : inst.name());
         inst.replaceAllUsesWith(result);
         inst.erase();
+    }
+
+    /**
+     * A vector argument ({@code Float4} …) arrives as a pointer to its lanes (the runtime copies the
+     * vector's storage array, without a header); the kernel works on the value loaded at entry.
+     */
+    private static void lowerVectorParam(Function function, uk.ac.manchester.tornado.tc.ir.BlockArg param, Type.VectorType vec) {
+        var users = List.copyOf(param.users());
+        param.setType(new Type.PointerType(AddressSpace.GLOBAL));
+        var entry = function.entry();
+        var first = entry.insts().isEmpty() ? null : entry.insts().get(0);
+        var b = first == null ? new IrBuilder(entry).atEnd(entry) : new IrBuilder(entry).before(first);
+        var lanes = new java.util.ArrayList<Value>();
+        for (int l = 0; l < vec.length(); l++) {
+            var address = l == 0 ? param : b.pointerOffset(param, b.constInt(Type.I64, (long) l * sizeOf(vec.element())));
+            lanes.add(b.load(address, vec.element()));
+        }
+        var value = b.intrinsic("tornado.vector.make", vec, lanes);
+        value.setName(param.name());
+        for (var user : users) {
+            for (int k = 0; k < user.operandCount(); k++) {
+                if (user.operand(k) == param) {
+                    user.setOperand(k, value);
+                }
+            }
+        }
     }
 
     private static Value reference(IrBuilder b, Value object, Value address) {

@@ -57,6 +57,13 @@ final class Helpers {
                       return a < b ? a : b;
                     }
                     """),
+            // A vector value with one lane replaced (Java vector types are values here; setX makes a new one).
+            Map.entry("tc_with", """
+                    template <typename V, typename S> __device__ static inline V tc_with_x(V v, S s) { v.x = s; return v; }
+                    template <typename V, typename S> __device__ static inline V tc_with_y(V v, S s) { v.y = s; return v; }
+                    template <typename V, typename S> __device__ static inline V tc_with_z(V v, S s) { v.z = s; return v; }
+                    template <typename V, typename S> __device__ static inline V tc_with_w(V v, S s) { v.w = s; return v; }
+                    """),
             Map.entry("tc_warp_sum", """
                     __device__ static inline float tc_warp_sum(float v) {
                       for (int lane = 16; lane > 0; lane >>= 1) v += __shfl_xor_sync(0xffffffffu, v, lane);
