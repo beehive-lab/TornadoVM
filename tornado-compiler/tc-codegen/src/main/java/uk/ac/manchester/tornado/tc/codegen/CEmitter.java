@@ -255,19 +255,14 @@ public final class CEmitter {
         if (!includes.isEmpty()) {
             source.append('\n');
         }
-        // Dependencies first (a block reduction calls java_fmaxf), each helper once.
-        var ordered = new LinkedHashSet<String>();
+        // Each helper once, in first-use order.
         for (var helper : helpers) {
-            ordered.addAll(Helpers.dependencies(helper));
-            ordered.add(helper);
-        }
-        for (var helper : ordered) {
             source.append(Helpers.source(helper, target.dialect())).append('\n');
         }
         var definition = header + emitted;
         source.append(definition);
         var declaration = header.substring(0, header.length() - "\n{\n".length()) + ";\n";
-        return new Result(source.toString(), entry, List.copyOf(includes), List.copyOf(ordered), definition, declaration);
+        return new Result(source.toString(), entry, List.copyOf(includes), List.copyOf(helpers), definition, declaration);
     }
 
     // ---------------------------------------------------------------- statements

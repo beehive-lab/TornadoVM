@@ -74,12 +74,6 @@ public final class Intrinsics {
         // a vector with one lane replaced (setX on a vector value).
         cuda("tornado.vector.lane", "$0.{lane|xyzw}");
         TABLE.put(new Key("tornado.vector.insert", Dialect.CUDA, ""), Spelling.withHelper("tc_with_{lane|xyzw}($0, $1)", "tc_with"));
-        // @Reduce: work-group reduction of each thread's value (Helpers.blockReduce).
-        for (var op : List.of("add", "mul", "max", "min")) {
-            for (var t : List.of("f32", "f64", "i32", "i64")) {
-                TABLE.put(new Key("tornado.reduce." + op, Dialect.CUDA, t), Spelling.withHelper("tc_reduce_" + op + "_" + t + "($0)", "tc_reduce_" + op + "_" + t));
-            }
-        }
         // AtomicInteger counters: slot $0 of the kernel's atomics region (AtomicSlots), operand $1.
         cuda("tornado.atomic_int.add_get", "atomicAdd(&_atomics[$0], $1) + $1");
         cuda("tornado.atomic_int.get_add", "atomicAdd(&_atomics[$0], $1)");

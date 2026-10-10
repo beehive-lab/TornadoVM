@@ -65,10 +65,13 @@ public class ReductionLoweringTest {
     @Test
     public void sumBecomesWorkGroupReduction() {
         var function = IrParser.parseFunction(SUM);
-        assertTrue(ReductionLowering.run(function, List.of(false, true)).isEmpty());
+        assertTrue(ReductionLowering.run(function, List.of(false, true), 256).isEmpty());
         assertTrue(Verifier.verify(function).toString(), Verifier.verify(function).isEmpty());
         var text = new IrPrinter(false).printFunction(function);
-        assertTrue(text, text.contains("tornado.reduce.add(%x)"));
+        // The tree is IR: a shared array sized by the largest work-group, barriers and a halving stride.
+        assertTrue(text, text.contains("alloca.shared") && text.contains("[256] : ptr<shared>"));
+        assertTrue(text, text.contains("tornado.barrier.local()") && text.contains("shr %stride"));
+        assertTrue(text, !text.contains("tornado.reduce"));
         assertTrue(text, text.contains("tornado.group_id<dim = 0>()"));
         assertTrue(text, !text.contains("parallel<iv = 0>"));
         assertEquals(List.of(new ParallelLoopLowering.Domain(0, 0, 1, 4096)), ParallelLoopLowering.domain(function));

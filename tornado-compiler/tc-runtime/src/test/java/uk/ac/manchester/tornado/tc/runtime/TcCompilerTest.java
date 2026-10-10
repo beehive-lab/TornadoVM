@@ -49,8 +49,45 @@ public class TcCompilerTest {
         var c = TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, TcOptions.DEFAULTS);
         assertTrue(c.diagnostics().toString(), c.succeeded());
         assertEquals("K_scale", c.entryName());
-        assertEquals("input,verify.pre-abi,parallel,optimize,abi,verify.post-abi,optimize.post-abi,structure,emit", String.join(",", c.stages().stream().map(TcCompiler.Stage::name).toList()));
+        assertEquals("input,verify.pre-abi,parallel,optimize,legality,abi,optimize.post-abi,structure,emit", String.join(",", c.stages().stream().map(TcCompiler.Stage::name).toList()));
         assertTrue(c.source(), c.source().contains("extern \"C\" __global__ void K_scale("));
+    }
+
+    /** verify=end still verifies, once, before structuring. */
+    @Test
+    public void verifyAtTheEndRunsOnce() {
+        var options = new TcOptions(java.util.Set.of(), java.nio.file.Path.of("tc-dumps"), false, java.util.Optional.empty(), false);
+        var c = TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, options);
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertEquals("input,verify.pre-abi,parallel,optimize,legality,abi,optimize.post-abi,verify.end,structure,emit", String.join(",", c.stages().stream().map(TcCompiler.Stage::name).toList()));
+    }
+
+    /** From Java, inlining and local collections are pipeline steps (dumped, timed and verified like the rest). */
+    @Test
+    public void javaKernelsInlineAsAPipelineStep() {
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
+        var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.Scalars", "helpers", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        var names = c.stages().stream().map(TcCompiler.Stage::name).toList();
+        assertTrue(names.toString(), names.indexOf("inline") > names.indexOf("verify.pre-abi") && names.indexOf("local-collections") > names.indexOf("inline"));
+    }
+
+    /** Legality refuses what the device's capabilities rule out, before any code is generated. */
+    @Test
+    public void legalityChecksTheTargetCapabilities() {
+        var noDoubles = new TargetCaps(TargetCaps.Dialect.CUDA, 89, false, true, 16, 1024, 48 * 1024, 32, true);
+        var doubles = TcCompiler.compile(IrParser.parseFunction(KERNEL.replace("f32", "f64")), noDoubles, TcOptions.DEFAULTS);
+        assertFalse(doubles.succeeded());
+        assertEquals("TC-E4012", doubles.diagnostics().get(0).code());
+        assertTrue(TcCompiler.compile(IrParser.parseFunction(KERNEL), noDoubles, TcOptions.DEFAULTS).succeeded());
+
+        var smallShared = new TargetCaps(TargetCaps.Dialect.CUDA, 89, true, true, 16, 1024, 512, 32, true);
+        // An unused array is removed before legality, so the check runs on the step itself.
+        var withShared = IrParser.parseFunction(KERNEL.replace("^entry:\n", "^entry:\n  %buf = alloca.shared f32[256] : ptr<shared>\n"));
+        var shared = uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, smallShared);
+        assertEquals(shared.toString(), "TC-E4014", shared.get(0).code());
+        assertTrue(shared.get(0).message(), shared.get(0).message().contains("1024 bytes"));
+        assertTrue(uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, TargetCaps.CUDA_SM89).isEmpty());
     }
 
     @Test
@@ -68,7 +105,7 @@ public class TcCompilerTest {
         var options = new TcOptions(java.util.Set.of("abi", "emit"), dir, true, java.util.Optional.empty(), false);
         TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, options);
         try (var files = Files.list(dir)) {
-            assertEquals(java.util.List.of("K_scale.05-abi.tcir", "K_scale.09-emit.cu"), files.map(p -> p.getFileName().toString()).sorted().toList());
+            assertEquals(java.util.List.of("K_scale.06-abi.tcir", "K_scale.09-emit.cu"), files.map(p -> p.getFileName().toString()).sorted().toList());
         }
     }
 
@@ -194,6 +231,19 @@ public class TcCompilerTest {
     }
 
     /** Design review TP-2: a reduction into out[1] is refused, not lowered into the partials. */
+    /** TP-8: a work-group reduction is an IR tree the dialect prints like any loop, sized from TargetCaps. */
+    @Test
+    public void reductionsAreIrTreesSizedByTheTarget() {
+        var facts = java.util.List.<uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact>of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(4096),
+                new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Reduce(17));
+        var sum = review("sum", facts);
+        assertTrue(sum.diagnostics().toString(), sum.succeeded());
+        var src = sum.source();
+        assertTrue(src, src.contains("__shared__ float reduce_scratch[1024];") && src.contains("__syncthreads();") && !src.contains("tc_reduce_"));
+        var max = review("maxOf", facts);
+        assertTrue(max.diagnostics().toString(), max.succeeded() && max.source().contains("java_fmaxf("));
+    }
+
     @Test
     public void reductionMustAccumulateIntoElementZero() {
         var c = review("reduceAtOne", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1024), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Reduce(2)));

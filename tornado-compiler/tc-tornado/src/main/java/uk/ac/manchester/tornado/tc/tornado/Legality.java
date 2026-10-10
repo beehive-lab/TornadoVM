@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ */
+package uk.ac.manchester.tornado.tc.tornado;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+
+import uk.ac.manchester.tornado.tc.ir.AddressSpace;
+import uk.ac.manchester.tornado.tc.ir.Diagnostic;
+import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Inst;
+import uk.ac.manchester.tornado.tc.ir.Loc;
+import uk.ac.manchester.tornado.tc.ir.Opcode;
+import uk.ac.manchester.tornado.tc.ir.Type;
+import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+
+/**
+ * What the target cannot run, refused before code is generated, from {@link TargetCaps} (the
+ * driver's device queries). Each check names the construct and the limit:
+ * <ul>
+ * <li>TC-E4012: double precision on a device without it;</li>
+ * <li>TC-E4013: half precision on a device without it;</li>
+ * <li>TC-E4014: more shared (local) memory than a work-group has;</li>
+ * <li>TC-E4015: warp operations, written for 32-lane warps, on another SIMD width;</li>
+ * <li>TC-E4016: a device launch where kernels cannot launch kernels;</li>
+ * <li>TC-E4010, TC-E4011: CUDA Tile kernels ({@link TileTyping#checkTarget}).</li>
+ * </ul>
+ */
+public final class Legality {
+
+    private Legality() {
+    }
+
+    public static List<Diagnostic> run(Function function, TargetCaps target) {
+        var problems = new ArrayList<Diagnostic>();
+        if (!target.fp64()) {
+            first(function, t -> uses(t, Type.F64)).ifPresent(i -> problems.add(at(function, i, "TC-E4012", "this kernel uses double precision, which the device does not support")));
+        }
+        if (!target.fp16()) {
+            first(function, t -> uses(t, Type.F16)).ifPresent(i -> problems.add(at(function, i, "TC-E4013", "this kernel uses half precision, which the device does not support")));
+        }
+        long shared = insts(function).mapToLong(i -> i.opcode() instanceof Opcode.Alloca(var space, var element, var count) && space == AddressSpace.SHARED ? (long) bytes(element) * count : 0).sum();
+        if (shared > target.localMemoryBytes()) {
+            problems.add(new Diagnostic("TC-E4014", "the kernel's local arrays need " + shared + " bytes of shared memory; a work-group has " + target.localMemoryBytes(), "@" + function.name(),
+                    Loc.UNKNOWN));
+        }
+        if (target.warpSize() != 32) {
+            insts(function).filter(i -> intrinsic(i, "tornado.simd.")).findFirst()
+                    .ifPresent(i -> problems.add(at(function, i, "TC-E4015", "warp operations are written for 32-lane warps; the device's SIMD width is " + target.warpSize())));
+        }
+        if (!target.deviceLaunch()) {
+            insts(function).filter(i -> intrinsic(i, "tornado.device_launch")).findFirst()
+                    .ifPresent(i -> problems.add(at(function, i, "TC-E4016", "KernelContext.launch needs kernels that launch kernels (CUDA dynamic parallelism), which this target lacks")));
+        }
+        if (TileTyping.usesTiles(function)) {
+            if (target.dialect() != TargetCaps.Dialect.CUDA) {
+                problems.add(new Diagnostic("TC-E4010", "TileContext kernels are CUDA Tile C++: they run only on the CUDA backend", "@" + function.name(), Loc.UNKNOWN));
+            } else {
+                problems.addAll(TileTyping.checkTarget(function, target.computeCapability()));
+            }
+        }
+        return problems;
+    }
+
+    private static Stream<Inst> insts(Function function) {
+        return function.blocks().stream().flatMap(b -> b.insts().stream());
+    }
+
+    private static java.util.Optional<Inst> first(Function function, java.util.function.Predicate<Type> type) {
+        // The first instruction producing or using such a value (parameters count where they are used).
+        return insts(function).filter(i -> type.test(i.type()) || i.operands().stream().anyMatch(o -> type.test(o.type()))).findFirst();
+    }
+
+    private static boolean uses(Type type, Type scalar) {
+        return switch (type) {
+            case Type.VectorType(var element, var length) -> element.equals(scalar);
+            case Type.ArrayType(var element) -> uses(element, scalar);
+            default -> type.equals(scalar);
+        };
+    }
+
+    private static boolean intrinsic(Inst inst, String prefix) {
+        return inst.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(prefix);
+    }
+
+    private static int bytes(Type type) {
+        return switch (type) {
+            case Type.IntType(var bits) -> Math.max(1, bits / 8);
+            case Type.FloatType f -> f.bits() / 8;
+            case Type.VectorType(var element, var length) -> bytes(element) * length;
+            default -> 8;
+        };
+    }
+
+    private static Diagnostic at(Function function, Inst inst, String code, String message) {
+        return new Diagnostic(code, message, "@" + function.name(), inst.loc());
+    }
+}

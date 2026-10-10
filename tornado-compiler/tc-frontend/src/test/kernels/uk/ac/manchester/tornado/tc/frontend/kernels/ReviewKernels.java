@@ -28,6 +28,19 @@ import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 /** Kernels for the design-review findings that compiled wrong or failed (design-review.md). */
 public final class ReviewKernels {
+    // TP-8: reductions are IR trees (sum, and max with Java NaN semantics)
+    public static void sum(FloatArray in, @Reduce FloatArray out) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            out.set(0, out.get(0) + in.get(i));
+        }
+    }
+
+    public static void maxOf(FloatArray in, @Reduce FloatArray out) {
+        for (@Parallel int i = 0; i < in.getSize(); i++) {
+            out.set(0, Math.max(out.get(0), in.get(i)));
+        }
+    }
+
     // TP-2: a reduction into out[1], not out[0]
     public static void reduceAtOne(FloatArray in, @Reduce FloatArray out) {
         for (@Parallel int i = 0; i < in.getSize(); i++) {

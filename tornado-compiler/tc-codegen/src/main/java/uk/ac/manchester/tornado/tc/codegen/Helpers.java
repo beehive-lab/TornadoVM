@@ -273,52 +273,7 @@ final class Helpers {
                     }
                     """));
 
-    /**
-     * Work-group reductions for @Reduce kernels: each thread's value into shared memory, a tree over
-     * the (power-of-two) block, the result in s[0] for every thread. Combines with Java semantics.
-     */
-    private static String blockReduce(String helper) {
-        var parts = helper.split("_"); // tc_reduce_<op>_<type>
-        String op = parts[2], t = parts[3];
-        String c = switch (t) {
-            case "f32" -> "float";
-            case "f64" -> "double";
-            case "i32" -> "int";
-            default -> "long long";
-        };
-        String combine = switch (op) {
-            case "add" -> "a + b";
-            case "mul" -> "a * b";
-            case "max" -> t.equals("f32") ? "java_fmaxf(a, b)" : t.equals("f64") ? "java_fmax(a, b)" : "(a > b ? a : b)";
-            default -> t.equals("f32") ? "java_fminf(a, b)" : t.equals("f64") ? "java_fmin(a, b)" : "(a < b ? a : b)";
-        };
-        return ("__device__ static inline %1$s %2$s(%1$s v) {\n"
-                + "  __shared__ %1$s s[1024];\n"
-                + "  unsigned t = threadIdx.x;\n"
-                + "  __syncthreads();\n"
-                + "  s[t] = v;\n"
-                + "  __syncthreads();\n"
-                + "  for (unsigned stride = blockDim.x / 2; stride > 0; stride >>= 1) {\n"
-                + "    if (t < stride) { %1$s a = s[t], b = s[t + stride]; s[t] = %3$s; }\n"
-                + "    __syncthreads();\n"
-                + "  }\n"
-                + "  return s[0];\n"
-                + "}\n").formatted(c, helper, combine);
-    }
-
-    /** Helpers another helper calls (emitted before it). */
-    static java.util.List<String> dependencies(String helper) {
-        if (helper.startsWith("tc_reduce_max_f") || helper.startsWith("tc_reduce_min_f")) {
-            var t = helper.endsWith("f32") ? "f" : "";
-            return java.util.List.of((helper.contains("max") ? "java_fmax" : "java_fmin") + t);
-        }
-        return java.util.List.of();
-    }
-
     static String source(String helper, Dialect dialect) {
-        if (helper.startsWith("tc_reduce_") && dialect == Dialect.CUDA) {
-            return blockReduce(helper);
-        }
         var text = switch (dialect) {
             case CUDA -> CUDA.get(helper);
             case OPENCL, METAL -> null;

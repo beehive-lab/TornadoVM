@@ -25,12 +25,14 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import uk.ac.manchester.tornado.tc.codegen.CEmitter;
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.IrModule;
 import uk.ac.manchester.tornado.tc.ir.IrPrinter;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
@@ -48,6 +50,8 @@ import uk.ac.manchester.tornado.tc.lower.Structurizer;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
 import uk.ac.manchester.tornado.tc.tornado.AtomicSlots;
 import uk.ac.manchester.tornado.tc.tornado.BatchOffset;
+import uk.ac.manchester.tornado.tc.tornado.Legality;
+import uk.ac.manchester.tornado.tc.tornado.ObjectLayout;
 import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
 import uk.ac.manchester.tornado.tc.frontend.LocalCollections;
 import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
@@ -90,6 +94,8 @@ public final class TcCompiler {
     private final TargetCaps target;
     private final TcOptions options;
     private List<ValueSpecialisation.Fact> facts = List.of();
+    /** The kernel's module with its callees, from Java; null when compiling one function of IR text. */
+    private IrModule module;
     private final List<Stage> stages = new ArrayList<>();
     private CEmitter.Result emitted;
 
@@ -197,20 +203,6 @@ public final class TcCompiler {
             kernel.ifPresent(k -> k.rename(rename));
         }
         List<Diagnostic> frontendDiagnostics = new ArrayList<>(translated.diagnostics());
-        if (kernel.isPresent() && translated.module().get().functions().size() > 1) {
-            var problems = Inliner.run(translated.module().get(), kernel.get());
-            if (!problems.isEmpty()) {
-                frontendDiagnostics.addAll(problems);
-                kernel = java.util.Optional.empty();
-            }
-        }
-        if (kernel.isPresent()) {
-            var problems = LocalCollections.run(kernel.get());
-            if (!problems.isEmpty()) {
-                frontendDiagnostics.addAll(problems);
-                kernel = java.util.Optional.empty();
-            }
-        }
         long frontendNanos = System.nanoTime() - start;
         var bytecode = new Stage("bytecode", Kind.BYTECODE, options.htmlReport() || options.dumps("bytecode") ? translated.bytecode() : "", 0, 0);
         if (kernel.isEmpty()) {
@@ -219,6 +211,7 @@ public final class TcCompiler {
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
         compiler.facts = List.copyOf(facts);
+        compiler.module = translated.module().get();
         compiler.stages.add(bytecode);
         var c = compiler.run();
         var stages = new ArrayList<>(c.stages());
@@ -226,6 +219,100 @@ public final class TcCompiler {
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
         return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics()),
                 compiler);
+    }
+
+    /**
+     * One step of the IR pipeline: when it applies, what it does (diagnostics fail the compilation)
+     * and the IR level it leaves, which the verifier checks after it ({@code verify=each}).
+     */
+    private record Step(String name, Predicate<TcCompiler> applies, java.util.function.Function<TcCompiler, List<Diagnostic>> run, Verifier.Stage leaves) {
+    }
+
+    /**
+     * The IR pipeline, in order. Ordering rules: inlining first (later steps see one function);
+     * specialisation before anything that needs constant bounds (tiles, reductions, the launch
+     * domain); atomics, reductions and batch offsets before parallel-loop lowering, which consumes the
+     * {@code parallel} loops they look at; local arrays after optimisation folds their lengths; ABI
+     * legality once types and local-array sizes are final; ABI lowering last, after which the IR is
+     * post-ABI.
+     */
+    private static final List<Step> PIPELINE = List.of(
+            new Step("inline", c -> c.module != null && c.module.functions().size() > 1, c -> Inliner.run(c.module, c.function), Verifier.Stage.PRE_ABI),
+            new Step("local-collections", c -> c.module != null, c -> LocalCollections.run(c.function), Verifier.Stage.PRE_ABI),
+            new Step("specialise", c -> !c.facts.isEmpty(), TcCompiler::specialise, Verifier.Stage.PRE_ABI),
+            new Step("tiles", c -> TileTyping.usesTiles(c.function), TcCompiler::tiles, Verifier.Stage.PRE_ABI),
+            new Step("atomics", c -> c.usesIntrinsic("tornado.atomic_int."), c -> AtomicSlots.run(c.function), Verifier.Stage.PRE_ABI),
+            new Step("reduce", c -> c.facts.stream().anyMatch(f -> f instanceof ValueSpecialisation.Fact.Reduce),
+                    c -> ReductionLowering.run(c.function, c.facts.stream().map(f -> f instanceof ValueSpecialisation.Fact.Reduce).toList(), c.target.maxWorkGroupSize()), Verifier.Stage.PRE_ABI),
+            new Step("batch", c -> c.batchOffset().isPresent(), c -> {
+                BatchOffset.run(c.function, c.batchOffset().getAsLong());
+                return List.of();
+            }, Verifier.Stage.PRE_ABI),
+            new Step("parallel", c -> true, TcCompiler::parallel, Verifier.Stage.PRE_ABI),
+            new Step("optimize", c -> true, TcCompiler::optimize, Verifier.Stage.PRE_ABI),
+            new Step("local-arrays", c -> LocalArrays.hasPending(c.function), c -> LocalArrays.run(c.function), Verifier.Stage.PRE_ABI),
+            new Step("legality", c -> true, c -> Legality.run(c.function, c.target), Verifier.Stage.PRE_ABI),
+            new Step("abi", c -> true, c -> AbiLowering.run(c.function, c.target, c.layouts()), Verifier.Stage.POST_ABI),
+            new Step("optimize.post-abi", c -> true, c -> {
+                PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(c.options.verifyEach()).run(c.function);
+                return List.of();
+            }, Verifier.Stage.POST_ABI));
+
+    /** Folds what the argument values made constant (loop bounds such as n + 1), so later steps see constants. */
+    private List<Diagnostic> specialise() {
+        ValueSpecialisation.run(function, facts);
+        // Through inlined getters too: merging blocks removes the call's return argument.
+        for (int round = 0; round < 4 && (new Canonicalizer().run(function) | new CfgSimplify().run(function)); round++) {
+        }
+        new DeadCodeElimination().run(function);
+        return List.of();
+    }
+
+    private List<Diagnostic> tiles() {
+        return TileTyping.run(function);
+    }
+
+    private List<Diagnostic> parallel() {
+        boolean hasParallelLoops = function.blocks().stream().anyMatch(b -> b.attributes().stream().anyMatch(a -> a.name().equals("parallel")));
+        var problems = ParallelLoopLowering.run(function);
+        if (!problems.isEmpty()) {
+            return problems;
+        }
+        // With the task's arguments known, every @Parallel loop must give a launch domain: without
+        // one the kernel would run on a single thread.
+        if (!facts.isEmpty() && hasParallelLoops && ParallelLoopLowering.domain(function).isEmpty()) {
+            return List.of(new Diagnostic("TC-E3103", "the bounds of the @Parallel loops are not compile-time constants after specialisation, so no launch domain can be derived", "", Loc.UNKNOWN));
+        }
+        return List.of();
+    }
+
+    private List<Diagnostic> optimize() {
+        var passes = PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach());
+        if (options.mathOptimizations()) {
+            passes.add(new MathPeepholes()).add(new DeadCodeElimination());
+        }
+        passes.run(function);
+        return List.of();
+    }
+
+    private boolean usesIntrinsic(String prefix) {
+        return function.blocks().stream().flatMap(b -> b.insts().stream()).anyMatch(i -> i.opcode() instanceof uk.ac.manchester.tornado.tc.ir.Opcode.Intrinsic(var n) && n.startsWith(prefix));
+    }
+
+    private java.util.OptionalLong batchOffset() {
+        return facts.stream().filter(f -> f instanceof ValueSpecialisation.Fact.IndexOffset).mapToLong(f -> ((ValueSpecialisation.Fact.IndexOffset) f).offset()).findFirst();
+    }
+
+    private List<ObjectLayout> layouts() {
+        return facts.stream().filter(f -> f instanceof ValueSpecialisation.Fact.Instance).flatMap(f -> ((ValueSpecialisation.Fact.Instance) f).layouts().stream()).toList();
+    }
+
+    /** The verifier after step {@code name}; a failure names the step that broke the IR. */
+    private void verify(String name, Verifier.Stage level) {
+        var problems = Verifier.verify(function, level);
+        if (!problems.isEmpty()) {
+            throw new Failed(problems.stream().map(d -> new Diagnostic(d.code(), "after " + name + ": " + d.message(), d.where(), d.loc(), d.line())).toList());
+        }
     }
 
     private Compilation run() {
@@ -240,85 +327,22 @@ public final class TcCompiler {
             stage("input", Kind.IR, () -> {
             }, () -> IrPrinter.print(function));
             check("verify.pre-abi", Verifier.Stage.PRE_ABI);
-            if (!facts.isEmpty()) {
-                // Fold what the argument values made constant (loop bounds such as n + 1), so the
-                // parallel-loop lowering can record the launch domain.
-                stage("specialise", Kind.IR, () -> {
-                    ValueSpecialisation.run(function, facts);
-                    // Through inlined getters too: merging blocks removes the call's return argument.
-                    for (int round = 0; round < 4 && (new Canonicalizer().run(function) | new CfgSimplify().run(function)); round++) {
-                    }
-                    new DeadCodeElimination().run(function);
-                }, () -> IrPrinter.print(function));
-            }
-            if (TileTyping.usesTiles(function)) {
-                stage("tiles", Kind.IR, () -> {
-                    var problems = new ArrayList<>(TileTyping.run(function));
-                    if (problems.isEmpty()) {
-                        problems.addAll(TileTyping.checkTarget(function, target.computeCapability()));
-                    }
-                    if (!problems.isEmpty()) {
-                        throw new Failed(problems);
-                    }
-                }, () -> IrPrinter.print(function));
-            }
-            if (function.blocks().stream().flatMap(b -> b.insts().stream()).anyMatch(i -> i.opcode() instanceof uk.ac.manchester.tornado.tc.ir.Opcode.Intrinsic(var n) && n.startsWith("tornado.atomic_int."))) {
-                stage("atomics", Kind.IR, () -> {
-                    var problems = AtomicSlots.run(function);
-                    if (!problems.isEmpty()) {
-                        throw new Failed(problems);
-                    }
-                }, () -> IrPrinter.print(function));
-            }
-            var reduce = facts.stream().map(f -> f instanceof ValueSpecialisation.Fact.Reduce).toList();
-            if (reduce.contains(true)) {
-                stage("reduce", Kind.IR, () -> {
-                    var problems = ReductionLowering.run(function, reduce);
-                    if (!problems.isEmpty()) {
-                        throw new Failed(problems);
-                    }
-                }, () -> IrPrinter.print(function));
-            }
-            facts.stream().filter(f -> f instanceof ValueSpecialisation.Fact.IndexOffset).findFirst()
-                    .ifPresent(f -> stage("batch", Kind.IR, () -> BatchOffset.run(function, ((ValueSpecialisation.Fact.IndexOffset) f).offset()), () -> IrPrinter.print(function)));
-            boolean hasParallelLoops = function.blocks().stream().anyMatch(b -> b.attributes().stream().anyMatch(a -> a.name().equals("parallel")));
-            stage("parallel", Kind.IR, () -> {
-                var problems = ParallelLoopLowering.run(function);
-                if (!problems.isEmpty()) {
-                    throw new Failed(problems);
+            for (var step : PIPELINE) {
+                if (step.applies().test(this)) {
+                    stage(step.name(), Kind.IR, () -> {
+                        var problems = step.run().apply(this);
+                        if (!problems.isEmpty()) {
+                            throw new Failed(problems);
+                        }
+                        if (options.verifyEach()) {
+                            verify(step.name(), step.leaves());
+                        }
+                    }, () -> IrPrinter.print(function));
                 }
-                // With the task's arguments known, every @Parallel loop must give a launch domain:
-                // without one the kernel would run on a single thread.
-                if (!facts.isEmpty() && hasParallelLoops && ParallelLoopLowering.domain(function).isEmpty()) {
-                    throw new Failed(List.of(new Diagnostic("TC-E3103", "the bounds of the @Parallel loops are not compile-time constants after specialisation, so no launch domain can be derived", "", Loc.UNKNOWN)));
-                }
-            }, () -> IrPrinter.print(function));
-            stage("optimize", Kind.IR, () -> {
-                var passes = PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach());
-                if (options.mathOptimizations()) {
-                    passes.add(new MathPeepholes()).add(new DeadCodeElimination());
-                }
-                passes.run(function);
-            }, () -> IrPrinter.print(function));
-            if (LocalArrays.hasPending(function)) {
-                stage("local-arrays", Kind.IR, () -> {
-                    var problems = LocalArrays.run(function);
-                    if (!problems.isEmpty()) {
-                        throw new Failed(problems);
-                    }
-                }, () -> IrPrinter.print(function));
             }
-            stage("abi", Kind.IR, () -> {
-                var layouts = facts.stream().filter(f -> f instanceof ValueSpecialisation.Fact.Instance).flatMap(f -> ((ValueSpecialisation.Fact.Instance) f).layouts().stream()).toList();
-                var problems = AbiLowering.run(function, target, layouts);
-                if (!problems.isEmpty()) {
-                    throw new Failed(problems);
-                }
-            }, () -> IrPrinter.print(function));
-            if (options.verifyEach()) {
-                check("verify.post-abi", Verifier.Stage.POST_ABI);
+            if (!options.verifyEach()) {
+                check("verify.end", Verifier.Stage.POST_ABI);
             }
-            stage("optimize.post-abi", Kind.IR, () -> PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(options.verifyEach()).run(function), () -> IrPrinter.print(function));
             var structured = new S.Kernel[1];
             stage("structure", Kind.STRUCTURED, () -> {
                 try {

@@ -91,6 +91,11 @@ public final class ErrorCodes {
             Map.entry("TC-E3403", new Entry(Category.UNSUPPORTED, "this TileContext operation is not compiled by TC yet; the Graal path supports it")),
             Map.entry("TC-E4010", new Entry(Category.UNSUPPORTED, "CUDA Tile needs compute capability 8.0 or higher (Ampere and newer); rewrite the task with KernelContext for the SIMT path")),
             Map.entry("TC-E4011", new Entry(Category.UNSUPPORTED, "fp8 tiles need compute capability 9.0 (Hopper) or newer; use F16 or BF16 operands on this device")),
+            Map.entry("TC-E4012", new Entry(Category.UNSUPPORTED, "the device has no double precision: use float")),
+            Map.entry("TC-E4013", new Entry(Category.UNSUPPORTED, "the device has no half precision: use float")),
+            Map.entry("TC-E4014", new Entry(Category.INVALID_KERNEL, "shrink the kernel's local arrays to fit the device's shared memory per work-group")),
+            Map.entry("TC-E4015", new Entry(Category.UNSUPPORTED, "warp operations need 32-lane warps on this backend")),
+            Map.entry("TC-E4016", new Entry(Category.UNSUPPORTED, "launch the child kernel from the host (a TaskGraph) on this device")),
             // Code generation.
             Map.entry("TC-E4001", new Entry(Category.UNSUPPORTED, "this type or operation has no CUDA spelling in TC yet")),
             Map.entry("TC-E4002", new Entry(Category.UNSUPPORTED, "this intrinsic has no CUDA spelling in TC yet")),

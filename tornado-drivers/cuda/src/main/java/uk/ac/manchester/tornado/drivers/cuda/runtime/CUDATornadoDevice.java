@@ -363,9 +363,16 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     /** What TC needs to know about this device. */
+    /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */
     private TargetCaps tcTarget() {
-        int cc = getDeviceContext().getDevice() instanceof CUDADevice d ? d.getComputeCapabilityMajor() * 10 + d.getComputeCapabilityMinor() : 89;
-        return new TargetCaps(TargetCaps.Dialect.CUDA, cc, true, true, (int) TornadoNativeArray.ARRAY_HEADER, 1024, 48 * 1024, 32);
+        if (!(getDeviceContext().getDevice() instanceof CUDADevice d)) {
+            return TargetCaps.CUDA_SM89.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER);
+        }
+        int cc = d.getComputeCapabilityMajor() * 10 + d.getComputeCapabilityMinor();
+        // fp64 on every CUDA device; native fp16 arithmetic from sm_53; device launches from sm_35.
+        // Every NVIDIA GPU so far has 32-lane warps.
+        return new TargetCaps(TargetCaps.Dialect.CUDA, cc, true, cc >= 53, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(), (int) d.getDeviceLocalMemorySize(), 32,
+                cc >= 35);
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {

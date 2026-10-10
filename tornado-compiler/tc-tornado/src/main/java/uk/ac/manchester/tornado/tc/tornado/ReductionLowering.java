@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Attribute;
 import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
@@ -37,6 +38,8 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.BinaryOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
+import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
@@ -45,8 +48,8 @@ import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
  * per work-group after a first slot holding the initial value, and appends a sequential task that
  * folds all slots. The kernel therefore runs one loop iteration per thread ({@code i = start + gid},
  * launch domain {@code [start, bound)}), reduces the iteration's value across the work-group (a
- * shared-memory tree, intrinsic {@code tornado.reduce.<op>}) and lets thread 0 write the partial to
- * {@code out[group + 1]}.
+ * shared-memory tree written in IR: a shared array, barriers and a halving-stride loop, so every
+ * dialect prints it the same way) and lets thread 0 write the partial to {@code out[group + 1]}.
  *
  * <p>Recognised: {@code out[k] = out[k] op v} for {@code +} and {@code *} (integer and float) and
  * {@code out[k] = max/min(out[k], v)}, in the body of the one {@code @Parallel} loop, which counts
@@ -59,6 +62,11 @@ public final class ReductionLowering {
 
     /** {@code reduce.get(p)}: parameter {@code p} is a {@code @Reduce} array. */
     public static List<Diagnostic> run(Function function, List<Boolean> reduce) {
+        return run(function, reduce, 1024);
+    }
+
+    /** {@code groupSlots}: the largest work-group, which sizes the shared scratch array of the tree. */
+    public static List<Diagnostic> run(Function function, List<Boolean> reduce, int groupSlots) {
         var targets = new ArrayList<Value>();
         for (int p = 0; p < Math.min(reduce.size(), function.params().size()); p++) {
             if (reduce.get(p)) {
@@ -96,7 +104,7 @@ public final class ReductionLowering {
                         return refuse("reduction store not in the form out[k] = out[k] op v (op: + * min max)");
                     }
                     // The group partials go to out[1..], the result to out[0]: only out[0] accumulates.
-                    if (!(inst.operand(1) instanceof Inst k && k.opcode() instanceof Opcode.ConstInt(var slot) && slot == 0)) {
+                    if (!Constants.isInteger(inst.operand(1), 0)) {
                         return refuse("a @Reduce loop must accumulate into element 0 of the reduction array (out[0] = out[0] op v)");
                     }
                     store = inst;
@@ -113,42 +121,31 @@ public final class ReductionLowering {
         if (!dominators.dominates(store.block().orElseThrow(), loop.latches().get(0))) {
             return refuse("the reduction store is conditional inside the loop");
         }
-        var exitTerm = header.terminator().orElseThrow();
-        if (!(exitTerm.opcode() instanceof Opcode.CondBranch) || !(exitTerm.operand(0) instanceof Inst cmp) || !(cmp.opcode() instanceof Opcode.ICmp(var p)) || cmp.operand(0) != iv
-                || !(cmp.operand(1) instanceof Inst bound && bound.opcode() instanceof Opcode.ConstInt(var upper))) {
-            return refuse("the reduction loop bound is not a compile-time constant");
-        }
-        int stay = loop.contains(exitTerm.successors().get(0).target()) ? 0 : 1;
-        var exit = exitTerm.successors().get(1 - stay);
-        long last = switch (p) {
-            case SGE, SLT -> upper;
-            case SGT, SLE -> upper + 1;
-            default -> Long.MIN_VALUE;
-        };
-        var latch = loop.latches().get(0).terminator().orElseThrow();
-        var entry = function.predecessors().get(header).stream().filter(b -> !loop.contains(b)).map(b -> b.terminator().orElseThrow()).toList();
-        if (last == Long.MIN_VALUE || entry.size() != 1 || !(latch.opcode() instanceof Opcode.Branch)) {
+        var counted = CountedLoop.of(loop, 0).orElse(null);
+        if (counted == null || counted.exit().isEmpty() || !(counted.backEdge().terminator().opcode() instanceof Opcode.Branch)) {
             return refuse("the reduction loop is not in counted form");
         }
-        var entryTerm = entry.get(0);
-        int entryIndex = -1;
-        for (int s = 0; s < entryTerm.successors().size(); s++) {
-            if (entryTerm.successors().get(s).target() == header) {
-                entryIndex = s;
-            }
+        var upper = counted.exclusiveUpper();
+        if (upper.isEmpty()) {
+            return refuse("the reduction loop bound is not a compile-time constant");
         }
-        var next = latch.successors().get(0).args().get(0);
-        if (!(entryTerm.successors().get(entryIndex).args().get(0) instanceof Inst init && init.opcode() instanceof Opcode.ConstInt(var start))
-                || !(next instanceof Inst add && add.opcode() instanceof Opcode.Binary(var addOp) && addOp == BinaryOp.ADD && add.operand(0) == iv
-                        && add.operand(1) instanceof Inst one && one.opcode() instanceof Opcode.ConstInt(var step) && step == 1)) {
+        var start = counted.constantInit();
+        if (start.isEmpty() || !Constants.isInteger(counted.step(), 1)) {
             return refuse("the reduction loop must start at a constant and count by 1");
         }
+        long last = upper.getAsLong();
+        var exitTerm = counted.exit().get().branch();
+        int stay = counted.exit().get().stay();
+        var exit = exitTerm.successors().get(1 - stay);
+        var latch = counted.backEdge().terminator();
+        var entryTerm = counted.entry().terminator();
+        int entryIndex = counted.entry().successor();
 
         // One iteration per thread: i = start + gid; no back edge.
         var b = new IrBuilder(header).before(header.insts().get(0)).at(header.insts().get(0).loc());
         Value index = b.intrinsic("tornado.thread_id.global", Immediates.of("dim", 0), Type.I32, List.of());
-        if (start != 0) {
-            index = b.binary(BinaryOp.ADD, index, b.constInt(Type.I32, start));
+        if (start.getAsLong() != 0) {
+            index = b.binary(BinaryOp.ADD, index, b.constInt(Type.I32, start.getAsLong()));
         }
         index.setName(iv.name());
         iv.replaceAllUsesWith(index);
@@ -161,8 +158,8 @@ public final class ReductionLowering {
         var exitLoc = exitTerm.loc();
         exitTerm.erase();
         new IrBuilder(header).at(exitLoc).br(bodyTarget, bodyArgs);
-        latch.setSuccessorTarget(0, exitTarget);
-        latch.setSuccessorArgs(0, exitArgs);
+        latch.setSuccessorTarget(counted.backEdge().successor(), exitTarget);
+        latch.setSuccessorArgs(counted.backEdge().successor(), exitArgs);
         header.removeAttribute("parallel");
 
         // The work-group reduces the iteration's value; thread 0 writes the group's slot.
@@ -174,23 +171,79 @@ public final class ReductionLowering {
             inst.moveToEnd(join);
         }
         var target = store.operand(0);
-        var at = new IrBuilder(block).atEnd(block).at(store.loc());
-        var reduced = at.intrinsic("tornado.reduce." + op, value.type(), List.of(value));
-        reduced.setName("partial");
-        var tid = at.intrinsic("tornado.thread_id.local", Immediates.of("dim", 0), Type.I32, List.of());
-        var first = at.icmp(Opcode.IntPredicate.EQ, tid, at.constInt(Type.I32, 0));
-        var write = function.newBlock(block.label() + ".partial");
+        var loc = store.loc();
         store.erase();
+        var done = treeReduce(function, block, value, op, groupSlots, loc);
+        var at = new IrBuilder(done.block()).atEnd(done.block()).at(loc);
+        var first = at.icmp(Opcode.IntPredicate.EQ, done.thread(), at.constInt(Type.I32, 0));
+        var write = function.newBlock(block.label() + ".partial");
+        var reduced = done.value();
         at.condBr(first, write, List.of(), join, List.of());
         var w = new IrBuilder(write).atEnd(write).at(store.loc());
         var slot = w.binary(BinaryOp.ADD, w.intrinsic("tornado.group_id", Immediates.of("dim", 0), Type.I32, List.of()), w.constInt(Type.I32, 1));
         w.arrayStore(target, slot, reduced);
         w.br(join, List.of());
-        function.addAttribute(Attribute.of("domain", "dim", 0, "offset", start, "step", 1, "upper", last));
+        function.addAttribute(Attribute.of("domain", "dim", 0, "offset", start.getAsLong(), "step", 1, "upper", last));
         return List.of();
     }
 
     private record Match(String op, Value value) {
+    }
+
+    /** Where a tree reduction ends: the block after it, the reduced value and the local thread index. */
+    private record Reduced(Block block, Value value, Value thread) {
+    }
+
+    /**
+     * A work-group tree reduction of each thread's {@code value}, appended to {@code from}: the values
+     * go to a shared array, then each pass halves the stride, threads below it combining their slot
+     * with the one a stride away, a barrier after each pass; every thread then reads slot 0. The
+     * work-group size is a power of two (the runtime launches reductions that way).
+     */
+    private static Reduced treeReduce(Function function, Block from, Value value, String op, int groupSlots, Loc loc) {
+        var type = value.type();
+        var entry = function.entry();
+        var scratch = new IrBuilder(entry).before(entry.insts().get(0)).at(loc).alloca(AddressSpace.SHARED, type, groupSlots);
+        scratch.setName("reduce_scratch");
+        var b = new IrBuilder(from).atEnd(from).at(loc);
+        var t = b.intrinsic("tornado.thread_id.local", Immediates.of("dim", 0), Type.I32, List.of());
+        b.arrayStore(scratch, t, value);
+        b.intrinsic("tornado.barrier.local", Type.VOID, List.of());
+        var size = b.intrinsic("tornado.group_size.local", Immediates.of("dim", 0), Type.I32, List.of());
+        var header = function.newBlock(from.label() + ".tree");
+        var stride = header.addArg(Type.I32, "stride");
+        b.br(header, List.of(b.binary(BinaryOp.SHR, size, b.constInt(Type.I32, 1))));
+
+        var test = function.newBlock(from.label() + ".tree.test");
+        var combine = function.newBlock(from.label() + ".tree.combine");
+        var latch = function.newBlock(from.label() + ".tree.next");
+        var done = function.newBlock(from.label() + ".tree.done");
+        var h = new IrBuilder(header).atEnd(header).at(loc);
+        h.condBr(h.icmp(Opcode.IntPredicate.SGT, stride, h.constInt(Type.I32, 0)), test, List.of(), done, List.of());
+        var c = new IrBuilder(test).atEnd(test).at(loc);
+        c.condBr(c.icmp(Opcode.IntPredicate.SLT, t, stride), combine, List.of(), latch, List.of());
+        var m = new IrBuilder(combine).atEnd(combine).at(loc);
+        var mine = m.arrayLoad(scratch, t, type);
+        var other = m.arrayLoad(scratch, m.binary(BinaryOp.ADD, t, stride), type);
+        m.arrayStore(scratch, t, combine(m, op, mine, other));
+        m.br(latch, List.of());
+        var l = new IrBuilder(latch).atEnd(latch).at(loc);
+        l.intrinsic("tornado.barrier.local", Type.VOID, List.of());
+        l.br(header, List.of(l.binary(BinaryOp.SHR, stride, l.constInt(Type.I32, 1))));
+        var d = new IrBuilder(done).atEnd(done).at(loc);
+        var result = d.arrayLoad(scratch, d.constInt(Type.I32, 0), type);
+        result.setName("partial");
+        return new Reduced(done, result, t);
+    }
+
+    /** One combining step with Java semantics (min/max through the math intrinsics: NaN and signed zeros). */
+    private static Value combine(IrBuilder b, String op, Value x, Value y) {
+        boolean fp = x.type() instanceof Type.FloatType;
+        return switch (op) {
+            case "add" -> b.binary(fp ? BinaryOp.FADD : BinaryOp.ADD, x, y);
+            case "mul" -> b.binary(fp ? BinaryOp.FMUL : BinaryOp.MUL, x, y);
+            default -> b.intrinsic("math." + op, x.type(), List.of(x, y));
+        };
     }
 
     /** {@code store out[k], op(load out[k], v)} (either operand order). */
