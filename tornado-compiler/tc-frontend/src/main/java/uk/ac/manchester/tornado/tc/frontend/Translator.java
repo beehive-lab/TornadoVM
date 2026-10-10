@@ -733,6 +733,8 @@ final class Translator {
                 } else if (op == NEW && classFile.constants().className(insn.index()).equals(Bindings.HALF_FLOAT)) {
                     // Placeholder until the constructor call gives the value (see Bindings.ValueInit).
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), Type.F16));
+                } else if (op == NEW && classFile.constants().className(insn.index()).equals(Bindings.ATOMIC_INTEGER)) {
+                    push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), new Type.ObjectType("AtomicInteger")));
                 } else if (op == NEW && Bindings.type("L" + classFile.constants().className(insn.index()) + ";") instanceof Type.VectorType vec) {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), vec)); // a vector value, made by its constructor
                 } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && stack.peek() != null
@@ -1039,6 +1041,18 @@ final class Translator {
                     builder.arrayStore(args.get(0), args.get(1), args.get(2));
                 } else {
                     push(builder.arrayLoad(args.get(0), args.get(1), type));
+                }
+            }
+            case Bindings.AtomicNew a -> {
+                var initial = args.size() > 1 ? args.get(1) : builder.constInt(Type.I32, 0);
+                rebind(args.get(0), builder.intrinsic("tornado.atomic_int.new", new Type.ObjectType("AtomicInteger"), List.of(initial)));
+            }
+            case Bindings.AtomicOp(var name, var delta) -> {
+                var operands = new ArrayList<Value>(List.of(args.get(0)));
+                operands.add(args.size() > 1 ? args.get(1) : builder.constInt(Type.I32, delta));
+                var result = builder.intrinsic("tornado.atomic_int." + name, name.equals("set") ? Type.VOID : Type.I32, operands);
+                if (result.producesValue()) {
+                    push(result);
                 }
             }
             case Bindings.VectorInit(var vec) -> {

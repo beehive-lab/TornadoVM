@@ -84,6 +84,13 @@ public final class Intrinsics {
                 TABLE.put(new Key("tornado.reduce." + op, Dialect.CUDA, t), Spelling.withHelper("tc_reduce_" + op + "_" + t + "($0)", "tc_reduce_" + op + "_" + t));
             }
         }
+        // AtomicInteger counters: slot $0 of the kernel's atomics region (AtomicSlots), operand $1.
+        cuda("tornado.atomic_int.add_get", "atomicAdd(&_atomics[$0], $1) + $1");
+        cuda("tornado.atomic_int.get_add", "atomicAdd(&_atomics[$0], $1)");
+        cuda("tornado.atomic_int.sub_get", "atomicSub(&_atomics[$0], $1) - $1");
+        cuda("tornado.atomic_int.get_sub", "atomicSub(&_atomics[$0], $1)");
+        cuda("tornado.atomic_int.get", "((volatile int *) _atomics)[$0]");
+        cuda("tornado.atomic_int.set", "atomicExch(&_atomics[$0], $1)");
         // Tensor cores, m16n8k16 (PTX ISA fragment layouts); helpers written from the PTX ISA.
         TABLE.put(new Key("tornado.mma.fragment", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_fragment($0)", "tc_mma_fragment"));
         TABLE.put(new Key("tornado.mma.load_a", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1, 2)", "tc_mma_load_a"));

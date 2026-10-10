@@ -124,6 +124,16 @@ final class Bindings {
     static final Map<String, Type.VectorType> VECTORS = new HashMap<>();
     static final String VECTOR_PACKAGE = "uk/ac/manchester/tornado/api/types/vectors/";
 
+    /** {@code new AtomicInteger(v)}: a counter in the kernel's atomics region (initial value {@code v}). */
+    record AtomicNew() implements Binding {
+    }
+
+    /** An operation on an AtomicInteger: {@code tornado.atomic_int.<op>(counter[, operand])}. */
+    record AtomicOp(String op, int delta) implements Binding {
+    }
+
+    static final String ATOMIC_INTEGER = "java/util/concurrent/atomic/AtomicInteger";
+
     /** A static final field with a known constant value (an enum constant passed as an option). */
     record ConstantField(long value) implements Binding {
     }
@@ -200,6 +210,18 @@ final class Bindings {
                 METHODS.put(owner + ".set(I" + d + ")V", new VectorSet(-1));
             }
         }
+        // java.util.concurrent.atomic.AtomicInteger: counters in the kernel's atomics region; the JDK's
+        // own implementation (Unsafe) is never translated.
+        METHODS.put(ATOMIC_INTEGER + ".<init>(I)V", new AtomicNew());
+        METHODS.put(ATOMIC_INTEGER + ".<init>()V", new AtomicNew());
+        METHODS.put(ATOMIC_INTEGER + ".incrementAndGet()I", new AtomicOp("add_get", 1));
+        METHODS.put(ATOMIC_INTEGER + ".getAndIncrement()I", new AtomicOp("get_add", 1));
+        METHODS.put(ATOMIC_INTEGER + ".decrementAndGet()I", new AtomicOp("sub_get", 1));
+        METHODS.put(ATOMIC_INTEGER + ".getAndDecrement()I", new AtomicOp("get_sub", 1));
+        METHODS.put(ATOMIC_INTEGER + ".addAndGet(I)I", new AtomicOp("add_get", 0));
+        METHODS.put(ATOMIC_INTEGER + ".getAndAdd(I)I", new AtomicOp("get_add", 0));
+        METHODS.put(ATOMIC_INTEGER + ".get()I", new AtomicOp("get", 0));
+        METHODS.put(ATOMIC_INTEGER + ".set(I)V", new AtomicOp("set", 0));
         // Tensor cores (m16n8k16, f16 inputs, f32 accumulators): fragments are register vectors -
         // C/D four floats per lane, A four and B two 32-bit registers of packed halves.
         var half = "L" + HALF_FLOAT + ";";

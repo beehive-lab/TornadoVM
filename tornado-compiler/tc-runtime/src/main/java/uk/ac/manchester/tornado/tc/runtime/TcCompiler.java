@@ -45,6 +45,7 @@ import uk.ac.manchester.tornado.tc.lower.S;
 import uk.ac.manchester.tornado.tc.lower.SPrinter;
 import uk.ac.manchester.tornado.tc.lower.Structurizer;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
+import uk.ac.manchester.tornado.tc.tornado.AtomicSlots;
 import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
 import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
 import uk.ac.manchester.tornado.tc.tornado.ReductionLowering;
@@ -69,7 +70,7 @@ public final class TcCompiler {
 
     /** The result of compiling one function. */
     public record Compilation(String function, TargetCaps target, boolean succeeded, String source, String entryName, List<Stage> stages, List<Diagnostic> diagnostics, long nanos,
-            List<ParallelLoopLowering.Domain> domain) {
+            List<ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics) {
     }
 
     private static final class Failed extends RuntimeException {
@@ -133,7 +134,7 @@ public final class TcCompiler {
         var bytecode = new Stage("bytecode", Kind.BYTECODE, options.htmlReport() || options.dumps("bytecode") ? translated.bytecode() : "", 0, 0);
         if (kernel.isEmpty()) {
             var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
-            return new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of());
+            return new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of()));
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
         compiler.facts = List.copyOf(facts);
@@ -142,7 +143,7 @@ public final class TcCompiler {
         var stages = new ArrayList<>(c.stages());
         var size = stages.size() > 1 ? stages.get(1).size() : 0;
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
-        return new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain());
+        return new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics());
     }
 
     private Compilation run() {
@@ -166,6 +167,14 @@ public final class TcCompiler {
                     for (int round = 0; round < 4 && (new Canonicalizer().run(function) | new CfgSimplify().run(function)); round++) {
                     }
                     new DeadCodeElimination().run(function);
+                }, () -> IrPrinter.print(function));
+            }
+            if (function.blocks().stream().flatMap(b -> b.insts().stream()).anyMatch(i -> i.opcode() instanceof uk.ac.manchester.tornado.tc.ir.Opcode.Intrinsic(var n) && n.startsWith("tornado.atomic_int."))) {
+                stage("atomics", Kind.IR, () -> {
+                    var problems = AtomicSlots.run(function);
+                    if (!problems.isEmpty()) {
+                        throw new Failed(problems);
+                    }
                 }, () -> IrPrinter.print(function));
             }
             var reduce = facts.stream().map(f -> f instanceof ValueSpecialisation.Fact.Reduce).toList();
@@ -247,7 +256,7 @@ public final class TcCompiler {
             event.diagnostic = diagnostics.isEmpty() ? "" : diagnostics.get(0).code() + ": " + diagnostics.get(0).message();
             event.commit();
         }
-        return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos, ParallelLoopLowering.domain(function));
+        return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos, ParallelLoopLowering.domain(function), AtomicSlots.info(function));
     }
 
     private void check(String name, Verifier.Stage stage) {

@@ -285,6 +285,15 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             if (kernel.isPresent()) {
                 profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
                 kernel.get().domain().ifPresent(taskMeta::setDomain);
+                // The runtime finds a task's atomics region through the compiled method, as for Graal.
+                taskMeta.setCompiledGraph(resolvedMethod);
+                var atomics = kernel.get().atomics();
+                if (!atomics.isEmpty()) {
+                    TornadoAtomicIntegerNode.globalAtomics.put(resolvedMethod, new ArrayList<>(atomics.initial()));
+                    if (!atomics.params().isEmpty()) {
+                        TornadoAtomicIntegerNode.globalAtomicsParameters.put(resolvedMethod, new HashMap<>(atomics.params()));
+                    }
+                }
                 var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());
                 profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
                 profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
