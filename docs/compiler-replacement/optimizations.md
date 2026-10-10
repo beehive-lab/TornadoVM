@@ -64,7 +64,7 @@ that nothing the Graal path does is lost.
 | Q3 | **Counted-loop recovery** to `for(init; cond; step)` | `TornadoLoopCanonicalization` + structured emitter | P0 | C5a | G | todo |
 | Q4 | **Global-load batching**: issue independent global loads of a block together (memory-level parallelism) | `CUDAGlobalLoadBatching` | P0 | C7 | G P | todo |
 | Q5 | **Infinity / NaN / special-constant spelling** per dialect | `InfinityReplacementPhase` | P0 | C5b | G | todo |
-| Q6 | **Variable naming from the local-variable table**, built-in name clash prefixing | Graal backend naming | P0 | C3 | G | done (C5b pending): Java locals keep their names (SSA versions share one), named values stay variables; TC-derived values get role names (`gid_x`, `lid_x`, `gsize_x`, `<array>_data`, `<array>_len`, `<array>_val`, `<i>_off`); clashes get `_1`, `_2` |
+| Q6 | **Variable naming from the local-variable table**, built-in name clash prefixing | Graal backend naming | P0 | C3 | G | done: Java locals keep their names (SSA versions share one), named values stay variables; TC-derived values get role names (`gid_x`, `lid_x`, `gsize_x`, `<array>_data`, `<array>_len`, `<array>_val`, `<i>_off`); one shared `Naming` pass per dialect (CUDA, OpenCL, Metal tables) makes every name legal and clash-free: keywords, called functions, built-ins, macros and helper namespaces get a `_` suffix (`and_`, `max_`), the underscore namespace a `v` prefix, duplicates `_1` (`NamingTest`, `Cuda/reserved-names.tcir`) |
 
 ## 4. Beyond parity (P2; only after C7 data)
 
