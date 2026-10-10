@@ -20,11 +20,14 @@
  */
 package uk.ac.manchester.tornado.drivers.common.tc;
 
+import java.io.IOException;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.tc.debug.HtmlReport;
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.ErrorCodes;
@@ -131,11 +135,15 @@ public final class TcHook {
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         TcCompiler.Compilation c;
+        var options = TcOptions.fromSystemProperties();
         try {
-            c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, TcOptions.fromSystemProperties(), facts);
+            c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, options, facts);
         } catch (RuntimeException | StackOverflowError e) {
             // An internal TC failure must never take the application down: the kernel goes to Graal.
             return refuse(name, "TC-E9003", "internal compiler error: " + e);
+        }
+        if (options.htmlReport() && options.selects(name)) {
+            writeReport(options.dumpDir().resolve(name.replace('.', '_') + ".report.html"), c);
         }
         if (!c.succeeded()) {
             var d = c.diagnostics().isEmpty() ? new Diagnostic("TC-E9003", "compilation failed without a diagnostic", "", Loc.UNKNOWN) : c.diagnostics().get(0);
@@ -156,6 +164,16 @@ public final class TcHook {
             domain = Optional.of(tree);
         }
         return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos(), c.atomics()));
+    }
+
+    /** -Dtornado.tc.report=html: every stage of one compilation, refused ones included, in one page. */
+    private static void writeReport(Path file, TcCompiler.Compilation c) {
+        try {
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, HtmlReport.render(c));
+        } catch (IOException e) {
+            System.err.println("[TC] cannot write " + file + ": " + e.getMessage());
+        }
     }
 
     private static Optional<Kernel> refuse(String name, String code, String reason) {

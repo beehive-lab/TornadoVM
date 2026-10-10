@@ -19,6 +19,11 @@
             <artifactId>tc-runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.beehive-lab</groupId>
+            <artifactId>tc-debug</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>

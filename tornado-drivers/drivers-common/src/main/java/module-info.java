@@ -3,6 +3,7 @@ open module tornado.drivers.common {
     requires transitive tornado.graal;
     requires transitive tornado.runtime;
     requires transitive tornado.tc.runtime;
+    requires tornado.tc.debug;
     
     exports uk.ac.manchester.tornado.drivers.providers;
     exports uk.ac.manchester.tornado.drivers.common;
