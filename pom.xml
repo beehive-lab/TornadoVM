@@ -602,6 +602,17 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <!-- Kotlin support (tornado-kotlin/*). Opt-in: `make KOTLIN=1` (bin/compile kotlin option)
+                 add this profile. Without it the build never downloads or runs the Kotlin toolchain. -->
+            <id>kotlin</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>tornado-kotlin</module>
+            </modules>
+        </profile>
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>

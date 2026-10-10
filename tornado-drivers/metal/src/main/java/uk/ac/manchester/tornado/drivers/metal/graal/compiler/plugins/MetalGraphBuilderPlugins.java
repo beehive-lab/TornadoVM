@@ -135,6 +135,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.WriteHalfFloatNode;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinGraphBuilderPlugins;
 
 public class MetalGraphBuilderPlugins {
 
@@ -142,6 +143,9 @@ public class MetalGraphBuilderPlugins {
         if (TornadoOptions.INLINE_DURING_BYTECODE_PARSING) {
             ps.appendInlineInvokePlugin(new InlineDuringParsingPlugin());
         }
+
+        // Kotlin kernels only: see KotlinGraphBuilderPlugins
+        KotlinGraphBuilderPlugins.registerPlugins(ps);
 
         registerFP16ConversionPlugins(plugins);
         registerTornadoVMIntrinsicsPlugins(plugins);

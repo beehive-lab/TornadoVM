@@ -69,6 +69,7 @@ import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkFloatingPoint
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntIntrinsicNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkIntrinsicsNode;
 import uk.ac.manchester.tornado.runtime.graal.phases.TornadoSketchTierContext;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinSupport;
 
 public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext> {
     private static ValueNode getArithmeticNode(ValueNode value, ValueNode accumulator) {
@@ -408,7 +409,7 @@ public class TornadoReduceReplacement extends BasePhase<TornadoSketchTierContext
     }
 
     private void findParametersWithReduceAnnotations(StructuredGraph graph) {
-        final Annotation[][] parameterAnnotations = graph.method().getParameterAnnotations();
+        final Annotation[][] parameterAnnotations = KotlinSupport.getParameterAnnotations(graph.method());
         for (int index = 0; index < parameterAnnotations.length; index++) {
             for (Annotation annotation : parameterAnnotations[index]) {
                 if (annotation instanceof Reduce) {
