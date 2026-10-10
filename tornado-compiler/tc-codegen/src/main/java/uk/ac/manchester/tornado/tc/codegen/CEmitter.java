@@ -262,12 +262,17 @@ public final class CEmitter {
     }
 
     private void ifStatement(S.Expr c, List<S.Stmt> t, List<S.Stmt> e, Set<String> fallthrough, int depth) {
+        ifStatement(c, t, e, fallthrough, depth, false);
+    }
+
+    /** {@code swapped}: the arms were already exchanged once (the rules below must not undo each other). */
+    private void ifStatement(S.Expr c, List<S.Stmt> t, List<S.Stmt> e, Set<String> fallthrough, int depth, boolean swapped) {
         if (t.isEmpty() && e.isEmpty()) {
             return;
         }
-        if (!e.isEmpty() && prefersComplement(c)) {
+        if (!swapped && !e.isEmpty() && prefersComplement(c)) {
             // javac branches on the inverse test; print the direct comparison with the arms swapped.
-            ifStatement(complement(c).orElseThrow(), e, t, fallthrough, depth);
+            ifStatement(complement(c).orElseThrow(), e, t, fallthrough, depth, true);
             return;
         }
         if (t.isEmpty()) {
@@ -284,8 +289,8 @@ public final class CEmitter {
             statements(e, fallthrough, depth);
             return;
         }
-        if (!e.isEmpty() && endsInJump(e) && !endsInJump(t) && complement(c).isPresent()) {
-            ifStatement(complement(c).orElseThrow(), e, t, fallthrough, depth);
+        if (!swapped && !e.isEmpty() && endsInJump(e) && !endsInJump(t) && complement(c).isPresent()) {
+            ifStatement(complement(c).orElseThrow(), e, t, fallthrough, depth, true);
             return;
         }
         line(depth, "if (" + expr(c).text + ") {");

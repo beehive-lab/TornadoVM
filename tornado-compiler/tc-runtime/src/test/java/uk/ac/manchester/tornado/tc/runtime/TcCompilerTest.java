@@ -81,6 +81,16 @@ public class TcCompilerTest {
     }
 
     @Test
+    public void emitsFloatLoopExitsWithoutSwappingForever() {
+        // Regression: two arm-swapping rules (direct comparison, no else after a jump) undid each
+        // other on a float test whose else arm leaves the loop: StackOverflowError on juliaset.
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
+        var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "escapeTime", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.source(), c.source().contains("while ("));
+    }
+
+    @Test
     public void rejectsRecursion() {
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.Scalars", "recursive", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());

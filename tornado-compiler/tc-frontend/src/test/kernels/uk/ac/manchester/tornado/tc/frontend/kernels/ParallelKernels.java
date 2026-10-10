@@ -52,4 +52,23 @@ public final class ParallelKernels {
             y.set(i, acc);
         }
     }
+
+    /** Escape-time loop with a float test and a float select (the juliaset benchmark's shape). */
+    public static void escapeTime(int size, FloatArray hue, FloatArray brightness) {
+        for (@Parallel int ix = 0; ix < size; ix++) {
+            for (@Parallel int jx = 0; jx < size; jx++) {
+                float zx = 1.5f * (ix - size / 2) / (0.5f * size);
+                float zy = (jx - size / 2) / (0.5f * size);
+                float k = 100;
+                while (zx * zx + zy * zy < 4 && k > 0) {
+                    float tmp = zx * zx - zy * zy - 0.7f;
+                    zy = 2.0f * zx * zy + 0.27f;
+                    zx = tmp;
+                    k--;
+                }
+                hue.set(ix * size + jx, 100 / k);
+                brightness.set(ix * size + jx, k > 0 ? 1 : 0);
+            }
+        }
+    }
 }

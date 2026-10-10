@@ -120,7 +120,13 @@ public final class TcHook {
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
-        var c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, TcOptions.fromSystemProperties(), facts);
+        TcCompiler.Compilation c;
+        try {
+            c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, TcOptions.fromSystemProperties(), facts);
+        } catch (RuntimeException | StackOverflowError e) {
+            // An internal TC failure must never take the application down: the kernel goes to Graal.
+            return refuse(name, "TC-E9003", "internal compiler error: " + e);
+        }
         if (!c.succeeded()) {
             var d = c.diagnostics().isEmpty() ? null : c.diagnostics().get(0);
             var reason = d == null ? "unknown" : d.code() + " " + d.message();
