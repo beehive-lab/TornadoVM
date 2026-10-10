@@ -288,6 +288,16 @@ public final class CEmitter {
                 line(depth, names.get(target) + " = " + text + ";" + comment(loc));
             }
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(DEVICE_LAUNCH) -> deviceLaunch(name, op.operands(), loc, depth);
+            case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.printf") -> {
+                // Debug.printf: every thread prints, prefixed with its global id (as on the Graal path).
+                var format = op.inst().attributes().stream().filter(a -> a.name().equals("format")).findFirst().map(a -> a.args()).orElse("\"\"");
+                var args = new StringBuilder();
+                for (var d : List.of("x", "y", "z")) {
+                    args.append(", (int) (blockIdx.").append(d).append(" * blockDim.").append(d).append(" + threadIdx.").append(d).append(")");
+                }
+                op.operands().forEach(o -> args.append(", ").append(expr(o).text));
+                line(depth, "printf(\"tornado[%3d,%3d,%3d]> " + format.substring(1) + args + ");" + comment(loc));
+            }
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
             case S.If(var c, var t, var e) -> ifStatement(c, t, e, fallthrough, depth);
             case S.Labelled(var label, var b) -> {

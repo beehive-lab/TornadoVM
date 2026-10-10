@@ -121,6 +121,8 @@ final class Translator {
     /** KernelContext.launch: the child each DeviceKernel placeholder names, and the varargs arrays being filled. */
     private final Map<Value, Frontend.MethodRef> deviceKernels = new IdentityHashMap<>();
     private final Map<Value, Value[]> varargs = new IdentityHashMap<>();
+    /** String constants (Debug.printf formats). */
+    private final Map<Value, String> strings = new IdentityHashMap<>();
 
     private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
         this(source, classFile, method, kind, null);
@@ -569,6 +571,12 @@ final class Translator {
                 case Float v -> b.constFloat(Type.F32, v);
                 case Long v -> b.constInt(Type.I64, v);
                 case Double v -> b.constFloat(Type.F64, v);
+                case String v -> {
+                    // Only a Debug.printf format: kept on the side, never an IR value.
+                    var placeholder = new Inst(new Opcode.Intrinsic("tc.string"), new Type.ObjectType("String"));
+                    strings.put(placeholder, v);
+                    yield placeholder;
+                }
                 default -> throw error("TC-E1002", "string constants are not supported in kernels", insn.bci());
             });
             case IINC -> {
@@ -967,6 +975,27 @@ final class Translator {
         builder.intrinsic("tornado.device_launch." + mode + "." + child.owner().replace('/', '.') + "." + child.name(), Type.VOID, operands);
     }
 
+    /** A Java string as the body of a C string literal: escapes, and no raw quote (IR attribute text). */
+    private static String cEscape(String text) {
+        var sb = new StringBuilder();
+        for (char c : text.toCharArray()) {
+            switch (c) {
+                case '\n' -> sb.append("\\n");
+                case '\t' -> sb.append("\\t");
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\042"); // octal: at most three digits, unlike greedy \\x escapes
+                default -> {
+                    if (c < 0x20 || c > 0x7e) {
+                        sb.append(String.format("\\%03o", (int) c & 0xff));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
+    }
+
     /**
      * Local arrays of value types are the only reference arrays kernels use: {@code HalfFloat[]}
      * holds f16 values, {@code Half2[]} half2 vectors.
@@ -1114,6 +1143,16 @@ final class Translator {
             var width = builder.constInt(Type.I32, c.width());
             var storage = localArray(AddressSpace.PRIVATE, c.element(), builder.binary(BinaryOp.MUL, n, width));
             rebind(args.get(0), builder.intrinsic(LocalCollections.NAME, args.get(0).type(), List.of(storage, n, width)));
+            return;
+        }
+        if (ref.owner().equals(Bindings.DEBUG) && ref.name().equals("printf")) {
+            var format = strings.get(args.get(0));
+            var values = varargs.get(args.get(1));
+            if (format == null || values == null || java.util.Arrays.stream(values).anyMatch(java.util.Objects::isNull)) {
+                throw error("TC-E1003", "Debug.printf needs a constant format string and its arguments passed directly", insn.bci());
+            }
+            var print = builder.intrinsic("tornado.printf", Type.VOID, List.of(values));
+            print.addAttribute(new uk.ac.manchester.tornado.tc.ir.Attribute("format", "\"" + cEscape(format) + "\""));
             return;
         }
         if (ref.owner().equals(Bindings.KERNEL_CONTEXT) && (ref.name().equals("launch") || ref.name().equals("launch3D"))) {

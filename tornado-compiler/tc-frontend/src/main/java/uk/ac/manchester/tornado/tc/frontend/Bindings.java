@@ -39,6 +39,7 @@ final class Bindings {
 
     static final String KERNEL_CONTEXT = "uk/ac/manchester/tornado/api/KernelContext";
     static final String DEVICE_KERNEL = "uk/ac/manchester/tornado/api/DeviceKernel";
+    static final String DEBUG = "uk/ac/manchester/tornado/api/exceptions/Debug";
     static final String DEVICE_LAUNCH_MODE = "uk/ac/manchester/tornado/api/enums/DeviceLaunchMode";
     private static final String ARRAYS = "uk/ac/manchester/tornado/api/types/arrays/";
     private static final String TORNADO_MATH = "uk/ac/manchester/tornado/api/math/TornadoMath";
