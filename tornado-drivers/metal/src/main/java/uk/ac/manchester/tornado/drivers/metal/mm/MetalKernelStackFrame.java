@@ -26,7 +26,9 @@ package uk.ac.manchester.tornado.drivers.metal.mm;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -70,6 +72,16 @@ public class MetalKernelStackFrame extends MetalByteBuffer implements KernelStac
     @Override
     public List<CallArgument> getCallArguments() {
         return callArguments;
+    }
+
+    /**
+     * The frame's slots as they are now, positioned at their end, for binding by value: a dispatch
+     * bound to this copy reads the values it was launched with, whatever the frame holds later.
+     */
+    public ByteBuffer contents() {
+        ByteBuffer copy = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), RESERVED_SLOTS << 3)).order(buffer.order());
+        copy.position(RESERVED_SLOTS << 3);
+        return copy;
     }
 
     @Override

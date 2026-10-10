@@ -239,6 +239,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.Grids"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLaunchFailureReporting"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestDependentLaunches"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAtomicRmw"),
