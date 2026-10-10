@@ -57,6 +57,12 @@ final class Helpers {
                       return a < b ? a : b;
                     }
                     """,
+            "tc_warp_sum", """
+                    __device__ static inline float tc_warp_sum(float v) {
+                      for (int lane = 16; lane > 0; lane >>= 1) v += __shfl_xor_sync(0xffffffffu, v, lane);
+                      return v;
+                    }
+                    """,
             "java_fmax", """
                     __device__ static inline double java_fmax(double a, double b) {
                       if (a != a || b != b) return __longlong_as_double(0x7ff8000000000000LL);

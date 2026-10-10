@@ -597,10 +597,18 @@ public final class CEmitter {
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
-        var type = inst.producesValue() ? inst.type() : (ops.isEmpty() ? Type.VOID : ops.get(0).type());
+        // A void intrinsic (an atomic update) is typed by its value operand, the last one.
+        var type = inst.producesValue() ? inst.type() : (ops.isEmpty() ? Type.VOID : ops.get(ops.size() - 1).type());
         var spelling = Intrinsics.lookup(name, target.dialect(), type).orElseThrow(() -> new EmitException("TC-E4002", "no " + target.dialect() + " spelling for intrinsic " + name + " on " + type.text()));
         spelling.helper().ifPresent(helpers::add);
-        var text = Intrinsics.expand(spelling.template(), ops.stream().map(o -> expr(o).text).toList());
+        var template = spelling.template();
+        if (template.contains("$&0")) {
+            // The address of the element operand 0 points to: `&a_data[i]`, or a typed cast of the pointer.
+            var element = deref(ops.get(0), type);
+            var address = element.text.startsWith("*((") ? "((" + typeName(type) + " *) " + wrap(expr(ops.get(0)), UNARY) + ")" : "&" + element.text;
+            template = template.replace("$&0", address);
+        }
+        var text = Intrinsics.expand(template, ops.stream().map(o -> expr(o).text).toList());
         return new R(text, text.startsWith("(") ? UNARY : ATOM);
     }
 

@@ -945,6 +945,23 @@ final class Translator {
                 }
                 stack = rebuilt;
             }
+            case Bindings.Atomic(var name, var value, var returnsPrevious) -> {
+                // args: context, array, index, values... A local array is a pointer: pass the element's
+                // address; a global array stays (array, index) until ABI lowering gives its address.
+                var array = args.get(1);
+                var operands = new ArrayList<Value>();
+                if (array.type() instanceof Type.PointerType) {
+                    operands.add(elementPointer(array, args.get(2), value));
+                } else {
+                    operands.add(array);
+                    operands.add(args.get(2));
+                }
+                operands.addAll(args.subList(3, args.size()));
+                var result = builder.intrinsic("tornado.atomic." + name, returnsPrevious ? value : Type.VOID, operands);
+                if (returnsPrevious) {
+                    push(result);
+                }
+            }
             case Bindings.ByteView(var type, var store) -> {
                 if (store) {
                     builder.arrayStore(args.get(0), args.get(1), args.get(2));

@@ -63,6 +63,22 @@ public final class Intrinsics {
             cuda("tornado.group_count." + d, "(int) gridDim." + d);
             cuda("tornado.global_size." + d, "(int) (gridDim." + d + " * blockDim." + d + ")");
         }
+        // Warp operations: every lane of the warp takes part (full mask). simdSum is a butterfly (XOR)
+        // reduction, so every lane receives the sum.
+        TABLE.put(new Key("tornado.simd.sum", Dialect.CUDA, ""), Spelling.withHelper("tc_warp_sum($0)", "tc_warp_sum"));
+        cuda("tornado.simd.shuffle_down", "__shfl_down_sync(0xffffffffu, $0, $1)");
+        cuda("tornado.simd.broadcast_first", "__shfl_sync(0xffffffffu, $0, 0)");
+        cuda("tornado.simd.any", "(__any_sync(0xffffffffu, $0) != 0)");
+        cuda("tornado.simd.all", "(__all_sync(0xffffffffu, $0) != 0)");
+        cuda("tornado.simd.ballot", "(int) __ballot_sync(0xffffffffu, $0)");
+        // Atomics: $&0 is the address of the element ($0 is its pointer); typed by the value.
+        for (var t : List.of("i32", "i64", "f32", "f64")) {
+            cudaTyped("tornado.atomic.add", t, t.equals("i64") ? "atomicAdd((unsigned long long *) $&0, (unsigned long long) $1)" : "atomicAdd($&0, $1)");
+        }
+        cudaTyped("tornado.atomic.cas", "i32", "atomicCAS($&0, $1, $2)");
+        cudaTyped("tornado.atomic.exchange", "i32", "atomicExch($&0, $1)");
+        cudaTyped("tornado.atomic.min", "i32", "atomicMin($&0, $1)");
+        cudaTyped("tornado.atomic.max", "i32", "atomicMax($&0, $1)");
         // Synchronisation.
         cuda("tornado.barrier.local", "__syncthreads()");
         cuda("tornado.barrier.global", "__syncthreads()");

@@ -113,6 +113,7 @@ public final class AbiLowering {
                     case Opcode.ArrayStore _s -> lowerStore(inst);
                     case Opcode.ArrayLength _l -> lowerLength(inst);
                     case Opcode.FieldLoad(var field) when classes.containsKey(inst.operand(0)) -> lowerField(inst, field, printer);
+                    case Opcode.Intrinsic(var name) when name.startsWith("tornado.atomic.") && elements.containsKey(inst.operand(0)) -> lowerAtomic(inst);
                     case Opcode.FieldLoad _f -> unsupported(inst, printer);
                     case Opcode.FieldStore _f -> unsupported(inst, printer);
                     default -> {
@@ -175,6 +176,16 @@ public final class AbiLowering {
         var wide = b.convert(ConvertOp.ZEXT, compressed, Type.I64);
         var bytes = b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, ObjectLayout.REFERENCE_SCALE));
         return b.pointerOffset(object, bytes);
+    }
+
+    /** An atomic on a global array element: {@code (array, index, values...)} becomes {@code (address, values...)}. */
+    private void lowerAtomic(Inst inst) {
+        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var operands = new java.util.ArrayList<Value>(inst.operands());
+        var address = elementAddress(b, operands.get(0), operands.get(1), elements.get(operands.get(0)));
+        operands.subList(0, 2).clear();
+        operands.add(0, address);
+        inst.setOperands(operands);
     }
 
     private void lowerLength(Inst inst) {

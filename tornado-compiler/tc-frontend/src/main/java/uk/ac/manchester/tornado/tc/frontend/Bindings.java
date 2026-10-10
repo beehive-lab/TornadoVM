@@ -92,6 +92,13 @@ final class Bindings {
     record ByteView(Type type, boolean store) implements Binding {
     }
 
+    /**
+     * A KernelContext atomic on {@code array[index]}: {@code op} is add, cas, exchange, min or max;
+     * {@code value} the element type; {@code returnsPrevious} for the read-modify-write forms.
+     */
+    record Atomic(String op, Type value, boolean returnsPrevious) implements Binding {
+    }
+
     /** Value classes: objects of these classes are their single scalar field. */
     static final String HALF_FLOAT = "uk/ac/manchester/tornado/api/types/HalfFloat";
 
@@ -130,6 +137,23 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".allocateByteLocalArray(I)[B", new SharedArray(Type.I8));
         METHODS.put(KERNEL_CONTEXT + ".allocateHalfFloatLocalArray(I)[L" + HALF_FLOAT + ";", new SharedArray(Type.F16));
         METHODS.put("java/lang/Integer.intValue()I", new Identity());
+        // Warp (SIMD group) operations: all lanes of the warp take part; not pure (never moved or merged).
+        METHODS.put(KERNEL_CONTEXT + ".simdSum(F)F", new Intrinsic("tornado.simd.sum", Type.F32));
+        METHODS.put(KERNEL_CONTEXT + ".simdShuffleDown(FI)F", new Intrinsic("tornado.simd.shuffle_down", Type.F32));
+        METHODS.put(KERNEL_CONTEXT + ".simdBroadcastFirst(F)F", new Intrinsic("tornado.simd.broadcast_first", Type.F32));
+        METHODS.put(KERNEL_CONTEXT + ".simdAny(Z)Z", new Intrinsic("tornado.simd.any", Type.I32));
+        METHODS.put(KERNEL_CONTEXT + ".simdAll(Z)Z", new Intrinsic("tornado.simd.all", Type.I32));
+        METHODS.put(KERNEL_CONTEXT + ".simdBallot(Z)I", new Intrinsic("tornado.simd.ballot", Type.I32));
+        // Atomics on global native arrays and on local int[] arrays.
+        METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "IntArray;II)V", new Atomic("add", Type.I32, false));
+        METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "LongArray;IJ)V", new Atomic("add", Type.I64, false));
+        METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "FloatArray;IF)V", new Atomic("add", Type.F32, false));
+        METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "DoubleArray;ID)V", new Atomic("add", Type.F64, false));
+        METHODS.put(KERNEL_CONTEXT + ".atomicAdd([III)V", new Atomic("add", Type.I32, false));
+        METHODS.put(KERNEL_CONTEXT + ".atomicCAS([IIII)I", new Atomic("cas", Type.I32, true));
+        METHODS.put(KERNEL_CONTEXT + ".atomicExchange([III)I", new Atomic("exchange", Type.I32, true));
+        METHODS.put(KERNEL_CONTEXT + ".atomicMin([III)I", new Atomic("min", Type.I32, true));
+        METHODS.put(KERNEL_CONTEXT + ".atomicMax([III)I", new Atomic("max", Type.I32, true));
         for (var index : new String[] { "I", "J" }) {
             METHODS.put(ARRAYS + "ByteArray.getHalfFloat(" + index + ")L" + HALF_FLOAT + ";", new ByteView(Type.F16, false));
             METHODS.put(ARRAYS + "ByteArray.setHalfFloat(" + index + "L" + HALF_FLOAT + ";)V", new ByteView(Type.F16, true));
