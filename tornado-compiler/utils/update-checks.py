@@ -16,6 +16,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 TOOLS = {
     "tc-ir": ("uk.ac.manchester.tornado.tc.ir.tools.IrTool", ["tc-ir"]),
     "tc-lower": ("uk.ac.manchester.tornado.tc.lower.tools.LowerTool", ["tc-ir", "tc-lower"]),
+    "tc-opt": ("uk.ac.manchester.tornado.tc.opt.tools.OptTool", ["tc-ir", "tc-opt"]),
     "tc-emit": ("uk.ac.manchester.tornado.tc.codegen.tools.EmitTool", ["tc-ir", "tc-lower", "tc-codegen"]),
     "tc-tornado": ("uk.ac.manchester.tornado.tc.tornado.tools.TornadoTool", ["tc-ir", "tc-tornado"]),
     "tc-java": ("uk.ac.manchester.tornado.tc.frontend.tools.JavaTool", ["tc-ir", "tc-frontend"]),

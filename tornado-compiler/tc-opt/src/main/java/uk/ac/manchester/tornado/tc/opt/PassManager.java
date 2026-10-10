@@ -98,6 +98,7 @@ public final class PassManager {
     public static PassManager standard(Verifier.Stage stage) {
         return new PassManager(stage)
                 .add(new Canonicalizer()).add(new CfgSimplify()).add(new DeadCodeElimination())
+                .add(new FullLoopUnroll()).add(new Canonicalizer()).add(new CfgSimplify())
                 .add(new GlobalValueNumbering()).add(new LoopInvariantCodeMotion())
                 .add(new Canonicalizer()).add(new GlobalValueNumbering()).add(new CfgSimplify()).add(new DeadCodeElimination());
     }

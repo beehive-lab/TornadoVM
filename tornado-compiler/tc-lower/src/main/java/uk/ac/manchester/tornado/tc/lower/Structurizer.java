@@ -450,7 +450,10 @@ public final class Structurizer {
 
     /** A pointer to the first element of an array: a parameter or allocation plus a constant offset. */
     static boolean isDataPointer(Inst inst) {
-        return inst.opcode() instanceof Opcode.PointerOffset && !(inst.operand(0) instanceof Inst base && base.opcode() instanceof Opcode.PointerOffset)
+        // `array + header` of a global array. A constant offset into a local array (`r + 4` after
+        // unrolling) is an element address instead: it prints as `r[1]`, which keeps the array
+        // promotable to registers by nvcc (a byte-pointer cast of its address would not).
+        return inst.opcode() instanceof Opcode.PointerOffset && !(inst.operand(0) instanceof Inst base && (base.opcode() instanceof Opcode.PointerOffset || base.opcode() instanceof Opcode.Alloca))
                 && inst.operand(1) instanceof Inst offset && offset.opcode() instanceof Opcode.ConstInt;
     }
 

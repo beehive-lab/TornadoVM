@@ -39,6 +39,7 @@ import uk.ac.manchester.tornado.tc.opt.Canonicalizer;
 import uk.ac.manchester.tornado.tc.opt.CfgSimplify;
 import uk.ac.manchester.tornado.tc.opt.DeadCodeElimination;
 import uk.ac.manchester.tornado.tc.opt.Inliner;
+import uk.ac.manchester.tornado.tc.opt.MathPeepholes;
 import uk.ac.manchester.tornado.tc.opt.PassManager;
 import uk.ac.manchester.tornado.tc.lower.S;
 import uk.ac.manchester.tornado.tc.lower.SPrinter;
@@ -178,7 +179,13 @@ public final class TcCompiler {
                     throw new Failed(List.of(new Diagnostic("TC-E3103", "the bounds of the @Parallel loops are not compile-time constants after specialisation, so no launch domain can be derived", "", Loc.UNKNOWN)));
                 }
             }, () -> IrPrinter.print(function));
-            stage("optimize", Kind.IR, () -> PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach()).run(function), () -> IrPrinter.print(function));
+            stage("optimize", Kind.IR, () -> {
+                var passes = PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach());
+                if (options.mathOptimizations()) {
+                    passes.add(new MathPeepholes()).add(new DeadCodeElimination());
+                }
+                passes.run(function);
+            }, () -> IrPrinter.print(function));
             if (LocalArrays.hasPending(function)) {
                 stage("local-arrays", Kind.IR, () -> {
                     var problems = LocalArrays.run(function);

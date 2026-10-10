@@ -658,6 +658,10 @@ public final class CEmitter {
         if (size == 1 && offset instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.Convert(var op) && op == Opcode.ConvertOp.SEXT) {
             return ops.get(0);
         }
+        // A constant byte offset (an unrolled index): `r + 8` with 4-byte elements is r[2].
+        if (offset instanceof S.Const(var c) && c.opcode() instanceof Opcode.ConstInt(var bytes) && bytes % size == 0) {
+            return new S.Const(new Inst(new Opcode.ConstInt(bytes / size), Type.I32));
+        }
         return null;
     }
 

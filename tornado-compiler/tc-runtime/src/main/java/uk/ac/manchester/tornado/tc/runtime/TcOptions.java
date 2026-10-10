@@ -37,7 +37,12 @@ import java.util.Set;
  * <li>{@code tornado.tc.report}: {@code html} writes a self-contained HTML report per compilation.</li>
  * </ul>
  */
-public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport) {
+public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations) {
+
+    /** Math optimisations (rsqrt) on, as on the Graal path by default. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, true);
+    }
 
     public static final TcOptions DEFAULTS = new TcOptions(Set.of(), Path.of("tc-dumps"), true, Optional.empty(), false);
 
@@ -49,7 +54,9 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
             default -> Set.of(dump.split(","));
         };
         return new TcOptions(stages, Path.of(System.getProperty("tornado.tc.dumpDir", "tc-dumps")), !"end".equals(System.getProperty("tornado.tc.verify", "each")),
-                Optional.ofNullable(System.getProperty("tornado.tc.only")), "html".equals(System.getProperty("tornado.tc.report")));
+                Optional.ofNullable(System.getProperty("tornado.tc.only")), "html".equals(System.getProperty("tornado.tc.report")),
+                // The runtime's own switch for math optimisations (default on), honoured by TC too.
+                Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")));
     }
 
     public boolean dumps(String stage) {
@@ -61,6 +68,6 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations);
     }
 }

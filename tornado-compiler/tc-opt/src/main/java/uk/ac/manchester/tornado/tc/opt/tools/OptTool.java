@@ -32,14 +32,16 @@ import uk.ac.manchester.tornado.tc.ir.Verifier;
 import uk.ac.manchester.tornado.tc.opt.Canonicalizer;
 import uk.ac.manchester.tornado.tc.opt.CfgSimplify;
 import uk.ac.manchester.tornado.tc.opt.DeadCodeElimination;
+import uk.ac.manchester.tornado.tc.opt.FullLoopUnroll;
 import uk.ac.manchester.tornado.tc.opt.GlobalValueNumbering;
 import uk.ac.manchester.tornado.tc.opt.LoopInvariantCodeMotion;
+import uk.ac.manchester.tornado.tc.opt.MathPeepholes;
 import uk.ac.manchester.tornado.tc.opt.Pass;
 import uk.ac.manchester.tornado.tc.opt.PassManager;
 
 /**
  * The {@code tc-opt} tool: runs passes on TC-SSA and prints the result, verifying after every pass.
- * {@code tc-opt [--passes=canonicalize,cfg-simplify,dce,gvn,licm | -O] [--stage=post-abi]
+ * {@code tc-opt [--passes=canonicalize,cfg-simplify,dce,gvn,licm,unroll | -O] [--stage=post-abi]
  * [--pass-limit=N] [--no-loc] <file | ->}.
  */
 public final class OptTool {
@@ -120,6 +122,8 @@ public final class OptTool {
             case "dce" -> new DeadCodeElimination();
             case "gvn" -> new GlobalValueNumbering();
             case "licm" -> new LoopInvariantCodeMotion();
+            case "unroll" -> new FullLoopUnroll();
+            case "math-peepholes" -> new MathPeepholes();
             default -> throw new IllegalArgumentException("unknown pass '" + name + "'");
         };
     }
