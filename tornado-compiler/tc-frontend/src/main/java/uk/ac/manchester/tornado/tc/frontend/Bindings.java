@@ -238,6 +238,9 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".mmaFragment(F)[F", new Intrinsic("tornado.mma.fragment", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadA([II)[" + half, new Intrinsic("tornado.mma.load_a", new Type.VectorType(Type.I32, 4)));
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadB([II)[" + half, new Intrinsic("tornado.mma.load_b", new Type.VectorType(Type.I32, 2)));
+        // Fragments straight from a row-major HalfFloatArray in global memory (no shared staging).
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadA(L" + ARRAYS + "HalfFloatArray;III)[" + half, new Intrinsic("tornado.mma.load_a.global", new Type.VectorType(Type.I32, 4)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadB(L" + ARRAYS + "HalfFloatArray;III)[" + half, new Intrinsic("tornado.mma.load_b.global", new Type.VectorType(Type.I32, 2)));
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadA([III)[" + half, new Intrinsic("tornado.mma.load_a.offset", new Type.VectorType(Type.I32, 4)));
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadB([III)[" + half, new Intrinsic("tornado.mma.load_b.offset", new Type.VectorType(Type.I32, 2)));
         var tile = "[" + half;

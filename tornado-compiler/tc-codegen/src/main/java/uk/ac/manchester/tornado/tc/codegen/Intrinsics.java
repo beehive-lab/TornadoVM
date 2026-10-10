@@ -96,6 +96,8 @@ public final class Intrinsics {
         TABLE.put(new Key("tornado.mma.load_a", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1, 2)", "tc_mma_load_a"));
         TABLE.put(new Key("tornado.mma.load_b", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) $0, $1)", "tc_mma_load_b"));
         // With a byte offset: the tile base moves by that many bytes (a warp's sub-tile).
+        TABLE.put(new Key("tornado.mma.load_a.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_a_global"));
+        TABLE.put(new Key("tornado.mma.load_b.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_b_global"));
         TABLE.put(new Key("tornado.mma.load_a.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) ((const char *) $0 + $2), $1, 2)", "tc_mma_load_a"));
         TABLE.put(new Key("tornado.mma.load_b.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_b"));
         // Swizzled B tiles (fp16, stride-32 permutation: byte b -> b ^ (((b >> 7) & 7) << 4)).

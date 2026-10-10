@@ -89,6 +89,34 @@ final class Helpers {
                       return a;
                     }
                     """),
+            // A from global memory: lane l, register i holds row l/4 + 8(i%2), columns 2(l%4) + 8(i/2)
+            // and the next one of the 16 x 16 tile at a[row * ld + col]: one 32-bit load per register.
+            Map.entry("tc_mma_load_a_global", """
+                    __device__ static inline int4 tc_mma_load_a_global(const unsigned short *a, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      const unsigned short *p = a + (long long) (row + (int) (lane >> 2)) * ld + col + (int) ((lane & 3u) << 1);
+                      long long down = 8LL * ld;
+                      int4 r;
+                      r.x = *(const int *) p;
+                      r.y = *(const int *) (p + down);
+                      r.z = *(const int *) (p + 8);
+                      r.w = *(const int *) (p + down + 8);
+                      return r;
+                    }
+                    """),
+            // B from global memory: each lane loads a half pair along n of the two 8 x 8 halves
+            // (rows k and k + 8), and movmatrix transposes them into the column-major B registers.
+            Map.entry("tc_mma_load_b_global", """
+                    __device__ static inline int2 tc_mma_load_b_global(const unsigned short *b, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      const unsigned short *p = b + (long long) (row + (int) (lane >> 2)) * ld + col + (int) ((lane & 3u) << 1);
+                      int lo = *(const int *) p, hi = *(const int *) (p + 8LL * ld);
+                      int2 r;
+                      asm volatile("movmatrix.sync.aligned.m8n8.trans.b16 %0, %1;" : "=r"(r.x) : "r"(lo));
+                      asm volatile("movmatrix.sync.aligned.m8n8.trans.b16 %0, %1;" : "=r"(r.y) : "r"(hi));
+                      return r;
+                    }
+                    """),
             // B: a k x 8 row-major half tile (rows of 16 bytes), transposed by ldmatrix into the two B registers.
             Map.entry("tc_mma_load_b", """
                     __device__ static inline int2 tc_mma_load_b(const int *tile, int k) {
