@@ -94,6 +94,7 @@ RUN_DEPENDENT_LAUNCHES = {
     "reductions.TestReductionsAutomatic": "testIrregularSize03 draws its sizes from an unseeded Random",
     "functional.TestStreams": "tasks are named after ForkJoin worker threads",
     "warmup.TestWarmUp": "the warm-up loop is timed",
+    "multithreaded.TestMultiThreadedExecutionPlans": "two threads share one WorkerGrid whose local size the runtime fills in (1024 once in run 12, 512 in 8 reruns under both compilers)",
 }
 
 

@@ -136,7 +136,7 @@ public final class ValueSpecialisation {
                 long elements = roots.iterator().next();
                 for (var user : List.copyOf(arg.users())) {
                     if (user.opcode() instanceof Opcode.ArrayLength && (user.type().equals(Type.I64) || elements <= Integer.MAX_VALUE)) {
-                        var constant = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc()).constInt(user.type(), elements);
+                        var constant = IrBuilder.insertingBefore(user).constInt(user.type(), elements);
                         constant.setName(user.name());
                         user.replaceAllUsesWith(constant);
                         user.erase();
@@ -185,7 +185,7 @@ public final class ValueSpecialisation {
                     for (var user : List.copyOf(param.users())) {
                         // getSize() is i32 and throws beyond Integer.MAX_VALUE in Java: only getSizeLong() folds then.
                         if (user.opcode() instanceof Opcode.ArrayLength && (user.type().equals(Type.I64) || elements <= Integer.MAX_VALUE)) {
-                            var constant = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc()).constInt(user.type(), elements);
+                            var constant = IrBuilder.insertingBefore(user).constInt(user.type(), elements);
                             constant.setName(user.name());
                             user.replaceAllUsesWith(constant);
                             user.erase();
@@ -199,7 +199,7 @@ public final class ValueSpecialisation {
                         if (user.opcode() instanceof Opcode.FieldLoad(var field) && lengths.containsKey(field)) {
                             for (var lengthUser : List.copyOf(user.users())) {
                                 if (lengthUser.opcode() instanceof Opcode.ArrayLength && (lengthUser.type().equals(Type.I64) || lengths.get(field) <= Integer.MAX_VALUE)) {
-                                    var constant = new IrBuilder(lengthUser.block().orElseThrow()).before(lengthUser).at(lengthUser.loc()).constInt(lengthUser.type(), lengths.get(field));
+                                    var constant = IrBuilder.insertingBefore(lengthUser).constInt(lengthUser.type(), lengths.get(field));
                                     constant.setName(field + "_len");
                                     lengthUser.replaceAllUsesWith(constant);
                                     lengthUser.erase();
@@ -210,7 +210,7 @@ public final class ValueSpecialisation {
                     }
                     for (var user : List.copyOf(param.users())) {
                         if (user.opcode() instanceof Opcode.FieldLoad(var field) && finals.containsKey(field) && (user.type().isInteger() || user.type().isFloat())) {
-                            var b = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc());
+                            var b = IrBuilder.insertingBefore(user);
                             var value = finals.get(field);
                             var constant = user.type().isFloat() ? b.constFloat(user.type(), value.doubleValue()) : b.constInt(user.type(), value.longValue());
                             constant.setName(user.name().isEmpty() || user.name().chars().allMatch(Character::isDigit) ? field : user.name());

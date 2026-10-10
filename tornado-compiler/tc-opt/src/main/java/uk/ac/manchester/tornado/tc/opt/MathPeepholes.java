@@ -48,7 +48,7 @@ public final class MathPeepholes implements Pass {
                 if (inst.block().isPresent() && inst.opcode() instanceof Opcode.Binary(var op) && op == Opcode.BinaryOp.FDIV
                         && inst.operand(0) instanceof Inst one && one.opcode() instanceof Opcode.ConstFloat(var v) && v == 1.0
                         && inst.operand(1) instanceof Inst sqrt && sqrt.opcode() instanceof Opcode.Intrinsic(var name) && name.equals("math.sqrt")) {
-                    var rsqrt = new IrBuilder(block).before(inst).at(inst.loc()).intrinsic("math.rsqrt", inst.type(), List.of(sqrt.operand(0)));
+                    var rsqrt = IrBuilder.insertingBefore(inst).intrinsic("math.rsqrt", inst.type(), List.of(sqrt.operand(0)));
                     rsqrt.setName(inst.name());
                     inst.replaceAllUsesWith(rsqrt);
                     inst.erase();

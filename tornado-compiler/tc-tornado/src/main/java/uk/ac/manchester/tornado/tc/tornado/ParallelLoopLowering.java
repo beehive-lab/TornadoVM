@@ -37,7 +37,9 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.BinaryOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
+import uk.ac.manchester.tornado.tc.ir.analysis.LoopShape;
 
 /**
  * Lowers {@code @Parallel} loops (optimisation list item T2) for GPU targets: every loop whose header
@@ -56,7 +58,6 @@ import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
  */
 public final class ParallelLoopLowering {
 
-    private static final String[] DIMENSIONS = { "x", "y", "z" };
 
     private ParallelLoopLowering() {
     }
@@ -115,40 +116,31 @@ public final class ParallelLoopLowering {
 
     private static java.util.Optional<Diagnostic> lower(LoopForest.Loop loop, int ivIndex, int dim) {
         var header = loop.header();
-        var iv = header.args().get(ivIndex);
-        var entries = new ArrayList<Inst>();
-        var predecessors = header.function().predecessors().get(header);
-        for (var pred : predecessors) {
-            if (!loop.contains(pred)) {
-                entries.add(pred.terminator().orElseThrow());
-            }
+        var shape = CountedLoop.analyse(loop, ivIndex);
+        if (shape instanceof LoopShape.NotCounted(var failure)) {
+            return java.util.Optional.of(error(header, switch (failure) {
+                case EDGES -> "a @Parallel loop needs one entry edge and one back edge";
+                case INCREMENT -> "the @Parallel index must advance as i = i + step";
+                case STEP -> "the step of a @Parallel loop must not change inside the loop";
+            }));
         }
-        if (entries.size() != 1 || loop.latches().size() != 1) {
-            return java.util.Optional.of(error(header, "a @Parallel loop needs one entry edge and one back edge"));
-        }
-        var entry = entries.get(0);
-        var latch = loop.latches().get(0).terminator().orElseThrow();
-        var next = argumentOnEdge(latch, header, ivIndex);
-        if (!(next instanceof Inst add && add.opcode() instanceof Opcode.Binary(var op) && op == BinaryOp.ADD && (add.operand(0) == iv || add.operand(1) == iv))) {
-            return java.util.Optional.of(error(header, "the @Parallel index must advance as i = i + step"));
-        }
-        var step = add.operand(0) == iv ? add.operand(1) : add.operand(0);
-        if (!isInvariant(step, loop)) {
-            return java.util.Optional.of(error(header, "the step of a @Parallel loop must not change inside the loop"));
-        }
-        var d = DIMENSIONS[dim];
-        recordDomain(header, iv, argumentOnEdge(entry, header, ivIndex), step, dim);
+        var counted = (CountedLoop) shape;
+        var iv = counted.iv();
+        var step = counted.step();
+        recordDomain(counted, dim);
 
-        var before = new IrBuilder(entry.block().orElseThrow()).before(entry).at(entry.loc());
+        var entry = counted.entry().terminator();
+        var before = IrBuilder.insertingBefore(entry);
         var gid = before.intrinsic("tornado.thread_id.global", Immediates.of("dim", dim), Type.I32, List.of());
-        var init = before.add(argumentOnEdge(entry, header, ivIndex), scaled(before, gid, step));
-        setArgumentOnEdge(entry, header, ivIndex, init);
+        counted.entry().setArgument(ivIndex, before.add(counted.init(), scaled(before, gid, step)));
 
-        var inLatch = new IrBuilder(latch.block().orElseThrow()).before(latch).at(latch.loc());
+        var latch = counted.backEdge().terminator();
+        var inLatch = IrBuilder.insertingBefore(latch);
         var size = inLatch.intrinsic("tornado.global_size", Immediates.of("dim", dim), Type.I32, List.of());
         var advanced = inLatch.add(iv, scaled(inLatch, size, step));
+        var add = counted.increment();
         advanced.setName(add.name());
-        setArgumentOnEdge(latch, header, ivIndex, advanced);
+        counted.backEdge().setArgument(ivIndex, advanced);
         if (!add.hasUses()) {
             add.erase();
         }
@@ -184,30 +176,14 @@ public final class ParallelLoopLowering {
         return d.step() == 0 ? 0 : (d.upper() - d.offset() + d.step() - 1) / d.step();
     }
 
-    /** Records offset, step and exclusive upper bound when all three are constants and the test is {@code i < upper} or {@code i <= last}. */
-    private static void recordDomain(Block header, BlockArg iv, Value init, Value step, int dim) {
-        var offset = constant(init);
-        var stride = constant(step);
-        var term = header.terminator().orElse(null);
-        if (offset.isEmpty() || stride.isEmpty() || term == null || !(term.opcode() instanceof Opcode.CondBranch) || !(term.operand(0) instanceof Inst cmp)) {
-            return;
+    /** Records offset, step and exclusive upper bound when all three are constants. */
+    private static void recordDomain(CountedLoop loop, int dim) {
+        var offset = loop.constantInit();
+        var stride = loop.constantStep();
+        var upper = loop.exclusiveUpper();
+        if (offset.isPresent() && stride.isPresent() && upper.isPresent()) {
+            loop.header().function().addAttribute(Attribute.of("domain", "dim", dim, "offset", offset.getAsLong(), "step", stride.getAsLong(), "upper", upper.getAsLong()));
         }
-        // javac tests the exit condition: `i >= upper` jumps out (`i < upper` stays in); for `i <= last`
-        // it is `i > last`, an exclusive upper bound of last + 1.
-        if (cmp.opcode() instanceof Opcode.ICmp(var p) && cmp.operand(0) == iv) {
-            long inclusive = switch (p) {
-                case SGE, SLT -> 0;
-                case SGT, SLE -> 1;
-                default -> -1;
-            };
-            if (inclusive >= 0) {
-                constant(cmp.operand(1)).ifPresent(upper -> header.function().addAttribute(Attribute.of("domain", "dim", dim, "offset", offset.get(), "step", stride.get(), "upper", upper + inclusive)));
-            }
-        }
-    }
-
-    private static java.util.Optional<Long> constant(Value v) {
-        return v instanceof Inst i && i.opcode() instanceof Opcode.ConstInt(var c) ? java.util.Optional.of(c) : java.util.Optional.empty();
     }
 
     private static Value scaled(IrBuilder b, Value v, Value step) {
@@ -216,33 +192,6 @@ public final class ParallelLoopLowering {
             return k == 1 ? v : b.binary(BinaryOp.MUL, v, b.constInt(step.type(), k));
         }
         return b.binary(BinaryOp.MUL, v, step);
-    }
-
-    private static boolean isInvariant(Value v, LoopForest.Loop loop) {
-        return switch (v) {
-            case Inst i -> i.opcode() instanceof Opcode.ConstInt || i.block().map(b -> !loop.contains(b)).orElse(false);
-            case BlockArg a -> !loop.contains(a.block());
-        };
-    }
-
-    private static Value argumentOnEdge(Inst terminator, Block target, int index) {
-        for (var s : terminator.successors()) {
-            if (s.target() == target) {
-                return s.args().get(index);
-            }
-        }
-        throw new IllegalStateException("no edge to " + target);
-    }
-
-    private static void setArgumentOnEdge(Inst terminator, Block target, int index, Value value) {
-        for (int i = 0; i < terminator.successors().size(); i++) {
-            var s = terminator.successors().get(i);
-            if (s.target() == target) {
-                var args = new ArrayList<>(s.args());
-                args.set(index, value);
-                terminator.setSuccessorArgs(i, args);
-            }
-        }
     }
 
     private static Diagnostic error(Block header, String message) {

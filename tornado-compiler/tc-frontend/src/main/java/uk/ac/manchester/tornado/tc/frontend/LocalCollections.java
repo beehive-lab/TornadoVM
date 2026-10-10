@@ -71,7 +71,7 @@ public final class LocalCollections {
                             // The storage's own length (FloatArray.getSize) is n * width.
                             for (var lengthRead : List.copyOf(use.users())) {
                                 if (lengthRead.opcode() instanceof Opcode.ArrayLength) {
-                                    var b = new IrBuilder(lengthRead.block().orElseThrow()).before(lengthRead).at(lengthRead.loc());
+                                    var b = IrBuilder.insertingBefore(lengthRead);
                                     var total = b.binary(BinaryOp.MUL, collection.operand(1), collection.operand(2));
                                     lengthRead.replaceAllUsesWith(lengthRead.type().equals(Type.I64) ? b.convert(ConvertOp.SEXT, total, Type.I64) : total);
                                     lengthRead.erase();

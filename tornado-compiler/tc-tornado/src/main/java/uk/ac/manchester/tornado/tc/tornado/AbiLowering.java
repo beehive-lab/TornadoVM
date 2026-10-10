@@ -134,7 +134,7 @@ public final class AbiLowering {
                     }
                     // Other intrinsics taking a whole array (mmaStore) get its data pointer.
                     case Opcode.Intrinsic _i when inst.operands().stream().anyMatch(elements::containsKey) -> {
-                        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+                        var b = IrBuilder.insertingBefore(inst);
                         for (int k = 0; k < inst.operandCount(); k++) {
                             if (elements.containsKey(inst.operand(k))) {
                                 var array = inst.operand(k);
@@ -155,7 +155,7 @@ public final class AbiLowering {
     }
 
     private void lowerLoad(Inst inst) {
-        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var b = IrBuilder.insertingBefore(inst);
         // A byte array read as another type (ByteArray.getHalfFloat) is indexed in bytes.
         var address = elementAddress(b, inst.operand(0), inst.operand(1), elements.getOrDefault(inst.operand(0), inst.type()));
         var load = b.load(address, inst.type());
@@ -165,7 +165,7 @@ public final class AbiLowering {
     }
 
     private void lowerStore(Inst inst) {
-        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var b = IrBuilder.insertingBefore(inst);
         var address = elementAddress(b, inst.operand(0), inst.operand(1), elements.getOrDefault(inst.operand(0), inst.operand(2).type()));
         b.store(address, inst.operand(2));
         inst.erase();
@@ -183,7 +183,7 @@ public final class AbiLowering {
             diagnostics.add(new Diagnostic("TC-E3102", "field '" + field + "' is not in the device layout of " + layout.className(), printer.instText(inst), inst.loc()));
             return;
         }
-        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var b = IrBuilder.insertingBefore(inst);
         var address = b.pointerOffset(object, b.constInt(Type.I64, offset));
         Value result;
         switch (inst.type()) {
@@ -224,7 +224,7 @@ public final class AbiLowering {
             if (user.opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.vector.store_param") && user.operand(0) == param) {
                 var updated = user.operand(1);
                 if (updated != param) {
-                    var s = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc());
+                    var s = IrBuilder.insertingBefore(user);
                     for (int l = 0; l < vec.length(); l++) {
                         var address = l == 0 ? param : s.pointerOffset(param, s.constInt(Type.I64, (long) l * sizeOf(vec.element())));
                         s.store(address, s.intrinsic("tornado.vector.lane", uk.ac.manchester.tornado.tc.ir.Immediates.of("lane", l), vec.element(), List.of(updated == param ? value : updated)));
@@ -251,7 +251,7 @@ public final class AbiLowering {
             diagnostics.add(new Diagnostic("TC-E3102", "field '" + field + "' cannot be written in the device copy of " + layout.className(), printer.instText(inst), inst.loc()));
             return;
         }
-        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var b = IrBuilder.insertingBefore(inst);
         b.store(b.pointerOffset(object, b.constInt(Type.I64, offset)), value);
         inst.erase();
     }
@@ -265,7 +265,7 @@ public final class AbiLowering {
 
     /** An atomic on a global array element: {@code (array, index, values...)} becomes {@code (address, values...)}. */
     private void lowerAtomic(Inst inst) {
-        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var b = IrBuilder.insertingBefore(inst);
         var operands = new java.util.ArrayList<Value>(inst.operands());
         var address = elementAddress(b, operands.get(0), operands.get(1), elements.get(operands.get(0)));
         operands.subList(0, 2).clear();
@@ -274,7 +274,7 @@ public final class AbiLowering {
     }
 
     private void lowerLength(Inst inst) {
-        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var b = IrBuilder.insertingBefore(inst);
         var count = b.load(inst.operand(0), Type.I64);
         var length = inst.type().equals(Type.I64) ? count : b.convert(ConvertOp.TRUNC, count, Type.I32);
         length.setName(!inst.name().isEmpty() && !inst.name().chars().allMatch(Character::isDigit) ? inst.name() : inst.operand(0).name() + "_len");

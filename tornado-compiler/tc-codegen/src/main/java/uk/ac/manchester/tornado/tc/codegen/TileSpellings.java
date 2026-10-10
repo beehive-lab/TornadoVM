@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Type.TileType;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 
 /**
  * CUDA Tile C++ ({@code cuda_tile.h}, namespace {@code ct}) for the {@code tile.*} intrinsics of a
@@ -112,10 +113,7 @@ final class TileSpellings {
 
     /** A constant operand (an axis, a fill value): TileTyping guarantees it; anything else is an error, never 0 (CG-4). */
     private static long intConstant(Value v) {
-        if (v instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n)) {
-            return n;
-        }
-        throw new CEmitter.EmitException("TC-E3401", "a tile axis must be a compile-time constant");
+        return Constants.integer(v).orElseThrow(() -> new CEmitter.EmitException("TC-E3401", "a tile axis must be a compile-time constant"));
     }
 
     private static double floatConstant(Value v) {

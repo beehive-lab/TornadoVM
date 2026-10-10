@@ -43,6 +43,12 @@ public final class IrBuilder {
         this.block = block;
     }
 
+    /** A builder inserting before {@code anchor}, at its source location: the usual way to rewrite an instruction. */
+    public static IrBuilder insertingBefore(Inst anchor) {
+        var block = anchor.block().orElseThrow(() -> new IllegalArgumentException("anchor is not in a block"));
+        return new IrBuilder(block).before(anchor).at(anchor.loc());
+    }
+
     /** Appends subsequent instructions to the end of {@code block}. */
     public IrBuilder atEnd(Block block) {
         this.block = block;

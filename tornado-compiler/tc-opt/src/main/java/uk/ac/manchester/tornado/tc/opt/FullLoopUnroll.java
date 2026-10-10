@@ -32,6 +32,7 @@ import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.IntPredicate;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
@@ -94,30 +95,6 @@ public final class FullLoopUnroll implements Pass {
         if (stay < 0 || headerExit.successors().get(1 - stay).target() == body) {
             return false;
         }
-        // The single entry edge from outside the loop.
-        Inst entryTerm = null;
-        int entryIndex = -1;
-        for (var b : function.blocks()) {
-            if (loop.contains(b)) {
-                continue;
-            }
-            var t = b.terminator().orElse(null);
-            if (t == null) {
-                continue;
-            }
-            for (int s = 0; s < t.successors().size(); s++) {
-                if (t.successors().get(s).target() == header) {
-                    if (entryTerm != null) {
-                        return false;
-                    }
-                    entryTerm = t;
-                    entryIndex = s;
-                }
-            }
-        }
-        if (entryTerm == null) {
-            return false;
-        }
         for (var b : List.of(header, body)) {
             for (var inst : b.insts()) {
                 if (inst.opcode() instanceof Opcode.Alloca || inst.opcode() instanceof Opcode.Call) {
@@ -125,23 +102,24 @@ public final class FullLoopUnroll implements Pass {
                 }
             }
         }
-        // Induction variable: i = c0; i < bound (or another signed test); i = i + step.
-        if (!(headerExit.operand(0) instanceof Inst cmp) || !(cmp.opcode() instanceof Opcode.ICmp(var predicate)) || !(cmp.operand(0) instanceof BlockArg iv)
-                || iv.block() != header) {
+        // Induction variable: i = c0; i < bound (or another signed test); i = i + step, all constants.
+        var counted = CountedLoop.of(loop).orElse(null);
+        if (counted == null || counted.exit().isEmpty()) {
             return false;
         }
-        int ivIndex = header.args().indexOf(iv);
-        var init = constant(entryTerm.successors().get(entryIndex).args().get(ivIndex));
-        var bound = constant(cmp.operand(1));
-        var next = latch.successors().get(0).args().get(ivIndex);
-        if (init == null || bound == null || !(next instanceof Inst add) || !(add.opcode() instanceof Opcode.Binary(var op)) || op != Opcode.BinaryOp.ADD || add.operand(0) != iv) {
+        var predicate = counted.exit().get().predicate();
+        var entryTerm = counted.entry().terminator();
+        int entryIndex = counted.entry().successor();
+        var initValue = counted.constantInit();
+        var boundValue = counted.constantBound();
+        var stepValue = counted.constantStep();
+        if (initValue.isEmpty() || boundValue.isEmpty() || stepValue.isEmpty() || stepValue.getAsLong() == 0 || !(predicate == IntPredicate.EQ || predicate == IntPredicate.NE
+                || predicate == IntPredicate.SLT || predicate == IntPredicate.SLE || predicate == IntPredicate.SGT || predicate == IntPredicate.SGE)) {
             return false;
         }
-        var step = constant(add.operand(1));
-        if (step == null || step == 0 || !(predicate == IntPredicate.EQ || predicate == IntPredicate.NE || predicate == IntPredicate.SLT || predicate == IntPredicate.SLE
-                || predicate == IntPredicate.SGT || predicate == IntPredicate.SGE)) {
-            return false;
-        }
+        long init = initValue.getAsLong();
+        long bound = boundValue.getAsLong();
+        long step = stepValue.getAsLong();
         boolean privateArray = touchesPrivateArray(header) || touchesPrivateArray(body);
         int maxTrips = privateArray ? MAX_TRIPS_PRIVATE : MAX_TRIPS;
         // (64 either way today; kept separate so the two budgets can be tuned independently.)
@@ -235,10 +213,6 @@ public final class FullLoopUnroll implements Pass {
             }
             env.put(inst, copy);
         }
-    }
-
-    private static Long constant(Value v) {
-        return v instanceof Inst i && i.opcode() instanceof Opcode.ConstInt(var c) ? c : null;
     }
 
     private static boolean holds(IntPredicate p, long a, long b) {

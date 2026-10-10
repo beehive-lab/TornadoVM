@@ -142,7 +142,7 @@ public final class ReductionLowering {
         int entryIndex = counted.entry().successor();
 
         // One iteration per thread: i = start + gid; no back edge.
-        var b = new IrBuilder(header).before(header.insts().get(0)).at(header.insts().get(0).loc());
+        var b = IrBuilder.insertingBefore(header.insts().get(0));
         Value index = b.intrinsic("tornado.thread_id.global", Immediates.of("dim", 0), Type.I32, List.of());
         if (start.getAsLong() != 0) {
             index = b.binary(BinaryOp.ADD, index, b.constInt(Type.I32, start.getAsLong()));

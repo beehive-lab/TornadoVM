@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.tc.ir.Opcode.FloatPredicate;
 import uk.ac.manchester.tornado.tc.ir.Opcode.IntPredicate;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 
 /**
  * Constant folding and algebraic simplification (optimisation list items O2, O3) with Java
@@ -81,43 +82,43 @@ public final class Canonicalizer implements Pass {
             case Opcode.Binary(var op) -> {
                 var a = ops.get(0);
                 var b = ops.get(1);
-                var ca = constant(a);
-                var cb = constant(b);
+                var ca = Constants.number(a);
+                var cb = Constants.number(b);
                 if (ca.isPresent() && cb.isPresent()) {
                     yield fold(op, type, ca.get(), cb.get()).map(v -> make(inst, type, v));
                 }
                 yield identity(op, type, a, b, ca, cb);
             }
-            case Opcode.Unary(var op) -> constant(ops.get(0)).map(c -> switch (op) {
+            case Opcode.Unary(var op) -> Constants.number(ops.get(0)).map(c -> switch (op) {
                 case NEG -> make(inst, type, wrap(-c.longValue(), type));
                 case NOT -> make(inst, type, wrap(~c.longValue(), type));
                 case FNEG -> make(inst, type, -c.doubleValue());
             });
             case Opcode.ICmp(var p) -> {
-                var ca = constant(ops.get(0));
-                var cb = constant(ops.get(1));
+                var ca = Constants.number(ops.get(0));
+                var cb = Constants.number(ops.get(1));
                 if (ca.isPresent() && cb.isPresent()) {
                     yield Optional.of(make(inst, Type.I1, compare(p, ca.get().longValue(), cb.get().longValue(), ops.get(0).type()) ? 1L : 0L));
                 }
                 yield ops.get(0) == ops.get(1) ? Optional.of(make(inst, Type.I1, reflexive(p) ? 1L : 0L)) : Optional.empty();
             }
             case Opcode.FCmp(var p) -> {
-                var ca = constant(ops.get(0));
-                var cb = constant(ops.get(1));
+                var ca = Constants.number(ops.get(0));
+                var cb = Constants.number(ops.get(1));
                 if (ca.isPresent() && cb.isPresent()) {
                     yield Optional.of(make(inst, Type.I1, compare(p, ca.get().doubleValue(), cb.get().doubleValue()) ? 1L : 0L));
                 }
                 yield Optional.empty();
             }
             case Opcode.Select s -> {
-                var c = constant(ops.get(0));
+                var c = Constants.number(ops.get(0));
                 if (c.isPresent()) {
                     yield Optional.of(c.get().longValue() != 0 ? ops.get(1) : ops.get(2));
                 }
                 yield ops.get(1) == ops.get(2) ? Optional.of(ops.get(1)) : Optional.empty();
             }
             case Opcode.Convert(var op) -> {
-                var folded = constant(ops.get(0)).flatMap(c -> convert(op, ops.get(0).type(), type, c)).map(v -> make(inst, type, v));
+                var folded = Constants.number(ops.get(0)).flatMap(c -> convert(op, ops.get(0).type(), type, c)).map(v -> make(inst, type, v));
                 // trunc(sext x) and trunc(zext x) back to x's own type are x: the extension only added high bits.
                 if (folded.isEmpty() && op == ConvertOp.TRUNC && ops.get(0) instanceof Inst ext && ext.opcode() instanceof Opcode.Convert(var inner)
                         && (inner == ConvertOp.SEXT || inner == ConvertOp.ZEXT) && ext.operand(0).type().equals(type)) {
@@ -125,7 +126,7 @@ public final class Canonicalizer implements Pass {
                 }
                 yield folded;
             }
-            case Opcode.PointerOffset p -> constant(ops.get(1)).filter(c -> c.longValue() == 0).map(c -> ops.get(0));
+            case Opcode.PointerOffset p -> Constants.number(ops.get(1)).filter(c -> c.longValue() == 0).map(c -> ops.get(0));
             case Opcode.Intrinsic(var name) when name.equals(INSERT) && type instanceof Type.VectorType vec -> wholeVector(inst, vec);
             case Opcode.Intrinsic(var name) when name.equals(LANE) -> laneOf(inst, ops.get(0), inst.immediates().requireInt("lane"));
             default -> Optional.empty();
@@ -381,20 +382,8 @@ public final class Canonicalizer implements Pass {
         };
     }
 
-    /** The value of an integer or floating-point constant: {@link Long} or {@link Double}. */
-    static Optional<Number> constant(Value v) {
-        if (v instanceof Inst i) {
-            return switch (i.opcode()) {
-                case Opcode.ConstInt(var value) -> Optional.of(value);
-                case Opcode.ConstFloat(var value) -> Optional.of(value);
-                default -> Optional.empty();
-            };
-        }
-        return Optional.empty();
-    }
-
     private static Value make(Inst at, Type type, Number value) {
-        var b = new IrBuilder(at.block().orElseThrow()).before(at).at(at.loc());
+        var b = IrBuilder.insertingBefore(at);
         Inst c = type.isFloat() ? b.constFloat(type, value.doubleValue()) : b.constInt(type, value.longValue());
         c.setName(at.name());
         return c;

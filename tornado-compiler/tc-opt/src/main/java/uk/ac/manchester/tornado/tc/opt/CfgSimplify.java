@@ -30,6 +30,7 @@ import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
+import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 
 /**
  * Control-flow simplification (optimisation list item O4): conditional branches on constants
@@ -61,7 +62,7 @@ public final class CfgSimplify implements Pass {
             if (term == null || !(term.opcode() instanceof Opcode.CondBranch)) {
                 continue;
             }
-            var c = Canonicalizer.constant(term.operand(0));
+            var c = Constants.number(term.operand(0));
             if (c.isEmpty()) {
                 continue;
             }

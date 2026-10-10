@@ -78,7 +78,7 @@ public final class LocalArrays {
                 if (array instanceof Inst a && isPending(a)) {
                     length = Optional.of(a.operand(0));
                 } else if (array instanceof Inst a && a.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
-                    length = Optional.of(new IrBuilder(block).before(inst).at(inst.loc()).constInt(Type.I32, count));
+                    length = Optional.of(IrBuilder.insertingBefore(inst).constInt(Type.I32, count));
                 }
                 if (length.isPresent()) {
                     inst.replaceAllUsesWith(length.get());
@@ -119,7 +119,7 @@ public final class LocalArrays {
                 if (inst.operand(0) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var count)) {
                     var space = AddressSpace.fromText(inst.immediates().requireString("space"));
                     // A zero-length array (Java allows it; nothing can be read from it) still occupies one element.
-                    var alloca = new IrBuilder(block).before(inst).at(inst.loc()).alloca(space, element(inst).orElseThrow(), (int) Math.max(count, 1));
+                    var alloca = IrBuilder.insertingBefore(inst).alloca(space, element(inst).orElseThrow(), (int) Math.max(count, 1));
                     alloca.setName(inst.name());
                     inst.replaceAllUsesWith(alloca);
                     inst.erase();

@@ -28,6 +28,8 @@ import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
+import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
  * Batched execution: each device buffer holds one chunk of every array, starting at element
@@ -47,18 +49,21 @@ public final class BatchOffset {
         if (offset == 0) {
             return;
         }
+        var forest = new LoopForest(function);
         for (var header : function.blocks()) {
             for (var a : header.attributes()) {
                 if (!a.name().equals("parallel")) {
                     continue;
                 }
                 var iv = header.args().get(a.integer("iv"));
+                // The loop's own compare and increment count chunk-local iterations; everything else sees the global index.
+                var counted = forest.loopWithHeader(header).flatMap(loop -> CountedLoop.of(loop, a.integer("iv")));
                 var first = header.insts().get(0);
-                var b = new IrBuilder(header).before(first).at(first.loc());
+                var b = IrBuilder.insertingBefore(first);
                 var global = b.binary(Opcode.BinaryOp.ADD, iv, b.constInt(iv.type(), offset));
                 global.setName(iv.name() + "_global");
                 for (var user : List.copyOf(iv.users())) {
-                    if (user == global || isLoopControl(user, header)) {
+                    if (user == global || counted.map(c -> c.controls(user)).orElse(false)) {
                         continue;
                     }
                     for (int k = 0; k < user.operandCount(); k++) {
@@ -86,7 +91,7 @@ public final class BatchOffset {
                 if (index == global) {
                     inst.setOperand(1, iv);
                 } else if (dependsOn(index, global, new java.util.HashSet<>())) {
-                    var b = new IrBuilder(block).before(inst).at(inst.loc());
+                    var b = IrBuilder.insertingBefore(inst);
                     var local = b.binary(Opcode.BinaryOp.SUB, index, b.constInt(index.type(), offset));
                     inst.setOperand(1, local);
                 }
@@ -107,14 +112,5 @@ public final class BatchOffset {
             }
         }
         return false;
-    }
-
-    /** The loop's own bound test (in the header) and increment (passed back to the header). */
-    private static boolean isLoopControl(Inst user, uk.ac.manchester.tornado.tc.ir.Block header) {
-        if (user.opcode() instanceof Opcode.ICmp) {
-            return user.block().map(b -> b == header).orElse(false);
-        }
-        return user.opcode() instanceof Opcode.Binary(var op) && op == Opcode.BinaryOp.ADD
-                && user.users().stream().anyMatch(t -> t.isTerminator() && t.successors().stream().anyMatch(s -> s.target() == header));
     }
 }

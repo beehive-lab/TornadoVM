@@ -95,7 +95,7 @@ public final class AtomicSlots {
             if (counter == null) {
                 return List.of(new Diagnostic("TC-E3205", "an AtomicInteger must be created in the kernel or passed to it (it cannot be selected at run time)", "", op.loc()));
             }
-            var slot = new IrBuilder(op.block().orElseThrow()).before(op).at(op.loc()).constInt(Type.I32, counter);
+            var slot = IrBuilder.insertingBefore(op).constInt(Type.I32, counter);
             op.setOperand(0, slot);
         }
         for (var value : slots.keySet()) {
