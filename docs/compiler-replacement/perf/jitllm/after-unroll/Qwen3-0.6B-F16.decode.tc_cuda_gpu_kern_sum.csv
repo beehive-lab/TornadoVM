@@ -1,0 +1,12 @@
+Time (%),Total Time (ns),Instances,Avg (ns),Med (ns),Min (ns),Max (ns),StdDev (ns),Name
+23.4,465256314,30492,15258.3,15232.0,7104,16256,159.1,TransformerComputeKernelsLayered_fusedRmsNormFFNGateUpWarp
+22.8,453236184,60984,7432.1,6784.0,4416,9248,1111.3,TransformerComputeKernelsLayered_matrixVectorGenericWithResidualSimd32
+18.1,359738672,1089,330338.5,330114.0,329602,339106,1199.0,TransformerComputeKernelsLayered_matrixVectorGenericSimd32
+16.8,333661412,30492,10942.6,10943.0,6880,11904,190.1,Qwen3Kernels_fusedRmsNormQKVMatmulWarp
+6.0,118975011,30492,3901.8,3840.0,2432,5216,707.5,TransformerPagedKvKernels_processHeadsFlashAttentionSplitKVFP16PagedLaneHead128
+4.6,90603014,62073,1459.6,1440.0,1407,1984,47.8,TransformerComputeKernelsLayered_reductionOneBlockWithLayerSingleGroup
+3.0,60513108,30492,1984.6,1984.0,1824,2368,56.2,Qwen3PagedKvKernels_ropeRotationWithCacheCopyFP16Paged
+2.7,52786999,30492,1731.2,1728.0,1695,1920,41.9,TransformerComputeKernelsLayered_combineSplitKVAttention
+2.5,50184821,30492,1645.8,1632.0,1599,1952,42.9,Qwen3Kernels_fusedQKRmsNorm
+0.1,1285269,1089,1180.2,1184.0,1151,1344,32.5,TransformerComputeKernels_convertFP16toFP32
+0.1,1206092,1089,1107.5,1088.0,1056,1344,38.7,TransformerComputeKernels_mapContextWithQuantizeLogits

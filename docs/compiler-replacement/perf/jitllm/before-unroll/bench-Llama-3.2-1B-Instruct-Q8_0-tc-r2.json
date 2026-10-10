@@ -1,0 +1,5 @@
+[
+  {"model": "Llama-3.2-1B-Instruct-Q8_0", "quant": "Q8_0", "size_gib": 1.230, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "STANDARD", "selection": "llama / Q8_0 / STANDARD", "test": "pp128", "avg_ts": 353.27, "stddev_ts": 1.23, "median_ts": 353.74, "samples_ts": [352.15, 351.82, 353.74, 354.71, 353.93]},
+  {"model": "Llama-3.2-1B-Instruct-Q8_0", "quant": "Q8_0", "size_gib": 1.230, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "STANDARD", "selection": "llama / Q8_0 / STANDARD", "test": "pp512", "avg_ts": 244.89, "stddev_ts": 0.50, "median_ts": 245.04, "samples_ts": [245.18, 245.20, 244.00, 245.03, 245.04]},
+  {"model": "Llama-3.2-1B-Instruct-Q8_0", "quant": "Q8_0", "size_gib": 1.230, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "STANDARD", "selection": "llama / Q8_0 / STANDARD", "test": "tg64", "avg_ts": 382.45, "stddev_ts": 0.61, "median_ts": 382.61, "samples_ts": [382.33, 383.07, 381.48, 382.61, 382.76]}
+]

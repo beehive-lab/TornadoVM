@@ -1,0 +1,5 @@
+[
+  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM CUDA", "arch": "qwen3", "mode": "STANDARD", "selection": "qwen3 / F16 / STANDARD", "test": "pp128", "avg_ts": 315.96, "stddev_ts": 8.46, "median_ts": 321.79, "samples_ts": [308.02, 305.48, 322.60, 321.79, 321.91]},
+  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM CUDA", "arch": "qwen3", "mode": "STANDARD", "selection": "qwen3 / F16 / STANDARD", "test": "pp512", "avg_ts": 314.02, "stddev_ts": 4.29, "median_ts": 316.43, "samples_ts": [317.67, 316.43, 316.86, 311.41, 307.72]},
+  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM CUDA", "arch": "qwen3", "mode": "STANDARD", "selection": "qwen3 / F16 / STANDARD", "test": "tg64", "avg_ts": 312.76, "stddev_ts": 1.11, "median_ts": 313.17, "samples_ts": [311.95, 311.26, 313.17, 313.44, 313.96]}
+]

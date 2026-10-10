@@ -41,11 +41,21 @@ import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
  * indexed by them ({@code float[] r = new float[3]}) can live in registers. Tornado policy: only
  * loops without nested control flow, allocations or calls, at most {@link #MAX_TRIPS} iterations and
  * {@link #MAX_INSTS} instructions after unrolling. Parallel loops are never unrolled.
+ *
+ * <p>A loop that reads or writes a private array gets a larger instruction budget
+ * ({@link #MAX_INSTS_PRIVATE}): with constant indices the array is a set of registers. Measured on
+ * jitLLM's paged flash attention (head size 64): with its 64-trip dot product
+ * ({@code score += q[d] * k[t][d]}) rolled, NVRTC 12.6 placed the warp-uniform accumulators of the
+ * per-thread {@code float[64]} output in uniform registers and moved every FFMA result back with
+ * R2UR (+25% instructions, 1.42x slower than Graal at a 512-token context); with the 64-trip loops
+ * unrolled the accumulators are ordinary registers and the private array needs no stack.</p>
  */
 public final class FullLoopUnroll implements Pass {
 
-    static final int MAX_TRIPS = 8;
-    static final int MAX_INSTS = 512;
+    static final int MAX_TRIPS = 64;
+    static final int MAX_INSTS = 1024;
+    static final int MAX_TRIPS_PRIVATE = 64;
+    static final int MAX_INSTS_PRIVATE = 4096;
 
     @Override
     public String name() {
@@ -132,14 +142,17 @@ public final class FullLoopUnroll implements Pass {
                 || predicate == IntPredicate.SGT || predicate == IntPredicate.SGE)) {
             return false;
         }
+        boolean privateArray = touchesPrivateArray(header) || touchesPrivateArray(body);
+        int maxTrips = privateArray ? MAX_TRIPS_PRIVATE : MAX_TRIPS;
+        // (64 either way today; kept separate so the two budgets can be tuned independently.)
         int trips = 0;
         for (long i = init; holds(predicate, i, bound) == (stay == 0); i += step) {
-            if (++trips > MAX_TRIPS) {
+            if (++trips > maxTrips) {
                 return false;
             }
         }
         int size = header.insts().size() + body.insts().size();
-        if (size * (trips + 1) > MAX_INSTS) {
+        if (size * (trips + 1) > (privateArray ? MAX_INSTS_PRIVATE : MAX_INSTS)) {
             return false;
         }
 
@@ -184,6 +197,29 @@ public final class FullLoopUnroll implements Pass {
             function.removeBlock(b);
         }
         return true;
+    }
+
+    /** Whether {@code block} loads from or stores to a private array (an address derived from a private alloca). */
+    private static boolean touchesPrivateArray(Block block) {
+        for (var inst : block.insts()) {
+            Value address = switch (inst.opcode()) {
+                case Opcode.Load l -> inst.operand(0);
+                case Opcode.Store st -> inst.operand(0);
+                case Opcode.ArrayLoad a -> inst.operand(0);
+                case Opcode.ArrayStore a -> inst.operand(0);
+                default -> null;
+            };
+            for (int depth = 0; address instanceof Inst a && depth < 8; depth++) {
+                if (a.opcode() instanceof Opcode.Alloca(var space, var element, var count) && space == uk.ac.manchester.tornado.tc.ir.AddressSpace.PRIVATE) {
+                    return true;
+                }
+                if (!(a.opcode() instanceof Opcode.PointerOffset)) {
+                    break;
+                }
+                address = a.operand(0);
+            }
+        }
+        return false;
     }
 
     /** Copies the non-terminator instructions of {@code from} to the end of {@code to}, renaming through {@code env}. */
