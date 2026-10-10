@@ -237,8 +237,9 @@ public final class Verifier {
             case Opcode.ArrayLoad _l -> {
                 if (count(inst, 2)) {
                     if (ops.get(0).type() instanceof ArrayType(var element)) {
-                        // A byte array may be read as any type at a byte index (ByteArray.getHalfFloat).
-                        resultIs(inst, result.equals(element) || element.equals(Type.I8), "the array element type " + element.text());
+                        // A byte array may be read as any type at a byte index (ByteArray.getHalfFloat); any
+                        // array as a vector of its elements (packed access, HalfFloatArray.getHalf2).
+                        resultIs(inst, result.equals(element) || element.equals(Type.I8) || packs(result, element), "the array element type " + element.text());
                     } else if (isLocalPointer(ops.get(0).type())) {
                         // A local array passed to an inlined helper: element type from the access.
                     } else {
@@ -250,7 +251,7 @@ public final class Verifier {
             case Opcode.ArrayStore _s -> {
                 if (count(inst, 3)) {
                     if (ops.get(0).type() instanceof ArrayType(var element)) {
-                        operandIs(inst, 2, ops.get(2).type().equals(element) || element.equals(Type.I8), "the array element type " + element.text());
+                        operandIs(inst, 2, ops.get(2).type().equals(element) || element.equals(Type.I8) || packs(ops.get(2).type(), element), "the array element type " + element.text());
                     } else if (isLocalPointer(ops.get(0).type())) {
                         // As for array.load.
                     } else {
@@ -403,6 +404,11 @@ public final class Verifier {
         if (inst.successors().size() != expected) {
             error(inst, "TC-E2106", "'" + inst.opcode().mnemonic() + "' needs " + expected + " successor(s), found " + inst.successors().size());
         }
+    }
+
+    /** {@code type} is a vector of {@code element}s: a packed access to consecutive array elements. */
+    private static boolean packs(Type type, Type element) {
+        return type instanceof Type.VectorType(var lane, var length) && lane.equals(element);
     }
 
     private void sameTypes(Inst inst, Value a, Value b) {

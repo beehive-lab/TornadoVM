@@ -967,12 +967,15 @@ final class Translator {
         builder.intrinsic("tornado.device_launch." + mode + "." + child.owner().replace('/', '.') + "." + child.name(), Type.VOID, operands);
     }
 
-    /** A local {@code HalfFloat[]} holds f16 values (HalfFloat is a value type): the only reference array kernels use. */
+    /**
+     * Local arrays of value types are the only reference arrays kernels use: {@code HalfFloat[]}
+     * holds f16 values, {@code Half2[]} half2 vectors.
+     */
     private Optional<Type> halfElements(Value array) {
         if (array.type() instanceof Type.ArrayType(var element) && element.equals(Type.F16)) {
             return Optional.of(Type.F16); // a HalfFloat[] parameter of an inlined helper
         }
-        return holdsHalfLocalArray(array, Collections.newSetFromMap(new IdentityHashMap<>())) ? Optional.of(Type.F16) : Optional.empty();
+        return localValueArrayElement(array, Collections.newSetFromMap(new IdentityHashMap<>()));
     }
 
     /**
@@ -980,24 +983,25 @@ final class Translator {
      * if or in a loop) is one when a definition reaching it on an incoming path is: block arguments
      * only collapse to their single incoming value once translation has finished.
      */
-    private boolean holdsHalfLocalArray(Value v, Set<Value> visited) {
+    private Optional<Type> localValueArrayElement(Value v, Set<Value> visited) {
         if (!visited.add(v)) {
-            return false;
+            return Optional.empty();
         }
         if (v instanceof Inst inst) {
-            return LocalArrays.element(inst).filter(Type.F16::equals).isPresent();
+            return LocalArrays.element(inst).filter(e -> e.equals(Type.F16) || e instanceof Type.VectorType);
         }
         var key = argumentKeys.get(v);
         if (key == null || !(v instanceof BlockArg arg)) {
-            return false;
+            return Optional.empty();
         }
         for (var pred : preds.getOrDefault(arg.block(), List.of())) {
             var reaching = reachingDefinition(key, pred, Collections.newSetFromMap(new IdentityHashMap<>()));
-            if (reaching != null && holdsHalfLocalArray(reaching, visited)) {
-                return true;
+            var element = reaching == null ? Optional.<Type>empty() : localValueArrayElement(reaching, visited);
+            if (element.isPresent()) {
+                return element;
             }
         }
-        return false;
+        return Optional.empty();
     }
 
     /** The value of {@code key} at the end of {@code block}, if defined on a path into it, without creating block arguments. */
@@ -1312,6 +1316,9 @@ final class Translator {
     }
 
     private static int sizeOf(Type type) {
+        if (type instanceof Type.VectorType(var element, var length)) {
+            return sizeOf(element) * length;
+        }
         return switch (type.text()) {
             case "i8" -> 1;
             case "i16", "f16", "bf16" -> 2;

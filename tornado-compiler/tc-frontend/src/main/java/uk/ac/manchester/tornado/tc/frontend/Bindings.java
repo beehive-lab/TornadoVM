@@ -179,6 +179,7 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".allocateLongLocalArray(I)[J", new SharedArray(Type.I64));
         METHODS.put(KERNEL_CONTEXT + ".allocateByteLocalArray(I)[B", new SharedArray(Type.I8));
         METHODS.put(KERNEL_CONTEXT + ".allocateHalfFloatLocalArray(I)[L" + HALF_FLOAT + ";", new SharedArray(Type.F16));
+        METHODS.put(KERNEL_CONTEXT + ".allocateHalf2LocalArray(I)[L" + VECTOR_PACKAGE + "Half2;", new SharedArray(new Type.VectorType(Type.F16, 2)));
         METHODS.put("java/lang/Integer.intValue()I", new Identity());
         METHODS.put("java/lang/Long.longValue()J", new Identity());
         METHODS.put("java/lang/Float.floatValue()F", new Identity());
@@ -311,6 +312,9 @@ final class Bindings {
         for (var index : new String[] { "I", "J" }) {
             METHODS.put(ARRAYS + "ByteArray.getHalfFloat(" + index + ")L" + HALF_FLOAT + ";", new ByteView(Type.F16, false));
             METHODS.put(ARRAYS + "ByteArray.setHalfFloat(" + index + "L" + HALF_FLOAT + ";)V", new ByteView(Type.F16, true));
+            // Packed half pairs: one 32-bit access at element index (even, so 4-byte aligned).
+            METHODS.put(ARRAYS + "HalfFloatArray.getHalf2(" + index + ")L" + VECTOR_PACKAGE + "Half2;", new ByteView(new Type.VectorType(Type.F16, 2), false));
+            METHODS.put(ARRAYS + "HalfFloatArray.setHalf2(" + index + "L" + VECTOR_PACKAGE + "Half2;)V", new ByteView(new Type.VectorType(Type.F16, 2), true));
         }
         METHODS.put(HALF_FLOAT + ".<init>(F)V", new ValueInit(Type.F32, ConvertOp.FTRUNC, Type.F16));
         METHODS.put(HALF_FLOAT + ".<init>(S)V", new ValueInit(Type.I16, ConvertOp.BITCAST, Type.F16));
