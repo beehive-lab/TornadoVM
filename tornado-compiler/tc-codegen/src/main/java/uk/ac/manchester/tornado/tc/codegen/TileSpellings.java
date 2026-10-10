@@ -145,25 +145,25 @@ final class TileSpellings {
     static String expression(String name, Inst inst, List<String> ops) {
         var values = inst.operands();
         var type = inst.type() instanceof TileType t ? t : null;
-        if (name.startsWith("tile.bid.")) {
-            return "ct::bid()." + name.substring(name.length() - 1);
-        }
-        if (name.startsWith("tile.num_blocks.")) {
-            return "ct::num_blocks()." + name.substring(name.length() - 1);
-        }
-        if (name.startsWith("tile.view_strided.")) {
-            int first = name.endsWith(".dtype") ? 2 : 1;
+        // A view's element type is an immediate, or else a DType operand after the array.
+        int first = inst.immediates().has("elem") ? 1 : 2;
+        if (name.equals("tile.view_strided")) {
             var pointer = "(reinterpret_cast<" + cpp(type.dtype()) + " *>(" + ops.get(0) + ") + " + ops.get(first) + ")";
             return "ct::tensor_span{" + pointer + ", ct::layout_strided_mapping<" + STRIDED_EXTENTS + ", " + STRIDED_EXTENTS + ">{" + STRIDED_EXTENTS + "{(uint32_t) "
                     + ops.get(first + 1) + ", (uint32_t) " + ops.get(first + 2) + "}, " + STRIDED_EXTENTS + "{(uint32_t) " + ops.get(first + 3) + ", 1u}}}";
         }
-        if (name.startsWith("tile.view.")) {
-            int first = name.endsWith(".dtype") ? 2 : 1;
+        if (name.equals("tile.view")) {
             // The payload is 32-byte aligned by the runtime: the hint keeps loads TMA eligible.
             return "ct::tensor_span{ct::assume_aligned(reinterpret_cast<" + cpp(type.dtype()) + " *>(" + ops.get(0) + "), 16_ic), ct::extents{" + join(ops.subList(first, ops.size()))
                     + "}}";
         }
         switch (name) {
+            case "tile.bid" -> {
+                return Intrinsics.fillImmediates("ct::bid().{dim|xyz}", inst.immediates());
+            }
+            case "tile.num_blocks" -> {
+                return Intrinsics.fillImmediates("ct::num_blocks().{dim|xyz}", inst.immediates());
+            }
             case "tile.partition" -> {
                 return "ct::partition_view{" + ops.get(0) + ", " + shapeValue(type.shape()) + "}";
             }
@@ -195,7 +195,7 @@ final class TileSpellings {
             case "tile.broadcast", "tile.reshape" -> {
                 return "ct::" + name.substring(5) + "(" + ops.get(0) + ", " + shapeType(type.shape()) + "{})";
             }
-            case "tile.extract.1", "tile.extract.2" -> {
+            case "tile.extract" -> {
                 int rank = type.shape().size();
                 return "ct::extract(" + ops.get(0) + ", " + shapeType(type.shape()) + "{}, " + join(ops.subList(1 + rank, ops.size())) + ")";
             }

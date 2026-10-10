@@ -27,6 +27,7 @@ import java.util.Optional;
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
@@ -36,26 +37,26 @@ import uk.ac.manchester.tornado.tc.ir.Value;
 /**
  * Local and shared arrays whose length is not a constant in the bytecode, such as
  * {@code context.allocateFloatLocalArray(blockSize)} with {@code blockSize} a task argument. The
- * frontend emits a pending allocation, the intrinsic {@code tornado.local_array.<space>.<element>(%n)};
+ * frontend emits a pending allocation, the intrinsic {@code tornado.local_array<space = "shared", elem = "f32">(%n)};
  * after value specialisation and constant folding, {@link #run} turns each one whose length became a
  * constant into an {@code alloca}, and reports {@code TC-E1004} for the others (the GPU needs the size
  * of a local array at compile time).
  */
 public final class LocalArrays {
 
-    private static final String PREFIX = "tornado.local_array.";
+    static final String PENDING = "tornado.local_array";
     private static final List<Type> ELEMENTS = List.of(Type.I8, Type.I16, Type.I32, Type.I64, Type.F16, Type.F32, Type.F64);
 
     private LocalArrays() {
     }
 
-    static String pendingName(AddressSpace space, Type element) {
-        return PREFIX + space.text() + "." + element.text();
+    static Immediates pendingImmediates(AddressSpace space, Type element) {
+        return Immediates.of("space", space.text(), "elem", element.text());
     }
 
     /** Whether {@code inst} is a pending allocation. */
     public static boolean isPending(Inst inst) {
-        return inst.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(PREFIX);
+        return inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(PENDING);
     }
 
     /** {@code arraylength} of a local array reached through a block argument, until SSA construction finishes. */
@@ -100,8 +101,8 @@ public final class LocalArrays {
         if (inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
             return Optional.of(element);
         }
-        if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(PREFIX)) {
-            var text = name.substring(name.lastIndexOf('.') + 1);
+        if (isPending(inst)) {
+            var text = inst.immediates().requireString("elem");
             return ELEMENTS.stream().filter(t -> t.text().equals(text)).findFirst();
         }
         return Optional.empty();
@@ -116,8 +117,7 @@ public final class LocalArrays {
                     continue;
                 }
                 if (inst.operand(0) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var count)) {
-                    var name = ((Opcode.Intrinsic) inst.opcode()).name();
-                    var space = AddressSpace.fromText(name.substring(PREFIX.length(), name.lastIndexOf('.')));
+                    var space = AddressSpace.fromText(inst.immediates().requireString("space"));
                     // A zero-length array (Java allows it; nothing can be read from it) still occupies one element.
                     var alloca = new IrBuilder(block).before(inst).at(inst.loc()).alloca(space, element(inst).orElseThrow(), (int) Math.max(count, 1));
                     alloca.setName(inst.name());

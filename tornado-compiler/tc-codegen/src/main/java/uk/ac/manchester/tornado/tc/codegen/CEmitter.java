@@ -751,7 +751,7 @@ public final class CEmitter {
         // A void intrinsic (an atomic update) is typed by its value operand, the last one.
         var type = inst.producesValue() ? inst.type() : (ops.isEmpty() ? Type.VOID : ops.get(ops.size() - 1).type());
         var spelling = Intrinsics.lookup(name, target.dialect(), type).orElseThrow(() -> new EmitException("TC-E4002", "no " + target.dialect() + " spelling for intrinsic " + name + " on " + type.text()));
-        spelling.helper().ifPresent(helpers::add);
+        spelling.helper().map(h -> Intrinsics.fillImmediates(h, inst.immediates())).ifPresent(helpers::add);
         var template = Intrinsics.fillImmediates(spelling.template(), inst.immediates());
         if (template.contains("$&0")) {
             // The address of the element operand 0 points to: `&a_data[i]`, or a typed cast of the pointer.

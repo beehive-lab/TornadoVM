@@ -1379,7 +1379,7 @@ final class Translator {
         if (length instanceof Inst inst && inst.opcode() instanceof Opcode.ConstInt(var v) && v > 0) {
             return builder.alloca(space, element, (int) v);
         }
-        return builder.intrinsic(LocalArrays.pendingName(space, element), new Type.PointerType(space), List.of(length));
+        return builder.intrinsic(LocalArrays.PENDING, LocalArrays.pendingImmediates(space, element), new Type.PointerType(space), List.of(length));
     }
 
     // ---------------------------------------------------------------- helpers

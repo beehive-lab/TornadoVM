@@ -145,6 +145,11 @@ then the test kept. Covers CG-1/2/3/4/10, TP-1/2/3/4/5/14, IR-1/3/5 and FE-4/5.
   compiles are close (4.5 vs 3.8 ms).
 - **Babylon as a frontend:** assess building TC-SSA from Babylon code models instead of bytecode
   (`tc-frontend-babylon`, plan Phase 10): what maps directly, what is lost or gained, and the effort.
+- **Leyden AOT and GraalVM native image, end to end (the last item before the new backend):** run
+  TC from a JDK 25+ AOT cache and as a GraalVM `native-image` build (the headless `tc` CLI and the
+  compiler library), measure cold and warm compile times against the plain JVM, and record what had
+  to change (reflection, resources, static initialisers). Code and results live on a separate
+  branch, `compiler/spike-aot`, not on `compiler/main`.
 
 **Then: the OpenCL dialect, then Metal.**
 
@@ -170,4 +175,6 @@ Recorded per finding as fixed, not reproduced, or deferred (with the commit).
 | TP-3 | **Reproduced and fixed.** `k = i + 1; a[k - 1] = k` in a batch wrote at chunk index `i + offset`. `BatchOffset` now works per use: every use of the index is global, and every array index depending on it subtracts the offset (`batchIndexIsGlobalAsValueAndLocalAsIndex`). |
 | CG-3 | **Fixed conservatively:** copy coalescing only into the arguments of an unconditional branch, so no other successor can see the early write. Cost: one extra copy in loops that exit mid-body (`Cuda/control-flow.tcir`). |
 | FE-5 | **Not reproduced** (`vectorSetterAfterABranchCompiles` kept); the design point is addressed by the typed abstract stack in Phase C. |
-
+| IR-10 | **Fixed:** one instruction-copy path (`Inst.copyShell`) used by the Inliner and FullLoopUnroll (phase B1 step 1). |
+| IR-1, IR-2, IR-14 | **Fixed:** `IntrinsicRegistry` in tc-ir declares every intrinsic or family, its effects (reads, writes, side effect, convergent) and required immediates. Purity, DCE and the verifier (TC-E2115) use it (phase B1 step 2). |
+| FE-2, IR-3, FE-3 | **Fixed:** data that was spelled into intrinsic names is now typed immediates, printed and parsed as `name<k = v>(...)`: thread geometry `dim`, vector `lane`, printf `format` (escaped by the emitter, not the frontend), device launch `callee`/`mode`, pending local arrays `space`/`elem`, cp.async `bytes`/`elem_bytes`, tile `bid`/`num_blocks` `dim`, views `elem` (absent when the type is a DType operand) and extracts `rank`. Spelling templates fill `{key}` and `{key\|xyz}`, helpers included. What remains in names is the operation itself (`math.sqrt`, `tile.binary.add`), as in LLVM intrinsic names (phase B1 step 3). |

@@ -126,8 +126,8 @@ public final class TileTyping {
      */
     private void atomicOperands(Inst inst, String name) {
         if (inst.operand(0) instanceof Inst partition && partition.operand(0) instanceof Inst view && view.opcode() instanceof Opcode.Intrinsic(var viewName)
-                && viewName.startsWith("tile.view.")) {
-            int first = viewName.endsWith(".dtype") ? 2 : 1;
+                && viewName.equals("tile.view")) {
+            int first = view.immediates().has("elem") ? 1 : 2;
             inst.addOperand(view.operand(0));
             int rank = ((TileType) partition.type()).shape().size();
             if (rank == 2) {
@@ -181,10 +181,10 @@ public final class TileTyping {
     /** The tile type of {@code inst}, or empty while an operand is not typed yet. */
     private Optional<Type> typeOf(Inst inst, String name) {
         var ops = inst.operands();
-        if (name.startsWith("tile.view.") || name.startsWith("tile.view_strided.")) {
-            var element = name.substring(name.lastIndexOf('.') + 1);
-            // tile.view.dtype(array, dtype, ...), tile.view_strided.dtype(array, dtype, ...)
-            return Optional.of(new TileType(element.equals("dtype") ? dtype(inst, ops.get(1)) : element, List.of(), true));
+        if (name.equals("tile.view") || name.equals("tile.view_strided")) {
+            // tile.view<elem = "F32">(array, ...), or tile.view(array, dtype, ...) when the element type is a DType operand.
+            var element = inst.immediates().string("elem");
+            return Optional.of(new TileType(element.isPresent() ? element.get() : dtype(inst, ops.get(1)), List.of(), true));
         }
         if (name.equals("tile.partition")) {
             var view = tile(ops.get(0));
@@ -203,8 +203,8 @@ public final class TileTyping {
             case "tile.broadcast", "tile.reshape" -> {
                 return tile(ops.get(0)).map(t -> new TileType(t.dtype(), shape(inst, ops.subList(1, ops.size())), false));
             }
-            case "tile.extract.1", "tile.extract.2" -> {
-                int rank = name.endsWith("1") ? 1 : 2;
+            case "tile.extract" -> {
+                int rank = (int) inst.immediates().requireInt("rank");
                 return tile(ops.get(0)).map(t -> new TileType(t.dtype(), shape(inst, ops.subList(1, 1 + rank)), false));
             }
             case "tile.select" -> {

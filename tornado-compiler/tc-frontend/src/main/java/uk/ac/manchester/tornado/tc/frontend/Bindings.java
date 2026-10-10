@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.ConvertOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
@@ -50,9 +51,9 @@ final class Bindings {
     }
 
     /** An intrinsic with the given result type (void for effects). */
-    record Intrinsic(String name, Type result, uk.ac.manchester.tornado.tc.ir.Immediates immediates) implements Binding {
+    record Intrinsic(String name, Type result, Immediates immediates) implements Binding {
         Intrinsic(String name, Type result) {
-            this(name, result, uk.ac.manchester.tornado.tc.ir.Immediates.NONE);
+            this(name, result, Immediates.NONE);
         }
 
     }
@@ -178,7 +179,7 @@ final class Bindings {
         for (int i = 0; i < 3; i++) {
             var d = dims[i];
             var upper = d.toUpperCase();
-            var dim = uk.ac.manchester.tornado.tc.ir.Immediates.of("dim", i);
+            var dim = Immediates.of("dim", i);
             FIELDS.put(KERNEL_CONTEXT + ".globalId" + d, new Intrinsic("tornado.thread_id.global", Type.I32, dim));
             FIELDS.put(KERNEL_CONTEXT + ".localId" + d, new Intrinsic("tornado.thread_id.local", Type.I32, dim));
             FIELDS.put(KERNEL_CONTEXT + ".groupId" + d, new Intrinsic("tornado.group_id", Type.I32, dim));
@@ -322,9 +323,9 @@ final class Bindings {
         // cp.async: global to shared copies of one packed b32 slot (4 bytes) or four of them (16 bytes).
         for (var source : List.of("HalfFloatArray", "FP8Array", "ByteArray")) {
             var bytes = source.equals("HalfFloatArray") ? 2 : 1;
-            METHODS.put(KERNEL_CONTEXT + ".asyncCopyToLocal([IIL" + ARRAYS + source + ";I)V", new Intrinsic("tornado.async_copy.4.e" + bytes, Type.VOID));
+            METHODS.put(KERNEL_CONTEXT + ".asyncCopyToLocal([IIL" + ARRAYS + source + ";I)V", new Intrinsic("tornado.async_copy", Type.VOID, Immediates.of("bytes", 4, "elem_bytes", bytes)));
             if (!source.equals("FP8Array")) {
-                METHODS.put(KERNEL_CONTEXT + ".asyncCopyToLocal16([IIL" + ARRAYS + source + ";I)V", new Intrinsic("tornado.async_copy.16.e" + bytes, Type.VOID));
+                METHODS.put(KERNEL_CONTEXT + ".asyncCopyToLocal16([IIL" + ARRAYS + source + ";I)V", new Intrinsic("tornado.async_copy", Type.VOID, Immediates.of("bytes", 16, "elem_bytes", bytes)));
             }
         }
         METHODS.put(KERNEL_CONTEXT + ".asyncCopyCommit()V", new Intrinsic("tornado.async_copy.commit", Type.VOID));
@@ -431,21 +432,23 @@ final class Bindings {
         var view = "L" + TILE_API + "TensorView;";
         var partition = "L" + TILE_API + "PartitionView;";
         var dtype = "L" + TILE_API + "DType;";
-        for (var d : List.of("X", "Y", "Z")) {
-            METHODS.put(ctx + "bid" + d + "()I", new Intrinsic("tile.bid." + d.toLowerCase(), Type.I32));
-            METHODS.put(ctx + "numBlocks" + d + "()I", new Intrinsic("tile.num_blocks." + d.toLowerCase(), Type.I32));
+        var axes = List.of("X", "Y", "Z");
+        for (int i = 0; i < axes.size(); i++) {
+            var dim = Immediates.of("dim", i);
+            METHODS.put(ctx + "bid" + axes.get(i) + "()I", new Intrinsic("tile.bid", Type.I32, dim));
+            METHODS.put(ctx + "numBlocks" + axes.get(i) + "()I", new Intrinsic("tile.num_blocks", Type.I32, dim));
         }
         var views = Map.of("FloatArray", "F32", "HalfFloatArray", "F16", "BFloat16Array", "BF16", "IntArray", "S32", "Int8Array", "S8", "DoubleArray", "F64", "ByteArray", "S8");
         views.forEach((array, element) -> {
             var a = "L" + ARRAYS + array + ";";
             for (var dims : List.of("I", "II", "III")) {
-                METHODS.put(ctx + "view(" + a + dims + ")" + view, new Intrinsic("tile.view." + element, VIEW));
+                METHODS.put(ctx + "view(" + a + dims + ")" + view, new Intrinsic("tile.view", VIEW, Immediates.of("elem", element)));
             }
-            METHODS.put(ctx + "viewStrided(" + a + "IIII)" + view, new Intrinsic("tile.view_strided." + element, VIEW));
+            METHODS.put(ctx + "viewStrided(" + a + "IIII)" + view, new Intrinsic("tile.view_strided", VIEW, Immediates.of("elem", element)));
         });
-        METHODS.put(ctx + "viewStrided(L" + ARRAYS + "ByteArray;" + dtype + "IIII)" + view, new Intrinsic("tile.view_strided.dtype", VIEW));
-        METHODS.put(ctx + "view(L" + ARRAYS + "FP8Array;" + dtype + "I)" + view, new Intrinsic("tile.view.dtype", VIEW));
-        METHODS.put(ctx + "view(L" + ARRAYS + "FP8Array;" + dtype + "II)" + view, new Intrinsic("tile.view.dtype", VIEW));
+        METHODS.put(ctx + "viewStrided(L" + ARRAYS + "ByteArray;" + dtype + "IIII)" + view, new Intrinsic("tile.view_strided", VIEW));
+        METHODS.put(ctx + "view(L" + ARRAYS + "FP8Array;" + dtype + "I)" + view, new Intrinsic("tile.view", VIEW));
+        METHODS.put(ctx + "view(L" + ARRAYS + "FP8Array;" + dtype + "II)" + view, new Intrinsic("tile.view", VIEW));
         for (var dims : List.of("I", "II", "III")) {
             METHODS.put(ctx + "partition(" + view + dims + ")" + partition, new Intrinsic("tile.partition", PARTITION));
         }
@@ -459,8 +462,8 @@ final class Bindings {
         for (var dims : List.of("I", "II", "III")) {
             METHODS.put(ctx + "reshape(" + tile + dims + ")" + tile, new Intrinsic("tile.reshape", TILE));
         }
-        METHODS.put(ctx + "extract(" + tile + "II)" + tile, new Intrinsic("tile.extract.1", TILE));
-        METHODS.put(ctx + "extract(" + tile + "IIII)" + tile, new Intrinsic("tile.extract.2", TILE));
+        METHODS.put(ctx + "extract(" + tile + "II)" + tile, new Intrinsic("tile.extract", TILE, Immediates.of("rank", 1)));
+        METHODS.put(ctx + "extract(" + tile + "IIII)" + tile, new Intrinsic("tile.extract", TILE, Immediates.of("rank", 2)));
         var tt = "(" + tile + tile + ")" + tile;
         for (var op : List.of("add", "sub", "mul", "div", "bitwiseAnd", "bitwiseOr", "bitwiseXor", "shiftLeft", "shiftRight", "maximum", "minimum", "atan2", "pow", "remainder",
                 "floorDiv", "ceilDiv", "mulhi", "logicalAnd", "logicalOr", "matmul")) {

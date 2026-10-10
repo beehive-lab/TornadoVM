@@ -44,7 +44,7 @@ device @negneg(%x: i32, %y: f32) -> f32 {
 kernel @cpasync(%tile: ptr<global>, %slot: i32, %src: ptr<global>, %i: i32, %j: i32, %out: ptr<global>) -> void {
 ^entry:
   %0 = add %i, %j : i32
-  tornado.async_copy.4.e2(%tile, %slot, %src, %0)
+  tornado.async_copy<bytes = 4, elem_bytes = 2>(%tile, %slot, %src, %0)
   %c = const 3 : i32
   %1 = mul %i, %j : i32
   %2 = tornado.atomic_int.sub_get(%c, %1) : i32

@@ -97,14 +97,21 @@ public final class IntrinsicRegistry {
         // Atomics and other effects.
         add("tornado.atomic.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "atomic read-modify-write on memory");
         add("tornado.atomic_int.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "AtomicInteger counter in the atomics region");
-        add("tornado.async_copy.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "asynchronous global-to-shared copies and their groups");
+        add("tornado.async_copy", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "asynchronous global-to-shared copy of a 4- or 16-byte slot", "bytes", "elem_bytes");
+        add("tornado.async_copy.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "commits and waits for groups of asynchronous copies");
         add("tornado.printf", EnumSet.of(Effect.SIDE_EFFECT), "Debug.printf", "format");
         add("tornado.device_launch", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "a kernel launch from the device", "callee", "mode");
         add("tornado.local_array.length", EnumSet.noneOf(Effect.class), "the element count of a pending local array");
-        add("tornado.local_array.", EnumSet.of(Effect.SIDE_EFFECT), "a local array whose size is known after specialisation");
+        add("tornado.local_array", EnumSet.of(Effect.SIDE_EFFECT), "a local array whose size is known after specialisation", "space", "elem");
         pure("tornado.local_collection", "a vector collection allocated in the kernel (removed after inlining)");
         add("tornado.dp4a.packed", EnumSet.noneOf(Effect.class), "dot product of packed int8 words");
         add("tornado.dp4a", EnumSet.of(Effect.READS), "dot product of int8 words read from memory");
+        // CUDA Tile (TileContext): block geometry, views (element type an immediate or a DType operand) and extracts.
+        pure("tile.bid", "tile block index", "dim");
+        pure("tile.num_blocks", "number of tile blocks", "dim");
+        pure("tile.view", "a tensor view of an array");
+        pure("tile.view_strided", "a strided two-dimensional tensor view of an array");
+        pure("tile.extract", "a sub-tile", "rank");
         // CUDA Tile (TileContext): values and views are pure; memory accesses are not.
         add("tile.load", EnumSet.of(Effect.READS), "tile load through a partition view");
         add("tile.load_masked", EnumSet.of(Effect.READS), "masked tile load");

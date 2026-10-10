@@ -121,11 +121,8 @@ public final class Intrinsics {
         cudaTyped("tornado.atomic.exchange", "i32", "atomicExch($&0, $1)");
         cudaTyped("tornado.atomic.min", "i32", "atomicMin($&0, $1)");
         cudaTyped("tornado.atomic.max", "i32", "atomicMax($&0, $1)");
-        // cp.async (sm_80+): the destination is a shared int[] slot, the source a native array element.
-        for (int bytes : new int[] {1, 2}) {
-            TABLE.put(new Key("tornado.async_copy.4.e" + bytes, Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_4((int *) $0 + $1, (const char *) $2 + (long long) $3 * " + bytes + ")", "tc_cp_async_4"));
-            TABLE.put(new Key("tornado.async_copy.16.e" + bytes, Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_16((int *) $0 + $1, (const char *) $2 + (long long) $3 * " + bytes + ")", "tc_cp_async_16"));
-        }
+        // cp.async (sm_80+) of a 4- or 16-byte slot into a shared int[]; the source index counts elements of elem_bytes each.
+        TABLE.put(new Key("tornado.async_copy", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_{bytes}((int *) $0 + $1, (const char *) $2 + (long long) $3 * {elem_bytes})", "tc_cp_async_{bytes}"));
         TABLE.put(new Key("tornado.async_copy.commit", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_commit()", "tc_cp_async_commit"));
         TABLE.put(new Key("tornado.async_copy.wait", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_wait($0)", "tc_cp_async_wait"));
         // DP4A (sm_61+): operands are the int8 data pointers (+ byte offsets) or packed words.
