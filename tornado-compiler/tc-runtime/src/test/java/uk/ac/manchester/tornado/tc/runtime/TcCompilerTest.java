@@ -194,4 +194,22 @@ public class TcCompilerTest {
                 new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Unknown()));
         assertTrue(different.diagnostics().toString(), different.succeeded());
     }
+
+    /** Design review TP-3: in a batch, values see the global index and array indices stay chunk-local, per use. */
+    @Test
+    public void batchIndexIsGlobalAsValueAndLocalAsIndex() {
+        var c = review("batchShared", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(100),
+                new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.IndexOffset(1000)));
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.source(), c.source().contains("i_global = i + 1000;") && c.source().contains("k = i_global + 1;") && c.source().contains("out_data[k - 1 - 1000] = k;"));
+    }
+
+    /** Design review FE-5 (not reproduced): a vector setter after a branch that defined another reference compiles. */
+    @Test
+    public void vectorSetterAfterABranchCompiles() {
+        var c = review("setterAfterBranch", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(2),
+                new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Unknown()));
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.source(), c.source().contains("= 5.0f;"));
+    }
 }

@@ -61,4 +61,21 @@ public final class ReviewKernels {
     public static void scalarEarly(IntArray out, int n) {
         out.set(0, n * 2);
     }
+    // TP-3: an index expression that is also a value, in a batch
+    public static void batchShared(IntArray out) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            int k = i + 1;
+            out.set(k - 1, k);
+        }
+    }
+    // FE-5: a vector setter after a branch that defined another reference slot
+    public static void setterAfterBranch(FloatArray out, int c) {
+        if (c > 0) {
+            FloatArray x = out;
+            x.set(0, 1f);
+        }
+        Float4 v = new Float4(1f, 2f, 3f, 4f);
+        v.setX(5f);
+        out.set(1, v.getX());
+    }
 }

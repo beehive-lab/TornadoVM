@@ -141,6 +141,9 @@ public final class Canonicalizer implements Pass {
      */
     private static Optional<Value> laneOf(Inst read, Value vector, int lane) {
         Value current = vector;
+        if (!(vector.type() instanceof Type.VectorType vec) || lane < 0 || lane >= vec.length()) {
+            return Optional.empty(); // malformed: left for the verifier (IR-3)
+        }
         while (current instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name)) {
             if (name.equals("tornado.vector.make")) {
                 return Optional.of(i.operand(lane));
@@ -171,6 +174,9 @@ public final class Canonicalizer implements Pass {
         Value current = inst;
         while (current instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(INSERT)) {
             int lane = Integer.parseInt(name.substring(INSERT.length()));
+            if (lane < 0 || lane >= lanes.length) {
+                return Optional.empty(); // malformed: left for the verifier (IR-3)
+            }
             if (lanes[lane] == null) {
                 lanes[lane] = i.operand(1);
             }

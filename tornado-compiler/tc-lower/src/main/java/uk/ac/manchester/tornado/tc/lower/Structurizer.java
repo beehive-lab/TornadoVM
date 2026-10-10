@@ -545,6 +545,12 @@ public final class Structurizer {
         if (!user.isTerminator() || !user.block().equals(inst.block()) || user.operands().contains(inst)) {
             return Optional.empty();
         }
+        // Only on an unconditional branch: the variable is written before the terminator, so on a
+        // conditional one the other successor (or an expression inlined there) would read the new value
+        // where it expects the old one (design review CG-3).
+        if (!(user.opcode() instanceof Opcode.Branch)) {
+            return Optional.empty();
+        }
         BlockArg target = null;
         for (var s : user.successors()) {
             for (int i = 0; i < s.args().size(); i++) {

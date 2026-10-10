@@ -159,6 +159,13 @@ public final class TcCompiler {
                 var p = parent.compilation();
                 return new Compilation(p.function(), p.target(), false, "", "", p.stages(), problems, p.nanos() + nanos, p.domain(), p.atomics());
             }
+            if (!c.atomics().initial().isEmpty()) {
+                // A child numbers its atomic slots from 0 like its parent and shares the parent's
+                // atomics region: refused until children get their own slot range (design review TP-1).
+                var p = parent.compilation();
+                var problem = new Diagnostic("TC-E3207", "kernel " + child + ", launched from the device, uses atomic counters", "", Loc.UNKNOWN);
+                return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics());
+            }
             children.add(compiled.compiler().emitted);
             work.addAll(launchedKernels(compiled.compiler().function));
         }

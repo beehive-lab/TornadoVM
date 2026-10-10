@@ -69,7 +69,16 @@ final class TileSpellings {
     }
 
     static String cpp(String dtype) {
-        return CPP.get(dtype);
+        return required(CPP, dtype, "element type");
+    }
+
+    /** A table entry that must exist: a missing one is an error, never the text "null" (CG-4). */
+    private static String required(Map<String, String> table, String key, String what) {
+        var value = table.get(key);
+        if (value == null) {
+            throw new CEmitter.EmitException("TC-E9001", "no CUDA Tile spelling for " + what + " " + key);
+        }
+        return value;
     }
 
     /** {@code ct::tile<float, ct::shape<64, 64>>}. */
@@ -101,15 +110,22 @@ final class TileSpellings {
         return (TileType) v.type();
     }
 
+    /** A constant operand (an axis, a fill value): TileTyping guarantees it; anything else is an error, never 0 (CG-4). */
     private static long intConstant(Value v) {
-        return v instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n) ? n : 0;
+        if (v instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n)) {
+            return n;
+        }
+        throw new CEmitter.EmitException("TC-E3401", "a tile axis must be a compile-time constant");
     }
 
     private static double floatConstant(Value v) {
         if (v instanceof Inst c && c.opcode() instanceof Opcode.ConstFloat(var d)) {
             return d;
         }
-        return v instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n) ? n : 0;
+        if (v instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n)) {
+            return n;
+        }
+        throw new CEmitter.EmitException("TC-E3401", "a tile fill value must be a compile-time constant");
     }
 
     /** A {@code ct::full} fill value in the tile's element type (it is part of the source, so it must fold). */
@@ -214,17 +230,17 @@ final class TileSpellings {
             var op = name.substring("tile.binary.".length());
             var d = tile(values.get(0)).dtype();
             if (CALLS.containsKey(op)) {
-                var call = "ct::" + CALLS.get(op) + "(" + operand(d, ops.get(0)) + ", " + operand(d, ops.get(1)) + ")";
+                var call = "ct::" + required(CALLS, op, "call") + "(" + operand(d, ops.get(0)) + ", " + operand(d, ops.get(1)) + ")";
                 return op.equals("matmul") ? "ct::matmul(" + ops.get(0) + ", " + ops.get(1) + ")" : result(d, call);
             }
-            var expression = operand(d, ops.get(0)) + " " + OPERATORS.get(op) + " " + operand(d, ops.get(1));
+            var expression = operand(d, ops.get(0)) + " " + required(OPERATORS, op, "operator") + " " + operand(d, ops.get(1));
             return op.startsWith("logical") ? expression : result(d, expression);
         }
         if (name.startsWith("tile.compare.")) {
-            return ops.get(0) + " " + OPERATORS.get(name.substring("tile.compare.".length())) + " " + ops.get(1);
+            return ops.get(0) + " " + required(OPERATORS, name.substring("tile.compare.".length()), "comparison") + " " + ops.get(1);
         }
         if (name.startsWith("tile.compare_scalar.")) {
-            return ops.get(0) + " " + OPERATORS.get(name.substring("tile.compare_scalar.".length())) + " (" + cpp(tile(values.get(0)).dtype()) + ") " + ops.get(1);
+            return ops.get(0) + " " + required(OPERATORS, name.substring("tile.compare_scalar.".length()), "comparison") + " (" + cpp(tile(values.get(0)).dtype()) + ") " + ops.get(1);
         }
         if (name.startsWith("tile.unary.")) {
             var op = name.substring("tile.unary.".length());
@@ -241,7 +257,7 @@ final class TileSpellings {
         if (name.startsWith("tile.reduce.")) {
             var op = name.substring("tile.reduce.".length());
             var d = tile(values.get(0)).dtype();
-            var call = "ct::" + REDUCTIONS.get(op) + "(" + operand(d, ops.get(0)) + ", " + intConstant(values.get(1)) + "_ic)";
+            var call = "ct::" + required(REDUCTIONS, op, "reduction") + "(" + operand(d, ops.get(0)) + ", " + intConstant(values.get(1)) + "_ic)";
             return d.equals("PRED") ? call : result(d, call);
         }
         if (name.startsWith("tile.atomic.")) {
@@ -261,7 +277,7 @@ final class TileSpellings {
                 pointers = base + " + ((" + rows + " + " + ops.get(2) + " * " + shape.get(0) + ") * " + ops.get(3 + rank) + " + (" + columns + " + " + ops.get(3) + " * " + shape.get(1)
                         + "))";
             }
-            return "ct::" + ATOMICS.get(name.substring("tile.atomic.".length())) + "(" + pointers + ", " + ops.get(1) + ", ct::memory_order_relaxed_t{}, ct::thread_scope_device_t{})";
+            return "ct::" + required(ATOMICS, name.substring("tile.atomic.".length()), "atomic") + "(" + pointers + ", " + ops.get(1) + ", ct::memory_order_relaxed_t{}, ct::thread_scope_device_t{})";
         }
         throw new CEmitter.EmitException("TC-E3403", "no CUDA Tile spelling for " + name);
     }

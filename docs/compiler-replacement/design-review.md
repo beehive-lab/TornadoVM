@@ -162,4 +162,12 @@ Recorded per finding as fixed, not reproduced, or deferred (with the commit).
 | FE-4 | **Reproduced and fixed by refusal.** A helper's `v.setX(v.getX() + 1)` was lost (the kernel stored 1.0, not 2.0). It is refused with TC-E1012 (falls back to Graal); full support waits for the typed abstract stack in Phase C (`helperChangingAVectorArgumentIsRefused`). |
 | TP-5 | **Reproduced (a crash, not a miscompile) and fixed.** An array chosen by a ternary failed the verifier (TC-E2104): ABI lowering skipped array block arguments. Both are lowered now, and a length through a merge folds when all candidates agree (`arraysThroughMergesAreLoweredAndTheirLengthsFold`). |
 | TP-14 | **Not reproducible** (the frontend's entry block holds only a branch). Made robust anyway: scalar constants go to the start of the entry block. |
+| CG-4 | **Fixed** (by inspection): a non-constant tile axis or fill value, or a missing tile table entry, is now an error instead of `0` or the text `null`. |
+| IR-1 | **Fixed** (by inspection): `tornado.vector.store_param` is no longer reported pure. The effect-based registry replaces name prefixes in Phase B. |
+| IR-3 | **Guarded:** lane folds skip out-of-range lanes instead of throwing. The verifier check comes with the Phase B registry. |
+| IR-5 | **Fixed:** the GVN key includes attributes, and operands without an ordinal are keyed by identity (no hash collisions). |
+| TP-1 | **Fixed by refusal:** a device-launched kernel that uses atomic counters is refused (TC-E3207) until children get their own slot range. No unit test uses this. |
+| TP-3 | **Reproduced and fixed.** `k = i + 1; a[k - 1] = k` in a batch wrote at chunk index `i + offset`. `BatchOffset` now works per use: every use of the index is global, and every array index depending on it subtracts the offset (`batchIndexIsGlobalAsValueAndLocalAsIndex`). |
+| CG-3 | **Fixed conservatively:** copy coalescing only into the arguments of an unconditional branch, so no other successor can see the early write. Cost: one extra copy in loops that exit mid-body (`Cuda/control-flow.tcir`). |
+| FE-5 | **Not reproduced** (`vectorSetterAfterABranchCompiles` kept); the design point is addressed by the typed abstract stack in Phase C. |
 

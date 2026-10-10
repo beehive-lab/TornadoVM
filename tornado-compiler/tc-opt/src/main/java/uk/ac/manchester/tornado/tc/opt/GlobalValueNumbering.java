@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree;
  */
 public final class GlobalValueNumbering implements Pass {
 
-    private record Key(Opcode opcode, Type type, List<Integer> operands) {
+    private record Key(Opcode opcode, Type type, List<Object> operands, List<uk.ac.manchester.tornado.tc.ir.Attribute> attributes) {
     }
 
     @Override
@@ -92,15 +92,33 @@ public final class GlobalValueNumbering implements Pass {
         return changed;
     }
 
+    /**
+     * Opcode, type, operands and attributes (an attribute can change meaning). An operand without an
+     * ordinal is keyed by its own identity, never by a hash that two values could share (IR-5).
+     */
     private static Key key(Inst inst, Map<Value, Integer> ordinal) {
-        var operands = new ArrayList<Integer>();
+        var operands = new ArrayList<Object>();
         for (var op : inst.operands()) {
-            operands.add(ordinal.getOrDefault(op, -1 - System.identityHashCode(op)));
+            var n = ordinal.get(op);
+            operands.add(n != null ? n : new Identity(op));
         }
-        if (inst.opcode() instanceof Opcode.Binary(var op) && commutative(op) && operands.get(0) > operands.get(1)) {
+        if (inst.opcode() instanceof Opcode.Binary(var op) && commutative(op) && operands.get(0) instanceof Integer a && operands.get(1) instanceof Integer b && a > b) {
             operands.add(operands.remove(0));
         }
-        return new Key(inst.opcode(), inst.type(), operands);
+        return new Key(inst.opcode(), inst.type(), operands, List.copyOf(inst.attributes()));
+    }
+
+    /** A value compared by identity in a key. */
+    private record Identity(Value value) {
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Identity other && other.value == value;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(value);
+        }
     }
 
     private static boolean commutative(BinaryOp op) {

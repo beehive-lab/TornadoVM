@@ -83,6 +83,7 @@ public final class ErrorCodes {
             Map.entry("TC-E3204", new Entry(Category.BAILOUT, "a @Reduce reduction must be out[k] = out[k] op value (op: + * min max), one per @Parallel loop, on every iteration")),
             Map.entry("TC-E3205", new Entry(Category.INVALID_KERNEL, "an AtomicInteger must be created in the kernel with a constant initial value, or passed as an argument")),
             Map.entry("TC-E3206", new Entry(Category.UNSUPPORTED, "batched execution (withBatch) is not compiled by TC yet; the Graal path supports it")),
+            Map.entry("TC-E3207", new Entry(Category.UNSUPPORTED, "atomic counters in a kernel launched from the device (KernelContext.launch) are not compiled by TC yet; the Graal path compiles them")),
             Map.entry("TC-E3301", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E3401", new Entry(Category.INVALID_KERNEL, "a tile shape, axis or element type must be a compile-time constant (a literal or a static final); shapes must be powers of two")),
             Map.entry("TC-E3402", new Entry(Category.INVALID_KERNEL, "the tile operands do not fit together (rank, broadcast or element type); see the TileContext documentation")),
