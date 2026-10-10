@@ -1,9 +1,11 @@
 open module tornado.unittests {
     requires transitive junit;
     requires transitive tornado.api;
+    requires tornado.runtime;
     requires tornado.cublas;
     requires tornado.curand;
     requires tornado.cufft;
+    requires tornado.nccl;
     requires tornado.cudnn;
     requires tornado.cusparse;
     requires tornado.cudf;
