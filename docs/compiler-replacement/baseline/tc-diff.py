@@ -77,6 +77,8 @@ def parse(log):
         elif m := re.match(r"Task info: (\S+)", line):
             info = {}
             for j in range(i + 1, min(i + 9, len(lines))):
+                if not lines[j].strip() or lines[j].startswith("Task info:"):
+                    break  # the block ends: a device-launch block is shorter than the window
                 if mm := re.match(r"\s+(Dims|Global work size|Local\s+work size)\s*:\s*(.*)", lines[j]):
                     info[mm.group(1).replace("  ", " ")] = mm.group(2).strip()
             launches[m.group(1)].append((info.get("Dims"), info.get("Global work size"), info.get("Local work size")))
