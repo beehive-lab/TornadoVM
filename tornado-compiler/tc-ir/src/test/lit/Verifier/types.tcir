@@ -24,3 +24,12 @@ device @void_value() -> void {
   store %p, %one
   ret
 }
+
+; A local array accessed where its allocation is in sight must be read and written as its element type.
+kernel @local_access(%i: i32, %v: f64) -> void {
+^entry:
+  %buf = alloca.shared f32[16] : ptr<shared>
+  array.store %buf[%i], %v ; expected-error {{TC-E2107: operand 2 must be the local array element type f32, found f64}}
+  %x = array.load %buf[%i] : f64 ; expected-error {{TC-E2108: result of 'array.load' must be the local array element type f32}}
+  ret
+}

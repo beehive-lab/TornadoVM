@@ -111,6 +111,12 @@ public final class Verifier {
             for (var param : f.params()) {
                 checkPostAbiType(param.type(), "parameter %" + printer.name(param), Loc.UNKNOWN);
             }
+            // Block arguments too: a Java-level value carried around a loop is still Java-level.
+            for (var block : f.blocks().subList(1, f.blocks().size())) {
+                for (var arg : block.args()) {
+                    checkPostAbiType(arg.type(), "argument %" + printer.name(arg) + " of ^" + printer.blockName(block), Loc.UNKNOWN);
+                }
+            }
         }
         verifyAttributes(f.attributes(), Attribute.Scope.FUNCTION, "function @" + f.name());
         for (var block : f.blocks()) {
@@ -155,6 +161,10 @@ public final class Verifier {
                 error(inst, "TC-E2102", "terminator '" + inst.opcode().mnemonic() + "' must be the last instruction of its block");
             }
             verifyUses(block, i, inst);
+            if (inst.type() instanceof Type.TileType && !(inst.opcode() instanceof Opcode.Intrinsic(var n) && n.startsWith("tile."))
+                    && !(inst.opcode() instanceof Opcode.Call) && !(inst.opcode() instanceof Opcode.Select)) {
+                error(inst, "TC-E2121", "only tile operations, calls and selects produce tile values, not '" + inst.opcode().mnemonic() + "'");
+            }
             verifySignature(inst);
             verifySuccessors(inst);
             if (stage == Stage.POST_ABI) {
@@ -270,7 +280,9 @@ public final class Verifier {
                         // array as a vector of its elements (packed access, HalfFloatArray.getHalf2).
                         resultIs(inst, result.equals(element) || element.equals(Type.I8) || packs(result, element), "the array element type " + element.text());
                     } else if (isLocalPointer(ops.get(0).type())) {
-                        // A local array passed to an inlined helper: element type from the access.
+                        // A local array: its element type where the allocation is in sight (through an
+                        // inlined helper's parameter the access gives the type).
+                        allocaElement(ops.get(0)).ifPresent(e -> resultIs(inst, result.equals(e) || packs(result, e), "the local array element type " + e.text()));
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }
@@ -283,6 +295,7 @@ public final class Verifier {
                         operandIs(inst, 2, ops.get(2).type().equals(element) || element.equals(Type.I8) || packs(ops.get(2).type(), element), "the array element type " + element.text());
                     } else if (isLocalPointer(ops.get(0).type())) {
                         // As for array.load.
+                        allocaElement(ops.get(0)).ifPresent(e -> operandIs(inst, 2, ops.get(2).type().equals(e) || packs(ops.get(2).type(), e), "the local array element type " + e.text()));
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }
@@ -492,6 +505,10 @@ public final class Verifier {
 
     private void report(String code, String message, String where, Loc loc) {
         diagnostics.add(new Diagnostic(code, message, where, loc));
+    }
+
+    private static java.util.Optional<Type> allocaElement(Value pointer) {
+        return pointer instanceof Inst a && a.opcode() instanceof Opcode.Alloca(var space, var element, var count) ? java.util.Optional.of(element) : java.util.Optional.empty();
     }
 
     private static boolean isLocalPointer(Type type) {

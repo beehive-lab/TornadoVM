@@ -74,7 +74,7 @@ public final class ErrorCodes {
             Map.entry("TC-E2113", new Entry(Category.INVALID_KERNEL, "shared (local) memory can only be allocated in the kernel itself, not in a called method")),
             Map.entry("TC-E2114", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2116", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2117", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2118", new Entry(Category.INTERNAL, "")),
-            Map.entry("TC-E2119", new Entry(Category.INVALID_KERNEL, "a kernel-local array needs at least one element")), Map.entry("TC-E2120", new Entry(Category.INTERNAL, "")),
+            Map.entry("TC-E2119", new Entry(Category.INVALID_KERNEL, "a kernel-local array needs at least one element")), Map.entry("TC-E2120", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2121", new Entry(Category.INTERNAL, "")),
             // Structuring and TornadoVM lowering.
             Map.entry("TC-E2115", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E3001", new Entry(Category.BAILOUT, "the loops of this kernel jump into each other (irreducible control flow); restructure the loops")),
