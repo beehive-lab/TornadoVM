@@ -68,12 +68,13 @@ final class Helpers {
                       return make_float4(v, v, v, v);
                     }
                     """),
-            // A: a 16 x k row-major half tile (rows of 2k bytes); ldmatrix .x4 gives the four A registers.
+            // A: a 16 x k row-major tile of elementBytes-wide elements (rows of k * elementBytes bytes);
+            // ldmatrix .x4 gives the four A registers (f16: k = 16, 2 bytes; s8: k = 32, 1 byte).
             Map.entry("tc_mma_load_a", """
-                    __device__ static inline int4 tc_mma_load_a(const int *tile, int k) {
+                    __device__ static inline int4 tc_mma_load_a(const int *tile, int k, int elementBytes) {
                       unsigned lane = threadIdx.x & 31u, group = lane >> 3;
                       unsigned row = ((group & 1u) << 3) + (lane & 7u);
-                      unsigned offset = row * (2u * (unsigned) k) + ((group >> 1) << 4);
+                      unsigned offset = row * (unsigned) (k * elementBytes) + ((group >> 1) << 4);
                       unsigned address = (unsigned) __cvta_generic_to_shared((const char *) tile + offset);
                       int4 a;
                       asm volatile("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0,%1,%2,%3}, [%4];"
@@ -110,6 +111,30 @@ final class Helpers {
                       unsigned offset = (unsigned) (row * stride + col) * 2u;
                       offset ^= ((offset >> 7) & 7u) << 4;
                       *((half *) ((char *) tile + byteOffset + offset)) = value;
+                    }
+                    """),
+            Map.entry("tc_mma_fragment_int", """
+                    __device__ static inline int4 tc_mma_fragment_int(int v) {
+                      return make_int4(v, v, v, v);
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k32_s8", """
+                    __device__ static inline int4 tc_mma_m16n8k32_s8(int4 a, int2 b, int4 c) {
+                      int4 d;
+                      asm volatile("mma.sync.aligned.m16n8k32.row.col.s32.s8.s8.s32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%10,%11,%12,%13};"
+                                   : "=r"(d.x), "=r"(d.y), "=r"(d.z), "=r"(d.w)
+                                   : "r"(a.x), "r"(a.y), "r"(a.z), "r"(a.w), "r"(b.x), "r"(b.y), "r"(c.x), "r"(c.y), "r"(c.z), "r"(c.w));
+                      return d;
+                    }
+                    """),
+            Map.entry("tc_mma_store_int", """
+                    __device__ static inline void tc_mma_store_int(int4 d, int *c, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      int r = row + (int) (lane >> 2), k = col + (int) ((lane & 3u) << 1);
+                      c[r * ld + k] = d.x;
+                      c[r * ld + k + 1] = d.y;
+                      c[(r + 8) * ld + k] = d.z;
+                      c[(r + 8) * ld + k + 1] = d.w;
                     }
                     """),
             Map.entry("tc_mma_m16n8k16", """

@@ -177,6 +177,15 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".mma([" + half + "[" + half + "[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k16", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaStore([FL" + ARRAYS + "FloatArray;III)V", new Intrinsic("tornado.mma.store", Type.VOID));
         FIELDS.put("uk/ac/manchester/tornado/api/enums/MMAShape.M16N8K16", new ConstantField(16));
+        FIELDS.put("uk/ac/manchester/tornado/api/enums/MMAShape.M16N8K32", new ConstantField(32));
+        var vecI = new Type.VectorType(Type.I32, 4);
+        METHODS.put(KERNEL_CONTEXT + ".mmaFragmentInt(I)[I", new Intrinsic("tornado.mma.fragment_int", vecI));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadAInt8([II)[B", new Intrinsic("tornado.mma.load_a_s8", vecI));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadAInt8([III)[B", new Intrinsic("tornado.mma.load_a_s8.offset", vecI));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadBInt8([II)[B", new Intrinsic("tornado.mma.load_b_s8", new Type.VectorType(Type.I32, 2)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadBInt8([III)[B", new Intrinsic("tornado.mma.load_b_s8.offset", new Type.VectorType(Type.I32, 2)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaInt8([B[B[ILuk/ac/manchester/tornado/api/enums/MMAShape;)[I", new Intrinsic("tornado.mma.m16n8k32_s8", vecI));
+        METHODS.put(KERNEL_CONTEXT + ".mmaStoreInt([IL" + ARRAYS + "IntArray;III)V", new Intrinsic("tornado.mma.store_int", Type.VOID));
         // Atomics on global native arrays and on local int[] arrays.
         METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "IntArray;II)V", new Atomic("add", Type.I32, false));
         METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "LongArray;IJ)V", new Atomic("add", Type.I64, false));

@@ -776,6 +776,10 @@ final class Translator {
         var array = pop();
         if (array.type() instanceof Type.VectorType(var element, var length)) {
             // A tensor-core fragment: lanes live in registers, so only a constant index can be read.
+            // Only accumulators (C/D) have a per-lane element layout; A/B operand fragments are packed registers.
+            if (array instanceof Inst producer && producer.opcode() instanceof Opcode.Intrinsic(var name) && (name.contains(".load_a") || name.contains(".load_b"))) {
+                throw error("TC-E1006", "elements of an MMA operand fragment (A or B) cannot be read; only accumulator fragments can", bci);
+            }
             if (!(index instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var lane)) || lane < 0 || lane >= length) {
                 throw error("TC-E1006", "fragment elements can only be read at a constant index within the fragment", bci);
             }

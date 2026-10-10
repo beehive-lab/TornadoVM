@@ -7,10 +7,10 @@
 ; CHECK-LABEL: __device__ static inline float4 tc_mma_fragment(float v) {
 ; CHECK-NEXT:    return make_float4(v, v, v, v);
 ; CHECK-NEXT:  }
-; CHECK-LABEL: __device__ static inline int4 tc_mma_load_a(const int *tile, int k) {
+; CHECK-LABEL: __device__ static inline int4 tc_mma_load_a(const int *tile, int k, int elementBytes) {
 ; CHECK-NEXT:    unsigned lane = threadIdx.x & 31u, group = lane >> 3;
 ; CHECK-NEXT:    unsigned row = ((group & 1u) << 3) + (lane & 7u);
-; CHECK-NEXT:    unsigned offset = row * (2u * (unsigned) k) + ((group >> 1) << 4);
+; CHECK-NEXT:    unsigned offset = row * (unsigned) (k * elementBytes) + ((group >> 1) << 4);
 ; CHECK-NEXT:    unsigned address = (unsigned) __cvta_generic_to_shared((const char *) tile + offset);
 ; CHECK-NEXT:    int4 a;
 ; CHECK-NEXT:    asm volatile("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0,%1,%2,%3}, [%4];"
@@ -48,7 +48,7 @@
 ; CHECK-NEXT:    int2 fb;
 ; CHECK-NEXT:    float first;
 ; CHECK-NEXT:    acc = tc_mma_fragment(0.0f);
-; CHECK-NEXT:    fa = tc_mma_load_a((const int *) a, 16);
+; CHECK-NEXT:    fa = tc_mma_load_a((const int *) a, 16, 2);
 ; CHECK-NEXT:    fb = tc_mma_load_b((const int *) b, 16);
 ; CHECK-NEXT:    d = tc_mma_m16n8k16(fa, fb, acc);
 ; CHECK-NEXT:    tc_mma_store(d, (float *) (c), row, col, 64);

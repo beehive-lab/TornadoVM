@@ -78,15 +78,23 @@ public final class Intrinsics {
         }
         // Tensor cores, m16n8k16 (PTX ISA fragment layouts); helpers written from the PTX ISA.
         TABLE.put(new Key("tornado.mma.fragment", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_fragment($0)", "tc_mma_fragment"));
-        TABLE.put(new Key("tornado.mma.load_a", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1)", "tc_mma_load_a"));
+        TABLE.put(new Key("tornado.mma.load_a", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1, 2)", "tc_mma_load_a"));
         TABLE.put(new Key("tornado.mma.load_b", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) $0, $1)", "tc_mma_load_b"));
         // With a byte offset: the tile base moves by that many bytes (a warp's sub-tile).
-        TABLE.put(new Key("tornado.mma.load_a.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_a"));
+        TABLE.put(new Key("tornado.mma.load_a.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) ((const char *) $0 + $2), $1, 2)", "tc_mma_load_a"));
         TABLE.put(new Key("tornado.mma.load_b.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_b"));
         // Swizzled B tiles (fp16, stride-32 permutation: byte b -> b ^ (((b >> 7) & 7) << 4)).
         TABLE.put(new Key("tornado.mma.load_b.swizzled", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_swizzled($0, $1, 0)", "tc_mma_load_b_swizzled"));
         TABLE.put(new Key("tornado.mma.load_b.swizzled.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_swizzled($0, $1, $2)", "tc_mma_load_b_swizzled"));
         TABLE.put(new Key("tornado.mma.store_b.swizzled", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store_b_swizzled($0, $1, $2, $3, $4, $5)", "tc_mma_store_b_swizzled"));
+        // int8: m16n8k32, s8 inputs, s32 accumulators; tiles hold k one-byte elements per row.
+        TABLE.put(new Key("tornado.mma.fragment_int", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_fragment_int($0)", "tc_mma_fragment_int"));
+        TABLE.put(new Key("tornado.mma.load_a_s8", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1, 1)", "tc_mma_load_a"));
+        TABLE.put(new Key("tornado.mma.load_a_s8.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) ((const char *) $0 + $2), $1, 1)", "tc_mma_load_a"));
+        TABLE.put(new Key("tornado.mma.load_b_s8", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) $0, $1)", "tc_mma_load_b"));
+        TABLE.put(new Key("tornado.mma.load_b_s8.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_b"));
+        TABLE.put(new Key("tornado.mma.m16n8k32_s8", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k32_s8($0, $1, $2)", "tc_mma_m16n8k32_s8"));
+        TABLE.put(new Key("tornado.mma.store_int", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store_int($0, (int *) ($1), $2, $3, $4)", "tc_mma_store_int"));
         TABLE.put(new Key("tornado.mma.m16n8k16", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k16($0, $1, $2)", "tc_mma_m16n8k16"));
         TABLE.put(new Key("tornado.mma.store", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store($0, (float *) ($1), $2, $3, $4)", "tc_mma_store"));
         // Atomics: $&0 is the address of the element ($0 is its pointer); typed by the value.
