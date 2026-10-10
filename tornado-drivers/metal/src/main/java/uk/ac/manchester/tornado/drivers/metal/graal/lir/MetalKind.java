@@ -86,6 +86,7 @@ import uk.ac.manchester.tornado.api.types.vectors.Short2;
 import uk.ac.manchester.tornado.api.types.vectors.Short3;
 import uk.ac.manchester.tornado.api.types.volumes.VolumeShort2;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Half;
 import uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssembler;
 
 public enum MetalKind implements PlatformKind {
@@ -111,6 +112,7 @@ public enum MetalKind implements PlatformKind {
     // Opaque hardware matrix-unit fragment (Apple simdgroup_float8x8). Lives in
     // registers as a single value, like a vector type, but is not a vector.
     SIMDGROUP_FLOAT8X8(256, Matrix8x8Float.TYPE),
+    SIMDGROUP_HALF8X8(128, Matrix8x8Half.TYPE),
     CHAR2(2, null, CHAR),
     UCHAR2(2, null, UCHAR),
     SHORT2(2, Short2.TYPE, SHORT),
@@ -499,6 +501,8 @@ public enum MetalKind implements PlatformKind {
             return "tornado_ptr_t";
         } else if (this == MetalKind.SIMDGROUP_FLOAT8X8) {
             return "simdgroup_float8x8";
+        } else if (this == MetalKind.SIMDGROUP_HALF8X8) {
+            return "simdgroup_half8x8";
         } else {
             return name().toLowerCase();
         }
@@ -552,12 +556,17 @@ public enum MetalKind implements PlatformKind {
         return false;
     }
 
+    /** Whether this is an opaque SIMD-group matrix fragment ({@code simdgroup_float8x8} / {@code simdgroup_half8x8}). */
+    public boolean isSimdgroupMatrix() {
+        return this == SIMDGROUP_FLOAT8X8 || this == SIMDGROUP_HALF8X8;
+    }
+
     public boolean isVector() {
         return vectorLength > 1;
     }
 
     public boolean isPrimitive() {
-        return (vectorLength == 1 && kind != MetalKind.ILLEGAL && kind != MetalKind.SIMDGROUP_FLOAT8X8);
+        return (vectorLength == 1 && kind != MetalKind.ILLEGAL && !kind.isSimdgroupMatrix());
     }
 
     public JavaConstant getDefaultValue() {
@@ -581,7 +590,7 @@ public enum MetalKind implements PlatformKind {
     }
 
     public JavaKind asJavaKind() {
-        if (kind == SIMDGROUP_FLOAT8X8) {
+        if (kind.isSimdgroupMatrix()) {
             return JavaKind.Object;
         }
         if (kind != ILLEGAL && !kind.isVector()) {
