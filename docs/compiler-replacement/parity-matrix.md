@@ -16,8 +16,9 @@ suite with `-Dtornado.compiler=tc` ([baseline/run-tests.sh](baseline/run-tests.s
 | kernel compilations by TC | – | 3026 | |
 | fell back to Graal | – | 636 | |
 
-9 memory tests were not run under TC (`TestStressDeviceMemory` 8, `TestReclaimReleasedBuffers` 1): the run
-was stopped at a blocked JVM (see the last row below); they are rerun separately.
+The 9 memory tests the run stopped before were run separately under TC: `TestStressDeviceMemory` 2/2
+(with the suite's `-Dtornado.device.memory=4GB -Xmx14g`, Graal also 2/2), `TestReclaimReleasedBuffers` 1/1,
+and the six 5-minute `TestMemoryLeak` loops 6/6 (88,646 kernel compilations by TC, no fallback, `-Xmx2g`).
 
 The 78 tests that differed in run 1 were rerun after fixes (`run-classes.sh rerun1`): 107/109 pass.
 The two left: `TestComputePi` fails on Graal as well (baseline), and the one difference below.

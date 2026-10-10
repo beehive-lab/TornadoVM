@@ -35,6 +35,9 @@ import uk.ac.manchester.tornado.tc.ir.IrPrinter;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Verifier;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.tc.opt.Canonicalizer;
+import uk.ac.manchester.tornado.tc.opt.CfgSimplify;
+import uk.ac.manchester.tornado.tc.opt.DeadCodeElimination;
 import uk.ac.manchester.tornado.tc.opt.Inliner;
 import uk.ac.manchester.tornado.tc.opt.PassManager;
 import uk.ac.manchester.tornado.tc.lower.S;
@@ -153,12 +156,26 @@ public final class TcCompiler {
             }, () -> IrPrinter.print(function));
             check("verify.pre-abi", Verifier.Stage.PRE_ABI);
             if (!facts.isEmpty()) {
-                stage("specialise", Kind.IR, () -> ValueSpecialisation.run(function, facts), () -> IrPrinter.print(function));
+                // Fold what the argument values made constant (loop bounds such as n + 1), so the
+                // parallel-loop lowering can record the launch domain.
+                stage("specialise", Kind.IR, () -> {
+                    ValueSpecialisation.run(function, facts);
+                    // Through inlined getters too: merging blocks removes the call's return argument.
+                    for (int round = 0; round < 4 && (new Canonicalizer().run(function) | new CfgSimplify().run(function)); round++) {
+                    }
+                    new DeadCodeElimination().run(function);
+                }, () -> IrPrinter.print(function));
             }
+            boolean hasParallelLoops = function.blocks().stream().anyMatch(b -> b.attributes().stream().anyMatch(a -> a.name().equals("parallel")));
             stage("parallel", Kind.IR, () -> {
                 var problems = ParallelLoopLowering.run(function);
                 if (!problems.isEmpty()) {
                     throw new Failed(problems);
+                }
+                // With the task's arguments known, every @Parallel loop must give a launch domain:
+                // without one the kernel would run on a single thread.
+                if (!facts.isEmpty() && hasParallelLoops && ParallelLoopLowering.domain(function).isEmpty()) {
+                    throw new Failed(List.of(new Diagnostic("TC-E3103", "the bounds of the @Parallel loops are not compile-time constants after specialisation, so no launch domain can be derived", "", Loc.UNKNOWN)));
                 }
             }, () -> IrPrinter.print(function));
             stage("optimize", Kind.IR, () -> PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach()).run(function), () -> IrPrinter.print(function));
