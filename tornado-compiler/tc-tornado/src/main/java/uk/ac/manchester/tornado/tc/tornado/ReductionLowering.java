@@ -27,7 +27,6 @@ import java.util.Optional;
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Attribute;
 import uk.ac.manchester.tornado.tc.ir.Block;
-import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Immediates;
@@ -38,9 +37,9 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.BinaryOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
-import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
  * Reductions over a {@code @Parallel} loop ({@code @Reduce} arrays), lowered to the TornadoVM
@@ -81,7 +80,7 @@ public final class ReductionLowering {
         if (!stores) {
             return List.of(); // no reduction into the @Reduce array: compiled as an ordinary kernel
         }
-        var forest = new LoopForest(function);
+        var forest = Analyses.loops(function);
         var headers = function.blocks().stream().filter(b -> b.hasAttribute("parallel")).toList();
         if (headers.size() != 1) {
             return refuse("a reduction needs exactly one @Parallel loop (found " + headers.size() + ")");
@@ -117,7 +116,7 @@ public final class ReductionLowering {
             return List.of(); // the array is only read here (a map using a reduced value): an ordinary kernel
         }
         // Every thread must reach the work-group reduction (it synchronises the group).
-        var dominators = new uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree(function);
+        var dominators = Analyses.dominators(function);
         if (!dominators.dominates(store.block().orElseThrow(), loop.latches().get(0))) {
             return refuse("the reduction store is conditional inside the loop");
         }

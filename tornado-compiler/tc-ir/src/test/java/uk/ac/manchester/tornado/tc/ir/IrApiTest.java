@@ -117,4 +117,38 @@ public class IrApiTest {
         assertEquals(2, diagnostics.size());
         assertEquals("TC-E2110", diagnostics.get(0).code());
     }
+
+    /** Cached CFG analyses are reused while the CFG is unchanged and recomputed after any edit to it. */
+    @Test
+    public void cfgAnalysesFollowEveryCfgEdit() {
+        var f = IrParser.parseFunction("""
+                device @f(%c: i1) -> i32 {
+                ^entry:
+                  cond_br %c, ^a, ^b
+                ^a:
+                  %one = const 1 : i32
+                  ret %one
+                ^b:
+                  %two = const 2 : i32
+                  ret %two
+                }
+                """);
+        var first = uk.ac.manchester.tornado.tc.ir.analysis.Analyses.dominators(f);
+        assertTrue(first == uk.ac.manchester.tornado.tc.ir.analysis.Analyses.dominators(f));
+        // A new instruction is not a CFG edit.
+        IrBuilder.insertingBefore(f.blocks().get(1).terminator().orElseThrow()).constInt(Type.I32, 3);
+        assertTrue(first == uk.ac.manchester.tornado.tc.ir.analysis.Analyses.dominators(f));
+        // Retargeting an edge, a new block and a removed terminator each are.
+        var entryBranch = f.entry().terminator().orElseThrow();
+        entryBranch.setSuccessorTarget(1, f.blocks().get(1));
+        var second = uk.ac.manchester.tornado.tc.ir.analysis.Analyses.dominators(f);
+        assertFalse(first == second);
+        f.newBlock("extra");
+        var third = uk.ac.manchester.tornado.tc.ir.analysis.Analyses.dominators(f);
+        assertFalse(second == third);
+        var ret = f.blocks().get(2).terminator().orElseThrow();
+        ret.dropReferences();
+        ret.erase();
+        assertFalse(third == uk.ac.manchester.tornado.tc.ir.analysis.Analyses.dominators(f));
+    }
 }

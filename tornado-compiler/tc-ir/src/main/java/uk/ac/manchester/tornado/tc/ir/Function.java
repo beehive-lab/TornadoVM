@@ -22,6 +22,7 @@ package uk.ac.manchester.tornado.tc.ir;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -48,6 +49,10 @@ public final class Function {
     private final Type returnType;
     private final List<Block> blocks = new ArrayList<>();
     private final List<Attribute> attributes = new ArrayList<>();
+    /** Bumped by every change to the control-flow graph; analyses of the CFG are cached against it. */
+    private long cfgVersion;
+    private long cachedVersion = -1;
+    private final Map<Class<?>, Object> cfgAnalyses = new HashMap<>();
 
     public Function(String name, Kind kind, Type returnType) {
         this.name = name;
@@ -80,6 +85,7 @@ public final class Function {
     public Block newBlock(String label) {
         var block = new Block(this, label);
         blocks.add(block);
+        cfgChanged();
         return block;
     }
 
@@ -89,12 +95,36 @@ public final class Function {
             throw new IllegalArgumentException("cannot remove the entry block");
         }
         blocks.remove(block);
+        cfgChanged();
     }
 
     /** Moves {@code block} to position {@code index}; the block at index 0 is the entry. */
     public void moveBlock(Block block, int index) {
         blocks.remove(block);
         blocks.add(index, block);
+        cfgChanged();
+    }
+
+    /** Records a change to the control-flow graph (blocks, edges or terminators). */
+    void cfgChanged() {
+        cfgVersion++;
+    }
+
+    /**
+     * An analysis of this function's control-flow graph (dominators, loops), computed once per CFG
+     * version: any change to blocks, edges or terminators recomputes it on the next request.
+     */
+    public <T> T cfgAnalysis(Class<T> kind, java.util.function.Function<Function, T> compute) {
+        if (cachedVersion != cfgVersion) {
+            cfgAnalyses.clear();
+            cachedVersion = cfgVersion;
+        }
+        var cached = cfgAnalyses.get(kind);
+        if (cached == null) {
+            cached = compute.apply(this);
+            cfgAnalyses.put(kind, cached);
+        }
+        return kind.cast(cached);
     }
 
     public Block entry() {

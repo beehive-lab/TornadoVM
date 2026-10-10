@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.tc.ir.Type.IntType;
 import uk.ac.manchester.tornado.tc.ir.Type.ObjectType;
 import uk.ac.manchester.tornado.tc.ir.Type.PointerType;
 import uk.ac.manchester.tornado.tc.ir.Type.VectorType;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree;
 
 /**
@@ -101,7 +102,7 @@ public final class Verifier {
         }
         this.printer = new IrPrinter(false);
         printer.printFunction(f);
-        this.dominators = new DominatorTree(f);
+        this.dominators = Analyses.dominators(f);
         var preds = f.predecessors();
         if (!preds.get(f.entry()).isEmpty()) {
             report("TC-E2116", "the entry block ^" + printer.blockName(f.entry()) + " must not have predecessors", "", Loc.UNKNOWN);

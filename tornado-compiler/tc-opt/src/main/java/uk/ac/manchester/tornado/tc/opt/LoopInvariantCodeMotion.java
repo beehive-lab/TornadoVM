@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Value;
-import uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
@@ -47,8 +47,8 @@ public final class LoopInvariantCodeMotion implements Pass {
 
     @Override
     public boolean run(Function function) {
-        var tree = new DominatorTree(function);
-        var forest = new LoopForest(function, tree);
+        var tree = Analyses.dominators(function);
+        var forest = Analyses.loops(function);
         var preds = function.predecessors();
         boolean changed = false;
         var loops = forest.loops().stream().sorted(Comparator.comparingInt((LoopForest.Loop l) -> l.depth()).reversed()).toList();

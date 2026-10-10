@@ -106,10 +106,18 @@ public final class Inst extends Value {
         var successor = new Successor(target, List.copyOf(args));
         successors.add(successor);
         args.forEach(arg -> arg.addUser(this));
+        cfgChanged();
     }
 
     public void setSuccessorTarget(int index, Block target) {
         successors.get(index).setTarget(target);
+        cfgChanged();
+    }
+
+    private void cfgChanged() {
+        if (block != null) {
+            block.function().cfgChanged();
+        }
     }
 
     public void setSuccessorArgs(int index, List<? extends Value> args) {

@@ -20,18 +20,17 @@
  */
 package uk.ac.manchester.tornado.tc.opt;
 
-import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.tc.ir.Block;
-import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.IntPredicate;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
@@ -69,7 +68,7 @@ public final class FullLoopUnroll implements Pass {
         boolean progress = true;
         while (progress) {
             progress = false;
-            for (var loop : new LoopForest(function).loops()) {
+            for (var loop : Analyses.loops(function).loops()) {
                 if (tryUnroll(function, loop)) {
                     changed = progress = true;
                     break; // the loop forest is stale now

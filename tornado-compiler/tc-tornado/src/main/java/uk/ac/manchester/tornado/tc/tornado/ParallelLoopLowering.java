@@ -26,7 +26,6 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.tc.ir.Attribute;
 import uk.ac.manchester.tornado.tc.ir.Block;
-import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Immediates;
@@ -37,6 +36,7 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.BinaryOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopShape;
@@ -64,7 +64,7 @@ public final class ParallelLoopLowering {
 
     public static List<Diagnostic> run(Function function) {
         var diagnostics = new ArrayList<Diagnostic>();
-        var forest = new LoopForest(function);
+        var forest = Analyses.loops(function);
         record Parallel(LoopForest.Loop loop, int iv) {
         }
         var parallel = new ArrayList<Parallel>();

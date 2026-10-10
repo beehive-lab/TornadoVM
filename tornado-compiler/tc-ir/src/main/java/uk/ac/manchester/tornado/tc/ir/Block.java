@@ -92,6 +92,9 @@ public final class Block {
     void remove(Inst inst) {
         insts.remove(inst);
         inst.setBlock(null);
+        if (!inst.successors().isEmpty() || inst.isTerminator()) {
+            function.cfgChanged();
+        }
     }
 
     private void attach(Inst inst) {
@@ -99,6 +102,9 @@ public final class Block {
             throw new IllegalStateException("instruction is already in a block");
         }
         inst.setBlock(this);
+        if (!inst.successors().isEmpty() || inst.isTerminator()) {
+            function.cfgChanged();
+        }
     }
 
     /** The terminator, if the block currently ends with one. */

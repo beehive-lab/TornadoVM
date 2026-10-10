@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
-import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Type.TileType;
 import uk.ac.manchester.tornado.tc.ir.Value;
 import uk.ac.manchester.tornado.tc.ir.analysis.Constants;

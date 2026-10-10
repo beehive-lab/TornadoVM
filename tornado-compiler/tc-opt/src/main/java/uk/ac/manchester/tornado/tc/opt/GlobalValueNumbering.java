@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.BinaryOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
-import uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 
 /**
  * Dominator-based global value numbering (optimisation list item O6): a pure instruction that
@@ -54,7 +54,7 @@ public final class GlobalValueNumbering implements Pass {
 
     @Override
     public boolean run(Function function) {
-        var tree = new DominatorTree(function);
+        var tree = Analyses.dominators(function);
         var ordinal = new IdentityHashMap<Value, Integer>();
         for (var param : function.params()) {
             ordinal.put(param, ordinal.size());

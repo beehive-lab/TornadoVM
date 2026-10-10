@@ -26,10 +26,9 @@ import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
-import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
-import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
  * Batched execution: each device buffer holds one chunk of every array, starting at element
@@ -49,7 +48,7 @@ public final class BatchOffset {
         if (offset == 0) {
             return;
         }
-        var forest = new LoopForest(function);
+        var forest = Analyses.loops(function);
         for (var header : function.blocks()) {
             for (var a : header.attributes()) {
                 if (!a.name().equals("parallel")) {
