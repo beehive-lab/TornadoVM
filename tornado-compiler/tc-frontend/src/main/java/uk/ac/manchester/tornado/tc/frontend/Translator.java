@@ -1332,6 +1332,12 @@ final class Translator {
                 var value = builder.intrinsic("tornado.vector.lane." + l, element, List.of(vector));
                 push(element.equals(Type.I8) || element.equals(Type.I16) ? builder.convert(ConvertOp.SEXT, value, Type.I32) : value);
             }
+            case Bindings.ReceiverIntrinsic(var name, var type) -> {
+                var result = builder.intrinsic(name, type, args);
+                if (result.producesValue()) {
+                    push(result);
+                }
+            }
             case Bindings.VectorWhole(var op) -> {
                 var vector = args.get(0);
                 var vec = (Type.VectorType) vector.type();

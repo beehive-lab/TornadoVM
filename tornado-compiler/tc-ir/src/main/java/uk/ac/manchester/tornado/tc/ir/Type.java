@@ -131,6 +131,23 @@ public sealed interface Type {
         }
     }
 
+    /**
+     * A CUDA Tile value ({@code TileContext}): element type (a {@code DType} name such as
+     * {@code F32} or {@code PRED}) and a static shape; {@code view} for a partition view, which
+     * addresses tiles of that shape in memory instead of holding one.
+     */
+    record TileType(String dtype, java.util.List<Integer> shape, boolean view) implements Type {
+        public TileType {
+            shape = java.util.List.copyOf(shape);
+        }
+
+        @Override
+        public String text() {
+            var dims = shape.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(", "));
+            return (view ? "tileview<" : "tile<") + dtype + (dims.isEmpty() ? "" : ", " + dims) + ">";
+        }
+    }
+
     /** Ordering-only result, for example of a barrier. */
     record TokenType() implements Type {
         @Override

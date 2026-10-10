@@ -195,8 +195,10 @@ public final class CEmitter {
         var f = k.source();
         var entry = entryName(f);
         var header = new StringBuilder();
+        var tiles = f.blocks().stream().flatMap(b -> b.insts().stream()).anyMatch(i -> i.opcode() instanceof Opcode.Intrinsic(var n) && n.startsWith("tile."));
         if (f.kind() == Function.Kind.KERNEL) {
-            header.append("extern \"C\" __global__ void ").append(entry).append("(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics");
+            // A TileContext kernel is CUDA Tile C++, compiled by nvcc (the runtime looks for __tile_global__).
+            header.append(tiles ? "extern \"C\" __tile_global__ void " : "extern \"C\" __global__ void ").append(entry).append("(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics");
             for (var p : k.params()) {
                 header.append(", ").append(declaration(p.type(), names.get(p)));
             }
@@ -215,6 +217,9 @@ public final class CEmitter {
         // Locals of one type share a declaration (`float x, v;`, `float *a_data, *b_data;`), in first-use order.
         var groups = new java.util.LinkedHashMap<String, List<String>>();
         for (var v : k.locals()) {
+            if (v.type() instanceof Type.TileType t && t.view()) {
+                continue; // a view's C++ type cannot be named: `auto` at its definition
+            }
             var element = elementTypes.get(v);
             var name = names.get(v);
             var full = element != null ? typeName(element) + " *" + name : declaration(v.type(), name);
@@ -246,8 +251,20 @@ public final class CEmitter {
         var emitted = resolveLoopLabels(out.toString());
         var source = new StringBuilder();
         var includes = new ArrayList<String>();
-        if (usesHalf) {
+        var text = header + emitted;
+        var fp8 = tiles && text.contains("__nv_fp8");
+        if (tiles) {
+            includes.add(TileSpellings.PRELUDE.strip());
+        }
+        // Tile element types are spelled by TileSpellings: their headers follow cuda_tile.h (fp8 builds on fp16).
+        if (usesHalf || tiles && text.contains("__half") || fp8) {
             includes.add("#include <cuda_fp16.h>");
+        }
+        if (!usesBFloat16 && tiles && text.contains("__nv_bfloat16")) {
+            includes.add("#include <cuda_bf16.h>");
+        }
+        if (fp8) {
+            includes.add("#include <cuda_fp8.h>");
         }
         if (usesBFloat16) {
             includes.add("#include <cuda_bf16.h>");
@@ -285,7 +302,8 @@ public final class CEmitter {
             case S.Assign(var target, var value, var loc) -> {
                 var element = elementTypes.get(target);
                 var text = element != null ? "(" + typeName(element) + " *) (" + expr(value).text + ")" : expr(value).text;
-                line(depth, names.get(target) + " = " + text + ";" + comment(loc));
+                var declare = target.type() instanceof Type.TileType t && t.view() ? "auto " : "";
+                line(depth, declare + names.get(target) + " = " + text + ";" + comment(loc));
             }
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(DEVICE_LAUNCH) -> deviceLaunch(name, op.operands(), loc, depth);
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.printf") -> {
@@ -702,6 +720,10 @@ public final class CEmitter {
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
+        if (name.startsWith("tile.")) {
+            // Tile values are always named variables; the result is a whole statement's expression.
+            return new R(TileSpellings.expression(name, inst, ops.stream().map(o -> wrap(expr(o), UNARY)).toList()), COND);
+        }
         if (name.equals("tornado.vector.make")) {
             // A vector value from its lanes: make_float4(x, y, z, w).
             return new R("make_" + typeName(inst.type()) + "(" + String.join(", ", ops.stream().map(o -> expr(o).text).toList()) + ")", ATOM);
@@ -869,6 +891,7 @@ public final class CEmitter {
                 case F64 -> "double";
             };
             case Type.PointerType p -> "unsigned char *";
+            case Type.TileType t when !t.view() -> TileSpellings.tileType(t);
             case Type.VectorType(var element, var length) when element.equals(Type.F16) && length == 2 -> {
                 usesHalf = true;
                 yield "half2";

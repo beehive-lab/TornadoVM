@@ -96,7 +96,7 @@ public final class AbiLowering {
                 }
                 // The ABI drops KernelContext: its uses were replaced by intrinsics in the frontend.
                 // and AtomicIntegers: they are slots of the atomics region (AtomicSlots), not arguments.
-                case Type.ObjectType o when (o.className().equals("KernelContext") || o.className().equals("AtomicInteger")) && !param.hasUses() -> function.entry().removeArg(param);
+                case Type.ObjectType o when (o.className().equals("KernelContext") || o.className().equals("TileContext") || o.className().equals("AtomicInteger")) && !param.hasUses() -> function.entry().removeArg(param);
                 case Type.VectorType vec -> lowerVectorParam(function, param, vec);
                 case Type.ObjectType o when layouts.containsKey(o.className()) -> {
                     classes.put(param, o.className());

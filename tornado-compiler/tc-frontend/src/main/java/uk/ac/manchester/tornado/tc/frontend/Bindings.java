@@ -120,6 +120,10 @@ final class Bindings {
     }
 
     /** {@code v.setX(s)} … {@code v.set(i, s)}: a new vector with one lane replaced, rebound to every slot holding {@code v}. */
+    /** An intrinsic on an instance method that keeps its receiver as operand 0 (a tile view). */
+    record ReceiverIntrinsic(String name, Type type) implements Binding {
+    }
+
     /** Whole-vector operations on a vector value: {@code set(v)}, {@code fill(s)}, {@code size()}. */
     record VectorWhole(String op) implements Binding {
     }
@@ -243,6 +247,7 @@ final class Bindings {
         METHODS.put(quant + ".dp4a(" + int8 + "J" + int8 + "JI)I", new Intrinsic("tornado.dp4a", Type.I32));
         METHODS.put(quant + ".dp4a(" + int8 + "J[BJI)I", new Intrinsic("tornado.dp4a", Type.I32));
         METHODS.put(quant + ".dp4a_packed(III)I", new Intrinsic("tornado.dp4a.packed", Type.I32));
+        registerTiles();
         // Half2: two f16 lanes (CUDA half2); its arithmetic is Java code over getX/getY and the constructor.
         var half2 = new Type.VectorType(Type.F16, 2);
         VECTORS.put("Half2", half2);
@@ -402,6 +407,94 @@ final class Bindings {
     }
 
     /** The TC type of a field or parameter descriptor ({@code I}, {@code [F}, {@code Lpkg/Cls;}, …). */
+    // ---------------------------------------------------------------- CUDA Tile (TileContext)
+
+    static final String TILE_API = "uk/ac/manchester/tornado/api/tile/";
+
+    /**
+     * TileContext and PartitionView become {@code tile.*} intrinsics on opaque tile values; their
+     * static types (element type and shape) are computed after specialisation by TileTyping. A
+     * DType argument arrives as its enum ordinal, shapes and axes as constants.
+     */
+    private static void registerTiles() {
+        // Locals, not constants: this runs from the static initialiser, before later fields are set.
+        final Type TILE = new Type.ObjectType("Tile");
+        final Type VIEW = new Type.ObjectType("TensorView");
+        final Type PARTITION = new Type.ObjectType("PartitionView");
+        var ctx = TILE_API + "TileContext.";
+        var tile = "L" + TILE_API + "Tile;";
+        var view = "L" + TILE_API + "TensorView;";
+        var partition = "L" + TILE_API + "PartitionView;";
+        var dtype = "L" + TILE_API + "DType;";
+        for (var d : List.of("X", "Y", "Z")) {
+            METHODS.put(ctx + "bid" + d + "()I", new Intrinsic("tile.bid." + d.toLowerCase(), Type.I32));
+            METHODS.put(ctx + "numBlocks" + d + "()I", new Intrinsic("tile.num_blocks." + d.toLowerCase(), Type.I32));
+        }
+        var views = Map.of("FloatArray", "F32", "HalfFloatArray", "F16", "BFloat16Array", "BF16", "IntArray", "S32", "Int8Array", "S8", "DoubleArray", "F64", "ByteArray", "S8");
+        views.forEach((array, element) -> {
+            var a = "L" + ARRAYS + array + ";";
+            for (var dims : List.of("I", "II", "III")) {
+                METHODS.put(ctx + "view(" + a + dims + ")" + view, new Intrinsic("tile.view." + element, VIEW));
+            }
+            METHODS.put(ctx + "viewStrided(" + a + "IIII)" + view, new Intrinsic("tile.view_strided." + element, VIEW));
+        });
+        METHODS.put(ctx + "viewStrided(L" + ARRAYS + "ByteArray;" + dtype + "IIII)" + view, new Intrinsic("tile.view_strided.dtype", VIEW));
+        METHODS.put(ctx + "view(L" + ARRAYS + "FP8Array;" + dtype + "I)" + view, new Intrinsic("tile.view.dtype", VIEW));
+        METHODS.put(ctx + "view(L" + ARRAYS + "FP8Array;" + dtype + "II)" + view, new Intrinsic("tile.view.dtype", VIEW));
+        for (var dims : List.of("I", "II", "III")) {
+            METHODS.put(ctx + "partition(" + view + dims + ")" + partition, new Intrinsic("tile.partition", PARTITION));
+        }
+        for (var dims : List.of("I", "II")) {
+            METHODS.put(ctx + "zeros(" + dtype + dims + ")" + tile, new Intrinsic("tile.zeros", TILE));
+            METHODS.put(ctx + "ones(" + dtype + dims + ")" + tile, new Intrinsic("tile.ones", TILE));
+            METHODS.put(ctx + "full(" + dtype + "D" + dims + ")" + tile, new Intrinsic("tile.full", TILE));
+            METHODS.put(ctx + "iota(" + dtype + dims + ")" + tile, new Intrinsic("tile.iota", TILE));
+            METHODS.put(ctx + "broadcast(" + tile + dims + ")" + tile, new Intrinsic("tile.broadcast", TILE));
+        }
+        for (var dims : List.of("I", "II", "III")) {
+            METHODS.put(ctx + "reshape(" + tile + dims + ")" + tile, new Intrinsic("tile.reshape", TILE));
+        }
+        METHODS.put(ctx + "extract(" + tile + "II)" + tile, new Intrinsic("tile.extract.1", TILE));
+        METHODS.put(ctx + "extract(" + tile + "IIII)" + tile, new Intrinsic("tile.extract.2", TILE));
+        var tt = "(" + tile + tile + ")" + tile;
+        for (var op : List.of("add", "sub", "mul", "div", "bitwiseAnd", "bitwiseOr", "bitwiseXor", "shiftLeft", "shiftRight", "maximum", "minimum", "atan2", "pow", "remainder",
+                "floorDiv", "ceilDiv", "mulhi", "logicalAnd", "logicalOr", "matmul")) {
+            METHODS.put(ctx + op + tt, new Intrinsic("tile.binary." + op, TILE));
+        }
+        for (var op : List.of("lessThan", "lessOrEqual", "greaterThan", "greaterOrEqual", "equalTo", "notEqualTo")) {
+            METHODS.put(ctx + op + tt, new Intrinsic("tile.compare." + op, TILE));
+            METHODS.put(ctx + op + "(" + tile + "D)" + tile, new Intrinsic("tile.compare_scalar." + op, TILE));
+        }
+        for (var op : List.of("exp", "sin", "cos", "sqrt", "rsqrt", "log", "log2", "exp2", "tanh", "abs", "floor", "ceil", "tan", "sinh", "cosh", "bitwiseNot", "isNaN",
+                "isInfinite", "logicalNot", "transpose")) {
+            METHODS.put(ctx + op + "(" + tile + ")" + tile, new Intrinsic("tile.unary." + op, TILE));
+        }
+        for (var op : List.of("sum", "max", "min", "prod", "reduceBitAnd", "reduceBitOr", "reduceBitXor", "allOf", "anyOf", "prefixSum", "prefixProduct")) {
+            METHODS.put(ctx + op + "(" + tile + "I)" + tile, new Intrinsic("tile.reduce." + op, TILE));
+        }
+        METHODS.put(ctx + "select(" + tile + tile + tile + ")" + tile, new Intrinsic("tile.select", TILE));
+        METHODS.put(ctx + "fma(" + tile + tile + tile + ")" + tile, new Intrinsic("tile.fma", TILE));
+        METHODS.put(ctx + "mma(" + tile + tile + tile + ")" + tile, new Intrinsic("tile.mma", TILE));
+        METHODS.put(ctx + "scale(" + tile + "D)" + tile, new Intrinsic("tile.scale", TILE));
+        METHODS.put(ctx + "cast(" + tile + dtype + ")" + tile, new Intrinsic("tile.cast", TILE));
+        METHODS.put(ctx + "bitcast(" + tile + dtype + ")" + tile, new Intrinsic("tile.bitcast", TILE));
+        METHODS.put(ctx + "concat(" + tile + tile + "I)" + tile, new Intrinsic("tile.concat", TILE));
+        var pv = TILE_API + "PartitionView.";
+        for (var dims : List.of("I", "II", "III")) {
+            METHODS.put(pv + "load(" + dims + ")" + tile, new ReceiverIntrinsic("tile.load", TILE));
+            METHODS.put(pv + "loadMasked(" + dims + ")" + tile, new ReceiverIntrinsic("tile.load_masked", TILE));
+            METHODS.put(pv + "store(" + tile + dims + ")V", new ReceiverIntrinsic("tile.store", Type.VOID));
+            METHODS.put(pv + "storeMasked(" + tile + dims + ")V", new ReceiverIntrinsic("tile.store_masked", Type.VOID));
+        }
+        for (var dims : List.of("I", "II")) {
+            METHODS.put(pv + "atomicLoad(" + dims + ")" + tile, new ReceiverIntrinsic("tile.atomic_load", TILE));
+            METHODS.put(pv + "atomicStore(" + tile + dims + ")V", new ReceiverIntrinsic("tile.atomic_store", Type.VOID));
+            for (var op : List.of("Add", "Sub", "Min", "Max", "And", "Or", "Xor", "Exchange")) {
+                METHODS.put(pv + "atomic" + op + "(" + tile + dims + ")V", new ReceiverIntrinsic("tile.atomic." + op.toLowerCase(), Type.VOID));
+            }
+        }
+    }
+
     /** A vector collection ({@code VectorFloat2}, ...): its element type and the lanes per element. */
     record Collection(Type element, int width) {
     }

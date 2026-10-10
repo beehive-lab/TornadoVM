@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.tc.tornado.BatchOffset;
 import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
 import uk.ac.manchester.tornado.tc.frontend.LocalCollections;
 import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
+import uk.ac.manchester.tornado.tc.tornado.TileTyping;
 import uk.ac.manchester.tornado.tc.tornado.ReductionLowering;
 import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
@@ -242,6 +243,14 @@ public final class TcCompiler {
                     for (int round = 0; round < 4 && (new Canonicalizer().run(function) | new CfgSimplify().run(function)); round++) {
                     }
                     new DeadCodeElimination().run(function);
+                }, () -> IrPrinter.print(function));
+            }
+            if (TileTyping.usesTiles(function)) {
+                stage("tiles", Kind.IR, () -> {
+                    var problems = TileTyping.run(function);
+                    if (!problems.isEmpty()) {
+                        throw new Failed(problems);
+                    }
                 }, () -> IrPrinter.print(function));
             }
             if (function.blocks().stream().flatMap(b -> b.insts().stream()).anyMatch(i -> i.opcode() instanceof uk.ac.manchester.tornado.tc.ir.Opcode.Intrinsic(var n) && n.startsWith("tornado.atomic_int."))) {

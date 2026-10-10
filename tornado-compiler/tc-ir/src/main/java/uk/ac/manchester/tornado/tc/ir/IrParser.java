@@ -495,6 +495,16 @@ public final class IrParser {
                 expectPunct(">");
                 yield new Type.ObjectType(className);
             }
+            case "tile", "tileview" -> {
+                expectPunct("<");
+                var dtype = expect(Kind.IDENT, "tile element type").text;
+                var shape = new ArrayList<Integer>();
+                while (acceptPunct(",")) {
+                    shape.add((int) parseLong(expect(Kind.NUMBER, "tile extent")));
+                }
+                expectPunct(">");
+                yield new Type.TileType(dtype, shape, token.text.equals("tileview"));
+            }
             default -> throw error("TC-E2006", token, "unknown type '" + token.text + "'");
         };
     }
