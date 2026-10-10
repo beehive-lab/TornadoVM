@@ -277,12 +277,12 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             // TC, the Graal-free compiler (docs/compiler-replacement). Falls back to Graal below when
             // TC reports a diagnostic, unless -Dtornado.compiler.fallback=false.
             TornadoProfiler profiler = task.getProfiler();
-            // TC time is reported as the task's compiler time, as Graal's is.
-            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads());
-            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            // TC's own timers (Task-Compile-TC, Total-TC-Compilation-Time); a refused attempt counts too.
+            profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads(), taskMeta.getNumThreads());
+            profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
             if (kernel.isPresent()) {
-                profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
                 profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
                 kernel.get().domain().ifPresent(taskMeta::setDomain);
                 var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());
@@ -346,8 +346,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
      */
     private static void reportCompileTimes(CompilableTask task, String compiler, TornadoProfiler profiler, String taskId) {
         if (REPORT_COMPILE_TIMES) {
+            var timer = compiler.equals("tc") ? ProfilerType.TASK_COMPILE_TC_TIME : ProfilerType.TASK_COMPILE_GRAAL_TIME;
             System.out.printf("[compile-times] compiler=%s method=%s.%s task=%s compilerNs=%d driverNs=%d%n", compiler, task.getMethod().getDeclaringClass().getSimpleName(),
-                    task.getMethod().getName(), taskId, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskId), profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskId));
+                    task.getMethod().getName(), taskId, profiler.getTaskTimer(timer, taskId), profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskId));
         }
     }
 

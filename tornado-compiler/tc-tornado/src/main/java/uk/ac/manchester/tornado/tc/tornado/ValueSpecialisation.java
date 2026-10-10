@@ -53,6 +53,10 @@ public final class ValueSpecialisation {
         record Length(long elements) implements Fact {
         }
 
+        /** A {@code @Reduce} array: the runtime gives the kernel one partial-result slot per work-group (see {@link ReductionLowering}). */
+        record Reduce(long elements) implements Fact {
+        }
+
         record Scalar(Number value) implements Fact {
         }
 

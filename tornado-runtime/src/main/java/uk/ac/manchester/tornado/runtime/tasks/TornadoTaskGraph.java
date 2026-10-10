@@ -2203,12 +2203,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public long getCompileTime() {
-        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + getProfilerValue(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
+        return getTornadoCompilerTime() + getProfilerValue(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
     }
 
     @Override
     public long getTornadoCompilerTime() {
-        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
+        // Whichever compiler produced the kernels: Graal, TC, or both (TC refused some and Graal compiled them).
+        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + getProfilerValue(ProfilerType.TOTAL_TC_COMPILE_TIME);
     }
 
     @Override
@@ -2272,6 +2273,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case COPY_IN_TIME -> timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
             case TOTAL_DRIVER_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
             case TOTAL_GRAAL_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
+            case TOTAL_TC_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_TC_COMPILE_TIME);
             case TOTAL_TASK_GRAPH_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
             case TOTAL_COPY_IN_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES);
             case TOTAL_COPY_OUT_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES);

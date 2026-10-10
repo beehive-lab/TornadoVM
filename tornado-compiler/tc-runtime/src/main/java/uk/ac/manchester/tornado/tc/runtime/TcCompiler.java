@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.tc.lower.Structurizer;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
 import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
 import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
+import uk.ac.manchester.tornado.tc.tornado.ReductionLowering;
 import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
 /**
@@ -165,6 +166,15 @@ public final class TcCompiler {
                     for (int round = 0; round < 4 && (new Canonicalizer().run(function) | new CfgSimplify().run(function)); round++) {
                     }
                     new DeadCodeElimination().run(function);
+                }, () -> IrPrinter.print(function));
+            }
+            var reduce = facts.stream().map(f -> f instanceof ValueSpecialisation.Fact.Reduce).toList();
+            if (reduce.contains(true)) {
+                stage("reduce", Kind.IR, () -> {
+                    var problems = ReductionLowering.run(function, reduce);
+                    if (!problems.isEmpty()) {
+                        throw new Failed(problems);
+                    }
                 }, () -> IrPrinter.print(function));
             }
             boolean hasParallelLoops = function.blocks().stream().anyMatch(b -> b.attributes().stream().anyMatch(a -> a.name().equals("parallel")));

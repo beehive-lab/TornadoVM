@@ -208,7 +208,13 @@ public final class CEmitter {
         if (usesHalf || usesBFloat16) {
             source.append('\n');
         }
+        // Dependencies first (a block reduction calls java_fmaxf), each helper once.
+        var ordered = new LinkedHashSet<String>();
         for (var helper : helpers) {
+            ordered.addAll(Helpers.dependencies(helper));
+            ordered.add(helper);
+        }
+        for (var helper : ordered) {
             source.append(Helpers.source(helper, target.dialect())).append('\n');
         }
         source.append(header).append(emitted);

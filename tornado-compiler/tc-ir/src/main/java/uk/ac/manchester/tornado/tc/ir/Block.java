@@ -123,6 +123,10 @@ public final class Block {
         attributes.add(attribute);
     }
 
+    public void removeAttribute(String name) {
+        attributes.removeIf(a -> a.name().equals(name));
+    }
+
     public boolean hasAttribute(String name) {
         return attributes.stream().anyMatch(a -> a.name().equals(name));
     }

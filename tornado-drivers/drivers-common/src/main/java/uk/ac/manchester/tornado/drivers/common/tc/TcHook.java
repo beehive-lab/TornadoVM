@@ -86,30 +86,30 @@ public final class TcHook {
      * it; throws when fallback is disabled.
      */
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target) {
-        return compile(method, arguments, target, 0);
+        return compile(method, arguments, target, 0, 0);
     }
 
-    /** As {@link #compile(Method, Object[], TargetCaps)}; {@code batchThreads > 0} when the task runs in batches. */
-    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads) {
+    /**
+     * As {@link #compile(Method, Object[], TargetCaps)}; {@code batchThreads > 0} when the task runs in
+     * batches; {@code numThreads > 0} when the runtime fixes the number of threads (a reduction over a
+     * size that is not a power of two runs on the largest power-of-two prefix; the host folds the rest).
+     */
+    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         // In a batch the device buffers hold one chunk: lengths and indices are per chunk, which TC
         // does not model yet (folding the full length would index past the chunk).
         if (batchThreads > 0) {
             return refuse(name, "TC-E3202", "batched execution (withBatch) is not compiled by TC yet");
         }
-        // @Reduce parameters need the reduction rewrite (T-list item): until TC has it, they stay on Graal.
-        for (var annotations : method.getParameterAnnotations()) {
-            for (var annotation : annotations) {
-                if (annotation instanceof Reduce) {
-                    return refuse(name, "TC-E3201", "@Reduce reductions are not compiled by TC yet");
-                }
-            }
-        }
         var facts = new ArrayList<ValueSpecialisation.Fact>();
         var declared = method.getParameterTypes();
         for (int i = 0; i < arguments.length; i++) {
             var argument = arguments[i];
-            if (argument instanceof TornadoNativeArray array) {
+            boolean reduced = i < method.getParameterAnnotations().length && java.util.Arrays.stream(method.getParameterAnnotations()[i]).anyMatch(Reduce.class::isInstance);
+            if (reduced && argument instanceof TornadoNativeArray array) {
+                // The runtime has already swapped in the per-work-group partial-results array.
+                facts.add(new ValueSpecialisation.Fact.Reduce(array.getSizeLong()));
+            } else if (argument instanceof TornadoNativeArray array) {
                 facts.add(new ValueSpecialisation.Fact.Length(array.getSizeLong()));
             } else if (isInstance(argument) && i < declared.length) {
                 facts.add(instanceFact(argument, declared[i]));
@@ -147,8 +147,10 @@ public final class TcHook {
         Optional<DomainTree> domain = Optional.empty();
         if (!c.domain().isEmpty()) {
             var tree = new DomainTree(c.domain().size());
+            boolean reduction = facts.stream().anyMatch(f -> f instanceof ValueSpecialisation.Fact.Reduce);
             for (var d : c.domain()) {
-                tree.set(d.dim(), new IntDomain((int) d.offset(), (int) d.step(), (int) d.upper()));
+                long upper = reduction && d.dim() == 0 && numThreads > 0 ? d.offset() + numThreads : d.upper();
+                tree.set(d.dim(), new IntDomain((int) d.offset(), (int) d.step(), (int) upper));
             }
             domain = Optional.of(tree);
         }

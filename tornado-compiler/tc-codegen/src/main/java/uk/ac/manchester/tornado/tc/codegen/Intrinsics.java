@@ -76,6 +76,12 @@ public final class Intrinsics {
         for (int lane = 0; lane < 4; lane++) {
             cuda("tornado.vector.lane." + lane, "$0." + components.get(lane));
         }
+        // @Reduce: work-group reduction of each thread's value (Helpers.blockReduce).
+        for (var op : List.of("add", "mul", "max", "min")) {
+            for (var t : List.of("f32", "f64", "i32", "i64")) {
+                TABLE.put(new Key("tornado.reduce." + op, Dialect.CUDA, t), Spelling.withHelper("tc_reduce_" + op + "_" + t + "($0)", "tc_reduce_" + op + "_" + t));
+            }
+        }
         // Tensor cores, m16n8k16 (PTX ISA fragment layouts); helpers written from the PTX ISA.
         TABLE.put(new Key("tornado.mma.fragment", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_fragment($0)", "tc_mma_fragment"));
         TABLE.put(new Key("tornado.mma.load_a", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1, 2)", "tc_mma_load_a"));

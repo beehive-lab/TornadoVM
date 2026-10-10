@@ -96,15 +96,18 @@ def compare(out):
         gt, gl, _ = parse(os.path.join(gdir, name))
         tt, tl, ts = parse(os.path.join(tdir, name))
         diffs = [{"test": k, "graal": gt.get(k), "tc": tt.get(k)} for k in sorted(set(gt) | set(tt)) if gt.get(k) != tt.get(k)]
-        launch = []
+        launch, counts = [], []
+        norm = lambda conf: (conf[0], conf[1], "[1, 1, 1]" if conf[0] == "0" and conf[2] == "null" else conf[2])  # 1-thread launch, local size unset
         for k in sorted(set(gl) & set(tl)):
-            # the first launch where the sequences part (a refused kernel shortens TC's sequence)
+            if len(gl[k]) != len(tl[k]):
+                counts.append({"task": k, "graal": len(gl[k]), "tc": len(tl[k])})  # a refused kernel launches fewer times
+                continue
             for n, (g, c) in enumerate(zip(gl[k], tl[k])):
-                if g != c:
+                if norm(g) != norm(c):
                     launch.append({"task": k, "launch": n, "graal": g, "tc": c})
                     break
         result["classes"][name[:-4]] = {"tests": len(tt), "pass": sum(v == "PASS" for v in tt.values()), "graalPass": sum(v == "PASS" for v in gt.values()),
-                                       "diffs": diffs, "launchDiffs": launch, "tcStats": dict(ts)}
+                                       "diffs": diffs, "launchDiffs": launch, "launchCountDiffs": counts, "tcStats": dict(ts)}
         s = result["summary"]
         s["tests"] += len(tt); s["tcPass"] += sum(v == "PASS" for v in tt.values()); s["graalPass"] += sum(v == "PASS" for v in gt.values())
         s["diffs"] += len(diffs); s["launchDiffs"] += len(launch); s["tcKernels"] += ts.get("tc", 0)
