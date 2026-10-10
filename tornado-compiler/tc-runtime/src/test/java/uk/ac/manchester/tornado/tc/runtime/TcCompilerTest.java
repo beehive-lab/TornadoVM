@@ -109,4 +109,24 @@ public class TcCompilerTest {
         assertFalse(c.succeeded());
         assertEquals("TC-E1009", c.diagnostics().get(0).code());
     }
+
+    /** KernelContext.launch: children resolved through the host classes, compiled once each, in one module. */
+    @Test
+    public void deviceLaunchesLinkChildKernelsIntoOneModule() throws Exception {
+        var urls = new java.net.URL[] { java.nio.file.Path.of("../tc-frontend/target/test-classes").toUri().toURL(), java.nio.file.Path.of("../../tornado-api/target/classes").toUri().toURL() };
+        try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
+            var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
+            var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.LaunchKernels", "parent", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+            assertTrue(c.diagnostics().toString(), c.succeeded());
+            var src = c.source();
+            var ping = "uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_ping_dp";
+            var pong = "uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_pong_dp";
+            assertTrue(src, src.contains(ping + "<<<_dp_grid, _dp_block, 0, cudaStreamTailLaunch>>>"));
+            assertTrue(src, src.contains(pong + "<<<_dp_grid, _dp_block>>>"));
+            // One definition each, declared before any definition (the launches form a cycle).
+            assertEquals(src, 1, src.split("void " + ping + "\\(long long \\*_kernel_context[^;]*\\)\\n\\{", -1).length - 1);
+            assertTrue(src, src.indexOf("void " + pong + "(") < src.indexOf(")\n{\n", src.indexOf("__global__")));
+            assertEquals("LaunchKernels_parent", c.entryName());
+        }
+    }
 }

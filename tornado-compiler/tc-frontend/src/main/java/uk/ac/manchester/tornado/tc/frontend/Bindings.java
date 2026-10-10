@@ -38,6 +38,8 @@ import uk.ac.manchester.tornado.tc.ir.Type;
 final class Bindings {
 
     static final String KERNEL_CONTEXT = "uk/ac/manchester/tornado/api/KernelContext";
+    static final String DEVICE_KERNEL = "uk/ac/manchester/tornado/api/DeviceKernel";
+    static final String DEVICE_LAUNCH_MODE = "uk/ac/manchester/tornado/api/enums/DeviceLaunchMode";
     private static final String ARRAYS = "uk/ac/manchester/tornado/api/types/arrays/";
     private static final String TORNADO_MATH = "uk/ac/manchester/tornado/api/math/TornadoMath";
     private static final String JAVA_MATH = "java/lang/Math";
@@ -254,6 +256,9 @@ final class Bindings {
         }
         METHODS.put(KERNEL_CONTEXT + ".mma([" + half + "[" + half + "[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k16", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaStore([FL" + ARRAYS + "FloatArray;III)V", new Intrinsic("tornado.mma.store", Type.VOID));
+        FIELDS.put(DEVICE_LAUNCH_MODE + ".DEFAULT", new ConstantField(0));
+        FIELDS.put(DEVICE_LAUNCH_MODE + ".TAIL", new ConstantField(1));
+        FIELDS.put(DEVICE_LAUNCH_MODE + ".FIRE_AND_FORGET", new ConstantField(2));
         FIELDS.put("uk/ac/manchester/tornado/api/enums/MMAShape.M16N8K16", new ConstantField(16));
         FIELDS.put("uk/ac/manchester/tornado/api/enums/MMAShape.M16N8K32", new ConstantField(32));
         var vecI = new Type.VectorType(Type.I32, 4);

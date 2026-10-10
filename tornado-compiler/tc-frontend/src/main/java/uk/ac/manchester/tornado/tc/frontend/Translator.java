@@ -92,6 +92,7 @@ final class Translator {
 
     private static final String PARALLEL = "Luk/ac/manchester/tornado/api/annotations/Parallel;";
 
+    private final Frontend.BytecodeSource source;
     private final ClassFile classFile;
     private final ClassFile.Method method;
     private final ClassFile.Code code;
@@ -117,13 +118,17 @@ final class Translator {
     private final Map<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef> callees = new java.util.LinkedHashMap<>();
     private IrBuilder builder;
     private Deque<Value> stack;
+    /** KernelContext.launch: the child each DeviceKernel placeholder names, and the varargs arrays being filled. */
+    private final Map<Value, Frontend.MethodRef> deviceKernels = new IdentityHashMap<>();
+    private final Map<Value, Value[]> varargs = new IdentityHashMap<>();
 
-    private Translator(ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
-        this(classFile, method, kind, null);
+    private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
+        this(source, classFile, method, kind, null);
     }
 
     /** {@code name} overrides the function name (an inherited method is called by its subclass name). */
-    private Translator(ClassFile classFile, ClassFile.Method method, Function.Kind kind, String name) {
+    private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind, String name) {
+        this.source = source;
         this.classFile = classFile;
         this.method = method;
         this.code = method.code().orElseThrow(() -> new IllegalArgumentException(method.name() + " has no code"));
@@ -138,22 +143,22 @@ final class Translator {
         this.function = new Function(functionName, kind, Bindings.type(returnDescriptor));
     }
 
-    static Function translate(ClassFile classFile, ClassFile.Method method) {
-        return new Translator(classFile, method, Function.Kind.KERNEL).run();
+    static Function translate(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method) {
+        return new Translator(source, classFile, method, Function.Kind.KERNEL).run();
     }
 
     /** The function and the static methods it calls (by TC function name), for transitive translation. */
     record Translated(Function function, Map<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef> callees) {
     }
 
-    static Translated translate(ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
-        var translator = new Translator(classFile, method, kind);
+    static Translated translate(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
+        var translator = new Translator(source, classFile, method, kind);
         return new Translated(translator.run(), translator.callees);
     }
 
     /** A device function translated under the name its callers use. */
-    static Translated translateDevice(ClassFile classFile, ClassFile.Method method, String name) {
-        var translator = new Translator(classFile, method, Function.Kind.DEVICE, name);
+    static Translated translateDevice(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, String name) {
+        var translator = new Translator(source, classFile, method, Function.Kind.DEVICE, name);
         return new Translated(translator.run(), translator.callees);
     }
 
@@ -655,6 +660,14 @@ final class Translator {
                     });
                     break;
                 }
+                if (op == GETSTATIC && ref.descriptor().equals("L" + Bindings.DEVICE_KERNEL + ";")) {
+                    var child = source.deviceKernel(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "the DeviceKernel " + ref.owner().replace('/', '.') + "." + ref.name()
+                            + " cannot be resolved: KernelContext.launch needs a static final field, e.g. static final DeviceKernel CHILD = DeviceKernel.of(MyKernels::child)", insn.bci()));
+                    var placeholder = new Inst(new Opcode.Intrinsic("tc.device_kernel"), new Type.ObjectType("DeviceKernel"));
+                    deviceKernels.put(placeholder, child);
+                    push(placeholder);
+                    break;
+                }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
                 if (binding instanceof Intrinsic(var name, var type)) {
                     push(b.intrinsic(name, type, List.of()));
@@ -676,6 +689,16 @@ final class Translator {
             }
             case PUTSTATIC -> throw error("TC-E1003", "static field writes are not supported in kernels", insn.bci());
             case INVOKEVIRTUAL, INVOKESTATIC, INVOKEINTERFACE, INVOKESPECIAL -> invoke(insn);
+            case ANEWARRAY -> {
+                // Only the Object[] of a varargs call (KernelContext.launch arguments) exists in a kernel.
+                var length = pop();
+                if (!classFile.constants().className(insn.index()).equals("java/lang/Object") || !(length instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n))) {
+                    throw error("TC-E1002", "arrays of references are not supported in kernels", insn.bci());
+                }
+                var placeholder = new Inst(new Opcode.Intrinsic("tc.varargs"), new Type.ObjectType("Object[]"));
+                varargs.put(placeholder, new Value[(int) n]);
+                push(placeholder);
+            }
             case NEWARRAY -> {
                 var length = pop();
                 var element = switch (insn.value()) {
@@ -826,6 +849,10 @@ final class Translator {
         var value = pop();
         var index = pop();
         var array = pop();
+        if (varargs.containsKey(array)) {
+            varargs.get(array)[constantLane(index, bci)] = value;
+            return;
+        }
         var element = switch (kind) {
             case 5 -> Type.I8;
             case 6, 7 -> Type.I16;
@@ -887,6 +914,54 @@ final class Translator {
             return (int) l;
         }
         throw error("TC-E1010", "vector lanes can only be accessed at a constant index", bci);
+    }
+
+    /**
+     * {@code KernelContext.launch(child, [mode,] global..., local..., args...)}: a launch of the static
+     * method the DeviceKernel names, as {@code tornado.device_launch.<mode>.<Owner>.<method>} with the
+     * three global sizes, the three local sizes and the child's arguments (without its KernelContext).
+     */
+    private void deviceLaunch(uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef ref, List<Value> args, int bci) {
+        var child = deviceKernels.get(args.get(1));
+        if (child == null) {
+            throw error("TC-E1003", "the DeviceKernel passed to KernelContext.launch must be read from a static final field", bci);
+        }
+        int next = 2;
+        var mode = "default";
+        if (ref.descriptor().contains(Bindings.DEVICE_LAUNCH_MODE)) {
+            if (!(args.get(next++) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var m))) {
+                throw error("TC-E1010", "the DeviceLaunchMode of KernelContext.launch must be a constant", bci);
+            }
+            mode = switch ((int) m) {
+                case 1 -> "tail";
+                case 2 -> "fire_and_forget";
+                default -> "default";
+            };
+        }
+        var one = builder.constInt(Type.I32, 1);
+        var operands = new ArrayList<Value>();
+        if (ref.name().equals("launch3D")) {
+            for (int k = 0; k < 6; k++) {
+                operands.add(args.get(next++));
+            }
+        } else {
+            operands.addAll(List.of(args.get(next), one, one, args.get(next + 1), one, one));
+            next += 2;
+        }
+        var values = varargs.get(args.get(next));
+        if (values == null) {
+            throw error("TC-E1003", "the arguments of KernelContext.launch must be passed directly (as varargs)", bci);
+        }
+        for (var v : values) {
+            if (v == null) {
+                throw error("TC-E1003", "an argument of KernelContext.launch is not set", bci);
+            }
+            if (v.type() instanceof Type.PointerType) {
+                throw error("TC-E1003", "a local-memory array cannot be passed to KernelContext.launch: it belongs to the launching block", bci);
+            }
+            operands.add(v);
+        }
+        builder.intrinsic("tornado.device_launch." + mode + "." + child.owner().replace('/', '.') + "." + child.name(), Type.VOID, operands);
     }
 
     /** A local {@code HalfFloat[]} holds f16 values (HalfFloat is a value type): the only reference array kernels use. */
@@ -1025,6 +1100,10 @@ final class Translator {
             args.add(0, pop());
         }
         var returnType = Bindings.type(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
+        if (ref.owner().equals(Bindings.KERNEL_CONTEXT) && (ref.name().equals("launch") || ref.name().equals("launch3D"))) {
+            deviceLaunch(ref, args, insn.bci());
+            return;
+        }
         if (binding.isEmpty() || binding.get() instanceof Bindings.InlineJava) {
             // Static calls, and instance calls on objects: resolved against the static type (the
             // runtime checks object arguments have exactly their declared class) and inlined.

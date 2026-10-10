@@ -116,6 +116,9 @@ public final class AbiLowering {
                     case Opcode.ArrayLength _l -> lowerLength(inst);
                     case Opcode.FieldLoad(var field) when classes.containsKey(inst.operand(0)) -> lowerField(inst, field, printer);
                     case Opcode.Intrinsic(var name) when name.startsWith("tornado.atomic.") && elements.containsKey(inst.operand(0)) -> lowerAtomic(inst);
+                    // A device launch passes arrays as they are (header included): the child has the same ABI.
+                    case Opcode.Intrinsic(var name) when name.startsWith("tornado.device_launch.") -> {
+                    }
                     // Other intrinsics taking a whole array (mmaStore) get its data pointer.
                     case Opcode.Intrinsic _i when inst.operands().stream().anyMatch(elements::containsKey) -> {
                         var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());

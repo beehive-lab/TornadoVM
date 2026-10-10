@@ -79,7 +79,53 @@ public final class CEmitter {
     }
 
     /** Emitted source plus what the runtime needs to install it. */
-    public record Result(String source, String entryName) {
+    /**
+     * An emitted function: the whole translation unit ({@code source}), and its parts for
+     * {@link #link}: the {@code #include} lines, the helpers it uses (dependencies first), its
+     * definition and its forward declaration.
+     */
+    public record Result(String source, String entryName, List<String> includes, List<String> helpers, String definition, String declaration) {
+    }
+
+    /** Prefix of a device-side kernel launch ({@code KernelContext.launch}): {@code <prefix><mode>.<Owner>.<method>}. */
+    public static final String DEVICE_LAUNCH = "tornado.device_launch.";
+
+    /** The entry point of a kernel launched from the device ({@code Owner.method}): {@code Owner_method_dp}. */
+    public static String deviceKernelEntry(String ownerDotMethod) {
+        return (ownerDotMethod + "_dp").replace('.', '_').replace('$', '_');
+    }
+
+    /**
+     * One translation unit holding {@code main} and the kernels it launches from the device: shared
+     * includes and helpers once, then forward declarations (launches may form cycles), then the
+     * device-launched kernels and finally {@code main}.
+     */
+    public static String link(Result main, List<Result> launched, TargetCaps target) {
+        if (launched.isEmpty()) {
+            return main.source();
+        }
+        var all = new ArrayList<Result>(launched);
+        all.add(main);
+        var includes = new LinkedHashSet<String>();
+        var helperNames = new LinkedHashSet<String>();
+        for (var r : all) {
+            includes.addAll(r.includes());
+            helperNames.addAll(r.helpers());
+        }
+        var source = new StringBuilder();
+        includes.forEach(i -> source.append(i).append('\n'));
+        if (!includes.isEmpty()) {
+            source.append('\n');
+        }
+        helperNames.forEach(h -> source.append(Helpers.source(h, target.dialect())).append('\n'));
+        for (var r : launched) {
+            source.append(r.declaration());
+        }
+        source.append('\n');
+        for (var r : all) {
+            source.append(r.definition()).append(r == main ? "" : "\n");
+        }
+        return source.toString();
     }
 
     private static final Set<String> RESERVED = Set.of(
@@ -199,13 +245,15 @@ public final class CEmitter {
 
         var emitted = resolveLoopLabels(out.toString());
         var source = new StringBuilder();
+        var includes = new ArrayList<String>();
         if (usesHalf) {
-            source.append("#include <cuda_fp16.h>\n");
+            includes.add("#include <cuda_fp16.h>");
         }
         if (usesBFloat16) {
-            source.append("#include <cuda_bf16.h>\n");
+            includes.add("#include <cuda_bf16.h>");
         }
-        if (usesHalf || usesBFloat16) {
+        includes.forEach(i -> source.append(i).append('\n'));
+        if (!includes.isEmpty()) {
             source.append('\n');
         }
         // Dependencies first (a block reduction calls java_fmaxf), each helper once.
@@ -217,8 +265,10 @@ public final class CEmitter {
         for (var helper : ordered) {
             source.append(Helpers.source(helper, target.dialect())).append('\n');
         }
-        source.append(header).append(emitted);
-        return new Result(source.toString(), entry);
+        var definition = header + emitted;
+        source.append(definition);
+        var declaration = header.substring(0, header.length() - "\n{\n".length()) + ";\n";
+        return new Result(source.toString(), entry, List.copyOf(includes), List.copyOf(ordered), definition, declaration);
     }
 
     // ---------------------------------------------------------------- statements
@@ -237,6 +287,7 @@ public final class CEmitter {
                 var text = element != null ? "(" + typeName(element) + " *) (" + expr(value).text + ")" : expr(value).text;
                 line(depth, names.get(target) + " = " + text + ";" + comment(loc));
             }
+            case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(DEVICE_LAUNCH) -> deviceLaunch(name, op.operands(), loc, depth);
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
             case S.If(var c, var t, var e) -> ifStatement(c, t, e, fallthrough, depth);
             case S.Labelled(var label, var b) -> {
@@ -393,6 +444,39 @@ public final class CEmitter {
             sb.append(l).append('\n');
         }
         return sb.substring(0, sb.length() - 1);
+    }
+
+    /**
+     * A launch from the device: grid = ceil(global / local) per dimension, the child gets the four
+     * ABI regions of its parent and the launch arguments; a failed launch is reported (as on the
+     * host, the child then does not run). TAIL and FIRE_AND_FORGET use the CUDA named streams.
+     */
+    private void deviceLaunch(String name, List<S.Expr> operands, Loc loc, int depth) {
+        var rest = name.substring(DEVICE_LAUNCH.length());
+        var mode = rest.substring(0, rest.indexOf('.'));
+        var child = rest.substring(rest.indexOf('.') + 1);
+        var e = operands.stream().map(o -> expr(o).text).toList();
+        var stream = switch (mode) {
+            case "tail" -> ", 0, cudaStreamTailLaunch";
+            case "fire_and_forget" -> ", 0, cudaStreamFireAndForget";
+            default -> "";
+        };
+        var args = new StringBuilder("_kernel_context, _constant_region, _local_region, _atomics");
+        e.subList(6, e.size()).forEach(a -> args.append(", ").append(a));
+        var shortName = child.substring(child.lastIndexOf('.', child.lastIndexOf('.') - 1) + 1);
+        helpers.add("tc_device_launch_check");
+        line(depth, "{" + comment(loc));
+        line(depth + 1, "dim3 _dp_block(" + e.get(3) + ", " + e.get(4) + ", " + e.get(5) + ");");
+        var grid = new ArrayList<String>();
+        for (int d = 0; d < 3; d++) {
+            var c = "xyz".charAt(d);
+            // Whole blocks covering the global size; a global size of 1 is one block.
+            grid.add(e.get(d).equals("1") ? "1" : "((unsigned) " + wrap(expr(operands.get(d)), UNARY) + " + _dp_block." + c + " - 1) / _dp_block." + c);
+        }
+        line(depth + 1, "dim3 _dp_grid(" + String.join(", ", grid) + ");");
+        line(depth + 1, deviceKernelEntry(child) + "<<<_dp_grid, _dp_block" + stream + ">>>(" + args + ");");
+        line(depth + 1, "tc_device_launch_check(_kernel_context, \"" + shortName + "\", _dp_grid, _dp_block);");
+        line(depth, "}");
     }
 
     private String comment(Loc loc) {

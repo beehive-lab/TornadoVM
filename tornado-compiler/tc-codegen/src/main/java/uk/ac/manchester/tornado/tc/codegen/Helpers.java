@@ -250,6 +250,15 @@ final class Helpers {
                       }
                     }
                     """),
+            // After a device-side launch: report a failed launch, and the launch itself with --threadInfo.
+            Map.entry("tc_device_launch_check", """
+                    __device__ static inline void tc_device_launch_check(const long long *context, const char *child, dim3 grid, dim3 block) {
+                      cudaError_t error = cudaGetLastError();
+                      if (error != cudaSuccess) printf("[TornadoVM-CUDA] device launch of %s failed: %s\\n", child, cudaGetErrorString(error));
+                      if (context[3]) printf("Device launch: %s, grid [%u, %u, %u], block [%u, %u, %u], from block [%u, %u, %u] thread [%u, %u, %u]\\n", child,
+                                             grid.x, grid.y, grid.z, block.x, block.y, block.z, blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z);
+                    }
+                    """),
             Map.entry("java_fmax", """
                     __device__ static inline double java_fmax(double a, double b) {
                       if (a != a || b != b) return __longlong_as_double(0x7ff8000000000000LL);

@@ -45,6 +45,15 @@ public final class Frontend {
     public interface BytecodeSource {
         Optional<byte[]> classBytes(String internalName);
 
+        /**
+         * The static method a {@code static final DeviceKernel} field names (the child of
+         * {@code KernelContext.launch}). Only a source backed by the host's loaded classes knows:
+         * the field's value is built by the class initialiser.
+         */
+        default Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
+            return Optional.empty();
+        }
+
         /** Class files on a path of directories and jars, separated by the platform path separator. */
         static BytecodeSource classpath(String path) {
             var entries = List.of(path.split(java.io.File.pathSeparator));
@@ -77,14 +86,26 @@ public final class Frontend {
 
         /** Class files visible to {@code loader}. */
         static BytecodeSource classLoader(ClassLoader loader) {
-            return internalName -> {
-                try (var in = loader.getResourceAsStream(internalName + ".class")) {
-                    return in == null ? Optional.empty() : Optional.of(in.readAllBytes());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
+            return new BytecodeSource() {
+                @Override
+                public Optional<byte[]> classBytes(String internalName) {
+                    try (var in = loader.getResourceAsStream(internalName + ".class")) {
+                        return in == null ? Optional.empty() : Optional.of(in.readAllBytes());
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+
+                @Override
+                public Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
+                    return DeviceKernels.resolve(loader, ownerInternalName, field);
                 }
             };
         }
+    }
+
+    /** A Java method: owner (internal name), name and descriptor. */
+    public record MethodRef(String owner, String name, String descriptor) {
     }
 
     /** The translated function (or the diagnostics explaining why there is none) and the bytecode listing. */
@@ -123,7 +144,7 @@ public final class Frontend {
         }
         var listing = Disassembler.print(classFile, method.get());
         try {
-            return new Result(Optional.of(Translator.translate(classFile, method.get())), List.of(), listing);
+            return new Result(Optional.of(Translator.translate(source, classFile, method.get())), List.of(), listing);
         } catch (Translator.FrontendError e) {
             return new Result(Optional.empty(), List.of(e.diagnostic), listing);
         }
@@ -150,7 +171,7 @@ public final class Frontend {
         var method = classFile.method(methodName, descriptor).orElseThrow();
         Translator.Translated root;
         try {
-            root = Translator.translate(classFile, method, Function.Kind.KERNEL);
+            root = Translator.translate(source, classFile, method, Function.Kind.KERNEL);
         } catch (Translator.FrontendError e) {
             return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.bytecode());
         }
@@ -182,7 +203,7 @@ public final class Frontend {
                 return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode", "", Loc.UNKNOWN)), kernel.bytecode());
             }
             try {
-                var translated = Translator.translateDevice(calleeClass, calleeMethod.get(), entry.getKey());
+                var translated = Translator.translateDevice(source, calleeClass, calleeMethod.get(), entry.getKey());
                 module.add(translated.function());
                 work.addAll(translated.callees().entrySet());
             } catch (Translator.FrontendError e) {

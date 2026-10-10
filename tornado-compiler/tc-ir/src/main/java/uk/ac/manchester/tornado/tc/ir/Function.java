@@ -43,7 +43,7 @@ public final class Function {
         }
     }
 
-    private final String name;
+    private String name;
     private final Kind kind;
     private final Type returnType;
     private final List<Block> blocks = new ArrayList<>();
@@ -57,6 +57,11 @@ public final class Function {
 
     public String name() {
         return name;
+    }
+
+    /** Renames the function (a kernel launched from the device gets its own entry-point name). */
+    public void rename(String newName) {
+        this.name = newName;
     }
 
     public Kind kind() {
