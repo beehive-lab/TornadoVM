@@ -166,25 +166,23 @@ final class Translator {
         if (!code.handlers().isEmpty()) {
             throw error("TC-E1001", "exception handlers (try/catch/finally) are not supported in kernels", 0);
         }
-        if (!method.isStatic() && function.kind() == Function.Kind.KERNEL) {
-            throw error("TC-E1005", "kernels must be static methods", 0);
-        }
         var entry = function.newBlock("entry");
         buildBlocks(entry);
         // Parameters: slot numbers follow the descriptor; long and double take two slots. An instance
-        // method (a device function reached by devirtualised call) takes `this` first, in slot 0.
+        // method (a device function reached by devirtualised call, or an instance-method task, whose
+        // receiver the runtime passes as the first argument) takes `this` first, in slot 0.
         var params = parameterDescriptors(method.descriptor());
         int slot = 0;
         if (!method.isStatic()) {
             var self = entry.addArg(Bindings.type("L" + classFile.name() + ";"), "this");
-            writeVariable(localKey(0, kindOf(self.type())), entry, self);
+            writeVariable(localKey(0, 'A'), entry, self);
             slot = 1;
         }
         for (var descriptor : params) {
             var type = Bindings.type(descriptor);
             var name = code.localAt(slot, 0).map(ClassFile.LocalVariable::name).orElse("arg" + slot);
             var arg = entry.addArg(type, name);
-            writeVariable(localKey(slot, kindOf(type)), entry, arg);
+            writeVariable(localKey(slot, descriptorKind(descriptor)), entry, arg);
             slot += descriptor.equals("J") || descriptor.equals("D") ? 2 : 1;
         }
         sealed.add(entry);
@@ -664,7 +662,19 @@ final class Translator {
                     push(b.constInt(Type.I32, value));
                 }
             }
-            case PUTFIELD, PUTSTATIC -> throw error("TC-E1003", "field writes are not supported in kernels yet", insn.bci());
+            case PUTFIELD -> {
+                var ref = classFile.constants().member(insn.index());
+                var value = pop();
+                var receiver = pop();
+                if (!(receiver.type() instanceof Type.ObjectType)) {
+                    throw error("TC-E1003", "field writes are only supported on object arguments", insn.bci());
+                }
+                // Stored at its memory width (sub-int fields narrow, like array stores).
+                var memory = Bindings.elementType(ref.descriptor());
+                var stored = memory.equals(value.type()) ? value : b.convert(ConvertOp.TRUNC, value, memory);
+                b.fieldStore(receiver, ref.name(), stored);
+            }
+            case PUTSTATIC -> throw error("TC-E1003", "static field writes are not supported in kernels", insn.bci());
             case INVOKEVIRTUAL, INVOKESTATIC, INVOKEINTERFACE, INVOKESPECIAL -> invoke(insn);
             case NEWARRAY -> {
                 var length = pop();
@@ -707,9 +717,9 @@ final class Translator {
                 } else if (op >= ILOAD_0 && op <= ALOAD_3) {
                     load(block, (op - ILOAD_0) % 4, (op - ILOAD_0) / 4, insn.bci());
                 } else if (op >= ISTORE && op <= ASTORE) {
-                    store(block, insn.index(), insn.bci(), insns.get(i + 1 < insns.size() ? i + 1 : i).bci());
+                    store(block, insn.index(), "IJFDA".charAt(op - ISTORE), insn.bci(), insns.get(i + 1 < insns.size() ? i + 1 : i).bci());
                 } else if (op >= ISTORE_0 && op <= ASTORE_3) {
-                    store(block, (op - ISTORE_0) % 4, insn.bci(), insns.get(i + 1 < insns.size() ? i + 1 : i).bci());
+                    store(block, (op - ISTORE_0) % 4, "IJFDA".charAt((op - ISTORE_0) / 4), insn.bci(), insns.get(i + 1 < insns.size() ? i + 1 : i).bci());
                 } else if (op >= IALOAD && op <= SALOAD) {
                     arrayLoad(op - IALOAD, insn.bci());
                 } else if (op >= IASTORE && op <= SASTORE) {
@@ -737,6 +747,8 @@ final class Translator {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), new Type.ObjectType("AtomicInteger")));
                 } else if (op == NEW && Bindings.type("L" + classFile.constants().className(insn.index()) + ";") instanceof Type.VectorType vec) {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), vec)); // a vector value, made by its constructor
+                } else if (op == NEW) {
+                    throw error("TC-E1011", "allocating an object (" + classFile.constants().className(insn.index()).replace('/', '.') + ") is not supported in kernels", insn.bci());
                 } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && stack.peek() != null
                         && (stack.peek().type().equals(Type.F16) || stack.peek().type() instanceof Type.VectorType)) {
                     b.ret(pop());
@@ -760,10 +772,11 @@ final class Translator {
         push(readVariable(localKey(slot, kind), block, kind == 'A' ? new Type.ObjectType("?") : primitive(kind), name));
     }
 
-    private void store(Block block, int slot, int bci, int nextBci) {
+    /** Slots are keyed by the bytecode's kind, as the JVM types them, whatever value TC made (a boxed Integer is an i32). */
+    private void store(Block block, int slot, char kind, int bci, int nextBci) {
         var value = pop();
         nameLocal(value, slot, nextBci);
-        writeVariable(localKey(slot, kindOf(value.type())), block, value);
+        writeVariable(localKey(slot, kind), block, value);
     }
 
     private void nameLocal(Value value, int slot, int bci) {
@@ -783,10 +796,10 @@ final class Translator {
             // A tensor-core fragment: lanes live in registers, so only a constant index can be read.
             // Only accumulators (C/D) have a per-lane element layout; A/B operand fragments are packed registers.
             if (array instanceof Inst producer && producer.opcode() instanceof Opcode.Intrinsic(var name) && (name.contains(".load_a") || name.contains(".load_b"))) {
-                throw error("TC-E1006", "elements of an MMA operand fragment (A or B) cannot be read; only accumulator fragments can", bci);
+                throw error("TC-E1010", "elements of an MMA operand fragment (A or B) cannot be read; only accumulator fragments can", bci);
             }
             if (!(index instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var lane)) || lane < 0 || lane >= length) {
-                throw error("TC-E1006", "fragment elements can only be read at a constant index within the fragment", bci);
+                throw error("TC-E1010", "fragment elements can only be read at a constant index within the fragment", bci);
             }
             push(builder.intrinsic("tornado.vector.lane." + lane, element, List.of(array)));
             return;
@@ -873,7 +886,7 @@ final class Translator {
         if (index instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var l)) {
             return (int) l;
         }
-        throw error("TC-E1006", "vector lanes can only be accessed at a constant index", bci);
+        throw error("TC-E1010", "vector lanes can only be accessed at a constant index", bci);
     }
 
     /** A local {@code HalfFloat[]} holds f16 values (HalfFloat is a value type): the only reference array kernels use. */
@@ -1095,7 +1108,7 @@ final class Translator {
      * ({@link LocalArrays} materialises it, or reports TC-E1004).
      */
     private Value localArray(AddressSpace space, Type element, Value length) {
-        if (length instanceof Inst inst && inst.opcode() instanceof Opcode.ConstInt(var v)) {
+        if (length instanceof Inst inst && inst.opcode() instanceof Opcode.ConstInt(var v) && v > 0) {
             return builder.alloca(space, element, (int) v);
         }
         return builder.intrinsic(LocalArrays.pendingName(space, element), new Type.PointerType(space), List.of(length));
@@ -1119,13 +1132,13 @@ final class Translator {
         return "L" + slot + kind;
     }
 
-    private static char kindOf(Type type) {
-        return switch (type.text()) {
-            case "i32", "i1", "i8", "i16" -> 'I';
-            case "i64" -> 'J';
-            case "f32" -> 'F';
-            case "f64" -> 'D';
-            default -> 'A';
+    private static char descriptorKind(String descriptor) {
+        return switch (descriptor.charAt(0)) {
+            case 'L', '[' -> 'A';
+            case 'J' -> 'J';
+            case 'F' -> 'F';
+            case 'D' -> 'D';
+            default -> 'I';
         };
     }
 

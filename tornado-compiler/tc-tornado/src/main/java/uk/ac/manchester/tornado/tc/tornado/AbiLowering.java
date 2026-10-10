@@ -129,6 +129,7 @@ public final class AbiLowering {
                         }
                     }
                     case Opcode.FieldLoad _f -> unsupported(inst, printer);
+                    case Opcode.FieldStore(var field) when classes.containsKey(inst.operand(0)) -> lowerFieldStore(inst, field, printer);
                     case Opcode.FieldStore _f -> unsupported(inst, printer);
                     default -> {
                     }
@@ -209,6 +210,21 @@ public final class AbiLowering {
                 }
             }
         }
+    }
+
+    /** A primitive field written in the object's device copy (the runtime copies the fields back). */
+    private void lowerFieldStore(Inst inst, String field, IrPrinter printer) {
+        var object = inst.operand(0);
+        var layout = layouts.get(classes.get(object));
+        var offset = layout.offsets().get(field);
+        var value = inst.operand(1);
+        if (offset == null || !(value.type().isInteger() || value.type().isFloat())) {
+            diagnostics.add(new Diagnostic("TC-E3102", "field '" + field + "' cannot be written in the device copy of " + layout.className(), printer.instText(inst), inst.loc()));
+            return;
+        }
+        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        b.store(b.pointerOffset(object, b.constInt(Type.I64, offset)), value);
+        inst.erase();
     }
 
     private static Value reference(IrBuilder b, Value object, Value address) {

@@ -64,7 +64,10 @@ public final class ValueSpecialisation {
          * An object argument: the values of its final primitive fields (they fold, as on the Graal
          * path) and the layouts of its device copy and of the objects it references.
          */
-        record Instance(Map<String, Number> finalFields, List<ObjectLayout> layouts) implements Fact {
+        record Instance(Map<String, Number> finalFields, List<ObjectLayout> layouts, Map<String, Long> arrayLengths) implements Fact {
+            public Instance(Map<String, Number> finalFields, List<ObjectLayout> layouts) {
+                this(finalFields, layouts, Map.of());
+            }
         }
 
         static Fact of(Object value) {
@@ -108,7 +111,21 @@ public final class ValueSpecialisation {
                         }
                     }
                 }
-                case Fact.Instance(var finals, var layouts) when param.type() instanceof Type.ObjectType -> {
+                case Fact.Instance(var finals, var layouts, var lengths) when param.type() instanceof Type.ObjectType -> {
+                    // Lengths of native arrays held in fields (output.getSize() in an instance-method task).
+                    for (var user : List.copyOf(param.users())) {
+                        if (user.opcode() instanceof Opcode.FieldLoad(var field) && lengths.containsKey(field)) {
+                            for (var lengthUser : List.copyOf(user.users())) {
+                                if (lengthUser.opcode() instanceof Opcode.ArrayLength && (lengthUser.type().equals(Type.I64) || lengths.get(field) <= Integer.MAX_VALUE)) {
+                                    var constant = new IrBuilder(lengthUser.block().orElseThrow()).before(lengthUser).at(lengthUser.loc()).constInt(lengthUser.type(), lengths.get(field));
+                                    constant.setName(field + "_len");
+                                    lengthUser.replaceAllUsesWith(constant);
+                                    lengthUser.erase();
+                                    folded++;
+                                }
+                            }
+                        }
+                    }
                     for (var user : List.copyOf(param.users())) {
                         if (user.opcode() instanceof Opcode.FieldLoad(var field) && finals.containsKey(field) && (user.type().isInteger() || user.type().isFloat())) {
                             var b = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc());

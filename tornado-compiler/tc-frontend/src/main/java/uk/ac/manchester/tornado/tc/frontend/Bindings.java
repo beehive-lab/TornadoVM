@@ -132,6 +132,8 @@ final class Bindings {
     record AtomicOp(String op, int delta) implements Binding {
     }
 
+    private static final Map<String, Type> BOXES = Map.of("java/lang/Integer", Type.I32, "java/lang/Long", Type.I64, "java/lang/Float", Type.F32, "java/lang/Double", Type.F64);
+
     static final String ATOMIC_INTEGER = "java/util/concurrent/atomic/AtomicInteger";
 
     /** A static final field with a known constant value (an enum constant passed as an option). */
@@ -176,6 +178,13 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".allocateByteLocalArray(I)[B", new SharedArray(Type.I8));
         METHODS.put(KERNEL_CONTEXT + ".allocateHalfFloatLocalArray(I)[L" + HALF_FLOAT + ";", new SharedArray(Type.F16));
         METHODS.put("java/lang/Integer.intValue()I", new Identity());
+        METHODS.put("java/lang/Long.longValue()J", new Identity());
+        METHODS.put("java/lang/Float.floatValue()F", new Identity());
+        METHODS.put("java/lang/Double.doubleValue()D", new Identity());
+        METHODS.put("java/lang/Integer.valueOf(I)Ljava/lang/Integer;", new Identity());
+        METHODS.put("java/lang/Long.valueOf(J)Ljava/lang/Long;", new Identity());
+        METHODS.put("java/lang/Float.valueOf(F)Ljava/lang/Float;", new Identity());
+        METHODS.put("java/lang/Double.valueOf(D)Ljava/lang/Double;", new Identity());
         // Warp (SIMD group) operations: all lanes of the warp take part; not pure (never moved or merged).
         METHODS.put(KERNEL_CONTEXT + ".simdSum(F)F", new Intrinsic("tornado.simd.sum", Type.F32));
         METHODS.put(KERNEL_CONTEXT + ".simdShuffleDown(FI)F", new Intrinsic("tornado.simd.shuffle_down", Type.F32));
@@ -349,6 +358,10 @@ final class Bindings {
                 var cls = descriptor.substring(1, descriptor.length() - 1);
                 if (cls.equals(HALF_FLOAT)) {
                     yield Type.F16;
+                }
+                // Boxed scalars are their primitive (the runtime passes boxed task arguments as values).
+                if (BOXES.containsKey(cls)) {
+                    yield BOXES.get(cls);
                 }
                 if (cls.startsWith(VECTOR_PACKAGE) && VECTORS.containsKey(cls.substring(VECTOR_PACKAGE.length()))) {
                     yield VECTORS.get(cls.substring(VECTOR_PACKAGE.length()));

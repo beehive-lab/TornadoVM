@@ -41,7 +41,11 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
+import uk.ac.manchester.tornado.tc.ir.Diagnostic;
+import uk.ac.manchester.tornado.tc.ir.ErrorCodes;
+import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
@@ -100,13 +104,16 @@ public final class TcHook {
         // In a batch the device buffers hold one chunk: lengths and indices are per chunk, which TC
         // does not model yet (folding the full length would index past the chunk).
         if (batchThreads > 0) {
-            return refuse(name, "TC-E3202", "batched execution (withBatch) is not compiled by TC yet");
+            return refuse(name, "TC-E3206", "batched execution (withBatch) is not compiled by TC yet");
         }
         var facts = new ArrayList<ValueSpecialisation.Fact>();
-        var declared = method.getParameterTypes();
+        // An instance-method task: the runtime passes the receiver as the first argument.
+        var parameterTypes = method.getParameterTypes();
+        var declared = Modifier.isStatic(method.getModifiers()) ? parameterTypes : prepend(method.getDeclaringClass(), parameterTypes);
+        var annotations = Modifier.isStatic(method.getModifiers()) ? method.getParameterAnnotations() : prepend(new java.lang.annotation.Annotation[0], method.getParameterAnnotations());
         for (int i = 0; i < arguments.length; i++) {
             var argument = arguments[i];
-            boolean reduced = i < method.getParameterAnnotations().length && java.util.Arrays.stream(method.getParameterAnnotations()[i]).anyMatch(Reduce.class::isInstance);
+            boolean reduced = i < annotations.length && java.util.Arrays.stream(annotations[i]).anyMatch(Reduce.class::isInstance);
             if (reduced && argument instanceof TornadoNativeArray array) {
                 // The runtime has already swapped in the per-work-group partial-results array.
                 facts.add(new ValueSpecialisation.Fact.Reduce(array.getSizeLong()));
@@ -129,17 +136,8 @@ public final class TcHook {
             return refuse(name, "TC-E9003", "internal compiler error: " + e);
         }
         if (!c.succeeded()) {
-            var d = c.diagnostics().isEmpty() ? null : c.diagnostics().get(0);
-            var reason = d == null ? "unknown" : d.code() + " " + d.message();
-            FALLBACKS.computeIfAbsent(d == null ? "unknown" : d.code(), k -> new AtomicInteger()).incrementAndGet();
-            if (!FALLBACK) {
-                // The runtime's bailout exception, as for a kernel Graal cannot compile.
-                throw new TornadoBailoutRuntimeException("[TC] cannot compile " + name + " and fallback is disabled: " + (d == null ? reason : d.render()));
-            }
-            if (VERBOSE) {
-                System.out.println("[TC] fallback to Graal for " + name + ": " + reason);
-            }
-            return Optional.empty();
+            var d = c.diagnostics().isEmpty() ? new Diagnostic("TC-E9003", "compilation failed without a diagnostic", "", Loc.UNKNOWN) : c.diagnostics().get(0);
+            return reject(name, d);
         }
         COMPILED.incrementAndGet();
         if (VERBOSE) {
@@ -159,14 +157,64 @@ public final class TcHook {
     }
 
     private static Optional<Kernel> refuse(String name, String code, String reason) {
-        FALLBACKS.computeIfAbsent(code, k -> new AtomicInteger()).incrementAndGet();
-        if (!FALLBACK) {
-            throw new TornadoBailoutRuntimeException("[TC] cannot compile " + name + " and fallback is disabled: error " + code + ": " + reason);
+        return reject(name, new Diagnostic(code, reason, "", Loc.UNKNOWN));
+    }
+
+    /**
+     * TC cannot compile {@code name}. With fallback on, the Graal path compiles the kernel (an internal
+     * TC error is still reported, so it does not go unnoticed). With fallback off, the diagnostic
+     * becomes the TornadoVM exception for its category (ErrorCodes), as the Graal path would throw it.
+     */
+    private static Optional<Kernel> reject(String name, Diagnostic d) {
+        FALLBACKS.computeIfAbsent(d.code(), k -> new AtomicInteger()).incrementAndGet();
+        var category = ErrorCodes.category(d.code());
+        if (FALLBACK) {
+            if (category == ErrorCodes.Category.INTERNAL) {
+                System.err.println("[TC] internal error compiling " + name + ", the Graal path compiles it instead (please report):\n" + message(name, d));
+            } else if (VERBOSE) {
+                System.out.println("[TC] fallback to Graal for " + name + ": " + d.code() + " " + d.message());
+            }
+            return Optional.empty();
         }
-        if (VERBOSE) {
-            System.out.println("[TC] fallback to Graal for " + name + ": " + code + " " + reason);
+        var e = exception(name, d, category);
+        if (e instanceof Error error) {
+            throw error;
         }
-        return Optional.empty();
+        throw (RuntimeException) e;
+    }
+
+    /** The TornadoVM exception for a diagnostic, matching what the Graal path throws for the same kind of kernel. */
+    static Throwable exception(String name, Diagnostic d, ErrorCodes.Category category) {
+        var text = message(name, d);
+        return switch (category) {
+            // TornadoInternalError formats its message: pass the text as an argument, not as the format.
+            case INTERNAL -> new TornadoInternalError("%s", "TC internal error (please report with the kernel): " + text);
+            // Kernels the GPU cannot run as written: the Graal path raises an Error for these code shapes.
+            case INVALID_KERNEL -> switch (d.code()) {
+                case "TC-E1002", "TC-E1004", "TC-E2108" -> new TornadoInternalError("%s", text);
+                default -> new TornadoBailoutRuntimeException(text);
+            };
+            case UNSUPPORTED, BAILOUT -> new TornadoBailoutRuntimeException(text);
+        };
+    }
+
+    /** {@code [TC] cannot compile Class.method: TC-E1004 message / at File.java:49 (bci 7) / hint: ...}. */
+    static String message(String name, Diagnostic d) {
+        var sb = new StringBuilder("[TC] cannot compile ").append(name).append(": ").append(d.code()).append(' ').append(d.message());
+        if (d.loc().isKnown()) {
+            sb.append("\n    at ").append(d.loc().file()).append(':').append(d.loc().line());
+            if (d.loc().bci() >= 0) {
+                sb.append(" (bci ").append(d.loc().bci()).append(')');
+            }
+        }
+        if (!d.where().isBlank()) {
+            sb.append("\n    in ").append(d.where());
+        }
+        var hint = ErrorCodes.hint(d.code());
+        if (!hint.isBlank()) {
+            sb.append("\n    hint: ").append(hint);
+        }
+        return sb.toString();
     }
 
     /** An object passed by field copy (not an array, box, KernelContext or native array). */
@@ -182,13 +230,31 @@ public final class TcHook {
      * against its declared class, so only an argument of exactly that class is described.
      */
     private static ValueSpecialisation.Fact instanceFact(Object argument, Class<?> declared) {
-        if (argument.getClass() != declared || !TornadoOptions.coopsUsed()) {
+        // A subclass of the declared type is fine for its fields (inherited ones keep their offsets);
+        // calls on the object are resolved against the declared class, so it must override nothing.
+        if (!declared.isAssignableFrom(argument.getClass()) || overridesAnything(argument.getClass(), declared) || !TornadoOptions.coopsUsed()) {
             return new ValueSpecialisation.Fact.Unknown();
         }
+        var lengths = new java.util.HashMap<String, Long>();
         var layouts = new ArrayList<ObjectLayout>();
         var finals = new java.util.HashMap<String, Number>();
         try {
             describe(argument, !isChildOfNativeArray(argument.getClass()), layouts, new java.util.HashSet<>());
+            if (argument.getClass() != declared) {
+                // Registered under the declared class too: that is the name in the kernel's obj<...>.
+                var own = layouts.get(layouts.size() - 1);
+                layouts.add(new ObjectLayout(tcClassName(declared), own.offsets(), own.referenceClasses()));
+            }
+            for (var c = argument.getClass(); c != null; c = c.getSuperclass()) {
+                for (var field : c.getDeclaredFields()) {
+                    if (!Modifier.isStatic(field.getModifiers()) && TornadoNativeArray.class.isAssignableFrom(field.getType())) {
+                        field.setAccessible(true);
+                        if (field.get(argument) instanceof TornadoNativeArray array) {
+                            lengths.putIfAbsent(field.getName(), array.getSizeLong());
+                        }
+                    }
+                }
+            }
             for (var c = argument.getClass(); c != null; c = c.getSuperclass()) {
                 for (var field : c.getDeclaredFields()) {
                     if (Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers()) && field.getType().isPrimitive() && field.getType() != boolean.class
@@ -201,7 +267,7 @@ public final class TcHook {
         } catch (ReflectiveOperationException | RuntimeException e) {
             return new ValueSpecialisation.Fact.Unknown();
         }
-        return new ValueSpecialisation.Fact.Instance(finals, layouts);
+        return new ValueSpecialisation.Fact.Instance(finals, layouts, lengths);
     }
 
     private static void describe(Object object, boolean includeSuper, List<ObjectLayout> out, java.util.Set<Class<?>> seen) throws ReflectiveOperationException {
@@ -220,12 +286,54 @@ public final class TcHook {
                 reflected.setAccessible(true);
                 var value = reflected.get(object);
                 if (value != null) {
-                    references.put(field.getName(), value.getClass().getSimpleName());
+                    references.put(field.getName(), tcClassName(value.getClass()));
                     describe(value, includeSuper, out, seen);
                 }
             }
         }
-        out.add(new ObjectLayout(cls.getSimpleName(), Map.copyOf(offsets), Map.copyOf(references)));
+        out.add(new ObjectLayout(tcClassName(cls), Map.copyOf(offsets), Map.copyOf(references)));
+    }
+
+    /** Whether {@code actual} (or a class between it and {@code declared}) overrides a method of {@code declared}. */
+    private static boolean overridesAnything(Class<?> actual, Class<?> declared) {
+        for (var c = actual; c != null && c != declared; c = c.getSuperclass()) {
+            for (var m : c.getDeclaredMethods()) {
+                if (Modifier.isStatic(m.getModifiers()) || Modifier.isPrivate(m.getModifiers())) {
+                    continue;
+                }
+                try {
+                    declared.getMethod(m.getName(), m.getParameterTypes());
+                    return true;
+                } catch (NoSuchMethodException e) {
+                    // not an override of a public method; check non-public declared methods too
+                    for (var d = declared; d != null; d = d.getSuperclass()) {
+                        try {
+                            var dm = d.getDeclaredMethod(m.getName(), m.getParameterTypes());
+                            if (!Modifier.isPrivate(dm.getModifiers())) {
+                                return true;
+                            }
+                        } catch (NoSuchMethodException ignored) {
+                            // keep looking up the hierarchy
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T[] prepend(T first, T[] rest) {
+        var all = (T[]) java.lang.reflect.Array.newInstance(rest.getClass().getComponentType(), rest.length + 1);
+        all[0] = first;
+        System.arraycopy(rest, 0, all, 1, rest.length);
+        return all;
+    }
+
+    /** The class name as TC's frontend writes it in obj<...>: the binary name after the package (Outer$Inner). */
+    private static String tcClassName(Class<?> cls) {
+        var name = cls.getName();
+        return name.substring(name.lastIndexOf('.') + 1);
     }
 
     private static Field declaredField(Class<?> cls, String name) throws NoSuchFieldException {
