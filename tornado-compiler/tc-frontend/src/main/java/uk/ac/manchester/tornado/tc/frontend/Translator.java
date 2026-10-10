@@ -660,6 +660,8 @@ final class Translator {
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
                 if (binding instanceof Intrinsic(var name, var type)) {
                     push(b.intrinsic(name, type, List.of()));
+                } else if (binding instanceof Bindings.ConstantField(var value)) {
+                    push(b.constInt(Type.I32, value));
                 }
             }
             case PUTFIELD, PUTSTATIC -> throw error("TC-E1003", "field writes are not supported in kernels yet", insn.bci());
@@ -772,6 +774,14 @@ final class Translator {
     private void arrayLoad(int kind, int bci) {
         var index = pop();
         var array = pop();
+        if (array.type() instanceof Type.VectorType(var element, var length)) {
+            // A tensor-core fragment: lanes live in registers, so only a constant index can be read.
+            if (!(index instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var lane)) || lane < 0 || lane >= length) {
+                throw error("TC-E1006", "fragment elements can only be read at a constant index within the fragment", bci);
+            }
+            push(builder.intrinsic("tornado.vector.lane." + lane, element, List.of(array)));
+            return;
+        }
         // kind: 0 i, 1 l, 2 f, 3 d, 4 a, 5 b(byte/boolean), 6 c, 7 s
         var element = switch (kind) {
             case 0 -> Type.I32;
@@ -810,6 +820,9 @@ final class Translator {
 
     /** A local {@code HalfFloat[]} holds f16 values (HalfFloat is a value type): the only reference array kernels use. */
     private static Optional<Type> halfElements(Value array) {
+        if (array.type() instanceof Type.ArrayType(var element) && element.equals(Type.F16)) {
+            return Optional.of(Type.F16); // a HalfFloat[] parameter of an inlined helper
+        }
         return array instanceof Inst inst && LocalArrays.element(inst).filter(Type.F16::equals).isPresent() ? Optional.of(Type.F16) : Optional.empty();
     }
 
@@ -898,10 +911,11 @@ final class Translator {
             args.add(0, pop());
         }
         var returnType = Bindings.type(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
-        if (binding.isEmpty()) {
+        if (binding.isEmpty() || binding.get() instanceof Bindings.InlineJava) {
             // Static calls, and instance calls on objects: resolved against the static type (the
             // runtime checks object arguments have exactly their declared class) and inlined.
-            if (insn.opcode() == INVOKESTATIC || (!args.isEmpty() && args.get(0).type() instanceof Type.ObjectType o && !o.className().equals("KernelContext"))) {
+            if (insn.opcode() == INVOKESTATIC || (!args.isEmpty() && args.get(0).type() instanceof Type.ObjectType o && !o.className().equals("KernelContext"))
+                    || binding.filter(Bindings.InlineJava.class::isInstance).isPresent()) {
                 var callee = calleeName(ref.owner(), ref.name(), ref.descriptor());
                 callees.put(callee, ref);
                 var call = builder.call(callee, returnType, args);
@@ -945,6 +959,8 @@ final class Translator {
                 }
                 stack = rebuilt;
             }
+            case Bindings.InlineJava j -> throw error("TC-E9002", "inline-Java binding reached the intrinsic switch", insn.bci());
+            case Bindings.ConstantField c -> throw error("TC-E9002", "a constant field bound as a method", insn.bci());
             case Bindings.Atomic(var name, var value, var returnsPrevious) -> {
                 // args: context, array, index, values... A local array is a pointer: pass the element's
                 // address; a global array stays (array, index) until ABI lowering gives its address.

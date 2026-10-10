@@ -99,6 +99,18 @@ final class Bindings {
     record Atomic(String op, Type value, boolean returnsPrevious) implements Binding {
     }
 
+    /**
+     * A KernelContext method whose Java body is also its device semantics (the swizzled tile
+     * accessors): translated and inlined like any helper. Most KernelContext bodies are CPU
+     * stand-ins, so only methods listed here are inlined.
+     */
+    record InlineJava() implements Binding {
+    }
+
+    /** A static final field with a known constant value (an enum constant passed as an option). */
+    record ConstantField(long value) implements Binding {
+    }
+
     /** Value classes: objects of these classes are their single scalar field. */
     static final String HALF_FLOAT = "uk/ac/manchester/tornado/api/types/HalfFloat";
 
@@ -144,6 +156,27 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".simdAny(Z)Z", new Intrinsic("tornado.simd.any", Type.I32));
         METHODS.put(KERNEL_CONTEXT + ".simdAll(Z)Z", new Intrinsic("tornado.simd.all", Type.I32));
         METHODS.put(KERNEL_CONTEXT + ".simdBallot(Z)I", new Intrinsic("tornado.simd.ballot", Type.I32));
+        // Tensor cores (m16n8k16, f16 inputs, f32 accumulators): fragments are register vectors -
+        // C/D four floats per lane, A four and B two 32-bit registers of packed halves.
+        var half = "L" + HALF_FLOAT + ";";
+        var vecC = new Type.VectorType(Type.F32, 4);
+        METHODS.put(KERNEL_CONTEXT + ".mmaFragment(F)[F", new Intrinsic("tornado.mma.fragment", vecC));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadA([II)[" + half, new Intrinsic("tornado.mma.load_a", new Type.VectorType(Type.I32, 4)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadB([II)[" + half, new Intrinsic("tornado.mma.load_b", new Type.VectorType(Type.I32, 2)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadA([III)[" + half, new Intrinsic("tornado.mma.load_a.offset", new Type.VectorType(Type.I32, 4)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadB([III)[" + half, new Intrinsic("tornado.mma.load_b.offset", new Type.VectorType(Type.I32, 2)));
+        var tile = "[" + half;
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadBSwizzled(" + tile + "I)" + tile, new Intrinsic("tornado.mma.load_b.swizzled", new Type.VectorType(Type.I32, 2)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadBSwizzled(" + tile + "II)" + tile, new Intrinsic("tornado.mma.load_b.swizzled.offset", new Type.VectorType(Type.I32, 2)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaStoreBSwizzled(" + tile + "III" + half + "I)V", new Intrinsic("tornado.mma.store_b.swizzled", Type.VOID));
+        for (var accessor : new String[] { "swizzleLoadFp16Stride32(" + tile + "III)" + half, "swizzleStoreFp16Stride32(" + tile + "III" + half + ")V",
+                "swizzleLoadFp16Stride16(" + tile + "III)" + half, "swizzleStoreFp16Stride16(" + tile + "III" + half + ")V", "swizzleLoadInt8([BIII)B",
+                "swizzleStoreInt8([BIIIB)V" }) {
+            METHODS.put(KERNEL_CONTEXT + "." + accessor, new InlineJava());
+        }
+        METHODS.put(KERNEL_CONTEXT + ".mma([" + half + "[" + half + "[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k16", vecC));
+        METHODS.put(KERNEL_CONTEXT + ".mmaStore([FL" + ARRAYS + "FloatArray;III)V", new Intrinsic("tornado.mma.store", Type.VOID));
+        FIELDS.put("uk/ac/manchester/tornado/api/enums/MMAShape.M16N8K16", new ConstantField(16));
         // Atomics on global native arrays and on local int[] arrays.
         METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "IntArray;II)V", new Atomic("add", Type.I32, false));
         METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "LongArray;IJ)V", new Atomic("add", Type.I64, false));
@@ -162,11 +195,11 @@ final class Bindings {
         METHODS.put(HALF_FLOAT + ".<init>(S)V", new ValueInit(Type.I16, ConvertOp.BITCAST, Type.F16));
         METHODS.put(HALF_FLOAT + ".getFloat32()F", new Convert(ConvertOp.FEXT, Type.F32));
         METHODS.put(HALF_FLOAT + ".getHalfFloatValue()S", new HalfBits());
-        var half = "(L" + HALF_FLOAT + ";L" + HALF_FLOAT + ";)L" + HALF_FLOAT + ";";
-        METHODS.put(HALF_FLOAT + ".add" + half, new HalfArith(Opcode.BinaryOp.FADD));
-        METHODS.put(HALF_FLOAT + ".sub" + half, new HalfArith(Opcode.BinaryOp.FSUB));
-        METHODS.put(HALF_FLOAT + ".mult" + half, new HalfArith(Opcode.BinaryOp.FMUL));
-        METHODS.put(HALF_FLOAT + ".div" + half, new HalfArith(Opcode.BinaryOp.FDIV));
+        var halfOp = "(L" + HALF_FLOAT + ";L" + HALF_FLOAT + ";)L" + HALF_FLOAT + ";";
+        METHODS.put(HALF_FLOAT + ".add" + halfOp, new HalfArith(Opcode.BinaryOp.FADD));
+        METHODS.put(HALF_FLOAT + ".sub" + halfOp, new HalfArith(Opcode.BinaryOp.FSUB));
+        METHODS.put(HALF_FLOAT + ".mult" + halfOp, new HalfArith(Opcode.BinaryOp.FMUL));
+        METHODS.put(HALF_FLOAT + ".div" + halfOp, new HalfArith(Opcode.BinaryOp.FDIV));
         // Raw bit casts are native methods (no bytecode): bitcast keeps every bit, NaN payloads included.
         METHODS.put("java/lang/Float.floatToRawIntBits(F)I", new Convert(ConvertOp.BITCAST, Type.I32));
         METHODS.put("java/lang/Float.intBitsToFloat(I)F", new Convert(ConvertOp.BITCAST, Type.F32));

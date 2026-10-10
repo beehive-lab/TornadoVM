@@ -311,12 +311,13 @@ public sealed interface Opcode {
 
         /**
          * Thread and work-group indices and sizes are fixed for a launch, and math functions depend
-         * only on their operands; barriers, atomics and printing are not pure.
+         * only on their operands, as do vector lane reads; barriers, atomics, warp and tensor-core
+         * operations and printing are not pure.
          */
         @Override
         public boolean isPure() {
             return name.startsWith("tornado.thread_id.") || name.startsWith("tornado.group_id.") || name.startsWith("tornado.group_size.") || name.startsWith("tornado.global_size.")
-                    || name.startsWith("tornado.group_count.") || name.startsWith("math.");
+                    || name.startsWith("tornado.group_count.") || name.startsWith("math.") || name.startsWith("tornado.vector.lane.");
         }
     }
 

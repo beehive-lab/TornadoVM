@@ -35,41 +35,110 @@ final class Helpers {
     }
 
     // Math.min/max (JLS, java.lang.Math): NaN if either argument is NaN; -0.0 is smaller than +0.0.
-    private static final Map<String, String> CUDA = Map.of(
-            "java_fminf", """
+    private static final Map<String, String> CUDA = Map.ofEntries(
+            Map.entry("java_fminf", """
                     __device__ static inline float java_fminf(float a, float b) {
                       if (a != a || b != b) return __int_as_float(0x7fc00000);
                       if (a == 0.0f && b == 0.0f) return __int_as_float(__float_as_int(a) | __float_as_int(b));
                       return a < b ? a : b;
                     }
-                    """,
-            "java_fmaxf", """
+                    """),
+            Map.entry("java_fmaxf", """
                     __device__ static inline float java_fmaxf(float a, float b) {
                       if (a != a || b != b) return __int_as_float(0x7fc00000);
                       if (a == 0.0f && b == 0.0f) return __int_as_float(__float_as_int(a) & __float_as_int(b));
                       return a > b ? a : b;
                     }
-                    """,
-            "java_fmin", """
+                    """),
+            Map.entry("java_fmin", """
                     __device__ static inline double java_fmin(double a, double b) {
                       if (a != a || b != b) return __longlong_as_double(0x7ff8000000000000LL);
                       if (a == 0.0 && b == 0.0) return __longlong_as_double(__double_as_longlong(a) | __double_as_longlong(b));
                       return a < b ? a : b;
                     }
-                    """,
-            "tc_warp_sum", """
+                    """),
+            Map.entry("tc_warp_sum", """
                     __device__ static inline float tc_warp_sum(float v) {
                       for (int lane = 16; lane > 0; lane >>= 1) v += __shfl_xor_sync(0xffffffffu, v, lane);
                       return v;
                     }
-                    """,
-            "java_fmax", """
+                    """),
+            Map.entry("tc_mma_fragment", """
+                    __device__ static inline float4 tc_mma_fragment(float v) {
+                      return make_float4(v, v, v, v);
+                    }
+                    """),
+            // A: a 16 x k row-major half tile (rows of 2k bytes); ldmatrix .x4 gives the four A registers.
+            Map.entry("tc_mma_load_a", """
+                    __device__ static inline int4 tc_mma_load_a(const int *tile, int k) {
+                      unsigned lane = threadIdx.x & 31u, group = lane >> 3;
+                      unsigned row = ((group & 1u) << 3) + (lane & 7u);
+                      unsigned offset = row * (2u * (unsigned) k) + ((group >> 1) << 4);
+                      unsigned address = (unsigned) __cvta_generic_to_shared((const char *) tile + offset);
+                      int4 a;
+                      asm volatile("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0,%1,%2,%3}, [%4];"
+                                   : "=r"(a.x), "=r"(a.y), "=r"(a.z), "=r"(a.w) : "r"(address));
+                      return a;
+                    }
+                    """),
+            // B: a k x 8 row-major half tile (rows of 16 bytes), transposed by ldmatrix into the two B registers.
+            Map.entry("tc_mma_load_b", """
+                    __device__ static inline int2 tc_mma_load_b(const int *tile, int k) {
+                      unsigned lane = threadIdx.x & 31u;
+                      unsigned row = (lane & 7u) + (((lane >> 3) & 1u) << 3);
+                      unsigned address = (unsigned) __cvta_generic_to_shared((const char *) tile + (row << 4));
+                      int2 b;
+                      asm volatile("ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 {%0,%1}, [%2];"
+                                   : "=r"(b.x), "=r"(b.y) : "r"(address));
+                      return b;
+                    }
+                    """),
+            Map.entry("tc_mma_load_b_swizzled", """
+                    __device__ static inline int2 tc_mma_load_b_swizzled(const void *tile, int k, int byteOffset) {
+                      unsigned lane = threadIdx.x & 31u;
+                      unsigned offset = ((lane & 7u) << 4) + (((lane >> 3) & 1u) << 7);
+                      offset ^= ((offset >> 7) & 7u) << 4;
+                      unsigned address = (unsigned) __cvta_generic_to_shared((const char *) tile + byteOffset + offset);
+                      int2 b;
+                      asm volatile("ldmatrix.sync.aligned.m8n8.x2.trans.shared.b16 {%0,%1}, [%2];"
+                                   : "=r"(b.x), "=r"(b.y) : "r"(address));
+                      return b;
+                    }
+                    """),
+            Map.entry("tc_mma_store_b_swizzled", """
+                    __device__ static inline void tc_mma_store_b_swizzled(void *tile, int row, int col, int stride, half value, int byteOffset) {
+                      unsigned offset = (unsigned) (row * stride + col) * 2u;
+                      offset ^= ((offset >> 7) & 7u) << 4;
+                      *((half *) ((char *) tile + byteOffset + offset)) = value;
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k16", """
+                    __device__ static inline float4 tc_mma_m16n8k16(int4 a, int2 b, float4 c) {
+                      float4 d;
+                      asm volatile("mma.sync.aligned.m16n8k16.row.col.f32.f16.f16.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%10,%11,%12,%13};"
+                                   : "=f"(d.x), "=f"(d.y), "=f"(d.z), "=f"(d.w)
+                                   : "r"(a.x), "r"(a.y), "r"(a.z), "r"(a.w), "r"(b.x), "r"(b.y), "f"(c.x), "f"(c.y), "f"(c.z), "f"(c.w));
+                      return d;
+                    }
+                    """),
+            // C/D: lane l holds rows l/4 and l/4 + 8, columns 2(l%4) and 2(l%4) + 1 of the 16 x 8 tile.
+            Map.entry("tc_mma_store", """
+                    __device__ static inline void tc_mma_store(float4 d, float *c, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      int r = row + (int) (lane >> 2), k = col + (int) ((lane & 3u) << 1);
+                      c[r * ld + k] = d.x;
+                      c[r * ld + k + 1] = d.y;
+                      c[(r + 8) * ld + k] = d.z;
+                      c[(r + 8) * ld + k + 1] = d.w;
+                    }
+                    """),
+            Map.entry("java_fmax", """
                     __device__ static inline double java_fmax(double a, double b) {
                       if (a != a || b != b) return __longlong_as_double(0x7ff8000000000000LL);
                       if (a == 0.0 && b == 0.0) return __longlong_as_double(__double_as_longlong(a) & __double_as_longlong(b));
                       return a > b ? a : b;
                     }
-                    """);
+                    """));
 
     static String source(String helper, Dialect dialect) {
         var text = switch (dialect) {

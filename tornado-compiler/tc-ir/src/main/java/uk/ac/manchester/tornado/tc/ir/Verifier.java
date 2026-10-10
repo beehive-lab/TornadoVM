@@ -239,6 +239,8 @@ public final class Verifier {
                     if (ops.get(0).type() instanceof ArrayType(var element)) {
                         // A byte array may be read as any type at a byte index (ByteArray.getHalfFloat).
                         resultIs(inst, result.equals(element) || element.equals(Type.I8), "the array element type " + element.text());
+                    } else if (isLocalPointer(ops.get(0).type())) {
+                        // A local array passed to an inlined helper: element type from the access.
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }
@@ -249,6 +251,8 @@ public final class Verifier {
                 if (count(inst, 3)) {
                     if (ops.get(0).type() instanceof ArrayType(var element)) {
                         operandIs(inst, 2, ops.get(2).type().equals(element) || element.equals(Type.I8), "the array element type " + element.text());
+                    } else if (isLocalPointer(ops.get(0).type())) {
+                        // As for array.load.
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }
@@ -443,5 +447,9 @@ public final class Verifier {
 
     private void report(String code, String message, String where, Loc loc) {
         diagnostics.add(new Diagnostic(code, message, where, loc));
+    }
+
+    private static boolean isLocalPointer(Type type) {
+        return type instanceof Type.PointerType(var space) && (space == AddressSpace.SHARED || space == AddressSpace.PRIVATE);
     }
 }

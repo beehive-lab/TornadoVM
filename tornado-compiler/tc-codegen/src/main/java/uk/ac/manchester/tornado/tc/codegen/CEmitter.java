@@ -756,6 +756,9 @@ public final class CEmitter {
                 case F64 -> "double";
             };
             case Type.PointerType p -> "unsigned char *";
+            // Register vectors (tensor-core fragments): the CUDA built-in vector types.
+            case Type.VectorType(var element, var length) when length >= 1 && length <= 4 && (element.equals(Type.F32) || element.equals(Type.I32)) ->
+                (element.equals(Type.F32) ? "float" : "int") + length;
             case Type.VoidType v -> "void";
             default -> throw new EmitException("TC-E4001", "type " + type.text() + " is not supported on CUDA yet");
         };

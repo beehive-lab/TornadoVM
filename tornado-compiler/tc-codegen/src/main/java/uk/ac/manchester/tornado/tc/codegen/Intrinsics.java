@@ -71,6 +71,24 @@ public final class Intrinsics {
         cuda("tornado.simd.any", "(__any_sync(0xffffffffu, $0) != 0)");
         cuda("tornado.simd.all", "(__all_sync(0xffffffffu, $0) != 0)");
         cuda("tornado.simd.ballot", "(int) __ballot_sync(0xffffffffu, $0)");
+        // Lanes of a register vector (fragment element reads at a constant index).
+        var components = List.of("x", "y", "z", "w");
+        for (int lane = 0; lane < 4; lane++) {
+            cuda("tornado.vector.lane." + lane, "$0." + components.get(lane));
+        }
+        // Tensor cores, m16n8k16 (PTX ISA fragment layouts); helpers written from the PTX ISA.
+        TABLE.put(new Key("tornado.mma.fragment", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_fragment($0)", "tc_mma_fragment"));
+        TABLE.put(new Key("tornado.mma.load_a", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1)", "tc_mma_load_a"));
+        TABLE.put(new Key("tornado.mma.load_b", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) $0, $1)", "tc_mma_load_b"));
+        // With a byte offset: the tile base moves by that many bytes (a warp's sub-tile).
+        TABLE.put(new Key("tornado.mma.load_a.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_a"));
+        TABLE.put(new Key("tornado.mma.load_b.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_b"));
+        // Swizzled B tiles (fp16, stride-32 permutation: byte b -> b ^ (((b >> 7) & 7) << 4)).
+        TABLE.put(new Key("tornado.mma.load_b.swizzled", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_swizzled($0, $1, 0)", "tc_mma_load_b_swizzled"));
+        TABLE.put(new Key("tornado.mma.load_b.swizzled.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_swizzled($0, $1, $2)", "tc_mma_load_b_swizzled"));
+        TABLE.put(new Key("tornado.mma.store_b.swizzled", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store_b_swizzled($0, $1, $2, $3, $4, $5)", "tc_mma_store_b_swizzled"));
+        TABLE.put(new Key("tornado.mma.m16n8k16", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k16($0, $1, $2)", "tc_mma_m16n8k16"));
+        TABLE.put(new Key("tornado.mma.store", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store($0, (float *) ($1), $2, $3, $4)", "tc_mma_store"));
         // Atomics: $&0 is the address of the element ($0 is its pointer); typed by the value.
         for (var t : List.of("i32", "i64", "f32", "f64")) {
             cudaTyped("tornado.atomic.add", t, t.equals("i64") ? "atomicAdd((unsigned long long *) $&0, (unsigned long long) $1)" : "atomicAdd($&0, $1)");

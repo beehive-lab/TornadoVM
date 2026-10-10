@@ -114,6 +114,18 @@ public final class AbiLowering {
                     case Opcode.ArrayLength _l -> lowerLength(inst);
                     case Opcode.FieldLoad(var field) when classes.containsKey(inst.operand(0)) -> lowerField(inst, field, printer);
                     case Opcode.Intrinsic(var name) when name.startsWith("tornado.atomic.") && elements.containsKey(inst.operand(0)) -> lowerAtomic(inst);
+                    // Other intrinsics taking a whole array (mmaStore) get its data pointer.
+                    case Opcode.Intrinsic _i when inst.operands().stream().anyMatch(elements::containsKey) -> {
+                        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+                        for (int k = 0; k < inst.operandCount(); k++) {
+                            if (elements.containsKey(inst.operand(k))) {
+                                var array = inst.operand(k);
+                                var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
+                                data.setName(array.name().isEmpty() ? "data" : array.name() + "_data");
+                                inst.setOperand(k, data);
+                            }
+                        }
+                    }
                     case Opcode.FieldLoad _f -> unsupported(inst, printer);
                     case Opcode.FieldStore _f -> unsupported(inst, printer);
                     default -> {
@@ -203,6 +215,11 @@ public final class AbiLowering {
      * prints accesses through it as {@code a_data[i]}.
      */
     private Value elementAddress(IrBuilder b, Value array, Value index, Type element) {
+        if (array.type() instanceof Type.PointerType(var space) && space != AddressSpace.GLOBAL) {
+            // A local (shared/private) array reached a Java-level access through an inlined helper: no header.
+            var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);
+            return b.pointerOffset(array, b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element))));
+        }
         var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
         data.setName(array.name().isEmpty() ? "data" : array.name() + "_data");
         var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);

@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -125,7 +126,8 @@ public final class TcHook {
             var reason = d == null ? "unknown" : d.code() + " " + d.message();
             FALLBACKS.computeIfAbsent(d == null ? "unknown" : d.code(), k -> new AtomicInteger()).incrementAndGet();
             if (!FALLBACK) {
-                throw new IllegalStateException("[TC] cannot compile " + name + " and fallback is disabled: " + (d == null ? reason : d.render()));
+                // The runtime's bailout exception, as for a kernel Graal cannot compile.
+                throw new TornadoBailoutRuntimeException("[TC] cannot compile " + name + " and fallback is disabled: " + (d == null ? reason : d.render()));
             }
             if (VERBOSE) {
                 System.out.println("[TC] fallback to Graal for " + name + ": " + reason);
@@ -150,7 +152,7 @@ public final class TcHook {
     private static Optional<Kernel> refuse(String name, String code, String reason) {
         FALLBACKS.computeIfAbsent(code, k -> new AtomicInteger()).incrementAndGet();
         if (!FALLBACK) {
-            throw new IllegalStateException("[TC] cannot compile " + name + " and fallback is disabled: error " + code + ": " + reason);
+            throw new TornadoBailoutRuntimeException("[TC] cannot compile " + name + " and fallback is disabled: error " + code + ": " + reason);
         }
         if (VERBOSE) {
             System.out.println("[TC] fallback to Graal for " + name + ": " + code + " " + reason);
