@@ -1240,6 +1240,12 @@ public class OCLGraphBuilderPlugins {
                 }
             });
         }
+        // A 32- or 64-bit word at a raw byte offset, read or written whole: one wide access instead of
+        // a byte or half per element, for byte buffers holding packed data. The caller aligns the offset.
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            registerByteArrayWordAccess(r, "getInt", "setInt", JavaKind.Int, indexType, segmentField, baseIndexField);
+            registerByteArrayWordAccess(r, "getLong", "setLong", JavaKind.Long, indexType, segmentField, baseIndexField);
+        }
     }
 
     /**
@@ -1249,6 +1255,27 @@ public class OCLGraphBuilderPlugins {
      * delegate chain {@code get -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract,
      * bodiless on JDK 22+, "this.code is null") is never reached on the reflection path.
      */
+    private static void registerByteArrayWordAccess(Registration r, String getter, String setter, JavaKind kind, Class<?> indexType, Field segmentField, Field baseIndexField) {
+        r.register(new InvocationPlugin(getter, Receiver.class, indexType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin(setter, Receiver.class, indexType, kind.toJavaClass()) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
     private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
         final Field segmentField;
         final Field baseIndexField;
