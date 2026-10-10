@@ -98,6 +98,13 @@ unsupported, bailout, internal); the `fails` family matches Graal except the acc
 `BitOpsUnsupportedFail` difference, and zero-length local arrays and object allocations behave as on
 Graal (`codeFail01`, `codeFail02`).
 
+Family runs since run 2, fallback off (Graal reference: the run-2 Graal logs):
+
+| Family | Tests | Graal PASS | TC PASS | Differences | What closed the gap |
+|---|---:|---:|---:|---:|---|
+| batches | 30 | 30 | 30 | 0 | per-chunk lengths for native and Java arrays, global index offset (`BatchOffset`) |
+| kernelcontext | 228 | 203 | 203 | 0 (launch configs: 0) | cp.async, MMA fragments from global memory, local `HalfFloat[]` after a merge, dynamic parallelism (`KernelContext.launch`); 255 kernels compiled by TC ([baseline/tc-diff-kernelcontext-kc4.json](baseline/tc-diff-kernelcontext-kc4.json)) |
+
 ## Differential run 1 (`baseline/tc-diff.py`, 2026-10-10, fallback off)
 
 All 223 suite classes except the memory-leak loops, each run under Graal and under TC with
