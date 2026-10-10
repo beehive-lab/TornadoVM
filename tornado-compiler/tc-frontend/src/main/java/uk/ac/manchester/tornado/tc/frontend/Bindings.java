@@ -222,6 +222,13 @@ final class Bindings {
                 METHODS.put(owner + ".set(I" + d + ")V", new VectorSet(-1));
             }
         }
+        // QuantizationUtils.dp4a: four signed int8 products accumulated (CUDA __dp4a, sm_61+). The Java
+        // bodies' bounds checks throw, which kernels cannot; the operands are 4-byte words at the offsets.
+        var quant = "uk/ac/manchester/tornado/api/utils/QuantizationUtils";
+        var int8 = "L" + ARRAYS + "Int8Array;";
+        METHODS.put(quant + ".dp4a(" + int8 + "J" + int8 + "JI)I", new Intrinsic("tornado.dp4a", Type.I32));
+        METHODS.put(quant + ".dp4a(" + int8 + "J[BJI)I", new Intrinsic("tornado.dp4a", Type.I32));
+        METHODS.put(quant + ".dp4a_packed(III)I", new Intrinsic("tornado.dp4a.packed", Type.I32));
         // Half2: two f16 lanes (CUDA half2); its arithmetic is Java code over getX/getY and the constructor.
         var half2 = new Type.VectorType(Type.F16, 2);
         VECTORS.put("Half2", half2);

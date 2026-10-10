@@ -132,6 +132,9 @@ public final class Intrinsics {
         }
         TABLE.put(new Key("tornado.async_copy.commit", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_commit()", "tc_cp_async_commit"));
         TABLE.put(new Key("tornado.async_copy.wait", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_wait($0)", "tc_cp_async_wait"));
+        // DP4A (sm_61+): operands are the int8 data pointers (+ byte offsets) or packed words.
+        cuda("tornado.dp4a", "__dp4a(*((const int *) ((const char *) $0 + $1)), *((const int *) ((const char *) $2 + $3)), $4)");
+        cuda("tornado.dp4a.packed", "__dp4a($0, $1, $2)");
         // Synchronisation.
         cuda("tornado.barrier.local", "__syncthreads()");
         cuda("tornado.barrier.global", "__syncthreads()");
