@@ -65,6 +65,9 @@ public final class DeadCodeElimination implements Pass {
             case Opcode.ArrayLoad l -> true;
             case Opcode.FieldLoad l -> true;
             case Opcode.Alloca a -> true;
+            // An intrinsic that only reads memory (no write, side effect or convergence) goes like a load.
+            case Opcode.Intrinsic(var name) -> uk.ac.manchester.tornado.tc.ir.IntrinsicRegistry.lookup(name)
+                    .map(d -> d.effects().stream().allMatch(e -> e == uk.ac.manchester.tornado.tc.ir.IntrinsicRegistry.Effect.READS)).orElse(false);
             default -> inst.opcode().isPure();
         };
     }

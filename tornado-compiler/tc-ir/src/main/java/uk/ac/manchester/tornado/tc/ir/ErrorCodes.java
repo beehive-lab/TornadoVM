@@ -73,6 +73,7 @@ public final class ErrorCodes {
             Map.entry("TC-E2114", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2116", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2117", new Entry(Category.INTERNAL, "")),
             // Structuring and TornadoVM lowering.
+            Map.entry("TC-E2115", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E3001", new Entry(Category.BAILOUT, "the loops of this kernel jump into each other (irreducible control flow); restructure the loops")),
             Map.entry("TC-E3002", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E3101", new Entry(Category.UNSUPPORTED, "this object argument cannot be described to TC (its class is not the declared one, or it overrides methods); the Graal path may compile it")),

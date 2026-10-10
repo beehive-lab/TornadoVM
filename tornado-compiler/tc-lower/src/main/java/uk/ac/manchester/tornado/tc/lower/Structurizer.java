@@ -363,6 +363,10 @@ public final class Structurizer {
     /** Values printed in place instead of through a variable. */
     private boolean isInline(Inst inst) {
         var opcode = inst.opcode();
+        if (inst.type() instanceof Type.TileType || inst.type() instanceof Type.ObjectType) {
+            // Tiles and views are named values (their C++ types are long): one statement each, as on Graal.
+            return false;
+        }
         if (opcode instanceof Opcode.ConstInt || opcode instanceof Opcode.ConstFloat || opcode instanceof Opcode.Alloca) {
             return true;
         }

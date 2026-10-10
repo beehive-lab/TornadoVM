@@ -320,8 +320,11 @@ public final class Verifier {
             case Opcode.Call _c -> {
                 // Callee signatures are checked at module level once device functions exist (after C6).
             }
-            case Opcode.Intrinsic _i -> {
-                // Intrinsic signatures are checked against the intrinsic registry (tc-codegen).
+            case Opcode.Intrinsic(var name) -> {
+                // Every intrinsic is described by the registry (its effects); an unknown one is a TC bug.
+                if (IntrinsicRegistry.lookup(name).isEmpty()) {
+                    error(inst, "TC-E2115", "intrinsic '" + name + "' is not in the intrinsic registry");
+                }
             }
             case Opcode.Branch _b -> {
                 count(inst, 0);
