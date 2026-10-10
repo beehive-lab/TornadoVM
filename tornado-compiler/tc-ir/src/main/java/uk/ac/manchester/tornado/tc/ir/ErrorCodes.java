@@ -86,6 +86,8 @@ public final class ErrorCodes {
             Map.entry("TC-E3401", new Entry(Category.INVALID_KERNEL, "a tile shape, axis or element type must be a compile-time constant (a literal or a static final); shapes must be powers of two")),
             Map.entry("TC-E3402", new Entry(Category.INVALID_KERNEL, "the tile operands do not fit together (rank, broadcast or element type); see the TileContext documentation")),
             Map.entry("TC-E3403", new Entry(Category.UNSUPPORTED, "this TileContext operation is not compiled by TC yet; the Graal path supports it")),
+            Map.entry("TC-E4010", new Entry(Category.UNSUPPORTED, "CUDA Tile needs compute capability 8.0 or higher (Ampere and newer); rewrite the task with KernelContext for the SIMT path")),
+            Map.entry("TC-E4011", new Entry(Category.UNSUPPORTED, "fp8 tiles need compute capability 9.0 (Hopper) or newer; use F16 or BF16 operands on this device")),
             // Code generation.
             Map.entry("TC-E4001", new Entry(Category.UNSUPPORTED, "this type or operation has no CUDA spelling in TC yet")),
             Map.entry("TC-E4002", new Entry(Category.UNSUPPORTED, "this intrinsic has no CUDA spelling in TC yet")),

@@ -132,6 +132,13 @@ public final class CEmitter {
             // C/C++ keywords that are plausible Java identifiers.
             "auto", "bool", "char", "const", "default", "delete", "double", "enum", "extern", "float", "goto", "inline", "int", "long", "operator", "register",
             "restrict", "short", "signed", "sizeof", "static", "struct", "template", "typedef", "typename", "union", "unsigned", "volatile", "half",
+            // C++ keywords and alternative operator tokens (CUDA sources are C++): `and` is `&&`.
+            "and", "and_eq", "bitand", "bitor", "compl", "not", "not_eq", "or", "or_eq", "xor", "xor_eq", "asm", "catch", "class", "concept", "const_cast", "constexpr",
+            "decltype", "dynamic_cast", "explicit", "export", "false", "friend", "mutable", "namespace", "new", "noexcept", "nullptr", "private", "protected", "public",
+            "reinterpret_cast", "requires", "static_assert", "static_cast", "this", "thread_local", "throw", "true", "try", "typeid", "using", "virtual", "wchar_t",
+            "alignas", "alignof", "char8_t", "char16_t", "char32_t", "consteval", "constinit", "co_await", "co_return", "co_yield",
+            // The CUDA Tile namespace alias of tile kernels.
+            "ct", "cuda",
             // CUDA built-ins and the TornadoVM ABI region names.
             "threadIdx", "blockIdx", "blockDim", "gridDim", "warpSize", "_kernel_context", "_constant_region", "_local_region", "_atomics");
 

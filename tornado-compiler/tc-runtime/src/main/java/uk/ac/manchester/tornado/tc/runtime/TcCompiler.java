@@ -247,7 +247,10 @@ public final class TcCompiler {
             }
             if (TileTyping.usesTiles(function)) {
                 stage("tiles", Kind.IR, () -> {
-                    var problems = TileTyping.run(function);
+                    var problems = new ArrayList<>(TileTyping.run(function));
+                    if (problems.isEmpty()) {
+                        problems.addAll(TileTyping.checkTarget(function, target.computeCapability()));
+                    }
                     if (!problems.isEmpty()) {
                         throw new Failed(problems);
                     }

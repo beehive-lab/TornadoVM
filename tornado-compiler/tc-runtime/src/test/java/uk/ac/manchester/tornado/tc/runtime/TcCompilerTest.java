@@ -130,4 +130,24 @@ public class TcCompilerTest {
             assertEquals("LaunchKernels_parent", c.entryName());
         }
     }
+
+    /** TileContext kernels become CUDA Tile C++: typed tiles, auto views, a loop-carried mma accumulator. */
+    @Test
+    public void tileKernelsAreCudaTile() throws Exception {
+        var urls = new java.net.URL[] { java.nio.file.Path.of("../tc-frontend/target/test-classes").toUri().toURL(), java.nio.file.Path.of("../../tornado-api/target/classes").toUri().toURL() };
+        try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
+            var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
+            var gemm = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.TileKernels", "gemm", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+            assertTrue(gemm.diagnostics().toString(), gemm.succeeded());
+            var g = gemm.source();
+            assertTrue(g, g.startsWith("#include \"cuda_tile.h\"") && g.contains("#include <cuda_fp16.h>") && g.contains("__tile_global__ void TileKernels_gemm("));
+            assertTrue(g, g.contains("ct::tile<float, ct::shape<32, 32>> acc;") && g.contains("acc = ct::mma(") && g.contains("auto av = ct::partition_view{"));
+            assertTrue(g, g.contains("reinterpret_cast<__half *>(a_data)") && g.contains("ct::full<ct::tile<float, ct::shape<32, 32>>>(0.0f)"));
+            var sum = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.TileKernels", "positiveRowSum", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+            assertTrue(sum.diagnostics().toString(), sum.succeeded());
+            var r = sum.source();
+            assertTrue(r, r.contains("ct::tile<bool, ct::shape<1, 64>>") && r.contains(" > (float) 0.0") && r.contains("ct::select(") && r.contains("ct::sum(") && r.contains("1_ic)"));
+            assertTrue(r, r.contains("ct::tile<float, ct::shape<1, 1>>"));
+        }
+    }
 }

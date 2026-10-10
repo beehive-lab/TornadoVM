@@ -138,6 +138,26 @@ public final class TileTyping {
         }
     }
 
+    /** The device must run CUDA Tile (sm_80+), and fp8 tiles need sm_90+ ({@code computeCapability} as 89 for 8.9). */
+    public static List<Diagnostic> checkTarget(Function function, int computeCapability) {
+        int major = computeCapability / 10;
+        int minor = computeCapability % 10;
+        if (major < 8) {
+            return List.of(new Diagnostic("TC-E4010", "CUDA Tile requires compute capability 8.0 or higher (Ampere and newer); device reports " + major + "." + minor,
+                    "@" + function.name(), uk.ac.manchester.tornado.tc.ir.Loc.UNKNOWN));
+        }
+        for (var block : function.blocks()) {
+            for (var inst : block.insts()) {
+                if (major < 9 && inst.type() instanceof TileType t && t.dtype().startsWith("FP8") && inst.opcode() instanceof Opcode.Intrinsic(var name)) {
+                    return List.of(new Diagnostic("TC-E4011", "the tile operation '" + name.substring(5) + "' uses " + t.dtype()
+                            + ", and CUDA Tile supports FP8 tiles only from compute capability 9.0 (Hopper) onwards; device reports " + major + "." + minor, "@" + function.name(),
+                            inst.loc()));
+                }
+            }
+        }
+        return List.of();
+    }
+
     private static boolean isOpaque(Type type) {
         return type instanceof Type.ObjectType o && (o.className().equals("Tile") || o.className().equals("TensorView") || o.className().equals("PartitionView"));
     }
