@@ -192,6 +192,36 @@ final class Helpers {
                       c[(r + 8) * ld + k + 1] = d.w;
                     }
                     """),
+            // cp.async (PTX ISA 7.0, sm_80): .ca caches the 4-byte copy in L1, .cg (16 bytes only) bypasses it.
+            Map.entry("tc_cp_async_4", """
+                    __device__ static inline void tc_cp_async_4(int *dst, const char *src) {
+                      unsigned s = (unsigned) __cvta_generic_to_shared(dst);
+                      asm volatile("cp.async.ca.shared.global [%0], [%1], 4;" :: "r"(s), "l"(src) : "memory");
+                    }
+                    """),
+            Map.entry("tc_cp_async_16", """
+                    __device__ static inline void tc_cp_async_16(int *dst, const char *src) {
+                      unsigned s = (unsigned) __cvta_generic_to_shared(dst);
+                      asm volatile("cp.async.cg.shared.global [%0], [%1], 16;" :: "r"(s), "l"(src) : "memory");
+                    }
+                    """),
+            Map.entry("tc_cp_async_commit", """
+                    __device__ static inline void tc_cp_async_commit() {
+                      asm volatile("cp.async.commit_group;" ::: "memory");
+                    }
+                    """),
+            // wait_group takes an immediate: the switch folds away for a constant argument.
+            Map.entry("tc_cp_async_wait", """
+                    __device__ static inline void tc_cp_async_wait(int n) {
+                      switch (n) {
+                        case 0: asm volatile("cp.async.wait_group 0;" ::: "memory"); break;
+                        case 1: asm volatile("cp.async.wait_group 1;" ::: "memory"); break;
+                        case 2: asm volatile("cp.async.wait_group 2;" ::: "memory"); break;
+                        case 3: asm volatile("cp.async.wait_group 3;" ::: "memory"); break;
+                        default: asm volatile("cp.async.wait_all;" ::: "memory"); break;
+                      }
+                    }
+                    """),
             Map.entry("java_fmax", """
                     __device__ static inline double java_fmax(double a, double b) {
                       if (a != a || b != b) return __longlong_as_double(0x7ff8000000000000LL);

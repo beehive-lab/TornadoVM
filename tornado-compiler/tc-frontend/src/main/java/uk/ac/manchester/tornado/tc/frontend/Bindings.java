@@ -266,6 +266,16 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".mmaFP8E4M3([B[B[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k32_e4m3", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaFP8E5M2([B[B[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k32_e5m2", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaBF16([" + half + "[" + half + "[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k16_bf16", vecC));
+        // cp.async: global to shared copies of one packed b32 slot (4 bytes) or four of them (16 bytes).
+        for (var source : List.of("HalfFloatArray", "FP8Array", "ByteArray")) {
+            var bytes = source.equals("HalfFloatArray") ? 2 : 1;
+            METHODS.put(KERNEL_CONTEXT + ".asyncCopyToLocal([IIL" + ARRAYS + source + ";I)V", new Intrinsic("tornado.async_copy.4.e" + bytes, Type.VOID));
+            if (!source.equals("FP8Array")) {
+                METHODS.put(KERNEL_CONTEXT + ".asyncCopyToLocal16([IIL" + ARRAYS + source + ";I)V", new Intrinsic("tornado.async_copy.16.e" + bytes, Type.VOID));
+            }
+        }
+        METHODS.put(KERNEL_CONTEXT + ".asyncCopyCommit()V", new Intrinsic("tornado.async_copy.commit", Type.VOID));
+        METHODS.put(KERNEL_CONTEXT + ".asyncCopyWaitGroup(I)V", new Intrinsic("tornado.async_copy.wait", Type.VOID));
         METHODS.put(KERNEL_CONTEXT + ".mmaStoreInt([IL" + ARRAYS + "IntArray;III)V", new Intrinsic("tornado.mma.store_int", Type.VOID));
         // Atomics on global native arrays and on local int[] arrays.
         METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "IntArray;II)V", new Atomic("add", Type.I32, false));
