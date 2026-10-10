@@ -197,11 +197,72 @@ public final class Intrinsics {
     }
 
     /** Fills a template's {@code $i} placeholders; operands are already printed expressions. */
-    static String expand(String template, List<String> operands) {
-        var out = template;
-        for (int i = operands.size() - 1; i >= 0; i--) {
-            out = out.replace("$" + i, operands.get(i));
+    /**
+     * Substitutes operands into a spelling template. An operand that fills a whole call argument
+     * ({@code f($0, $1)}) is inserted as it is; anywhere else ({@code (long long) $3 * 2},
+     * {@code x - $1}) it is parenthesised unless {@code atomic} says it is a single token, so a
+     * folded {@code i + j} keeps its meaning.
+     */
+    static String expand(String template, List<String> operands, java.util.function.IntPredicate atomic) {
+        var out = new StringBuilder();
+        for (int p = 0; p < template.length(); p++) {
+            char c = template.charAt(p);
+            if (c == '$' && p + 1 < template.length() && Character.isDigit(template.charAt(p + 1))) {
+                int q = p + 1;
+                while (q < template.length() && Character.isDigit(template.charAt(q))) {
+                    q++;
+                }
+                int i = Integer.parseInt(template.substring(p + 1, q));
+                var text = operands.get(i);
+                boolean wholeArgument = previousNonSpace(template, p) == '(' || previousNonSpace(template, p) == ',';
+                wholeArgument = wholeArgument && (nextNonSpace(template, q) == ',' || nextNonSpace(template, q) == ')');
+                out.append(wholeArgument || atomic.test(i) ? text : "(" + text + ")");
+                p = q - 1;
+            } else {
+                out.append(c);
+            }
         }
-        return out;
+        return out.toString();
+    }
+
+    static String expand(String template, List<String> operands) {
+        return expand(template, operands, i -> true);
+    }
+
+    private static char previousNonSpace(String s, int at) {
+        for (int k = at - 1; k >= 0; k--) {
+            if (s.charAt(k) != ' ') {
+                return s.charAt(k);
+            }
+        }
+        return 0;
+    }
+
+    private static char nextNonSpace(String s, int from) {
+        for (int k = from; k < s.length(); k++) {
+            if (s.charAt(k) != ' ') {
+                return s.charAt(k);
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Whether an expanded template is one call, {@code name(...)} with the closing parenthesis last:
+     * then it binds like an atom; any other template (an operator, a cast) binds loosest.
+     */
+    static boolean isSingleCall(String text) {
+        int open = text.indexOf('(');
+        if (open <= 0 || !text.substring(0, open).matches("[A-Za-z_][A-Za-z0-9_:<>, ]*") || !text.endsWith(")")) {
+            return false;
+        }
+        int depth = 0;
+        for (int k = open; k < text.length(); k++) {
+            depth += text.charAt(k) == '(' ? 1 : text.charAt(k) == ')' ? -1 : 0;
+            if (depth == 0 && k != text.length() - 1) {
+                return false;
+            }
+        }
+        return true;
     }
 }

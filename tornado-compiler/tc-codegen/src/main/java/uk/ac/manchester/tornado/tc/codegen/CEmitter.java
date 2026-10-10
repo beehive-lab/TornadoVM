@@ -533,8 +533,8 @@ public final class CEmitter {
         return switch (inst.opcode()) {
             case Opcode.Binary(var op) -> binary(op, inst.type(), ops.get(0), ops.get(1));
             case Opcode.Unary(var op) -> switch (op) {
-                case NEG, FNEG -> new R("-" + wrap(expr(ops.get(0)), UNARY), UNARY);
-                case NOT -> new R((inst.type().equals(Type.I1) ? "!" : "~") + wrap(expr(ops.get(0)), UNARY), UNARY);
+                case NEG, FNEG -> new R("-" + prefixOperand(expr(ops.get(0))), UNARY);
+                case NOT -> new R((inst.type().equals(Type.I1) ? "!" : "~") + prefixOperand(expr(ops.get(0))), UNARY);
             };
             case Opcode.ICmp(var p) -> icmp(p, ops.get(0), ops.get(1));
             case Opcode.FCmp(var p) -> fcmp(p, ops.get(0), ops.get(1));
@@ -555,6 +555,12 @@ public final class CEmitter {
             case Opcode.Call(var callee) -> throw unsupported(inst, "calls must be inlined (device functions come after parity)");
             default -> throw unsupported(inst, "unexpected in an expression");
         };
+    }
+
+    /** The operand of a prefix operator: parenthesised when it starts with a sign, so `-(-x)` never prints as `--x`. */
+    private static String prefixOperand(R operand) {
+        var text = wrap(operand, UNARY);
+        return text.startsWith("-") || text.startsWith("+") ? "(" + text + ")" : text;
     }
 
     private R binary(BinaryOp op, Type type, S.Expr a, S.Expr b) {
@@ -732,8 +738,9 @@ public final class CEmitter {
             var address = element.text.startsWith("*((") ? "((" + typeName(type) + " *) " + wrap(expr(ops.get(0)), UNARY) + ")" : "&" + element.text;
             template = template.replace("$&0", address);
         }
-        var text = Intrinsics.expand(template, ops.stream().map(o -> expr(o).text).toList());
-        return new R(text, text.startsWith("(") ? UNARY : ATOM);
+        var operands = ops.stream().map(this::expr).toList();
+        var text = Intrinsics.expand(template, operands.stream().map(R::text).toList(), i -> operands.get(i).prec >= UNARY);
+        return new R(text, Intrinsics.isSingleCall(text) ? ATOM : COND);
     }
 
     /**
@@ -866,7 +873,7 @@ public final class CEmitter {
         return switch (type) {
             case IntType(var bits) -> switch (bits) {
                 case 1 -> "bool";
-                case 8 -> "char";
+                case 8 -> "signed char"; // Java byte; plain char's signedness is implementation-defined
                 case 16 -> "short";
                 case 32 -> "int";
                 default -> "long long";
@@ -891,7 +898,7 @@ public final class CEmitter {
             }
             // Register vectors (tensor-core fragments): the CUDA built-in vector types.
             case Type.VectorType(var element, var length) when length >= 2 && length <= 4 && !element.equals(Type.F16) && !element.equals(Type.BF16) && !element.equals(Type.I1) ->
-                (element.equals(Type.I8) ? "char" : typeName(element).replace("long long", "longlong")) + length;
+                (element.equals(Type.I8) ? "char" : typeName(element).replace("long long", "longlong")) + length; // CUDA charN lanes are signed char
             case Type.VoidType v -> "void";
             default -> throw new EmitException("TC-E4001", "type " + type.text() + " is not supported on CUDA yet");
         };

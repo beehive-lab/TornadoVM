@@ -100,10 +100,13 @@ sm_89, test gaps) are listed in the review transcripts. They are fixed opportuni
 
 ## Plan
 
-**Phase A (now): correctness.** For each suspected P0 miscompile: a reproducing lit or JUnit test,
-then the fix, then the test kept. Covers CG-1/2/3/4/10, TP-1/2/3/4/5/14, IR-1/3/5 and FE-4/5.
+User direction (2026-10-10): duplication and cleanliness are fixed **before** a new backend is added,
+reusing what exists wherever possible. The spikes in Phase D come last, before the new backend.
 
-**Phase B (before OpenCL): the architecture changes the second dialect needs.**
+**Phase A (now): correctness.** For each suspected P0 miscompile: a reproducing test, then the fix,
+then the test kept. Covers CG-1/2/3/4/10, TP-1/2/3/4/5/14, IR-1/3/5 and FE-4/5.
+
+**Phase B: the architecture the second dialect needs.**
 
 1. An `IntrinsicDef` registry in `tc-ir`: id, typed immediates (lane, mode, element type, space,
    callee), operand and result signature, and effects (reads, writes, convergent, may trap). The
@@ -118,17 +121,39 @@ then the fix, then the test kept. Covers CG-1/2/3/4/10, TP-1/2/3/4/5/14, IR-1/3/
    precedence.
 4. A declared pass pipeline built per target. Every stage is a pass run by the PassManager: guarded,
    verified, dumped. Its ordering rules are written down.
-5. A legality stage driven by real `TargetCaps` values (queried from the device), not CUDA constants.
+5. A legality stage driven by real `TargetCaps` values (queried from the device).
 6. Reductions lowered in tc-tornado to IR (shared alloca, loop, barriers).
 
-**Phase C (after OpenCL lands): remaining P1 debt.**
+**Phase C: duplication and cleanliness (also before the new backend).**
 
-- an analysis manager;
-- shared constant, counted-loop and cloner utilities;
-- a typed abstract stack in the Translator, and a data-driven, signature-checked Bindings table;
-- fully qualified class identity;
-- one meaning per error code.
+- One shared set of IR utilities: constants and folding helpers, a `CountedLoop` analysis
+  (preheader, exits, induction variable), one IR cloner used by the Inliner and the unroller, and
+  `IrBuilder.before(inst)`.
+- An analysis manager, so passes stop rebuilding dominators and loop forests.
+- One element-access analysis shared by the structurizer and the emitters.
+- One way to read through block arguments in the Translator, and a typed abstract stack value
+  instead of placeholder instructions in side maps.
+- A data-driven Bindings table, checked against the API signatures.
+- Fully qualified class identity; one meaning per error code; dead code and stale comments removed.
+
+**Phase D: spikes before the new backend.**
+
+- **Leyden AOT:** can TC's classes (and the JIT profile of a warm compile) come from a JDK 25+
+  AOT cache (`-XX:AOTCache`), and what does it do to the first kernel's compile time?
+- **Cold-start compile time:** measure where a cold TC compile spends its time (JFR, the stage
+  timers), then fix or improve it. Today TC's front end is 1.4-2x Graal's in a fresh JVM, while warm
+  compiles are close (4.5 vs 3.8 ms).
+- **Babylon as a frontend:** assess building TC-SSA from Babylon code models instead of bytecode
+  (`tc-frontend-babylon`, plan Phase 10): what maps directly, what is lost or gained, and the effort.
+
+**Then: the OpenCL dialect, then Metal.**
 
 ## Progress
 
 Recorded per finding as fixed, not reproduced, or deferred (with the commit).
+
+| ID | Status |
+|---|---|
+| CG-1 | **Reproduced and fixed.** `(long long) i + j * 2` printed for `(i + j) * 2`. Template operands are now parenthesised unless they fill a whole call argument, and the template's own precedence comes from its shape (lit `Cuda/printing.tcir`). |
+| CG-2 | **Reproduced and fixed.** `--x` printed for `-(-x)`, which is a decrement (lit `Cuda/printing.tcir`). |
+| CG-10 | **Reproduced and fixed.** Java `byte` printed as `char`; now `signed char` (lit `Cuda/printing.tcir`). |
