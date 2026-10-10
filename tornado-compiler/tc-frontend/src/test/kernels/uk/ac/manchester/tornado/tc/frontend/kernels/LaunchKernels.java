@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.tc.frontend.kernels;
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.enums.DeviceLaunchMode;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
 /** KernelContext.launch: ping and pong launch each other, so the launch graph has a cycle. */
@@ -30,6 +31,7 @@ public final class LaunchKernels {
 
     static final DeviceKernel PING = DeviceKernel.of(LaunchKernels::ping);
     static final DeviceKernel PONG = DeviceKernel.of(LaunchKernels::pong);
+    static final DeviceKernel SCALE = DeviceKernel.of(LaunchKernels::scale);
 
     private LaunchKernels() {
     }
@@ -51,6 +53,26 @@ public final class LaunchKernels {
         trace.set(depth, 2);
         if (depth > 0) {
             context.launch(PING, 1, 1, trace, depth - 1);
+        }
+    }
+
+    /** Launches SCALE from an inlined helper, and also calls scale directly (an ordinary call). */
+    public static void dispatch(KernelContext context, FloatArray data, int n) {
+        data.set(context.globalIdx, data.get(context.globalIdx) + 1.0f);
+        if (context.globalIdx == 0) {
+            launchScale(context, data, n);
+        }
+        scale(context, data, n);
+    }
+
+    private static void launchScale(KernelContext context, FloatArray data, int n) {
+        context.launch(SCALE, n, 32, data, n);
+    }
+
+    static void scale(KernelContext context, FloatArray data, int n) {
+        int i = context.globalIdx;
+        if (i < n) {
+            data.set(i, data.get(i) * 3.0f);
         }
     }
 }

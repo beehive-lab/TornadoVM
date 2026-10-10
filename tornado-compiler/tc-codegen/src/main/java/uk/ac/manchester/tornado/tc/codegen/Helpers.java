@@ -257,11 +257,12 @@ final class Helpers {
                     """),
             // After a device-side launch: report a failed launch, and the launch itself with --threadInfo.
             Map.entry("tc_device_launch_check", """
-                    __device__ static inline void tc_device_launch_check(const long long *context, const char *child, dim3 grid, dim3 block) {
+                    __device__ static inline void tc_device_launch_check(const long long *context, const char *child, const char *label, unsigned gx, unsigned gy, unsigned gz, dim3 grid, dim3 block) {
                       cudaError_t error = cudaGetLastError();
                       if (error != cudaSuccess) printf("[TornadoVM-CUDA] device launch of %s failed: %s\\n", child, cudaGetErrorString(error));
-                      if (context[3]) printf("Device launch: %s, grid [%u, %u, %u], block [%u, %u, %u], from block [%u, %u, %u] thread [%u, %u, %u]\\n", child,
-                                             grid.x, grid.y, grid.z, block.x, block.y, block.z, blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z);
+                      if (context[3]) printf("Task info: %s\\n\\tLaunched by       : block [%u, %u, %u] thread [%u, %u, %u]\\n\\tGlobal work size  : [%u, %u, %u]\\n"
+                                             "\\tLocal  work size  : [%u, %u, %u]\\n\\tNumber of workgroups  : [%u, %u, %u]\\n\\n", label,
+                                             blockIdx.x, blockIdx.y, blockIdx.z, threadIdx.x, threadIdx.y, threadIdx.z, gx, gy, gz, block.x, block.y, block.z, grid.x, grid.y, grid.z);
                     }
                     """),
             Map.entry("java_fmax", """

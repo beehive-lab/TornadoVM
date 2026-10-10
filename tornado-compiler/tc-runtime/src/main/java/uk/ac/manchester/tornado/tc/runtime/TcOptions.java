@@ -37,11 +37,11 @@ import java.util.Set;
  * <li>{@code tornado.tc.report}: {@code html} writes a self-contained HTML report per compilation.</li>
  * </ul>
  */
-public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations) {
+public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task) {
 
-    /** Math optimisations (rsqrt) on, as on the Graal path by default. */
+    /** Math optimisations (rsqrt) on, as on the Graal path by default; no task id. */
     public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport) {
-        this(dump, dumpDir, verifyEach, only, htmlReport, true);
+        this(dump, dumpDir, verifyEach, only, htmlReport, true, "?");
     }
 
     public static final TcOptions DEFAULTS = new TcOptions(Set.of(), Path.of("tc-dumps"), true, Optional.empty(), false);
@@ -56,7 +56,7 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
         return new TcOptions(stages, Path.of(System.getProperty("tornado.tc.dumpDir", "tc-dumps")), !"end".equals(System.getProperty("tornado.tc.verify", "each")),
                 Optional.ofNullable(System.getProperty("tornado.tc.only")), "html".equals(System.getProperty("tornado.tc.report")),
                 // The runtime's own switch for math optimisations (default on), honoured by TC too.
-                Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")));
+                Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")), "?");
     }
 
     public boolean dumps(String stage) {
@@ -68,6 +68,11 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task);
+    }
+
+    /** The task being compiled, as the runtime names it (device-launch reports print it, as on the Graal path). */
+    public TcOptions withTask(String id) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id);
     }
 }

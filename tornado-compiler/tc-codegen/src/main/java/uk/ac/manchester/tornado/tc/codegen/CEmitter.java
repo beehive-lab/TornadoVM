@@ -155,13 +155,15 @@ public final class CEmitter {
     private Map<S.Var, Type> elementTypes = Map.of();
     private boolean usesHalf;
     private boolean usesBFloat16;
+    private final String task;
 
-    private CEmitter(TargetCaps target, boolean lineComments) {
+    private CEmitter(TargetCaps target, boolean lineComments, String task) {
         if (target.dialect() != Dialect.CUDA) {
             throw new EmitException("TC-E4001", "dialect " + target.dialect() + " is not implemented yet (CUDA first, then OpenCL and Metal)");
         }
         this.target = target;
         this.lineComments = lineComments;
+        this.task = task;
     }
 
     public static Result emit(S.Kernel kernel, TargetCaps target) {
@@ -169,7 +171,12 @@ public final class CEmitter {
     }
 
     public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments) {
-        return new CEmitter(target, lineComments).kernel(kernel);
+        return emit(kernel, target, lineComments, "?");
+    }
+
+    /** {@code task}: the runtime's task id, printed by device-launch reports. */
+    public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task) {
+        return new CEmitter(target, lineComments, task).kernel(kernel);
     }
 
     /** The entry-point name for a TC function name (dots and dollars become underscores). */
@@ -496,7 +503,9 @@ public final class CEmitter {
         }
         line(depth + 1, "dim3 _dp_grid(" + String.join(", ", grid) + ");");
         line(depth + 1, deviceKernelEntry(child) + "<<<_dp_grid, _dp_block" + stream + ">>>(" + args + ");");
-        line(depth + 1, "tc_device_launch_check(_kernel_context, \"" + shortName + "\", _dp_grid, _dp_block);");
+        // --threadInfo: the launching thread reports the child's grid in the host's "Task info" format.
+        var label = cEscape(task + " -> " + shortName + " (device launch, " + mode.toUpperCase(java.util.Locale.ROOT) + ")");
+        line(depth + 1, "tc_device_launch_check(_kernel_context, \"" + shortName + "\", \"" + label + "\", " + e.get(0) + ", " + e.get(1) + ", " + e.get(2) + ", _dp_grid, _dp_block);");
         line(depth, "}");
     }
 

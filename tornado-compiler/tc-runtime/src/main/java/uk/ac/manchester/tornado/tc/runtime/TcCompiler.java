@@ -330,7 +330,7 @@ public final class TcCompiler {
             var emitted = new CEmitter.Result[1];
             stage("emit", Kind.SOURCE, () -> {
                 try {
-                    emitted[0] = CEmitter.emit(structured[0], target);
+                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task());
                 } catch (CEmitter.EmitException e) {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }

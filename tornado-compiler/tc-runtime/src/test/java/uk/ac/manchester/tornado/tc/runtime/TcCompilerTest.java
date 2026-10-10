@@ -131,6 +131,33 @@ public class TcCompilerTest {
         }
     }
 
+    /**
+     * A launched kernel stays a separate {@code __global__} kernel even when the launch sits in an
+     * inlined helper and the same method is also called directly: the call is inlined, the launch is not.
+     */
+    @Test
+    public void launchedKernelsAreNeverInlined() throws Exception {
+        var urls = new java.net.URL[] { java.nio.file.Path.of("../tc-frontend/target/test-classes").toUri().toURL(), java.nio.file.Path.of("../../tornado-api/target/classes").toUri().toURL() };
+        try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
+            var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
+            var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.LaunchKernels", "dispatch", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+            assertTrue(c.diagnostics().toString(), c.succeeded());
+            var src = c.source();
+            var scale = "uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_scale_dp";
+            assertTrue(src, src.contains(scale + "<<<_dp_grid, _dp_block>>>"));
+            // One definition of the child (its forward declaration aside).
+            assertEquals(src, 1, src.split("void " + scale + "\\([^;{]*\\)\\n\\{", -1).length - 1);
+            // The parent holds one launch and the inlined direct call (* 3.0f), with no device function call.
+            var parent = src.substring(src.indexOf("void LaunchKernels_dispatch("));
+            assertEquals(src, 1, parent.split(scale + "<<<", -1).length - 1);
+            assertTrue(src, parent.contains("3.0f"));
+            assertFalse(src, parent.contains(scale + "(_kernel_context"));
+            // The child is a full kernel with its own thread index.
+            var child = src.substring(src.indexOf("void " + scale + "("), src.indexOf("void LaunchKernels_dispatch("));
+            assertTrue(src, child.contains("3.0f") && child.contains("threadIdx.x"));
+        }
+    }
+
     /** TileContext kernels become CUDA Tile C++: typed tiles, auto views, a loop-carried mma accumulator. */
     @Test
     public void tileKernelsAreCudaTile() throws Exception {

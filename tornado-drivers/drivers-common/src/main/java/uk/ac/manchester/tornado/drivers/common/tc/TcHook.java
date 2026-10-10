@@ -104,6 +104,11 @@ public final class TcHook {
      * size that is not a power of two runs on the largest power-of-two prefix; the host folds the rest).
      */
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset) {
+        return compile(method, arguments, target, batchThreads, numThreads, batchIndexOffset, "?");
+    }
+
+    /** As above, for task {@code taskId} (named in device-launch reports). */
+    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         var facts = new ArrayList<ValueSpecialisation.Fact>();
         // An instance-method task: the runtime passes the receiver as the first argument.
@@ -135,7 +140,7 @@ public final class TcHook {
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         TcCompiler.Compilation c;
-        var options = TcOptions.fromSystemProperties();
+        var options = TcOptions.fromSystemProperties().withTask(taskId);
         try {
             c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, options, facts);
         } catch (RuntimeException | StackOverflowError e) {
