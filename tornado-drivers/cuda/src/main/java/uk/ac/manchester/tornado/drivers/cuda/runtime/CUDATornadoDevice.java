@@ -276,9 +276,13 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         if (TcHook.ENABLED) {
             // TC, the Graal-free compiler (docs/compiler-replacement). Falls back to Graal below when
             // TC reports a diagnostic, unless -Dtornado.compiler.fallback=false.
-            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget());
+            TornadoProfiler profiler = task.getProfiler();
+            // TC time is reported as the task's compiler time, as Graal's is.
+            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
+            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads());
+            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
             if (kernel.isPresent()) {
-                TornadoProfiler profiler = task.getProfiler();
+                profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
                 profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
                 kernel.get().domain().ifPresent(taskMeta::setDomain);
                 var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());

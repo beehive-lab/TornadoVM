@@ -162,7 +162,9 @@ public final class CEmitter {
 
         for (var alloca : k.allocas()) {
             var a = alloca.kind();
-            line(1, (a.space() == AddressSpace.SHARED ? "__shared__ " : "") + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "];");
+            // Java zero-fills `new T[n]` (private arrays); KernelContext local arrays start undefined, as on Graal.
+            var init = a.space() == AddressSpace.PRIVATE ? " = {}" : "";
+            line(1, (a.space() == AddressSpace.SHARED ? "__shared__ " : "") + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "]" + init + ";");
         }
         // Locals of one type share a declaration (`float x, v;`, `float *a_data, *b_data;`), in first-use order.
         var groups = new java.util.LinkedHashMap<String, List<String>>();

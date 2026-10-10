@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -84,6 +85,25 @@ public final class TcHook {
      * it; throws when fallback is disabled.
      */
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target) {
+        return compile(method, arguments, target, 0);
+    }
+
+    /** As {@link #compile(Method, Object[], TargetCaps)}; {@code batchThreads > 0} when the task runs in batches. */
+    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads) {
+        var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
+        // In a batch the device buffers hold one chunk: lengths and indices are per chunk, which TC
+        // does not model yet (folding the full length would index past the chunk).
+        if (batchThreads > 0) {
+            return refuse(name, "TC-E3202", "batched execution (withBatch) is not compiled by TC yet");
+        }
+        // @Reduce parameters need the reduction rewrite (T-list item): until TC has it, they stay on Graal.
+        for (var annotations : method.getParameterAnnotations()) {
+            for (var annotation : annotations) {
+                if (annotation instanceof Reduce) {
+                    return refuse(name, "TC-E3201", "@Reduce reductions are not compiled by TC yet");
+                }
+            }
+        }
         var facts = new ArrayList<ValueSpecialisation.Fact>();
         var declared = method.getParameterTypes();
         for (int i = 0; i < arguments.length; i++) {
@@ -100,7 +120,6 @@ public final class TcHook {
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         var c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, TcOptions.fromSystemProperties(), facts);
-        var name = owner.getSimpleName() + "." + method.getName();
         if (!c.succeeded()) {
             var d = c.diagnostics().isEmpty() ? null : c.diagnostics().get(0);
             var reason = d == null ? "unknown" : d.code() + " " + d.message();
@@ -126,6 +145,17 @@ public final class TcHook {
             domain = Optional.of(tree);
         }
         return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos()));
+    }
+
+    private static Optional<Kernel> refuse(String name, String code, String reason) {
+        FALLBACKS.computeIfAbsent(code, k -> new AtomicInteger()).incrementAndGet();
+        if (!FALLBACK) {
+            throw new IllegalStateException("[TC] cannot compile " + name + " and fallback is disabled: error " + code + ": " + reason);
+        }
+        if (VERBOSE) {
+            System.out.println("[TC] fallback to Graal for " + name + ": " + code + " " + reason);
+        }
+        return Optional.empty();
     }
 
     /** An object passed by field copy (not an array, box, KernelContext or native array). */
