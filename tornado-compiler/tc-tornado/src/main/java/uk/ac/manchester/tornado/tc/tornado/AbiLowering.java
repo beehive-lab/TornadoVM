@@ -207,6 +207,19 @@ public final class AbiLowering {
         var value = b.intrinsic("tornado.vector.make", vec, lanes);
         value.setName(param.name());
         for (var user : users) {
+            // A vector parameter changed by setters: its lanes are stored back (the host copies them out).
+            if (user.opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.vector.store_param") && user.operand(0) == param) {
+                var updated = user.operand(1);
+                if (updated != param) {
+                    var s = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc());
+                    for (int l = 0; l < vec.length(); l++) {
+                        var address = l == 0 ? param : s.pointerOffset(param, s.constInt(Type.I64, (long) l * sizeOf(vec.element())));
+                        s.store(address, s.intrinsic("tornado.vector.lane." + l, vec.element(), List.of(updated == param ? value : updated)));
+                    }
+                }
+                user.erase();
+                continue;
+            }
             for (int k = 0; k < user.operandCount(); k++) {
                 if (user.operand(k) == param) {
                     user.setOperand(k, value);

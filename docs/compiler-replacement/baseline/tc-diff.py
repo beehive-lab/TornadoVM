@@ -102,6 +102,9 @@ def compare(out):
             if len(gl[k]) != len(tl[k]):
                 counts.append({"task": k, "graal": len(gl[k]), "tc": len(tl[k])})  # a refused kernel launches fewer times
                 continue
+            # Test methods may run in another order: only a different multiset of launches is a difference.
+            if collections.Counter(map(norm, gl[k])) == collections.Counter(map(norm, tl[k])):
+                continue
             for n, (g, c) in enumerate(zip(gl[k], tl[k])):
                 if norm(g) != norm(c):
                     launch.append({"task": k, "launch": n, "graal": g, "tc": c})

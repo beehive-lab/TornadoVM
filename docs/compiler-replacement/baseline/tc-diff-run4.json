@@ -1,0 +1,2526 @@
+{
+ "classes": {
+  "uk.ac.manchester.tornado.unittests.TestHello": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestAPI": {
+   "tests": 32,
+   "pass": 32,
+   "graalPass": 32,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestBuildFromByteBuffers": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestChainOfGridSchedulers": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestChainedGraphsTypeChange": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestConcat": {
+   "tests": 8,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 21
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestCudaGraphPlanTeardown": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestDevices": {
+   "tests": 7,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestFreeSelectedGraphs": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 82
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestIO": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestInitDataTypes": {
+   "tests": 8,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 8
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestMemorySegmentsAsType": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestMethodTask": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestMultipleCopyOuts": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 19
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestNativeArrayLayouts": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn": {
+   "tests": 13,
+   "pass": 13,
+   "graalPass": 13,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 15
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestPinnedTransfers": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 20
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestSharedBuffers": {
+   "tests": 14,
+   "pass": 14,
+   "graalPass": 14,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 41
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestSlice": {
+   "tests": 8,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.api.TestSliceAliasing": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestArrayCopies": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestArrays": {
+   "tests": 23,
+   "pass": 23,
+   "graalPass": 23,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 49
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestBFloat16": {
+   "tests": 12,
+   "pass": 12,
+   "graalPass": 12,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations": {
+   "tests": 24,
+   "pass": 24,
+   "graalPass": 24,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 24
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestFP8": {
+   "tests": 13,
+   "pass": 13,
+   "graalPass": 13,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestFP8ElementwiseCopy": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatInPlaceUpdate": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatInlineWrite": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatShortBits": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatShortBitsOpenCL": {
+   "tests": 5,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatValueConversion": {
+   "tests": 12,
+   "pass": 12,
+   "graalPass": 12,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 12
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatValueConversionMetal": {
+   "tests": 13,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestHalfFloatValueConversionOpenCL": {
+   "tests": 12,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestJaggedArrays": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestLongIndexArrays": {
+   "tests": 16,
+   "pass": 16,
+   "graalPass": 16,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 12
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestNewArrays": {
+   "tests": 7,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.arrays.TestSignedBytes": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.atomics.TestAtomics": {
+   "tests": 27,
+   "pass": 26,
+   "graalPass": 26,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 26
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.atomics.TestAtomicsWithReduction": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.batches.TestBatches": {
+   "tests": 30,
+   "pass": 30,
+   "graalPass": 30,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 74
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.bitsets.BitSetTests": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.branching.TestConditionals": {
+   "tests": 27,
+   "pass": 27,
+   "graalPass": 27,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 27
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.branching.TestLoopConditions": {
+   "tests": 16,
+   "pass": 16,
+   "graalPass": 16,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 16
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.CodeGenTest": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.TestConstantFoldedIntrinsics": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.TestDeepInliningChain": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.TestFloatBitsAndComparisons": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.TestPrivateArrayZeroInit": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.TestSharedMemoryStaging": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.TestShortCircuits": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.codegen.TestSignedComparisonsCodegen": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.compiler.TestCompilerFlagsAPI": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.compiler.TestSwitchLowering": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.compute.ComputeTests": {
+   "tests": 19,
+   "pass": 17,
+   "graalPass": 17,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 19
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.compute.MMwithBytes": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.compute.TransformerKernelsTest": {
+   "tests": 11,
+   "pass": 10,
+   "graalPass": 10,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 11
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.cublas.TestCuBlas": {
+   "tests": 25,
+   "pass": 25,
+   "graalPass": 25,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt": {
+   "tests": 9,
+   "pass": 9,
+   "graalPass": 9,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.cudf.TestCudf": {
+   "tests": 23,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.cudf.TestCudfColumns": {
+   "tests": 23,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn": {
+   "tests": 11,
+   "pass": 11,
+   "graalPass": 11,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.cufft.TestCuFft": {
+   "tests": 8,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.curand.TestCuRand": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.cusparse.TestCusparse": {
+   "tests": 16,
+   "pass": 16,
+   "graalPass": 16,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.cutlass.TestCutlass": {
+   "tests": 25,
+   "pass": 25,
+   "graalPass": 25,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.cuvs.TestCuVS": {
+   "tests": 6,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.dynsize.ResizeTest": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.executor.TestExecutor": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 10
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.fails.BitOpsUnsupportedFail": {
+   "tests": 1,
+   "pass": 0,
+   "graalPass": 1,
+   "diffs": [
+    {
+     "test": "fails.BitOpsUnsupportedFail#testReverseUnsupported",
+     "graal": "PASS",
+     "tc": "FAILED"
+    }
+   ],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.fails.CodeFail": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [
+    {
+     "task": "s0.t0",
+     "graal": 2,
+     "tc": 1
+    }
+   ],
+   "tcStats": {
+    "tc": 1,
+    "TC-E1011": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.fails.DynamicArrayFail": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 0,
+    "TC-E1004": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.fails.FloatAtomicFail": {
+   "tests": 1,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.fails.InliningFail": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.fails.LocalMemoryFail": {
+   "tests": 1,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.fails.MultiDimArrayFail": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 0,
+    "TC-E1002": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.fails.NonConstantStrideFail": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.fails.RuntimeFail": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.fails.TestFails": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.fields.TestFields": {
+   "tests": 9,
+   "pass": 9,
+   "graalPass": 9,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 9
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.fields.TestInheritedFields": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.flatmap.TestFlatMap": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.MultipleRuns": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestDoubles": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestFloats": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestHalfFloats": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestIf": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestIntegers": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestLinearAlgebra": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestLong": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.foundation.TestShorts": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.functional.TestLambdas": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.functional.TestStreams": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-1",
+     "graal": 20,
+     "tc": 16
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-17",
+     "graal": 12,
+     "tc": 16
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-20",
+     "graal": 12,
+     "tc": 16
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-21",
+     "graal": 16,
+     "tc": 12
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-23",
+     "graal": 20,
+     "tc": 16
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-25",
+     "graal": 16,
+     "tc": 20
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-27",
+     "graal": 12,
+     "tc": 16
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-29",
+     "graal": 20,
+     "tc": 16
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-30",
+     "graal": 16,
+     "tc": 12
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-4",
+     "graal": 16,
+     "tc": 20
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-6",
+     "graal": 16,
+     "tc": 20
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-7",
+     "graal": 16,
+     "tc": 12
+    },
+    {
+     "task": "s1.ForkJoinPool.commonPool-worker-9",
+     "graal": 16,
+     "tc": 20
+    },
+    {
+     "task": "s1.main",
+     "graal": 16,
+     "tc": 12
+    }
+   ],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.grid.TestGrid": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.grid.TestGridScheduler": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.grid.TestIrregularGridSizes": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 13
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.images.TestImages": {
+   "tests": 18,
+   "pass": 17,
+   "graalPass": 17,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 17
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.images.TestResizeImage": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.instances.TestInstances": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.Grids": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAsyncCopyToLocal": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAtomicRmw": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAtomicRmw2D": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 15
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCudaSamplesDynamicParallelism": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [
+    {
+     "task": "bezier.cdp",
+     "graal": 257,
+     "tc": 1
+    },
+    {
+     "task": "print.cdp",
+     "graal": 85,
+     "tc": 1
+    },
+    {
+     "task": "qsort.cdp",
+     "graal": 464,
+     "tc": 1
+    },
+    {
+     "task": "quadtree.cdp",
+     "graal": 50,
+     "tc": 1
+    }
+   ],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestDynamicParallelism": {
+   "tests": 15,
+   "pass": 15,
+   "graalPass": 15,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [
+    {
+     "task": "dp.t0",
+     "graal": 8295,
+     "tc": 16
+    }
+   ],
+   "tcStats": {
+    "tc": 13
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestDynamicParallelismPipelines": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [
+    {
+     "task": "chain.launch",
+     "graal": 81,
+     "tc": 1
+    },
+    {
+     "task": "labels.propagate",
+     "graal": 16,
+     "tc": 1
+    },
+    {
+     "task": "lib.compact",
+     "graal": 5,
+     "tc": 1
+    },
+    {
+     "task": "sort.qs",
+     "graal": 881,
+     "tc": 1
+    }
+   ],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestFlashAttentionKernelContext": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestGlobalAtomics": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestGlobalBarrier": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestGridStrideLoop": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestHalfFloatLocalArray": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLaunchFailureReporting": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLocalArrayDynamicIndexAtomics": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestUnsupportedKernelContextOps": {
+   "tests": 8,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 5
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.api.TestWarpVote": {
+   "tests": 8,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 8
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.local.memory.TestSwizzledLocalArrays": {
+   "tests": 6,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMMAGlobalFragmentLoad": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMMAInt8FragmentElementRead": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationKernelContext": {
+   "tests": 3,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMA": {
+   "tests": 18,
+   "pass": 18,
+   "graalPass": 18,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 17,
+    "TC-E1010": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMABF16": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 8
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMACpAsync": {
+   "tests": 8,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 8
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAFP8": {
+   "tests": 8,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 8
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAInt8": {
+   "tests": 12,
+   "pass": 12,
+   "graalPass": 12,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 11,
+    "TC-E1010": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrix": {
+   "tests": 4,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrixPrimitives": {
+   "tests": 5,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupTiledMatrix": {
+   "tests": 4,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestHistogram": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestHistogramHalfFloat": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsBytes": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestLocalMemoryReductionsHalfFloats": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionOptimizationLadder": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext": {
+   "tests": 12,
+   "pass": 12,
+   "graalPass": 12,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 12
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsLongKernelContext": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestSIMDGroupReductions": {
+   "tests": 11,
+   "pass": 11,
+   "graalPass": 11,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 54
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestWarpShuffleScan": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestWorkEfficientScan": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.sort.TestBitonicSort": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.kernelcontext.sort.TestBitonicSortHalfFloat": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.lambdas.TestLambdas": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.logic.TestEnumInKernel": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.logic.TestLogic": {
+   "tests": 9,
+   "pass": 9,
+   "graalPass": 9,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 9
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.logic.TestShifts": {
+   "tests": 9,
+   "pass": 9,
+   "graalPass": 9,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 9
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.loops.TestLoopTransformations": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.loops.TestLoops": {
+   "tests": 27,
+   "pass": 26,
+   "graalPass": 26,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 26
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.math.TestMath": {
+   "tests": 38,
+   "pass": 38,
+   "graalPass": 38,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 39
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.math.TestTornadoMathCollection": {
+   "tests": 37,
+   "pass": 37,
+   "graalPass": 37,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 37
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes": {
+   "tests": 35,
+   "pass": 35,
+   "graalPass": 35,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 27
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.memory.TestMemoryLimit": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.memory.TestReclaimReleasedBuffers": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 20
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 20
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.multithreaded.TestConcurrentSketches": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 16
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 404
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.numpromotion.Inlining": {
+   "tests": 5,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.numpromotion.TestBitManipulation": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.numpromotion.TestNumericPromotion": {
+   "tests": 22,
+   "pass": 22,
+   "graalPass": 22,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 22
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.numpromotion.TestZeroExtend": {
+   "tests": 10,
+   "pass": 10,
+   "graalPass": 10,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.numpromotion.Types": {
+   "tests": 11,
+   "pass": 9,
+   "graalPass": 9,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 9
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.nvtx.TestNvtx": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.parameters.ParameterTests": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 4
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.prebuilt.TestPrebuiltTaskOrdering": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.profiler.TestProfiler": {
+   "tests": 9,
+   "pass": 9,
+   "graalPass": 9,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 14
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.profiler.TestProfilerTransferBytes": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.quantization.QuantizationTests": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 16
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.reductions.InstanceReduction": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.reductions.MultipleReductions": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [
+    {
+     "task": "__GENERATED_TASK_GRAPH__11.t0",
+     "launch": 0,
+     "graal": [
+      "1",
+      "[256]",
+      "[256, 1, 1]"
+     ],
+     "tc": [
+      "1",
+      "[512]",
+      "[512, 1, 1]"
+     ]
+    },
+    {
+     "task": "__GENERATED_TASK_GRAPH__12.t0",
+     "launch": 0,
+     "graal": [
+      "1",
+      "[128]",
+      "[128, 1, 1]"
+     ],
+     "tc": [
+      "1",
+      "[512]",
+      "[512, 1, 1]"
+     ]
+    },
+    {
+     "task": "__GENERATED_TASK_GRAPH__3.t0",
+     "launch": 0,
+     "graal": [
+      "1",
+      "[256]",
+      "[256, 1, 1]"
+     ],
+     "tc": [
+      "1",
+      "[512]",
+      "[512, 1, 1]"
+     ]
+    },
+    {
+     "task": "__GENERATED_TASK_GRAPH__4.t0",
+     "launch": 0,
+     "graal": [
+      "1",
+      "[512]",
+      "[512, 1, 1]"
+     ],
+     "tc": [
+      "1",
+      "[256]",
+      "[256, 1, 1]"
+     ]
+    },
+    {
+     "task": "__GENERATED_TASK_GRAPH__5.t0",
+     "launch": 0,
+     "graal": [
+      "1",
+      "[512]",
+      "[512, 1, 1]"
+     ],
+     "tc": [
+      "1",
+      "[256]",
+      "[256, 1, 1]"
+     ]
+    },
+    {
+     "task": "__GENERATED_TASK_GRAPH__6.t0",
+     "launch": 0,
+     "graal": [
+      "1",
+      "[512]",
+      "[512, 1, 1]"
+     ],
+     "tc": [
+      "1",
+      "[32]",
+      "[32, 1, 1]"
+     ]
+    },
+    {
+     "task": "__GENERATED_TASK_GRAPH__9.t0",
+     "launch": 0,
+     "graal": [
+      "1",
+      "[256]",
+      "[256, 1, 1]"
+     ],
+     "tc": [
+      "1",
+      "[512]",
+      "[512, 1, 1]"
+     ]
+    }
+   ],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 30
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles": {
+   "tests": 17,
+   "pass": 16,
+   "graalPass": 16,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 43
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats": {
+   "tests": 13,
+   "pass": 13,
+   "graalPass": 12,
+   "diffs": [
+    {
+     "test": "reductions.TestReductionsFloats#testComputePi",
+     "graal": "FAILED",
+     "tc": "PASS"
+    }
+   ],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 27
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers": {
+   "tests": 15,
+   "pass": 15,
+   "graalPass": 15,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 31
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong": {
+   "tests": 6,
+   "pass": 6,
+   "graalPass": 6,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 12
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.runtime.TestRuntimeAPI": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.streams.TestCUDAStreams": {
+   "tests": 13,
+   "pass": 13,
+   "graalPass": 13,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 38
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestAliasedTaskArguments": {
+   "tests": 5,
+   "pass": 5,
+   "graalPass": 5,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 6
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestLargeTaskGraphs": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1496
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestLibraryTaskArity": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestManyArgumentTasks": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions": {
+   "tests": 10,
+   "pass": 10,
+   "graalPass": 10,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 13
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices": {
+   "tests": 0,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 14
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.vector.api.TestVectorAPI": {
+   "tests": 4,
+   "pass": 4,
+   "graalPass": 4,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles": {
+   "tests": 18,
+   "pass": 13,
+   "graalPass": 13,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 14
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.vectortypes.TestFloats": {
+   "tests": 31,
+   "pass": 20,
+   "graalPass": 20,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 20
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.vectortypes.TestHalf2Packed": {
+   "tests": 7,
+   "pass": 7,
+   "graalPass": 7,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 7
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloatDotProduct": {
+   "tests": 1,
+   "pass": 1,
+   "graalPass": 1,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 1
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloats": {
+   "tests": 26,
+   "pass": 8,
+   "graalPass": 8,
+   "diffs": [
+    {
+     "test": "vectortypes.TestHalfFloats#privateVectorHalf4",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#privateVectorHalf8",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testInternalSetMethod02",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testInternalSetMethod03",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testInternalSetMethod04",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testSimpleDotProductHalf16",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testSimpleDotProductHalf3",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testSimpleDotProductHalf4",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testSimpleDotProductHalf8",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testSimpleVectorAddition",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testVectorFloat3toString",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testVectorHalf16",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testVectorHalf3",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testVectorHalf4",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testVectorHalf4_Unary",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testVectorHalf8",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#testVectorHalf8_Storage",
+     "graal": null,
+     "tc": "FAILED"
+    },
+    {
+     "test": "vectortypes.TestHalfFloats#vectorPhiTest",
+     "graal": null,
+     "tc": "FAILED"
+    }
+   ],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 8,
+    "TC-E1011": 18
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.vectortypes.TestInts": {
+   "tests": 26,
+   "pass": 19,
+   "graalPass": 19,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 20
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation": {
+   "tests": 3,
+   "pass": 3,
+   "graalPass": 3,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 3
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer": {
+   "tests": 0,
+   "pass": 0,
+   "graalPass": 0,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {}
+  },
+  "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [],
+   "tcStats": {
+    "tc": 2
+   }
+  },
+  "uk.ac.manchester.tornado.unittests.warmup.TestWarmUp": {
+   "tests": 2,
+   "pass": 2,
+   "graalPass": 2,
+   "diffs": [],
+   "launchDiffs": [],
+   "launchCountDiffs": [
+    {
+     "task": "foo.bar",
+     "graal": 75464,
+     "tc": 74066
+    }
+   ],
+   "tcStats": {
+    "tc": 2
+   }
+  }
+ },
+ "summary": {
+  "tests": 1458,
+  "tcPass": 1292,
+  "graalPass": 1292,
+  "diffs": 20,
+  "launchDiffs": 7,
+  "tcKernels": 3487,
+  "tcBetter": 1,
+  "tcWorse": 1
+ },
+ "refusals": {
+  "TC-E1011": 19,
+  "TC-E1004": 1,
+  "TC-E1002": 1,
+  "TC-E1010": 2
+ }
+}

@@ -120,6 +120,10 @@ final class Bindings {
     }
 
     /** {@code v.setX(s)} … {@code v.set(i, s)}: a new vector with one lane replaced, rebound to every slot holding {@code v}. */
+    /** Whole-vector operations on a vector value: {@code set(v)}, {@code fill(s)}, {@code size()}. */
+    record VectorWhole(String op) implements Binding {
+    }
+
     record VectorSet(int lane) implements Binding {
     }
 
@@ -221,6 +225,15 @@ final class Bindings {
                 }
                 METHODS.put(owner + ".get(I)" + d, new VectorGet(-1));
                 METHODS.put(owner + ".set(I" + d + ")V", new VectorSet(-1));
+                // OpenCL-style lane names, and the whole-vector operations (vectors are values).
+                for (int l = 0; l < lanes; l++) {
+                    METHODS.put(owner + ".getS" + l + "()" + d, new VectorGet(l));
+                    METHODS.put(owner + ".setS" + l + "(" + d + ")V", new VectorSet(l));
+                }
+                METHODS.put(owner + ".set(L" + owner + ";)V", new VectorWhole("set"));
+                METHODS.put(owner + ".fill(" + d + ")V", new VectorWhole("fill"));
+                METHODS.put(owner + ".size()I", new VectorWhole("size"));
+                METHODS.put(owner + ".duplicate()L" + owner + ";", new Identity());
             }
         }
         // QuantizationUtils.dp4a: four signed int8 products accumulated (CUDA __dp4a, sm_61+). The Java

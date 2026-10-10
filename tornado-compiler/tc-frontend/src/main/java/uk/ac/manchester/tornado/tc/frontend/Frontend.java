@@ -54,6 +54,11 @@ public final class Frontend {
             return Optional.empty();
         }
 
+        /** The constants of an enum class and their primitive instance fields; host classes only. */
+        default Optional<EnumInfo> enumInfo(String internalName) {
+            return Optional.empty();
+        }
+
         /** Class files on a path of directories and jars, separated by the platform path separator. */
         static BytecodeSource classpath(String path) {
             var entries = List.of(path.split(java.io.File.pathSeparator));
@@ -100,7 +105,48 @@ public final class Frontend {
                 public Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
                     return DeviceKernels.resolve(loader, ownerInternalName, field);
                 }
+
+                private final java.util.Map<String, Optional<EnumInfo>> enums = new java.util.concurrent.ConcurrentHashMap<>();
+
+                @Override
+                public Optional<EnumInfo> enumInfo(String internalName) {
+                    return enums.computeIfAbsent(internalName, n -> EnumInfo.of(loader, n));
+                }
             };
+        }
+    }
+
+    /**
+     * An enum class: its constants in ordinal order and, per primitive instance field, each
+     * constant's value (kernels see an enum value as its ordinal).
+     */
+    public record EnumInfo(List<String> constants, java.util.Map<String, List<Number>> fields) {
+
+        static Optional<EnumInfo> of(ClassLoader loader, String internalName) {
+            try {
+                var c = Class.forName(internalName.replace('/', '.'), false, loader);
+                if (!c.isEnum()) {
+                    return Optional.empty();
+                }
+                var constants = c.getEnumConstants();
+                var names = java.util.Arrays.stream(constants).map(e -> ((Enum<?>) e).name()).toList();
+                var fields = new java.util.LinkedHashMap<String, List<Number>>();
+                for (var f : c.getDeclaredFields()) {
+                    if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) || !f.getType().isPrimitive()) {
+                        continue;
+                    }
+                    f.setAccessible(true);
+                    var values = new java.util.ArrayList<Number>();
+                    for (var constant : constants) {
+                        var v = f.get(constant);
+                        values.add(v instanceof Boolean b ? (b ? 1 : 0) : v instanceof Character ch ? (int) ch : (Number) v);
+                    }
+                    fields.put(f.getName(), List.copyOf(values));
+                }
+                return Optional.of(new EnumInfo(names, java.util.Map.copyOf(fields)));
+            } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+                return Optional.empty();
+            }
         }
     }
 

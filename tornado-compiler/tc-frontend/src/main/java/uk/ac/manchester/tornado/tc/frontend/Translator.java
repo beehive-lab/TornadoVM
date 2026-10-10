@@ -123,6 +123,8 @@ final class Translator {
     private final Map<Value, Value[]> varargs = new IdentityHashMap<>();
     /** String constants (Debug.printf formats). */
     private final Map<Value, String> strings = new IdentityHashMap<>();
+    /** Vector parameters of a kernel (hidden SSA variable → parameter): setters on them reach the host. */
+    private final Map<String, BlockArg> vectorParams = new java.util.LinkedHashMap<>();
 
     private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
         this(source, classFile, method, kind, null);
@@ -142,7 +144,7 @@ final class Translator {
         }
         var returnDescriptor = method.descriptor().substring(method.descriptor().indexOf(')') + 1);
         var functionName = name != null ? name : kind == Function.Kind.KERNEL ? simpleClass + "." + method.name() : calleeName(classFile.name(), method.name(), method.descriptor());
-        this.function = new Function(functionName, kind, Bindings.type(returnDescriptor));
+        this.function = new Function(functionName, kind, kind == Function.Kind.KERNEL ? Bindings.type(returnDescriptor) : typeOf(returnDescriptor));
     }
 
     static Function translate(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method) {
@@ -181,15 +183,22 @@ final class Translator {
         var params = parameterDescriptors(method.descriptor());
         int slot = 0;
         if (!method.isStatic()) {
-            var self = entry.addArg(Bindings.type("L" + classFile.name() + ";"), "this");
+            var self = entry.addArg(typeOf("L" + classFile.name() + ";"), "this");
             writeVariable(localKey(0, 'A'), entry, self);
             slot = 1;
         }
         for (var descriptor : params) {
-            var type = Bindings.type(descriptor);
+            // Enum values are ordinals inside the kernel; a kernel's own parameters come from the host.
+            var type = function.kind() == Function.Kind.KERNEL ? Bindings.type(descriptor) : typeOf(descriptor);
             var name = code.localAt(slot, 0).map(ClassFile.LocalVariable::name).orElse("arg" + slot);
             var arg = entry.addArg(type, name);
             writeVariable(localKey(slot, descriptorKind(descriptor)), entry, arg);
+            if (function.kind() == Function.Kind.KERNEL && type instanceof Type.VectorType) {
+                // The object the host passed: its value as setters change it, written back at return.
+                var key = "vparam#" + slot;
+                writeVariable(key, entry, arg);
+                vectorParams.put(key, arg);
+            }
             slot += descriptor.equals("J") || descriptor.equals("D") ? 2 : 1;
         }
         sealed.add(entry);
@@ -633,7 +642,16 @@ final class Translator {
                 var lhs = pop();
                 push(threeWayCompare(op, lhs, rhs));
             }
-            case IF_ACMPEQ, IF_ACMPNE, IFNULL, IFNONNULL -> throw error("TC-E1002", "reference comparisons are not supported in kernels", insn.bci());
+            case IF_ACMPEQ, IF_ACMPNE -> {
+                var rhs = pop();
+                var lhs = pop();
+                // Enum constants are ordinals: comparing them is comparing integers.
+                if (!lhs.type().equals(Type.I32) || !rhs.type().equals(Type.I32)) {
+                    throw error("TC-E1002", "reference comparisons are not supported in kernels", insn.bci());
+                }
+                conditionalBranch(block, b.icmp(op == IF_ACMPEQ ? IntPredicate.EQ : IntPredicate.NE, lhs, rhs), insn);
+            }
+            case IFNULL, IFNONNULL -> throw error("TC-E1002", "reference comparisons are not supported in kernels", insn.bci());
             case GOTO, GOTO_W -> {
                 var target = blockAt.get(insn.targets()[0]);
                 leaveTo(block, List.of(target));
@@ -653,7 +671,15 @@ final class Translator {
                 leaveTo(block, all);
                 b.switchOn(selector, keys, cases, deflt);
             }
-            case RETURN -> b.ret();
+            case RETURN -> {
+                vectorParams.forEach((key, param) -> {
+                    var current = readVariable(key, block, param.type(), param.name());
+                    if (current != param) {
+                        b.intrinsic("tornado.vector.store_param", Type.VOID, List.of(param, current));
+                    }
+                });
+                b.ret();
+            }
             case GETFIELD, GETSTATIC -> {
                 var ref = classFile.constants().member(insn.index());
                 Value receiver = op == GETFIELD ? pop() : null;
@@ -666,6 +692,15 @@ final class Translator {
                         case 'B', 'S' -> b.convert(ConvertOp.SEXT, loaded, Type.I32);
                         default -> loaded;
                     });
+                    break;
+                }
+                var enumInfo = source.enumInfo(ref.owner());
+                if (op == GETSTATIC && enumInfo.isPresent() && enumInfo.get().constants().contains(ref.name())) {
+                    push(b.constInt(Type.I32, enumInfo.get().constants().indexOf(ref.name())));
+                    break;
+                }
+                if (op == GETFIELD && enumInfo.isPresent() && enumInfo.get().fields().containsKey(ref.name())) {
+                    push(enumField(receiver, enumInfo.get().fields().get(ref.name()), Bindings.type(ref.descriptor())));
                     break;
                 }
                 if (op == GETSTATIC && ref.descriptor().equals("L" + Bindings.DEVICE_KERNEL + ";")) {
@@ -783,8 +818,9 @@ final class Translator {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), vec)); // a vector value, made by its constructor
                 } else if (op == NEW) {
                     throw error("TC-E1011", "allocating an object (" + classFile.constants().className(insn.index()).replace('/', '.') + ") is not supported in kernels", insn.bci());
-                } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && stack.peek() != null
-                        && (stack.peek().type().equals(Type.F16) || stack.peek().type() instanceof Type.VectorType)) {
+                } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && !stack.isEmpty()) {
+                    // A device method may return any value it has (arrays, objects, f16, vectors, enum
+                    // ordinals): it is inlined. Kernels return void; the verifier checks the type.
                     b.ret(pop());
                 } else {
                     throw error("TC-E1002", "bytecode '" + Bytecode.name(op) + "' is not supported in kernels", insn.bci());
@@ -892,6 +928,11 @@ final class Translator {
             return; // a fresh object is only on the stack
         }
         var current = builder.block();
+        for (var key : vectorParams.keySet()) {
+            if (readVariable(key, current, old.type(), "") == old) {
+                writeVariable(key, current, replacement);
+            }
+        }
         for (int slot = 0; slot < code.maxLocals(); slot++) {
             var key = localKey(slot, 'A');
             if (definedSomewhere(key) && readVariable(key, current, old.type(), "") == old) {
@@ -973,6 +1014,31 @@ final class Translator {
             operands.add(v);
         }
         builder.intrinsic("tornado.device_launch." + mode + "." + child.owner().replace('/', '.') + "." + child.name(), Type.VOID, operands);
+    }
+
+    /** The descriptor's type, with enum classes as their ordinal ({@code i32}). */
+    private Type typeOf(String descriptor) {
+        if (descriptor.startsWith("L") && source.enumInfo(descriptor.substring(1, descriptor.length() - 1)).isPresent()) {
+            return Type.I32;
+        }
+        return Bindings.type(descriptor);
+    }
+
+    /** A primitive field of an enum value (an ordinal): the constants' values, selected by ordinal. */
+    private Value enumField(Value ordinal, List<Number> values, Type type) {
+        Value result = constantOf(type, values.get(values.size() - 1));
+        for (int k = values.size() - 2; k >= 0; k--) {
+            if (values.get(k).equals(values.get(values.size() - 1)) && result instanceof Inst c && (c.opcode() instanceof Opcode.ConstInt || c.opcode() instanceof Opcode.ConstFloat)) {
+                continue;
+            }
+            var is = builder.icmp(IntPredicate.EQ, ordinal, builder.constInt(Type.I32, k));
+            result = builder.select(is, constantOf(type, values.get(k)), result);
+        }
+        return result;
+    }
+
+    private Value constantOf(Type type, Number v) {
+        return type.isFloat() ? builder.constFloat(type, v.doubleValue()) : builder.constInt(type, v.longValue());
     }
 
     /** A Java string as the body of a C string literal: escapes, and no raw quote (IR attribute text). */
@@ -1135,7 +1201,12 @@ final class Translator {
         for (int k = 0; k < argCount; k++) {
             args.add(0, pop());
         }
-        var returnType = Bindings.type(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
+        var returnType = typeOf(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
+        var enumOwner = source.enumInfo(ref.owner());
+        if (enumOwner.isPresent() && ref.name().equals("ordinal") && ref.descriptor().equals("()I")) {
+            push(args.get(0));
+            return;
+        }
         var collection = Bindings.collection(ref.owner());
         if (ref.name().equals("<init>") && ref.descriptor().equals("(I)V") && collection.isPresent()) {
             var c = collection.get();
@@ -1162,7 +1233,7 @@ final class Translator {
         if (binding.isEmpty() || binding.get() instanceof Bindings.InlineJava) {
             // Static calls, and instance calls on objects: resolved against the static type (the
             // runtime checks object arguments have exactly their declared class) and inlined.
-            if (insn.opcode() == INVOKESTATIC || (!args.isEmpty() && args.get(0).type() instanceof Type.ObjectType o && !o.className().equals("KernelContext"))
+            if (insn.opcode() == INVOKESTATIC || (!args.isEmpty() && args.get(0).type() instanceof Type.ObjectType o && !o.className().equals("KernelContext")) || enumOwner.isPresent()
                     || binding.filter(Bindings.InlineJava.class::isInstance).isPresent()) {
                 var callee = calleeName(ref.owner(), ref.name(), ref.descriptor());
                 callees.put(callee, ref);
@@ -1260,6 +1331,15 @@ final class Translator {
                 var element = ((Type.VectorType) vector.type()).element();
                 var value = builder.intrinsic("tornado.vector.lane." + l, element, List.of(vector));
                 push(element.equals(Type.I8) || element.equals(Type.I16) ? builder.convert(ConvertOp.SEXT, value, Type.I32) : value);
+            }
+            case Bindings.VectorWhole(var op) -> {
+                var vector = args.get(0);
+                var vec = (Type.VectorType) vector.type();
+                switch (op) {
+                    case "set" -> rebind(vector, args.get(1));
+                    case "fill" -> rebind(vector, builder.intrinsic("tornado.vector.make", vec, java.util.Collections.nCopies(vec.length(), narrow(args.get(1), vec.element()))));
+                    default -> push(builder.constInt(Type.I32, vec.length()));
+                }
             }
             case Bindings.VectorSet(var lane) -> {
                 var vector = args.get(0);
