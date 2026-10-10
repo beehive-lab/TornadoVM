@@ -49,8 +49,10 @@ import tornado.graal.compiler.nodes.java.LoadFieldNode;
 import tornado.graal.compiler.nodes.java.LoadIndexedNode;
 import tornado.graal.compiler.nodes.java.NewInstanceNode;
 import tornado.graal.compiler.nodes.memory.address.AddressNode;
+import tornado.graal.compiler.nodes.util.GraphUtil;
 import tornado.graal.compiler.phases.BasePhase;
 import uk.ac.manchester.tornado.api.internal.annotations.HalfType;
+import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.HalfFloatStamp;
 import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.AddHalfNode;
@@ -151,6 +153,12 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
                     && objectStamp.type().getAnnotation(HalfType.class) != null) {
                 return input;
             }
+        }
+        // A lane of a half vector (e.g. HalfFloatArray.getHalf4(i).getX()) is a half value too.
+        if (input instanceof VectorLoadElementNode laneLoad //
+                && laneLoad.getVector().stamp(NodeView.DEFAULT) instanceof CUDAStamp vectorStamp //
+                && vectorStamp.getCUDAKind().isHalf()) {
+            return input;
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {
             nodesToBeDeleted.add(input);
@@ -573,7 +581,8 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             if (loadIndexedVectorNode.array() instanceof LocalArrayNode) {
                 continue;
             }
-            if (loadIndexedVectorNode.getCUDAKind().isHalf()) {
+            // A load already strided by Short addresses its halves correctly and needs no offset fix-up.
+            if (loadIndexedVectorNode.getCUDAKind().isHalf() && loadIndexedVectorNode.elementKind() != JavaKind.Short) {
                 VectorHalfRead vectorHalfRead;
                 if (loadIndexedVectorNode.index() instanceof ConstantNode constantNode) {
                     int offsetValue = Integer.valueOf(constantNode.getValue().toValueString());
@@ -646,6 +655,22 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
             graph.addWithoutUnique(bitsNode);
             placeholder.replaceAtUsages(bitsNode);
             placeholder.safeDelete();
+        }
+
+        // A lane read off a half vector gathered from known elements (HalfFloatArray.getHalf4) is that element.
+        // Folding the lanes leaves the vector unused, so the half4 type, which cuda_fp16.h does not have, is
+        // never emitted.
+        for (VectorLoadElementNode laneLoad : graph.getNodes().filter(VectorLoadElementNode.class).snapshot()) {
+            ValueNode source = laneLoad.getVector() instanceof PiNode piNode ? piNode.getOriginalNode() : laneLoad.getVector();
+            if (laneLoad.isDeleted() || !(source instanceof VectorValueNode vector) || !vector.getCUDAKind().isHalf() || !(laneLoad.getLaneId() instanceof ConstantNode)) {
+                continue;
+            }
+            ValueNode element = vector.getElement(laneLoad.laneId());
+            if (element == null) {
+                continue;
+            }
+            laneLoad.replaceAtUsages(element);
+            GraphUtil.killWithUnusedFloatingInputs(laneLoad);
         }
 
     }

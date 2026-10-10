@@ -19,6 +19,7 @@ package uk.ac.manchester.tornado.api.types.arrays;
 
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
+import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
@@ -253,6 +254,19 @@ public final class FloatArray extends TornadoNativeArray {
      */
     public float get(int index) {
         return segment.getFloatAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets four consecutive float values starting at the specified element index as a {@link Float4}. On backends
+     * with vector loads this maps to a single 16-byte load, so {@code index} must be a multiple of 4.
+     *
+     * @param index
+     *         The element index of the first lane; must be a multiple of 4.
+     * @return A {@link Float4} holding elements {@code index} to {@code index + 3}.
+     */
+    public Float4 getFloat4(int index) {
+        // Unchecked, like get(int): device kernels cannot throw. Callers guarantee bounds and alignment.
+        return new Float4(get(index), get(index + 1), get(index + 2), get(index + 3));
     }
 
     /**
