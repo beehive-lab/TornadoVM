@@ -21,6 +21,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
+import uk.ac.manchester.tornado.api.types.vectors.Half4;
 
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
@@ -282,6 +283,19 @@ public final class HalfFloatArray extends TornadoNativeArray {
     public Half2 getHalf2(int index) {
         // Unchecked, like get(int)/set(int): device kernels cannot throw. Callers guarantee bounds.
         return new Half2(get(index), get(index + 1));
+    }
+
+    /**
+     * Gets four consecutive {@link HalfFloat} values starting at the specified element index as a {@link Half4}. On
+     * backends with vector loads this maps to a single 8-byte load, so {@code index} must be a multiple of 4.
+     *
+     * @param index
+     *         The element index of the first lane; must be a multiple of 4.
+     * @return A {@link Half4} holding elements {@code index} to {@code index + 3}.
+     */
+    public Half4 getHalf4(int index) {
+        // Unchecked, like get(int): device kernels cannot throw. Callers guarantee bounds and alignment.
+        return new Half4(get(index), get(index + 1), get(index + 2), get(index + 3));
     }
 
     /**

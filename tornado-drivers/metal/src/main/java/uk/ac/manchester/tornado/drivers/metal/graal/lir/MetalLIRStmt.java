@@ -135,7 +135,8 @@ public class MetalLIRStmt {
             asm.assign();
             asm.space();
             asm.emit("(float)(");
-            asm.emitValue(crb, halfValue);
+            // The half may be a lane of a half vector (an op such as v.x), not only a variable.
+            asm.emitValueOrOp(crb, halfValue);
             asm.emit(")");
             asm.delimiter();
             asm.eol();
