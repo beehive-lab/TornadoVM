@@ -69,12 +69,12 @@ public final class ParallelLoopLowering {
         var parallel = new ArrayList<Parallel>();
         for (var block : function.blocks()) {
             for (var attribute : block.attributes()) {
-                if (attribute.name().equals("parallel") && attribute.args().startsWith("iv=")) {
+                if (attribute.name().equals("parallel")) {
                     var loop = forest.loopWithHeader(block);
                     if (loop.isEmpty()) {
                         diagnostics.add(error(block, "block marked parallel is not a loop header"));
                     } else {
-                        parallel.add(new Parallel(loop.get(), Integer.parseInt(attribute.args().substring(3))));
+                        parallel.add(new Parallel(loop.get(), attribute.integer("iv")));
                     }
                 }
             }
@@ -152,7 +152,7 @@ public final class ParallelLoopLowering {
         if (!add.hasUses()) {
             add.erase();
         }
-        header.addAttribute(new Attribute("grid", "dim=" + dim));
+        header.addAttribute(Attribute.of("grid", "dim", dim));
         return java.util.Optional.empty();
     }
 
@@ -168,8 +168,7 @@ public final class ParallelLoopLowering {
         var result = new ArrayList<Domain>();
         for (var attribute : function.attributes()) {
             if (attribute.name().equals("domain")) {
-                var v = attribute.args().split(",");
-                result.add(new Domain(Integer.parseInt(v[0].trim()), Long.parseLong(v[1].trim()), Long.parseLong(v[2].trim()), Long.parseLong(v[3].trim())));
+                result.add(new Domain(attribute.integer("dim"), attribute.longValue("offset"), attribute.longValue("step"), attribute.longValue("upper")));
             }
         }
         // Sibling loops share a dimension: the launch covers the widest of them (each loop
@@ -202,7 +201,7 @@ public final class ParallelLoopLowering {
                 default -> -1;
             };
             if (inclusive >= 0) {
-                constant(cmp.operand(1)).ifPresent(upper -> header.function().addAttribute(new Attribute("domain", dim + "," + offset.get() + "," + stride.get() + "," + (upper + inclusive))));
+                constant(cmp.operand(1)).ifPresent(upper -> header.function().addAttribute(Attribute.of("domain", "dim", dim, "offset", offset.get(), "step", stride.get(), "upper", upper + inclusive)));
             }
         }
     }

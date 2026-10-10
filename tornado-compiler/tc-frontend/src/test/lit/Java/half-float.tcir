@@ -11,7 +11,7 @@
 ; CHECK-NEXT:  ^bci0:
 ; CHECK-NEXT:    %i = const 0 : i32
 ; CHECK-NEXT:    br ^bci2(%i)
-; CHECK-NEXT:  ^bci2(%i.1: i32) [parallel(iv=0)]:
+; CHECK-NEXT:  ^bci2(%i.1: i32) [parallel<iv = 0>]:
 ; CHECK-NEXT:    %0 = array.length %a : i32
 ; CHECK-NEXT:    %1 = icmp.sge %i.1, %0 : i1
 ; CHECK-NEXT:    cond_br %1, ^bci44, ^bci10

@@ -106,39 +106,25 @@ public final class AtomicSlots {
                 created.erase();
             }
         }
-        var text = new StringBuilder("init=");
         for (int s = 0; s < initial.size(); s++) {
-            text.append(s == 0 ? "" : ",").append(initial.get(s));
+            function.addAttribute(Attribute.of("atomic_slot", "slot", s, "init", initial.get(s)));
         }
-        text.append(";params=");
-        int k = 0;
-        for (var e : params.entrySet()) {
-            text.append(k++ == 0 ? "" : ",").append(e.getKey()).append(':').append(e.getValue());
-        }
-        function.addAttribute(new Attribute("atomics", text.toString()));
+        params.forEach((param, slot) -> function.addAttribute(Attribute.of("atomic_param", "param", param, "slot", slot)));
         return List.of();
     }
 
     /** The slot assignment recorded by {@link #run}; empty when the kernel has no AtomicInteger. */
     public static Info info(Function function) {
+        var initial = new java.util.TreeMap<Integer, Integer>();
+        var params = new LinkedHashMap<Integer, Integer>();
         for (var a : function.attributes()) {
-            if (a.name().equals("atomics")) {
-                var parts = a.args().split(";");
-                var initial = new ArrayList<Integer>();
-                for (var v : parts[0].substring("init=".length()).split(",")) {
-                    initial.add(Integer.parseInt(v.trim()));
+            switch (a.name()) {
+                case "atomic_slot" -> initial.put(a.integer("slot"), a.integer("init"));
+                case "atomic_param" -> params.put(a.integer("param"), a.integer("slot"));
+                default -> {
                 }
-                var params = new LinkedHashMap<Integer, Integer>();
-                var ps = parts[1].substring("params=".length());
-                if (!ps.isEmpty()) {
-                    for (var pair : ps.split(",")) {
-                        var kv = pair.split(":");
-                        params.put(Integer.parseInt(kv[0].trim()), Integer.parseInt(kv[1].trim()));
-                    }
-                }
-                return new Info(initial, params);
             }
         }
-        return new Info(List.of(), Map.of());
+        return new Info(List.copyOf(initial.values()), params);
     }
 }

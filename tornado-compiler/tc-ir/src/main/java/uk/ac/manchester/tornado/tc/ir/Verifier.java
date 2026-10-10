@@ -111,9 +111,36 @@ public final class Verifier {
                 checkPostAbiType(param.type(), "parameter %" + printer.name(param), Loc.UNKNOWN);
             }
         }
+        verifyAttributes(f.attributes(), Attribute.Scope.FUNCTION, "function @" + f.name());
         for (var block : f.blocks()) {
+            verifyAttributes(block.attributes(), Attribute.Scope.BLOCK, "block ^" + printer.blockName(block));
+            for (var a : block.attributes()) {
+                if (a.name().equals("parallel") && a.values().has("iv") && a.integer("iv") >= block.args().size()) {
+                    report("TC-E2118", "parallel<iv = " + a.integer("iv") + "> names a block argument ^" + printer.blockName(block) + " does not have", "^" + printer.blockName(block), Loc.UNKNOWN);
+                }
+            }
             verifyBlock(block);
         }
+    }
+
+    /** Each attribute is declared for this scope and carries the values its declaration needs. */
+    private void verifyAttributes(List<Attribute> attributes, Attribute.Scope scope, String where) {
+        attributeProblems(attributes, scope, where).forEach(m -> report("TC-E2118", m, where, Loc.UNKNOWN));
+    }
+
+    private static List<String> attributeProblems(List<Attribute> attributes, Attribute.Scope scope, String where) {
+        var problems = new ArrayList<String>();
+        for (var a : attributes) {
+            var def = Attribute.lookup(a.name());
+            if (def.isEmpty()) {
+                problems.add("attribute '" + a.name() + "' on " + where + " is not declared");
+            } else if (def.get().scope() != scope) {
+                problems.add("attribute '" + a.name() + "' belongs on a " + def.get().scope().name().toLowerCase(java.util.Locale.ROOT) + ", not on " + where);
+            } else {
+                def.get().values().stream().filter(key -> !a.values().has(key)).forEach(key -> problems.add("attribute '" + a.name() + "' on " + where + " needs the value '" + key + "'"));
+            }
+        }
+        return problems;
     }
 
     private void verifyBlock(Block block) {
@@ -132,6 +159,7 @@ public final class Verifier {
             if (stage == Stage.POST_ABI) {
                 verifyPostAbi(inst);
             }
+            attributeProblems(inst.attributes(), Attribute.Scope.INST, "'" + inst.opcode().mnemonic() + "'").forEach(m -> error(inst, "TC-E2118", m));
         }
     }
 

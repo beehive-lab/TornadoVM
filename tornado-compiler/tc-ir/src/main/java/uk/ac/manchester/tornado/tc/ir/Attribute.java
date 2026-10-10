@@ -20,17 +20,61 @@
  */
 package uk.ac.manchester.tornado.tc.ir;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 /**
- * A named annotation on an instruction, block or function, for example {@code contract} on a
- * floating-point op or {@code parallel(dim=0)} on a loop header. {@code args} is empty when absent.
+ * A named annotation on an instruction, block or function, with typed values written like an
+ * instruction's immediates: {@code [parallel<iv = 0>]}, {@code [contract]}. Every attribute is declared
+ * in {@link #DEFS} with where it may appear and the values it needs; the verifier checks both
+ * (TC-E2118).
  */
-public record Attribute(String name, String args) {
+public record Attribute(String name, Immediates values) {
+
+    /** Where an attribute may appear. */
+    public enum Scope {
+        FUNCTION, BLOCK, INST
+    }
+
+    /** A declared attribute: its scope, required values and meaning. */
+    public record Def(String name, Scope scope, List<String> values, String description) {
+    }
+
+    private static final Map<String, Def> DEFS = Map.ofEntries(
+            def("parallel", Scope.BLOCK, "a @Parallel loop header; iv is the index of its induction-variable block argument", "iv"),
+            def("grid", Scope.BLOCK, "a parallel loop lowered to a grid-stride loop over dimension dim", "dim"),
+            def("domain", Scope.FUNCTION, "the launch domain of one dimension: offset, step and exclusive upper bound", "dim", "offset", "step", "upper"),
+            def("atomic_slot", Scope.FUNCTION, "an AtomicInteger slot of the atomics region and its initial value", "slot", "init"),
+            def("atomic_param", Scope.FUNCTION, "an AtomicInteger parameter and the slot it uses", "param", "slot"),
+            def("contract", Scope.INST, "a floating-point op that may be contracted (FMA)"));
+
+    private static Map.Entry<String, Def> def(String name, Scope scope, String description, String... values) {
+        return Map.entry(name, new Def(name, scope, List.of(values), description));
+    }
+
+    public static Optional<Def> lookup(String name) {
+        return Optional.ofNullable(DEFS.get(name));
+    }
 
     public static Attribute of(String name) {
-        return new Attribute(name, "");
+        return new Attribute(name, Immediates.NONE);
+    }
+
+    /** {@code of("domain", "dim", 0, "offset", 0, "step", 1, "upper", 128)}. */
+    public static Attribute of(String name, Object... keysAndValues) {
+        return new Attribute(name, Immediates.of(keysAndValues));
+    }
+
+    public int integer(String key) {
+        return values.requireInt(key);
+    }
+
+    public long longValue(String key) {
+        return values.integer(key).orElseThrow(() -> new IllegalStateException("attribute " + name + " has no integer '" + key + "'"));
     }
 
     public String text() {
-        return args.isEmpty() ? name : name + "(" + args + ")";
+        return name + values.text();
     }
 }

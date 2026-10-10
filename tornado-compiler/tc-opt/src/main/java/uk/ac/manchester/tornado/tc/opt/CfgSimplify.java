@@ -102,9 +102,8 @@ public final class CfgSimplify implements Pass {
             for (var arg : List.copyOf(b.args())) {
                 b.removeArg(arg);
             }
-            for (var attribute : b.attributes()) {
-                p.addAttribute(attribute);
-            }
+            // b's block attributes are not carried over: they describe b (a loop header's
+            // arguments, say), and a block with a single predecessor heads no loop.
             function.removeBlock(b);
             preds = function.predecessors();
             changed = true;

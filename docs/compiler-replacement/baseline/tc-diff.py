@@ -89,6 +89,14 @@ def parse(log):
     return tests, dict(launches), stats
 
 
+# Classes whose launches differ from run to run under either compiler: not compiler differences.
+RUN_DEPENDENT_LAUNCHES = {
+    "reductions.TestReductionsAutomatic": "testIrregularSize03 draws its sizes from an unseeded Random",
+    "functional.TestStreams": "tasks are named after ForkJoin worker threads",
+    "warmup.TestWarmUp": "the warm-up loop is timed",
+}
+
+
 def compare(out):
     result = {"classes": {}, "summary": collections.Counter()}
     gdir, tdir = os.path.join(out, "graal"), os.path.join(out, "tc")
@@ -111,8 +119,12 @@ def compare(out):
                 if norm(g) != norm(c):
                     launch.append({"task": k, "launch": n, "graal": g, "tc": c})
                     break
+        noise = RUN_DEPENDENT_LAUNCHES.get(name[:-4].removeprefix("uk.ac.manchester.tornado.unittests."))
+        if noise:
+            launch, counts = [], []
         result["classes"][name[:-4]] = {"tests": len(tt), "pass": sum(v == "PASS" for v in tt.values()), "graalPass": sum(v == "PASS" for v in gt.values()),
-                                       "diffs": diffs, "launchDiffs": launch, "launchCountDiffs": counts, "tcStats": dict(ts)}
+                                       "diffs": diffs, "launchDiffs": launch, "launchCountDiffs": counts, "tcStats": dict(ts),
+                                       **({"launchesRunDependent": noise} if noise else {})}
         s = result["summary"]
         s["tests"] += len(tt); s["tcPass"] += sum(v == "PASS" for v in tt.values()); s["graalPass"] += sum(v == "PASS" for v in gt.values())
         s["diffs"] += len(diffs); s["launchDiffs"] += len(launch); s["tcKernels"] += ts.get("tc", 0)

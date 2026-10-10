@@ -52,7 +52,7 @@ public final class BatchOffset {
                 if (!a.name().equals("parallel")) {
                     continue;
                 }
-                var iv = header.args().get(Integer.parseInt(a.args().substring("iv=".length())));
+                var iv = header.args().get(a.integer("iv"));
                 var first = header.insts().get(0);
                 var b = new IrBuilder(header).before(first).at(first.loc());
                 var global = b.binary(Opcode.BinaryOp.ADD, iv, b.constInt(iv.type(), offset));

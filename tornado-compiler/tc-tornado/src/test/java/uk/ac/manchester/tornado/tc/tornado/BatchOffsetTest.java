@@ -37,7 +37,7 @@ public class BatchOffsetTest {
                 ^entry:
                   %zero = const 0 : i32
                   br ^head(%zero)
-                ^head(%i: i32) [parallel(iv=0)]:
+                ^head(%i: i32) [parallel<iv = 0>]:
                   %n = const 1000 : i32
                   %done = icmp.sge %i, %n : i1
                   cond_br %done, ^exit, ^body

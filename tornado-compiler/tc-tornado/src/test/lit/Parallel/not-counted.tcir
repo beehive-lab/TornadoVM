@@ -5,7 +5,7 @@ kernel @doubling(%n: i32) -> void {
 ^entry:
   %one = const 1 : i32
   br ^head(%one)
-^head(%i: i32) [parallel(iv=0)]:
+^head(%i: i32) [parallel<iv = 0>]:
   %more = icmp.slt %i, %n : i1
   cond_br %more, ^body, ^exit
 ^body:

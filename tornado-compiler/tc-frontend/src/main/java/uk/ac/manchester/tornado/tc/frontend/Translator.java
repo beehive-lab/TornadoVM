@@ -561,7 +561,7 @@ final class Translator {
                 }
                 int slot = Integer.parseInt(key.substring(1, key.length() - 1));
                 if (parallel.stream().anyMatch(a -> a.slot() == slot && a.covers(bci))) {
-                    header.addAttribute(new Attribute("parallel", "iv=" + k));
+                    header.addAttribute(Attribute.of("parallel", "iv", k));
                 }
             }
         }

@@ -44,7 +44,7 @@ public class ReductionLoweringTest {
               %fzero = const 0.0 : f32
               array.store %out[%zero], %fzero
               br ^head(%zero)
-            ^head(%i: i32) [parallel(iv=0)]:
+            ^head(%i: i32) [parallel<iv = 0>]:
               %n = const 4096 : i32
               %done = icmp.sge %i, %n : i1
               cond_br %done, ^exit, ^body
@@ -70,7 +70,7 @@ public class ReductionLoweringTest {
         var text = new IrPrinter(false).printFunction(function);
         assertTrue(text, text.contains("tornado.reduce.add(%x)"));
         assertTrue(text, text.contains("tornado.group_id<dim = 0>()"));
-        assertTrue(text, !text.contains("parallel(iv=0)"));
+        assertTrue(text, !text.contains("parallel<iv = 0>"));
         assertEquals(List.of(new ParallelLoopLowering.Domain(0, 0, 1, 4096)), ParallelLoopLowering.domain(function));
     }
 
@@ -78,7 +78,7 @@ public class ReductionLoweringTest {
     public void readOnlyReduceArrayIsAnOrdinaryKernel() {
         var function = IrParser.parseFunction(SUM.replace("array.store %out[%k], %s", "array.store %in[%i], %s"));
         assertTrue(ReductionLowering.run(function, List.of(false, true)).isEmpty());
-        assertTrue(new IrPrinter(false).printFunction(function).contains("parallel(iv=0)"));
+        assertTrue(new IrPrinter(false).printFunction(function).contains("parallel<iv = 0>"));
     }
 
     @Test

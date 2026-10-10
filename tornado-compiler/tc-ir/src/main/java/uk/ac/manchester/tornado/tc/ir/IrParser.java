@@ -402,25 +402,7 @@ public final class IrParser {
         }
         do {
             var name = expect(Kind.IDENT, "attribute name").text;
-            var args = "";
-            if (isPunct("(")) {
-                var open = next();
-                int depth = 1;
-                Token token;
-                do {
-                    token = next();
-                    if (token.kind == Kind.EOF) {
-                        throw error("TC-E2001", open, "unterminated attribute arguments");
-                    }
-                    if (token.kind == Kind.PUNCT && token.text.equals("(")) {
-                        depth++;
-                    } else if (token.kind == Kind.PUNCT && token.text.equals(")")) {
-                        depth--;
-                    }
-                } while (depth > 0);
-                args = source.substring(open.offset + 1, token.offset).trim();
-            }
-            attributes.add(new Attribute(name, args));
+            attributes.add(new Attribute(name, parseImmediates()));
         } while (acceptPunct(","));
         expectPunct("]");
         return attributes;

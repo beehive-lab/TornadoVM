@@ -8,13 +8,13 @@
 ; CHECK-NEXT:    %[[GY:[0-9]+]] = tornado.thread_id.global<dim = 1>() : i32
 ; CHECK-NEXT:    %[[IY:[0-9]+]] = add %i, %[[GY]] : i32
 ; CHECK-NEXT:    br ^bci3(%[[IY]])
-; CHECK-NEXT:  ^bci3(%i.1: i32) [parallel(iv=0), grid(dim=1)]:
+; CHECK-NEXT:  ^bci3(%i.1: i32) [parallel<iv = 0>, grid<dim = 1>]:
 ; CHECK:       ^bci9:
 ; CHECK-NEXT:    %j = const 0 : i32
 ; CHECK-NEXT:    %[[GX:[0-9]+]] = tornado.thread_id.global<dim = 0>() : i32
 ; CHECK-NEXT:    %[[JX:[0-9]+]] = add %j, %[[GX]] : i32
 ; CHECK-NEXT:    br ^bci12(%[[JX]])
-; CHECK-NEXT:  ^bci12(%j.1: i32) [parallel(iv=0), grid(dim=0)]:
+; CHECK-NEXT:  ^bci12(%j.1: i32) [parallel<iv = 0>, grid<dim = 0>]:
 ; CHECK:         %[[SX:[0-9]+]] = tornado.global_size<dim = 0>() : i32
 ; CHECK-NEXT:    %j.2 = add %j.1, %[[SX]] : i32
 ; CHECK-NEXT:    br ^bci12(%j.2)
@@ -27,13 +27,13 @@ kernel @matrixAdd(%c: array<f32>, %rows: i32, %cols: i32) -> void {
 ^bci0:
   %i = const 0 : i32
   br ^bci3(%i)
-^bci3(%i.1: i32) [parallel(iv=0)]:
+^bci3(%i.1: i32) [parallel<iv = 0>]:
   %0 = icmp.sge %i.1, %rows : i1
   cond_br %0, ^bci68, ^bci9
 ^bci9:
   %j = const 0 : i32
   br ^bci12(%j)
-^bci12(%j.1: i32) [parallel(iv=0)]:
+^bci12(%j.1: i32) [parallel<iv = 0>]:
   %1 = icmp.sge %j.1, %cols : i1
   cond_br %1, ^bci62, ^bci19
 ^bci19:

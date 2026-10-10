@@ -7,7 +7,7 @@ kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
   %i0 = tornado.thread_id.global<dim = 0>() : i32
   %s = tornado.global_size<dim = 0>() : i32
   br ^head(%i0)
-^head(%i: i32) [parallel(dim=0)]:
+^head(%i: i32) [parallel<iv = 0>]:
   %more = icmp.slt %i, %n : i1                 loc("VectorAdd.java":20)
   cond_br %more, ^body, ^exit
 ^body:

@@ -43,7 +43,7 @@ public class IrApiTest {
         var c = entry.addArg(new Type.ArrayType(Type.F32), "c");
         var head = f.newBlock("head");
         var i = head.addArg(Type.I32, "i");
-        head.addAttribute(new Attribute("parallel", "dim=0"));
+        head.addAttribute(Attribute.of("parallel", "iv", 0));
         var body = f.newBlock("body");
         var exit = f.newBlock("exit");
 
@@ -77,7 +77,7 @@ public class IrApiTest {
     @Test
     public void builtKernelPrintsAndRoundTrips() {
         var text = IrPrinter.print(vectorAdd());
-        assertTrue(text, text.contains("^head(%i: i32) [parallel(dim=0)]:"));
+        assertTrue(text, text.contains("^head(%i: i32) [parallel<iv = 0>]:"));
         assertTrue(text, text.contains("%n = array.length %c : i32  loc(\"VectorAdd.java\":20)"));
         assertEquals(text, IrPrinter.print(IrParser.parseFunction(text)));
     }

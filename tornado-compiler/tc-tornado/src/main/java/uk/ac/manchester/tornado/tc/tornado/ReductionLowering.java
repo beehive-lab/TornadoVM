@@ -186,7 +186,7 @@ public final class ReductionLowering {
         var slot = w.binary(BinaryOp.ADD, w.intrinsic("tornado.group_id", Immediates.of("dim", 0), Type.I32, List.of()), w.constInt(Type.I32, 1));
         w.arrayStore(target, slot, reduced);
         w.br(join, List.of());
-        function.addAttribute(new Attribute("domain", "0," + start + ",1," + last));
+        function.addAttribute(Attribute.of("domain", "dim", 0, "offset", start, "step", 1, "upper", last));
         return List.of();
     }
 
