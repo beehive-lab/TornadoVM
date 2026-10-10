@@ -1,0 +1,5 @@
+[
+  {"model": "Llama-3.2-1B-Instruct-Q8_0", "quant": "Q8_0", "size_gib": 1.230, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "BATCH_PREFILL_DECODE", "selection": "llama / Q8_0 / BATCH_PREFILL_DECODE", "test": "pp128 b32", "avg_ts": 863.53, "stddev_ts": 48.85, "median_ts": 886.84, "samples_ts": [776.37, 879.38, 888.18, 886.88, 886.84]},
+  {"model": "Llama-3.2-1B-Instruct-Q8_0", "quant": "Q8_0", "size_gib": 1.230, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "BATCH_PREFILL_DECODE", "selection": "llama / Q8_0 / BATCH_PREFILL_DECODE", "test": "pp512 b32", "avg_ts": 881.10, "stddev_ts": 1.59, "median_ts": 881.02, "samples_ts": [879.07, 880.62, 881.02, 881.32, 883.48]},
+  {"model": "Llama-3.2-1B-Instruct-Q8_0", "quant": "Q8_0", "size_gib": 1.230, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "BATCH_PREFILL_DECODE", "selection": "llama / Q8_0 / BATCH_PREFILL_DECODE", "test": "tg64 b32", "avg_ts": 392.10, "stddev_ts": 3.21, "median_ts": 391.00, "samples_ts": [390.32, 388.36, 391.00, 394.69, 396.13]}
+]

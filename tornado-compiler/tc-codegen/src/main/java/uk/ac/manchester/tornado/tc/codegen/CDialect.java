@@ -97,8 +97,11 @@ sealed interface CDialect permits CudaDialect {
     /** Java's saturating float-to-integer conversion (NaN to 0). */
     String saturatingToInt(Type from, Type to, Set<Feature> features);
 
-    /** A conversion the C cast does not express (to f16 or bf16, rounding to nearest), else empty. */
-    Optional<String> convertTo(Type to, String value, Set<Feature> features);
+    /**
+     * A conversion of {@code value} (of type {@code from}) the C cast does not express: to f16 or bf16,
+     * rounding to nearest once (a double converts directly, never through float); else empty.
+     */
+    Optional<String> convertTo(Type from, Type to, String value, Set<Feature> features);
 
     /** A tile-programming expression ({@code tile.*} intrinsics; CUDA Tile on CUDA); TC-E4001 where the target has none. */
     String tileExpression(String name, uk.ac.manchester.tornado.tc.ir.Inst inst, List<String> operands);

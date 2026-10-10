@@ -126,14 +126,15 @@ final class CudaDialect implements CDialect {
     }
 
     @Override
-    public Optional<String> convertTo(Type to, String value, Set<Feature> features) {
+    public Optional<String> convertTo(Type from, Type to, String value, Set<Feature> features) {
+        boolean fromDouble = from.equals(Type.F64);
         if (to.equals(Type.F16)) {
             features.add(Feature.HALF);
-            return Optional.of("__float2half_rn(" + value + ")");
+            return Optional.of((fromDouble ? "__double2half(" : "__float2half_rn(") + value + ")");
         }
         if (to.equals(Type.BF16)) {
             features.add(Feature.BFLOAT16);
-            return Optional.of("__float2bfloat16_rn(" + value + ")");
+            return Optional.of((fromDouble ? "__double2bfloat16(" : "__float2bfloat16_rn(") + value + ")");
         }
         return Optional.empty();
     }

@@ -21,7 +21,7 @@
 ; CHECK-NEXT:    float mn;
 ; CHECK-NEXT:    double mx;
 ; CHECK-NEXT:    bool lt, ne, ucmp;
-; CHECK-NEXT:    s1 = x << (k & 31);
+; CHECK-NEXT:    s1 = (int) ((unsigned int) x << (k & 31));
 ; CHECK-NEXT:    s2 = x >> 3;
 ; CHECK-NEXT:    u = (int) ((unsigned int) x >> (k & 31));
 ; CHECK-NEXT:    ul = (long long) ((unsigned long long) l >> (l & 63));

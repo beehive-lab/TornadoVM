@@ -1,0 +1,5 @@
+[
+  {"model": "Llama-3.2-1B-Instruct-f16", "quant": "F16", "size_gib": 2.309, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "BATCH_PREFILL_DECODE", "selection": "llama / F16 / BATCH_PREFILL_DECODE", "test": "pp128 b32", "avg_ts": 1793.01, "stddev_ts": 22.56, "median_ts": 1795.99, "samples_ts": [1757.43, 1788.19, 1795.99, 1816.01, 1807.42]},
+  {"model": "Llama-3.2-1B-Instruct-f16", "quant": "F16", "size_gib": 2.309, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "BATCH_PREFILL_DECODE", "selection": "llama / F16 / BATCH_PREFILL_DECODE", "test": "pp512 b32", "avg_ts": 1782.67, "stddev_ts": 1.26, "median_ts": 1782.71, "samples_ts": [1781.19, 1781.99, 1782.71, 1782.89, 1784.58]},
+  {"model": "Llama-3.2-1B-Instruct-f16", "quant": "F16", "size_gib": 2.309, "params_b": 1.236, "backend": "TornadoVM CUDA", "arch": "llama", "mode": "BATCH_PREFILL_DECODE", "selection": "llama / F16 / BATCH_PREFILL_DECODE", "test": "tg64 b32", "avg_ts": 280.17, "stddev_ts": 1.03, "median_ts": 279.67, "samples_ts": [279.67, 279.29, 279.54, 280.56, 281.81]}
+]

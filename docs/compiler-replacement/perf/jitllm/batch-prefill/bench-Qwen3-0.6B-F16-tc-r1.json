@@ -1,0 +1,5 @@
+[
+  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM CUDA", "arch": "qwen3", "mode": "BATCH_PREFILL_DECODE", "selection": "qwen3 / F16 / BATCH_PREFILL_DECODE", "test": "pp128 b32", "avg_ts": 2313.99, "stddev_ts": 60.09, "median_ts": 2339.96, "samples_ts": [2212.04, 2310.58, 2339.96, 2343.45, 2363.95]},
+  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM CUDA", "arch": "qwen3", "mode": "BATCH_PREFILL_DECODE", "selection": "qwen3 / F16 / BATCH_PREFILL_DECODE", "test": "pp512 b32", "avg_ts": 2174.77, "stddev_ts": 1.17, "median_ts": 2174.58, "samples_ts": [2173.36, 2174.22, 2175.21, 2174.58, 2176.48]},
+  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM CUDA", "arch": "qwen3", "mode": "BATCH_PREFILL_DECODE", "selection": "qwen3 / F16 / BATCH_PREFILL_DECODE", "test": "tg64 b32", "avg_ts": 388.00, "stddev_ts": 1.48, "median_ts": 388.55, "samples_ts": [386.26, 386.59, 388.55, 389.22, 389.37]}
+]

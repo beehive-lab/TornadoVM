@@ -89,6 +89,7 @@ public final class ErrorCodes {
             Map.entry("TC-E3206", new Entry(Category.UNSUPPORTED, "batched execution (withBatch) is not compiled by TC yet; the Graal path supports it")),
             Map.entry("TC-E3207", new Entry(Category.UNSUPPORTED, "atomic counters in a kernel launched from the device (KernelContext.launch) are not compiled by TC yet; the Graal path compiles them")),
             Map.entry("TC-E3208", new Entry(Category.UNSUPPORTED, "give the overloads launched from the device different names: each becomes one entry point named after its method")),
+            Map.entry("TC-E3209", new Entry(Category.UNSUPPORTED, "the launch domain is wider than the runtime's int domains; split the work into several launches")),
             Map.entry("TC-E3301", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E3401", new Entry(Category.INVALID_KERNEL, "a tile shape, axis or element type must be a compile-time constant (a literal or a static final); shapes must be powers of two")),
             Map.entry("TC-E3402", new Entry(Category.INVALID_KERNEL, "the tile operands do not fit together (rank, broadcast or element type); see the TileContext documentation")),

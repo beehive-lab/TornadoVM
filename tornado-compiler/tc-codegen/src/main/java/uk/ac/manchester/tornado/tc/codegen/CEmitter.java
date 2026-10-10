@@ -552,7 +552,11 @@ public final class CEmitter {
             case AND -> infix(a, "&", b, BAND);
             case OR -> infix(a, "|", b, BOR);
             case XOR -> infix(a, "^", b, BXOR);
-            case SHL -> new R(wrap(expr(a), SHIFT) + " << " + shiftCount(b, type), SHIFT);
+            // Java shifts the bits of a negative value; C++ leaves that undefined, so shift it unsigned.
+            case SHL -> {
+                var unsigned = type.equals(Type.I64) ? "unsigned long long" : "unsigned int";
+                yield new R("(" + typeName(type) + ") ((" + unsigned + ") " + wrap(expr(a), UNARY) + " << " + shiftCount(b, type) + ")", UNARY);
+            }
             case SHR -> new R(wrap(expr(a), SHIFT) + " >> " + shiftCount(b, type), SHIFT);
             case USHR -> {
                 var unsigned = type.equals(Type.I64) ? "unsigned long long" : "unsigned int";
@@ -620,15 +624,15 @@ public final class CEmitter {
         var from = value.type();
         var v = expr(value);
         return switch (op) {
-            case SEXT, TRUNC, I2F, FEXT, FTRUNC -> cast(to, v);
-            case ZEXT -> from.equals(Type.I1) ? cast(to, v) : cast(to, new R("(" + unsignedName(from) + ") " + wrap(v, UNARY), UNARY));
+            case SEXT, TRUNC, I2F, FEXT, FTRUNC -> cast(from, to, v);
+            case ZEXT -> from.equals(Type.I1) ? cast(from, to, v) : cast(from, to, new R("(" + unsignedName(from) + ") " + wrap(v, UNARY), UNARY));
             case F2I_SAT -> new R(dialect.saturatingToInt(from, to, features) + "(" + v.text + ")", ATOM);
             case BITCAST -> new R(dialect.bitcast(from, to, features) + "(" + v.text + ")", ATOM);
         };
     }
 
-    private R cast(Type to, R value) {
-        var special = dialect.convertTo(to, value.text, features);
+    private R cast(Type from, Type to, R value) {
+        var special = dialect.convertTo(from, to, value.text, features);
         if (special.isPresent()) {
             return new R(special.get(), ATOM);
         }
@@ -665,7 +669,7 @@ public final class CEmitter {
             return new R(fn + "(" + bits + ")", ATOM);
         }
         var text = single ? Float.toString((float) value) + "f" : Double.toString(value);
-        return dialect.convertTo(type, text, features).map(c -> new R(c, ATOM)).orElseGet(() -> new R(text, text.startsWith("-") ? UNARY : ATOM));
+        return dialect.convertTo(single ? Type.F32 : Type.F64, type, text, features).map(c -> new R(c, ATOM)).orElseGet(() -> new R(text, text.startsWith("-") ? UNARY : ATOM));
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
