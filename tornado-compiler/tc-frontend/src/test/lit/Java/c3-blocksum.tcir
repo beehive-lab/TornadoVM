@@ -5,10 +5,10 @@
 ; CHECK-NEXT:  ^entry:
 ; CHECK-NEXT:    br ^bci0
 ; CHECK-NEXT:  ^bci0:
-; CHECK-NEXT:    %gid = tornado.thread_id.global.x() : i32
-; CHECK-NEXT:    %lid = tornado.thread_id.local.x() : i32
-; CHECK-NEXT:    %grp = tornado.group_id.x() : i32
-; CHECK-NEXT:    %lsz = tornado.group_size.local.x() : i32
+; CHECK-NEXT:    %gid = tornado.thread_id.global<dim = 0>() : i32
+; CHECK-NEXT:    %lid = tornado.thread_id.local<dim = 0>() : i32
+; CHECK-NEXT:    %grp = tornado.group_id<dim = 0>() : i32
+; CHECK-NEXT:    %lsz = tornado.group_size.local<dim = 0>() : i32
 ; CHECK-NEXT:    %0 = const 256 : i32
 ; CHECK-NEXT:    %scratch = alloca.shared f32[256] : ptr<shared>
 ; CHECK-NEXT:    %1 = array.load %in[%gid] : f32

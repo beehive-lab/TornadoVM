@@ -36,7 +36,7 @@ public class TcCompilerTest {
     private static final String KERNEL = """
             kernel @K.scale(%a: array<f32>, %f: f32) -> void {
             ^entry:
-              %i = tornado.thread_id.global.x() : i32
+              %i = tornado.thread_id.global<dim = 0>() : i32
               %x = array.load %a[%i] : f32
               %y = fmul %x, %f : f32
               array.store %a[%i], %y

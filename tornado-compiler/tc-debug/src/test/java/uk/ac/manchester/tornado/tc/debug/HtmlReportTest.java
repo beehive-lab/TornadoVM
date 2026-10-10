@@ -41,7 +41,7 @@ public class HtmlReportTest {
         var c = TcCompiler.compile(IrParser.parseFunction("""
                 kernel @K.copy(%a: array<i32>, %b: array<i32>) -> void {
                 ^entry:
-                  %i = tornado.thread_id.global.x() : i32
+                  %i = tornado.thread_id.global<dim = 0>() : i32
                   %x = array.load %a[%i] : i32
                   array.store %b[%i], %x
                   ret

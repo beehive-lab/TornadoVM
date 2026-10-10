@@ -5,7 +5,7 @@
 ; CHECK-NEXT:  ^entry:
 ; CHECK-NEXT:    br ^bci0
 ; CHECK-NEXT:  ^bci0:
-; CHECK-NEXT:    %i = tornado.thread_id.global.x() : i32
+; CHECK-NEXT:    %i = tornado.thread_id.global<dim = 0>() : i32
 ; CHECK-NEXT:    %0 = array.length %in : i32
 ; CHECK-NEXT:    %1 = icmp.sge %i, %0 : i1
 ; CHECK-NEXT:    cond_br %1, ^bci54, ^bci16

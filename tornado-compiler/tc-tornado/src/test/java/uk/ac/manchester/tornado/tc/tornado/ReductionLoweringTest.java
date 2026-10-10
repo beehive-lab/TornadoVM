@@ -69,7 +69,7 @@ public class ReductionLoweringTest {
         assertTrue(Verifier.verify(function).toString(), Verifier.verify(function).isEmpty());
         var text = new IrPrinter(false).printFunction(function);
         assertTrue(text, text.contains("tornado.reduce.add(%x)"));
-        assertTrue(text, text.contains("tornado.group_id.x()"));
+        assertTrue(text, text.contains("tornado.group_id<dim = 0>()"));
         assertTrue(text, !text.contains("parallel(iv=0)"));
         assertEquals(List.of(new ParallelLoopLowering.Domain(0, 0, 1, 4096)), ParallelLoopLowering.domain(function));
     }

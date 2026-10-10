@@ -227,7 +227,7 @@ public final class AbiLowering {
                     var s = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc());
                     for (int l = 0; l < vec.length(); l++) {
                         var address = l == 0 ? param : s.pointerOffset(param, s.constInt(Type.I64, (long) l * sizeOf(vec.element())));
-                        s.store(address, s.intrinsic("tornado.vector.lane." + l, vec.element(), List.of(updated == param ? value : updated)));
+                        s.store(address, s.intrinsic("tornado.vector.lane", uk.ac.manchester.tornado.tc.ir.Immediates.of("lane", l), vec.element(), List.of(updated == param ? value : updated)));
                     }
                 }
                 user.erase();

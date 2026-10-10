@@ -50,7 +50,11 @@ final class Bindings {
     }
 
     /** An intrinsic with the given result type (void for effects). */
-    record Intrinsic(String name, Type result) implements Binding {
+    record Intrinsic(String name, Type result, uk.ac.manchester.tornado.tc.ir.Immediates immediates) implements Binding {
+        Intrinsic(String name, Type result) {
+            this(name, result, uk.ac.manchester.tornado.tc.ir.Immediates.NONE);
+        }
+
     }
 
     /** {@code get(int)} on a TornadoVM native array. */
@@ -174,11 +178,12 @@ final class Bindings {
         for (int i = 0; i < 3; i++) {
             var d = dims[i];
             var upper = d.toUpperCase();
-            FIELDS.put(KERNEL_CONTEXT + ".globalId" + d, new Intrinsic("tornado.thread_id.global." + d, Type.I32));
-            FIELDS.put(KERNEL_CONTEXT + ".localId" + d, new Intrinsic("tornado.thread_id.local." + d, Type.I32));
-            FIELDS.put(KERNEL_CONTEXT + ".groupId" + d, new Intrinsic("tornado.group_id." + d, Type.I32));
-            FIELDS.put(KERNEL_CONTEXT + ".globalGroupSize" + upper, new Intrinsic("tornado.global_size." + d, Type.I32));
-            FIELDS.put(KERNEL_CONTEXT + ".localGroupSize" + upper, new Intrinsic("tornado.group_size.local." + d, Type.I32));
+            var dim = uk.ac.manchester.tornado.tc.ir.Immediates.of("dim", i);
+            FIELDS.put(KERNEL_CONTEXT + ".globalId" + d, new Intrinsic("tornado.thread_id.global", Type.I32, dim));
+            FIELDS.put(KERNEL_CONTEXT + ".localId" + d, new Intrinsic("tornado.thread_id.local", Type.I32, dim));
+            FIELDS.put(KERNEL_CONTEXT + ".groupId" + d, new Intrinsic("tornado.group_id", Type.I32, dim));
+            FIELDS.put(KERNEL_CONTEXT + ".globalGroupSize" + upper, new Intrinsic("tornado.global_size", Type.I32, dim));
+            FIELDS.put(KERNEL_CONTEXT + ".localGroupSize" + upper, new Intrinsic("tornado.group_size.local", Type.I32, dim));
         }
         METHODS.put(KERNEL_CONTEXT + ".localBarrier()V", new Intrinsic("tornado.barrier.local", Type.VOID));
         METHODS.put(KERNEL_CONTEXT + ".globalBarrier()V", new Intrinsic("tornado.barrier.global", Type.VOID));

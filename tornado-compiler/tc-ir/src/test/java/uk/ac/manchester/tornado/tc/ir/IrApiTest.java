@@ -51,8 +51,8 @@ public class IrApiTest {
         var n = builder.at(new Loc("VectorAdd.java", 20, -1)).arrayLength(c);
         n.setName("n");
         builder.at(Loc.UNKNOWN);
-        var i0 = builder.intrinsic("tornado.thread_id.global.x", Type.I32, List.of());
-        var stride = builder.intrinsic("tornado.global_size.x", Type.I32, List.of());
+        var i0 = builder.intrinsic("tornado.thread_id.global", Immediates.of("dim", 0), Type.I32, List.of());
+        var stride = builder.intrinsic("tornado.global_size", Immediates.of("dim", 0), Type.I32, List.of());
         builder.br(head, List.of(i0));
 
         builder.atEnd(head);

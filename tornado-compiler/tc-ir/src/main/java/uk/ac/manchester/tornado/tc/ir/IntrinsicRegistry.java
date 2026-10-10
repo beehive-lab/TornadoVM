@@ -75,17 +75,18 @@ public final class IntrinsicRegistry {
 
     static {
         // Launch geometry: fixed for a launch.
-        pure("tornado.thread_id.", "global or local thread index per dimension");
-        pure("tornado.group_id.", "work-group index per dimension");
-        pure("tornado.group_size.", "work-group size per dimension");
-        pure("tornado.global_size.", "global size per dimension");
-        pure("tornado.group_count.", "number of work-groups per dimension");
+        pure("tornado.thread_id.global", "global thread index in a dimension", "dim");
+        pure("tornado.thread_id.local", "thread index within the work-group", "dim");
+        pure("tornado.group_id", "work-group index", "dim");
+        pure("tornado.group_size.local", "work-group size", "dim");
+        pure("tornado.global_size", "global size (threads in the launch)", "dim");
+        pure("tornado.group_count", "number of work-groups", "dim");
         // Math (Java semantics; the spelling tables give each dialect's functions).
         pure("math.", "math functions of TornadoMath and java.lang.Math");
         // Vector values.
         pure("tornado.vector.make", "a vector from its lanes");
-        pure("tornado.vector.lane.", "one lane of a vector");
-        pure("tornado.vector.insert.", "a vector with one lane replaced");
+        pure("tornado.vector.lane", "one lane of a vector", "lane");
+        pure("tornado.vector.insert", "a vector with one lane replaced", "lane");
         add("tornado.vector.store_param", EnumSet.of(Effect.WRITES), "writes a changed vector parameter back to its lanes in memory");
         // Synchronisation, warp and tensor-core operations.
         add("tornado.barrier.", EnumSet.of(Effect.CONVERGENT, Effect.READS, Effect.WRITES), "work-group barrier");

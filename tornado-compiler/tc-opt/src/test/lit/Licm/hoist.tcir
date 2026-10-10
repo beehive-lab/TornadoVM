@@ -5,14 +5,14 @@
 ; CHECK-LABEL: kernel @k(
 ; CHECK:       ^entry:
 ; CHECK:         %n2 = mul %n, %n : i32
-; CHECK-NEXT:    %gs = tornado.global_size.x() : i32
+; CHECK-NEXT:    %gs = tornado.global_size<dim = 0>() : i32
 ; CHECK-NEXT:    br ^head
 ; CHECK:       ^body:
 ; CHECK-NEXT:    %v = array.load %a[%i] : f32
 ; CHECK-NEXT:    %ii = add %i, %gs : i32
 kernel @k(%a: array<f32>, %n: i32) -> void {
 ^entry:
-  %i0 = tornado.thread_id.global.x() : i32
+  %i0 = tornado.thread_id.global<dim = 0>() : i32
   br ^head(%i0)
 ^head(%i: i32):
   %n2 = mul %n, %n : i32
@@ -20,7 +20,7 @@ kernel @k(%a: array<f32>, %n: i32) -> void {
   cond_br %more, ^body, ^exit
 ^body:
   %v = array.load %a[%i] : f32
-  %gs = tornado.global_size.x() : i32
+  %gs = tornado.global_size<dim = 0>() : i32
   %ii = add %i, %gs : i32
   array.store %a[%i], %v
   br ^head(%ii)

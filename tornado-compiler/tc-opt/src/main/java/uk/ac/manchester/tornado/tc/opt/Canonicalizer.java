@@ -126,14 +126,14 @@ public final class Canonicalizer implements Pass {
                 yield folded;
             }
             case Opcode.PointerOffset p -> constant(ops.get(1)).filter(c -> c.longValue() == 0).map(c -> ops.get(0));
-            case Opcode.Intrinsic(var name) when name.startsWith(INSERT) && type instanceof Type.VectorType vec -> wholeVector(inst, vec);
-            case Opcode.Intrinsic(var name) when name.startsWith(LANE) -> laneOf(inst, ops.get(0), Integer.parseInt(name.substring(LANE.length())));
+            case Opcode.Intrinsic(var name) when name.equals(INSERT) && type instanceof Type.VectorType vec -> wholeVector(inst, vec);
+            case Opcode.Intrinsic(var name) when name.equals(LANE) -> laneOf(inst, ops.get(0), inst.immediates().requireInt("lane"));
             default -> Optional.empty();
         };
     }
 
-    private static final String INSERT = "tornado.vector.insert.";
-    private static final String LANE = "tornado.vector.lane.";
+    private static final String INSERT = "tornado.vector.insert";
+    private static final String LANE = "tornado.vector.lane";
 
     /**
      * Lane {@code lane} of a vector made from lanes, or of an insert chain that sets it, is that lane's
@@ -148,10 +148,10 @@ public final class Canonicalizer implements Pass {
             if (name.equals("tornado.vector.make")) {
                 return Optional.of(i.operand(lane));
             }
-            if (!name.startsWith(INSERT)) {
+            if (!name.equals(INSERT)) {
                 break;
             }
-            if (Integer.parseInt(name.substring(INSERT.length())) == lane) {
+            if (i.immediates().requireInt("lane") == lane) {
                 return Optional.of(i.operand(1));
             }
             current = i.operand(0);
@@ -159,7 +159,7 @@ public final class Canonicalizer implements Pass {
         if (current == vector) {
             return Optional.empty();
         }
-        var direct = new uk.ac.manchester.tornado.tc.ir.IrBuilder(read.block().orElseThrow()).before(read).at(read.loc()).intrinsic(LANE + lane, read.type(), List.of(current));
+        var direct = new uk.ac.manchester.tornado.tc.ir.IrBuilder(read.block().orElseThrow()).before(read).at(read.loc()).intrinsic(LANE, uk.ac.manchester.tornado.tc.ir.Immediates.of("lane", lane), read.type(), List.of(current));
         direct.setName(read.name());
         return Optional.of(direct);
     }
@@ -172,8 +172,8 @@ public final class Canonicalizer implements Pass {
     private Optional<Value> wholeVector(Inst inst, Type.VectorType vec) {
         var lanes = new Value[vec.length()];
         Value current = inst;
-        while (current instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(INSERT)) {
-            int lane = Integer.parseInt(name.substring(INSERT.length()));
+        while (current instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(INSERT)) {
+            int lane = i.immediates().requireInt("lane");
             if (lane < 0 || lane >= lanes.length) {
                 return Optional.empty(); // malformed: left for the verifier (IR-3)
             }

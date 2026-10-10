@@ -25,8 +25,8 @@ kernel @VectorAdd.add(%a: ptr<global>, %b: ptr<global>, %c: ptr<global>) -> void
 ^entry:
   %0 = load %a : i64  loc("VectorAdd.java":20)
   %n = trunc %0 : i32  loc("VectorAdd.java":20)
-  %i0 = tornado.thread_id.global.x() : i32
-  %s = tornado.global_size.x() : i32
+  %i0 = tornado.thread_id.global<dim = 0>() : i32
+  %s = tornado.global_size<dim = 0>() : i32
   br ^head(%i0)
 ^head(%i: i32) [parallel(dim=0)]:
   %more = icmp.slt %i, %n : i1  loc("VectorAdd.java":20)

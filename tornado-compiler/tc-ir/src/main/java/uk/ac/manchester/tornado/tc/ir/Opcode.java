@@ -300,7 +300,7 @@ public sealed interface Opcode {
     }
 
     /**
-     * A TornadoVM, math, vector or target intrinsic, for example {@code tornado.thread_id.global.x} or
+     * A TornadoVM, math, vector or target intrinsic, for example {@code tornado.thread_id.global<dim = 0>} or
      * {@code math.sqrt}. Semantics and per-dialect spellings come from the intrinsic registry.
      */
     record Intrinsic(String name) implements Opcode {

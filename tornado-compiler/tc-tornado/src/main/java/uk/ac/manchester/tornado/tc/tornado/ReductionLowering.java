@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Loc;
@@ -145,7 +146,7 @@ public final class ReductionLowering {
 
         // One iteration per thread: i = start + gid; no back edge.
         var b = new IrBuilder(header).before(header.insts().get(0)).at(header.insts().get(0).loc());
-        Value index = b.intrinsic("tornado.thread_id.global.x", Type.I32, List.of());
+        Value index = b.intrinsic("tornado.thread_id.global", Immediates.of("dim", 0), Type.I32, List.of());
         if (start != 0) {
             index = b.binary(BinaryOp.ADD, index, b.constInt(Type.I32, start));
         }
@@ -176,13 +177,13 @@ public final class ReductionLowering {
         var at = new IrBuilder(block).atEnd(block).at(store.loc());
         var reduced = at.intrinsic("tornado.reduce." + op, value.type(), List.of(value));
         reduced.setName("partial");
-        var tid = at.intrinsic("tornado.thread_id.local.x", Type.I32, List.of());
+        var tid = at.intrinsic("tornado.thread_id.local", Immediates.of("dim", 0), Type.I32, List.of());
         var first = at.icmp(Opcode.IntPredicate.EQ, tid, at.constInt(Type.I32, 0));
         var write = function.newBlock(block.label() + ".partial");
         store.erase();
         at.condBr(first, write, List.of(), join, List.of());
         var w = new IrBuilder(write).atEnd(write).at(store.loc());
-        var slot = w.binary(BinaryOp.ADD, w.intrinsic("tornado.group_id.x", Type.I32, List.of()), w.constInt(Type.I32, 1));
+        var slot = w.binary(BinaryOp.ADD, w.intrinsic("tornado.group_id", Immediates.of("dim", 0), Type.I32, List.of()), w.constInt(Type.I32, 1));
         w.arrayStore(target, slot, reduced);
         w.br(join, List.of());
         function.addAttribute(new Attribute("domain", "0," + start + ",1," + last));

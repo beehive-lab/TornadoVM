@@ -322,8 +322,15 @@ public final class Verifier {
             }
             case Opcode.Intrinsic(var name) -> {
                 // Every intrinsic is described by the registry (its effects); an unknown one is a TC bug.
-                if (IntrinsicRegistry.lookup(name).isEmpty()) {
+                var def = IntrinsicRegistry.lookup(name);
+                if (def.isEmpty()) {
                     error(inst, "TC-E2115", "intrinsic '" + name + "' is not in the intrinsic registry");
+                } else {
+                    for (var key : def.get().immediates()) {
+                        if (!inst.immediates().has(key)) {
+                            error(inst, "TC-E2115", "intrinsic '" + name + "' needs the immediate '" + key + "'");
+                        }
+                    }
                 }
             }
             case Opcode.Branch _b -> {

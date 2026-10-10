@@ -91,7 +91,54 @@ public record Immediates(Map<String, Object> values) {
         if (values.isEmpty()) {
             return "";
         }
-        return values.entrySet().stream().map(e -> e.getKey() + " = " + (e.getValue() instanceof String s ? "\"" + s + "\"" : e.getValue().toString()))
+        return values.entrySet().stream().map(e -> e.getKey() + " = " + (e.getValue() instanceof String s ? quote(s) : e.getValue().toString()))
                 .collect(Collectors.joining(", ", "<", ">"));
+    }
+
+    /** A string as IR text: quoted, with backslash, quote and control characters escaped (the parser reads it back). */
+    public static String quote(String s) {
+        var sb = new StringBuilder("\"");
+        for (char c : s.toCharArray()) {
+            switch (c) {
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\\"");
+                case '\n' -> sb.append("\\n");
+                case '\t' -> sb.append("\\t");
+                case '\r' -> sb.append("\\r");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append(String.format("\\x%02x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.append('"').toString();
+    }
+
+    /** The inverse of {@link #quote}: the body of a quoted IR string, unescaped. */
+    public static String unquote(String quoted) {
+        var body = quoted.substring(1, quoted.length() - 1);
+        var sb = new StringBuilder();
+        for (int k = 0; k < body.length(); k++) {
+            char c = body.charAt(k);
+            if (c != '\\' || k + 1 >= body.length()) {
+                sb.append(c);
+                continue;
+            }
+            char e = body.charAt(++k);
+            switch (e) {
+                case 'n' -> sb.append('\n');
+                case 't' -> sb.append('\t');
+                case 'r' -> sb.append('\r');
+                case 'x' -> {
+                    sb.append((char) Integer.parseInt(body.substring(k + 1, k + 3), 16));
+                    k += 2;
+                }
+                default -> sb.append(e);
+            }
+        }
+        return sb.toString();
     }
 }

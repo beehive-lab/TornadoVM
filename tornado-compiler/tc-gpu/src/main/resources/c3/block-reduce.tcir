@@ -2,10 +2,10 @@
 ; input in shared memory (tree reduction with barriers) and thread 0 writes the group's sum.
 kernel @Reduce.blockSum(%in: array<f32>, %out: array<f32>) -> void {
 ^entry:
-  %gid = tornado.thread_id.global.x() : i32    loc("Reduce.java":40)
-  %lid = tornado.thread_id.local.x() : i32     loc("Reduce.java":41)
-  %grp = tornado.group_id.x() : i32            loc("Reduce.java":42)
-  %lsz = tornado.group_size.local.x() : i32    loc("Reduce.java":43)
+  %gid = tornado.thread_id.global<dim = 0>() : i32    loc("Reduce.java":40)
+  %lid = tornado.thread_id.local<dim = 0>() : i32     loc("Reduce.java":41)
+  %grp = tornado.group_id<dim = 0>() : i32            loc("Reduce.java":42)
+  %lsz = tornado.group_size.local<dim = 0>() : i32    loc("Reduce.java":43)
   %scratch = alloca.shared f32[256] : ptr<shared>   loc("Reduce.java":44)
   %v = array.load %in[%gid] : f32              loc("Reduce.java":45)
   %lw = sext %lid : i64

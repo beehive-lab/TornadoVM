@@ -301,13 +301,13 @@ public final class CEmitter {
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(DEVICE_LAUNCH) -> deviceLaunch(name, op.operands(), loc, depth);
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.printf") -> {
                 // Debug.printf: every thread prints, prefixed with its global id (as on the Graal path).
-                var format = op.inst().attributes().stream().filter(a -> a.name().equals("format")).findFirst().map(a -> a.args()).orElse("\"\"");
+                var format = cEscape(op.inst().immediates().requireString("format"));
                 var args = new StringBuilder();
                 for (var d : List.of("x", "y", "z")) {
                     args.append(", (int) (blockIdx.").append(d).append(" * blockDim.").append(d).append(" + threadIdx.").append(d).append(")");
                 }
                 op.operands().forEach(o -> args.append(", ").append(expr(o).text));
-                line(depth, "printf(\"tornado[%3d,%3d,%3d]> " + format.substring(1) + args + ");" + comment(loc));
+                line(depth, "printf(\"tornado[%3d,%3d,%3d]> " + format + "\"" + args + ");" + comment(loc));
             }
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
             case S.If(var c, var t, var e) -> ifStatement(c, t, e, fallthrough, depth);
@@ -498,6 +498,27 @@ public final class CEmitter {
         line(depth + 1, deviceKernelEntry(child) + "<<<_dp_grid, _dp_block" + stream + ">>>(" + args + ");");
         line(depth + 1, "tc_device_launch_check(_kernel_context, \"" + shortName + "\", _dp_grid, _dp_block);");
         line(depth, "}");
+    }
+
+    /** A Java string as the body of a C string literal (octal escapes: at most three digits, unlike greedy hex). */
+    private static String cEscape(String text) {
+        var sb = new StringBuilder();
+        for (char c : text.toCharArray()) {
+            switch (c) {
+                case '\n' -> sb.append("\\n");
+                case '\t' -> sb.append("\\t");
+                case '\\' -> sb.append("\\\\");
+                case '"' -> sb.append("\\042"); // octal: at most three digits, unlike greedy \\x escapes
+                default -> {
+                    if (c < 0x20 || c > 0x7e) {
+                        sb.append(String.format("\\%03o", (int) c & 0xff));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 
     private String comment(Loc loc) {
@@ -731,7 +752,7 @@ public final class CEmitter {
         var type = inst.producesValue() ? inst.type() : (ops.isEmpty() ? Type.VOID : ops.get(ops.size() - 1).type());
         var spelling = Intrinsics.lookup(name, target.dialect(), type).orElseThrow(() -> new EmitException("TC-E4002", "no " + target.dialect() + " spelling for intrinsic " + name + " on " + type.text()));
         spelling.helper().ifPresent(helpers::add);
-        var template = spelling.template();
+        var template = Intrinsics.fillImmediates(spelling.template(), inst.immediates());
         if (template.contains("$&0")) {
             // The address of the element operand 0 points to: `&a_data[i]`, or a typed cast of the pointer.
             var element = deref(ops.get(0), type);

@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Loc;
@@ -716,8 +717,8 @@ final class Translator {
                     break;
                 }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
-                if (binding instanceof Intrinsic(var name, var type)) {
-                    push(b.intrinsic(name, type, List.of()));
+                if (binding instanceof Intrinsic(var name, var type, var immediates)) {
+                    push(b.intrinsic(name, immediates, type, List.of()));
                 } else if (binding instanceof Bindings.ConstantField(var value)) {
                     push(b.constInt(Type.I32, value));
                 }
@@ -875,7 +876,7 @@ final class Translator {
             if (!(index instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var lane)) || lane < 0 || lane >= length) {
                 throw error("TC-E1010", "fragment elements can only be read at a constant index within the fragment", bci);
             }
-            push(builder.intrinsic("tornado.vector.lane." + lane, element, List.of(array)));
+            push(builder.intrinsic("tornado.vector.lane", Immediates.of("lane", lane), element, List.of(array)));
             return;
         }
         // kind: 0 i, 1 l, 2 f, 3 d, 4 a, 5 b(byte/boolean), 6 c, 7 s
@@ -1066,27 +1067,6 @@ final class Translator {
         return type.isFloat() ? builder.constFloat(type, v.doubleValue()) : builder.constInt(type, v.longValue());
     }
 
-    /** A Java string as the body of a C string literal: escapes, and no raw quote (IR attribute text). */
-    private static String cEscape(String text) {
-        var sb = new StringBuilder();
-        for (char c : text.toCharArray()) {
-            switch (c) {
-                case '\n' -> sb.append("\\n");
-                case '\t' -> sb.append("\\t");
-                case '\\' -> sb.append("\\\\");
-                case '"' -> sb.append("\\042"); // octal: at most three digits, unlike greedy \\x escapes
-                default -> {
-                    if (c < 0x20 || c > 0x7e) {
-                        sb.append(String.format("\\%03o", (int) c & 0xff));
-                    } else {
-                        sb.append(c);
-                    }
-                }
-            }
-        }
-        return sb.toString();
-    }
-
     /**
      * Local arrays of value types are the only reference arrays kernels use: {@code HalfFloat[]}
      * holds f16 values, {@code Half2[]} half2 vectors.
@@ -1247,8 +1227,8 @@ final class Translator {
             if (format == null || values == null || java.util.Arrays.stream(values).anyMatch(java.util.Objects::isNull)) {
                 throw error("TC-E1003", "Debug.printf needs a constant format string and its arguments passed directly", insn.bci());
             }
-            var print = builder.intrinsic("tornado.printf", Type.VOID, List.of(values));
-            print.addAttribute(new uk.ac.manchester.tornado.tc.ir.Attribute("format", "\"" + cEscape(format) + "\""));
+            // The format is kept as the Java string: each dialect spells (escapes) it itself.
+            builder.intrinsic("tornado.printf", Immediates.of("format", format), Type.VOID, List.of(values));
             return;
         }
         if (ref.owner().equals(Bindings.KERNEL_CONTEXT) && (ref.name().equals("launch") || ref.name().equals("launch3D"))) {
@@ -1271,9 +1251,9 @@ final class Translator {
             throw error("TC-E1003", "call to " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " is not supported in kernels yet", insn.bci());
         }
         switch (binding.get()) {
-            case Intrinsic(var name, var type) -> {
+            case Intrinsic(var name, var type, var immediates) -> {
                 var operands = insn.opcode() == INVOKESTATIC ? args : args.subList(1, args.size());
-                var result = builder.intrinsic(name, type, operands);
+                var result = builder.intrinsic(name, immediates, type, operands);
                 if (result.producesValue()) {
                     push(result);
                 }
@@ -1354,7 +1334,7 @@ final class Translator {
                 var vector = args.get(0);
                 int l = lane >= 0 ? lane : constantLane(args.get(1), insn.bci());
                 var element = ((Type.VectorType) vector.type()).element();
-                var value = builder.intrinsic("tornado.vector.lane." + l, element, List.of(vector));
+                var value = builder.intrinsic("tornado.vector.lane", Immediates.of("lane", l), element, List.of(vector));
                 push(element.equals(Type.I8) || element.equals(Type.I16) ? builder.convert(ConvertOp.SEXT, value, Type.I32) : value);
             }
             case Bindings.ReceiverIntrinsic(var name, var type) -> {
@@ -1376,7 +1356,7 @@ final class Translator {
                 var vector = args.get(0);
                 int l = lane >= 0 ? lane : constantLane(args.get(1), insn.bci());
                 var element = ((Type.VectorType) vector.type()).element();
-                var updated = builder.intrinsic("tornado.vector.insert." + l, vector.type(), List.of(vector, narrow(args.get(args.size() - 1), element)));
+                var updated = builder.intrinsic("tornado.vector.insert", Immediates.of("lane", l), vector.type(), List.of(vector, narrow(args.get(args.size() - 1), element)));
                 rebind(vector, updated);
             }
             case Bindings.HalfBits h -> push(builder.convert(ConvertOp.SEXT, builder.convert(ConvertOp.BITCAST, args.get(0), Type.I16), Type.I32));

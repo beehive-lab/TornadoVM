@@ -126,7 +126,7 @@ public final class SPrinter {
                 case Opcode.ArrayStore _s -> expr(ops.get(0)) + "[" + expr(ops.get(1)) + "] = " + expr(ops.get(2));
                 case Opcode.Load _l -> "load<" + inst.type().text() + ">(" + expr(ops.get(0)) + ")";
                 case Opcode.Call(var callee) -> callee + "(" + args(ops) + ")";
-                default -> inst.opcode().mnemonic() + "(" + args(ops) + ")";
+                default -> inst.opcode().mnemonic() + inst.immediates().text() + "(" + args(ops) + ")";
             };
         };
     }

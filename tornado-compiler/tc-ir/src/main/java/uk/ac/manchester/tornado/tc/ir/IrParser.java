@@ -581,8 +581,7 @@ public final class IrParser {
     }
 
     private static String unquote(Token token) {
-        var body = token.text.substring(1, token.text.length() - 1);
-        return body.replace("\\\"", "\"").replace("\\\\", "\\");
+        return Immediates.unquote(token.text);
     }
 
     private static String describe(Token token) {

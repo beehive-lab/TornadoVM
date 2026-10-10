@@ -7,8 +7,8 @@
 ; CHECK-LABEL: kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
 ; CHECK-NEXT:  ^entry:
 ; CHECK-NEXT:    %n = array.length %c : i32  loc("VectorAdd.java":20)
-; CHECK-NEXT:    %i0 = tornado.thread_id.global.x() : i32
-; CHECK-NEXT:    %s = tornado.global_size.x() : i32
+; CHECK-NEXT:    %i0 = tornado.thread_id.global<dim = 0>() : i32
+; CHECK-NEXT:    %s = tornado.global_size<dim = 0>() : i32
 ; CHECK-NEXT:    br ^head(%i0)
 ; CHECK-NEXT:  ^head(%i: i32) [parallel(dim=0)]:
 ; CHECK-NEXT:    %more = icmp.slt %i, %n : i1
@@ -27,8 +27,8 @@
 kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
 ^entry:
   %n = array.length %c : i32                   loc("VectorAdd.java":20)
-  %i0 = tornado.thread_id.global.x() : i32
-  %s = tornado.global_size.x() : i32
+  %i0 = tornado.thread_id.global<dim = 0>() : i32
+  %s = tornado.global_size<dim = 0>() : i32
   br ^head(%i0)
 ^head(%i: i32) [parallel(dim=0)]:
   %more = icmp.slt %i, %n : i1

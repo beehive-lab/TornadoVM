@@ -55,14 +55,13 @@ public final class Intrinsics {
 
     static {
         // Thread indexing (KernelContext and @Parallel lowering).
-        for (var d : List.of("x", "y", "z")) {
-            cuda("tornado.thread_id.global." + d, "(int) (blockIdx." + d + " * blockDim." + d + " + threadIdx." + d + ")");
-            cuda("tornado.thread_id.local." + d, "(int) threadIdx." + d);
-            cuda("tornado.group_id." + d, "(int) blockIdx." + d);
-            cuda("tornado.group_size.local." + d, "(int) blockDim." + d);
-            cuda("tornado.group_count." + d, "(int) gridDim." + d);
-            cuda("tornado.global_size." + d, "(int) (gridDim." + d + " * blockDim." + d + ")");
-        }
+        // {dim|xyz}: the dimension immediate as x, y or z.
+        cuda("tornado.thread_id.global", "(int) (blockIdx.{dim|xyz} * blockDim.{dim|xyz} + threadIdx.{dim|xyz})");
+        cuda("tornado.thread_id.local", "(int) threadIdx.{dim|xyz}");
+        cuda("tornado.group_id", "(int) blockIdx.{dim|xyz}");
+        cuda("tornado.group_size.local", "(int) blockDim.{dim|xyz}");
+        cuda("tornado.group_count", "(int) gridDim.{dim|xyz}");
+        cuda("tornado.global_size", "(int) (gridDim.{dim|xyz} * blockDim.{dim|xyz})");
         // Warp operations: every lane of the warp takes part (full mask). simdSum is a butterfly (XOR)
         // reduction, so every lane receives the sum.
         TABLE.put(new Key("tornado.simd.sum", Dialect.CUDA, ""), Spelling.withHelper("tc_warp_sum($0)", "tc_warp_sum"));
@@ -73,11 +72,8 @@ public final class Intrinsics {
         cuda("tornado.simd.ballot", "(int) __ballot_sync(0xffffffffu, $0)");
         // Lanes of a register vector (vector types, fragment element reads at a constant index), and
         // a vector with one lane replaced (setX on a vector value).
-        var components = List.of("x", "y", "z", "w");
-        for (int lane = 0; lane < 4; lane++) {
-            cuda("tornado.vector.lane." + lane, "$0." + components.get(lane));
-            TABLE.put(new Key("tornado.vector.insert." + lane, Dialect.CUDA, ""), Spelling.withHelper("tc_with_" + components.get(lane) + "($0, $1)", "tc_with"));
-        }
+        cuda("tornado.vector.lane", "$0.{lane|xyzw}");
+        TABLE.put(new Key("tornado.vector.insert", Dialect.CUDA, ""), Spelling.withHelper("tc_with_{lane|xyzw}($0, $1)", "tc_with"));
         // @Reduce: work-group reduction of each thread's value (Helpers.blockReduce).
         for (var op : List.of("add", "mul", "max", "min")) {
             for (var t : List.of("f32", "f64", "i32", "i64")) {
@@ -194,6 +190,34 @@ public final class Intrinsics {
             return Optional.of(typed);
         }
         return Optional.ofNullable(TABLE.get(new Key(name, dialect, "")));
+    }
+
+    /**
+     * Fills a template's immediate placeholders: {@code {key}} is the immediate's value and
+     * {@code {key|xyz}} the character at that index (a dimension or lane as x, y, z, w).
+     */
+    static String fillImmediates(String template, uk.ac.manchester.tornado.tc.ir.Immediates immediates) {
+        var m = java.util.regex.Pattern.compile("\\{([a-z_]+)(?:\\|([a-z]+))?}").matcher(template);
+        var out = new StringBuilder();
+        while (m.find()) {
+            var key = m.group(1);
+            String value;
+            if (m.group(2) != null) {
+                int index = immediates.requireInt(key);
+                if (index < 0 || index >= m.group(2).length()) {
+                    throw new CEmitter.EmitException("TC-E9001", "immediate " + key + " = " + index + " out of range for " + m.group(2));
+                }
+                value = String.valueOf(m.group(2).charAt(index));
+            } else {
+                value = immediates.values().containsKey(key) ? immediates.values().get(key).toString() : null;
+                if (value == null) {
+                    throw new CEmitter.EmitException("TC-E9001", "missing immediate " + key);
+                }
+            }
+            m.appendReplacement(out, java.util.regex.Matcher.quoteReplacement(value));
+        }
+        m.appendTail(out);
+        return out.toString();
     }
 
     /** Fills a template's {@code $i} placeholders; operands are already printed expressions. */

@@ -614,21 +614,18 @@ public final class Structurizer {
         if (value instanceof Inst inst) {
             switch (inst.opcode()) {
                 case Opcode.Intrinsic(var name) -> {
-                    var dim = name.substring(name.lastIndexOf('.') + 1);
-                    if (name.startsWith("tornado.thread_id.global.")) {
-                        return "gid_" + dim;
-                    }
-                    if (name.startsWith("tornado.thread_id.local.")) {
-                        return "lid_" + dim;
-                    }
-                    if (name.startsWith("tornado.group_id.")) {
-                        return "group_" + dim;
-                    }
-                    if (name.startsWith("tornado.global_size.")) {
-                        return "gsize_" + dim;
-                    }
-                    if (name.startsWith("tornado.group_size.local.")) {
-                        return "lsize_" + dim;
+                    // Role names: gid_x, lid_x, group_x, gsize_x, lsize_x (the dimension is an immediate).
+                    var dim = inst.immediates().integer("dim").map(d -> String.valueOf("xyz".charAt(d.intValue()))).orElse("");
+                    var role = switch (name) {
+                        case "tornado.thread_id.global" -> "gid_";
+                        case "tornado.thread_id.local" -> "lid_";
+                        case "tornado.group_id" -> "group_";
+                        case "tornado.global_size" -> "gsize_";
+                        case "tornado.group_size.local" -> "lsize_";
+                        default -> null;
+                    };
+                    if (role != null && !dim.isEmpty()) {
+                        return role + dim;
                     }
                     if (name.startsWith("math.")) {
                         return name.substring("math.".length());

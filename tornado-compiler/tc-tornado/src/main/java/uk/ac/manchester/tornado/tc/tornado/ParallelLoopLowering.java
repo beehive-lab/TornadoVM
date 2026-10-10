@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Loc;
@@ -139,12 +140,12 @@ public final class ParallelLoopLowering {
         recordDomain(header, iv, argumentOnEdge(entry, header, ivIndex), step, dim);
 
         var before = new IrBuilder(entry.block().orElseThrow()).before(entry).at(entry.loc());
-        var gid = before.intrinsic("tornado.thread_id.global." + d, Type.I32, List.of());
+        var gid = before.intrinsic("tornado.thread_id.global", Immediates.of("dim", dim), Type.I32, List.of());
         var init = before.add(argumentOnEdge(entry, header, ivIndex), scaled(before, gid, step));
         setArgumentOnEdge(entry, header, ivIndex, init);
 
         var inLatch = new IrBuilder(latch.block().orElseThrow()).before(latch).at(latch.loc());
-        var size = inLatch.intrinsic("tornado.global_size." + d, Type.I32, List.of());
+        var size = inLatch.intrinsic("tornado.global_size", Immediates.of("dim", dim), Type.I32, List.of());
         var advanced = inLatch.add(iv, scaled(inLatch, size, step));
         advanced.setName(add.name());
         setArgumentOnEdge(latch, header, ivIndex, advanced);

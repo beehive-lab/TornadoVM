@@ -10,8 +10,8 @@
 ; CHECK-NEXT:    f32 y;
 ; CHECK-NEXT:    f32 z;
 ; CHECK-NEXT:    n = array.length(c);
-; CHECK-NEXT:    i = tornado.thread_id.global.x();
-; CHECK-NEXT:    s = tornado.global_size.x();
+; CHECK-NEXT:    i = tornado.thread_id.global<dim = 0>();
+; CHECK-NEXT:    s = tornado.global_size<dim = 0>();
 ; CHECK-NEXT:    block L_exit {
 ; CHECK-NEXT:      loop L_head {
 ; CHECK-NEXT:        if ((i slt n)) {
@@ -85,8 +85,8 @@
 kernel @vadd(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
 ^entry:
   %n = array.length %c : i32
-  %i0 = tornado.thread_id.global.x() : i32
-  %s = tornado.global_size.x() : i32
+  %i0 = tornado.thread_id.global<dim = 0>() : i32
+  %s = tornado.global_size<dim = 0>() : i32
   br ^head(%i0)
 ^head(%i: i32):
   %more = icmp.slt %i, %n : i1

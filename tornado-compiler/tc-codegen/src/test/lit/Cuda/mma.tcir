@@ -94,7 +94,7 @@ device @gemm(%a: ptr<shared>, %b: ptr<shared>, %c: ptr<global>, %row: i32, %col:
   %fb = tornado.mma.load_b(%b, %k) : vec<2 x i32>
   %d = tornado.mma.m16n8k16(%fa, %fb, %acc) : vec<4 x f32>
   tornado.mma.store(%d, %c, %row, %col, %ld)
-  %first = tornado.vector.lane.0(%d) : f32
+  %first = tornado.vector.lane<lane = 0>(%d) : f32
   ret %first
 }
 
