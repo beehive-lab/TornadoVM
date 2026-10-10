@@ -31,4 +31,21 @@
         <module>tc-debug</module>
         <module>tc-gpu</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgs combine.children="append">
+                        <!-- Cold start: string concatenation as plain StringBuilder code instead of an
+                             invokedynamic site bootstrapped on first use (hundreds in the binding and
+                             spelling tables); see docs/compiler-replacement/cold-start.md. -->
+                        <arg>-XDstringConcat=inline</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
