@@ -44,7 +44,7 @@ import uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree;
  */
 public final class GlobalValueNumbering implements Pass {
 
-    private record Key(Opcode opcode, Type type, List<Object> operands, List<uk.ac.manchester.tornado.tc.ir.Attribute> attributes) {
+    private record Key(Opcode opcode, Type type, List<Object> operands, List<uk.ac.manchester.tornado.tc.ir.Attribute> attributes, uk.ac.manchester.tornado.tc.ir.Immediates immediates) {
     }
 
     @Override
@@ -105,7 +105,7 @@ public final class GlobalValueNumbering implements Pass {
         if (inst.opcode() instanceof Opcode.Binary(var op) && commutative(op) && operands.get(0) instanceof Integer a && operands.get(1) instanceof Integer b && a > b) {
             operands.add(operands.remove(0));
         }
-        return new Key(inst.opcode(), inst.type(), operands, List.copyOf(inst.attributes()));
+        return new Key(inst.opcode(), inst.type(), operands, List.copyOf(inst.attributes()), inst.immediates());
     }
 
     /** A value compared by identity in a key. */

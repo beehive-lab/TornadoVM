@@ -111,7 +111,7 @@ public final class IrPrinter {
             case Opcode.Store _s -> sb.append(mnemonic).append(' ').append(operands(inst));
             case Opcode.Alloca(var space, var element, var count) -> sb.append(mnemonic).append(' ').append(element.text()).append('[').append(count).append(']');
             case Opcode.Call(var callee) -> sb.append("call @").append(callee).append('(').append(operands(inst)).append(')');
-            case Opcode.Intrinsic(var name) -> sb.append(name).append('(').append(operands(inst)).append(')');
+            case Opcode.Intrinsic(var name) -> sb.append(name).append(inst.immediates().text()).append('(').append(operands(inst)).append(')');
             case Opcode.Branch _b -> sb.append("br ").append(successor(inst, 0));
             case Opcode.CondBranch _c -> sb.append("cond_br ").append(ref(inst.operand(0))).append(", ").append(successor(inst, 0)).append(", ").append(successor(inst, 1));
             case Opcode.Switch(var keys) -> {

@@ -112,11 +112,9 @@ public final class Inliner {
                 }
             }
             for (var inst : original.insts()) {
-                var opcode = inst.opcode() instanceof Opcode.Return ? new Opcode.Branch() : inst.opcode();
-                var clone = new Inst(opcode, inst.opcode() instanceof Opcode.Return ? Type.VOID : inst.type());
-                clone.setName(inst.name());
+                // A return becomes the branch to the continuation; everything else is copied as it is.
+                var clone = inst.opcode() instanceof Opcode.Return ? new Inst(new Opcode.Branch(), Type.VOID) : inst.copyShell();
                 clone.setLoc(inst.loc().isKnown() ? inst.loc() : call.loc());
-                inst.attributes().forEach(clone::addAttribute);
                 copy.append(clone);
                 clones.put(inst, clone);
                 values.put(inst, clone);

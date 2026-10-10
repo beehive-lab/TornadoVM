@@ -228,10 +228,7 @@ public final class FullLoopUnroll implements Pass {
             if (inst.isTerminator()) {
                 continue;
             }
-            var copy = new Inst(inst.opcode(), inst.type());
-            copy.setName(inst.name());
-            copy.setLoc(inst.loc());
-            inst.attributes().forEach(copy::addAttribute);
+            var copy = inst.copyShell();
             to.append(copy);
             for (var operand : inst.operands()) {
                 copy.addOperand(env.getOrDefault(operand, operand));

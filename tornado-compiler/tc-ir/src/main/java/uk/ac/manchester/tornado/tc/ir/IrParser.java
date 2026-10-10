@@ -190,6 +190,7 @@ public final class IrParser {
         var successors = new ArrayList<PendingSuccessor>();
         var mnemonic = expect(Kind.IDENT, "an operation").text;
         Opcode opcode;
+        Immediates immediates = Immediates.NONE;
         switch (mnemonic) {
             case "const" -> opcode = parseConstant();
             case "array.load" -> {
@@ -276,8 +277,9 @@ public final class IrParser {
                     var count = (int) parseLong(expect(Kind.NUMBER, "element count"));
                     expectPunct("]");
                     opcode = new Opcode.Alloca(space, element, count);
-                } else if (isPunct("(")) {
+                } else if (isPunct("(") || isPunct("<")) {
                     opcode = new Opcode.Intrinsic(mnemonic);
+                    immediates = parseImmediates();
                     operands.addAll(parenthesisedValues());
                 } else {
                     opcode = simpleOpcode(mnemonic, start);
@@ -291,6 +293,7 @@ public final class IrParser {
             type = parseType();
         }
         var inst = new Inst(opcode, type);
+        inst.setImmediates(immediates);
         inst.setTextLine(start.line);
         inst.setTextLine(start.line);
         if (result != null) {
@@ -556,6 +559,25 @@ public final class IrParser {
         } catch (NumberFormatException e) {
             throw error("TC-E2001", token, "expected an integer, found '" + token.text + "'");
         }
+    }
+
+    /** {@code <lane = 3, mode = "tail">} after an intrinsic's name; none when absent. */
+    private Immediates parseImmediates() {
+        if (!acceptPunct("<")) {
+            return Immediates.NONE;
+        }
+        var values = new java.util.TreeMap<String, Object>();
+        do {
+            var key = expect(Kind.IDENT, "immediate name").text;
+            expectPunct("=");
+            if (peek().kind == Kind.STRING) {
+                values.put(key, unquote(next()));
+            } else {
+                values.put(key, parseLong(expect(Kind.NUMBER, "immediate value")));
+            }
+        } while (acceptPunct(","));
+        expectPunct(">");
+        return new Immediates(values);
     }
 
     private static String unquote(Token token) {

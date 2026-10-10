@@ -168,7 +168,13 @@ public final class IrBuilder {
     }
 
     public Inst intrinsic(String name, Type type, List<? extends Value> args) {
-        return insert(new Inst(new Opcode.Intrinsic(name), type), args);
+        return intrinsic(name, Immediates.NONE, type, args);
+    }
+
+    public Inst intrinsic(String name, Immediates immediates, Type type, List<? extends Value> args) {
+        var inst = new Inst(new Opcode.Intrinsic(name), type);
+        inst.setImmediates(immediates);
+        return insert(inst, args);
     }
 
     // ---------------------------------------------------------------- terminators

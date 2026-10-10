@@ -37,6 +37,7 @@ public final class Inst extends Value {
     private final List<Value> operands = new ArrayList<>();
     private final List<Successor> successors = new ArrayList<>();
     private final List<Attribute> attributes = new ArrayList<>();
+    private Immediates immediates = Immediates.NONE;
     private Block block;
     private Loc loc = Loc.UNKNOWN;
     private int textLine = -1;
@@ -173,6 +174,28 @@ public final class Inst extends Value {
 
     void setTextLine(int textLine) {
         this.textLine = textLine;
+    }
+
+    /** Typed compile-time parameters of the instruction (lane, mode, callee, ...). */
+    public Immediates immediates() {
+        return immediates;
+    }
+
+    public void setImmediates(Immediates immediates) {
+        this.immediates = java.util.Objects.requireNonNull(immediates);
+    }
+
+    /**
+     * A detached copy of this instruction: opcode, type, name, location, attributes and immediates,
+     * with no operands or successors (the caller maps those). The one way passes clone instructions.
+     */
+    public Inst copyShell() {
+        var copy = new Inst(opcode, type());
+        copy.setName(name());
+        copy.setLoc(loc);
+        attributes.forEach(copy::addAttribute);
+        copy.immediates = immediates;
+        return copy;
     }
 
     public List<Attribute> attributes() {
