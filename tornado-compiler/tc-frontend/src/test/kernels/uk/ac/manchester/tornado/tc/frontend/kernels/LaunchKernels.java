@@ -75,4 +75,11 @@ public final class LaunchKernels {
             data.set(i, data.get(i) * 3.0f);
         }
     }
+
+    /** A launch argument chosen by a ternary: javac carries the varargs array across the branch. */
+    public static void chosenArgument(KernelContext context, FloatArray data, int n, int wide) {
+        if (context.globalIdx == 0) {
+            context.launch(SCALE, n, 32, data, wide > 0 ? n : 1);
+        }
+    }
 }

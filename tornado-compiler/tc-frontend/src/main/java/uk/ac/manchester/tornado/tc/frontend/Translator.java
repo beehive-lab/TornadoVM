@@ -64,6 +64,7 @@ import uk.ac.manchester.tornado.tc.ir.Opcode.IntPredicate;
 import uk.ac.manchester.tornado.tc.ir.Opcode.UnaryOp;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 
 /**
  * Translates one Java method into pre-ABI TC-SSA.
@@ -107,25 +108,42 @@ final class Translator {
     private final Map<Block, Integer> startIndex = new IdentityHashMap<>();
     private final Map<Block, List<Block>> preds = new IdentityHashMap<>();
 
+    /**
+     * An SSA variable of the bytecode: a local slot (keyed by the JVM kind that stored it), an
+     * operand-stack slot live across a block boundary, or the current value of a vector parameter.
+     */
+    private sealed interface Var permits Local, StackSlot, VectorParam {
+    }
+
+    private record Local(int slot, char kind) implements Var {
+    }
+
+    private record StackSlot(int depth) implements Var {
+    }
+
+    private record VectorParam(int slot) implements Var {
+    }
+
     // SSA construction state (Braun et al.).
-    private final Map<Block, Map<String, Value>> currentDef = new IdentityHashMap<>();
-    private final Map<Block, LinkedHashMap<String, BlockArg>> incomplete = new IdentityHashMap<>();
+    private final Map<Block, Map<Var, Value>> currentDef = new IdentityHashMap<>();
+    private final Map<Block, LinkedHashMap<Var, BlockArg>> incomplete = new IdentityHashMap<>();
     private final Set<Block> sealed = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Set<Block> filled = Collections.newSetFromMap(new IdentityHashMap<>());
     private final Map<Block, Integer> entryDepth = new IdentityHashMap<>();
     private final Map<Block, List<Type>> entryStackTypes = new IdentityHashMap<>();
 
-    private final Map<BlockArg, String> argumentKeys = new IdentityHashMap<>();
+    private final Map<BlockArg, Var> argumentKeys = new IdentityHashMap<>();
     private final Map<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef> callees = new java.util.LinkedHashMap<>();
     private IrBuilder builder;
     private Deque<Value> stack;
-    /** KernelContext.launch: the child each DeviceKernel placeholder names, and the varargs arrays being filled. */
-    private final Map<Value, Frontend.MethodRef> deviceKernels = new IdentityHashMap<>();
-    private final Map<Value, Value[]> varargs = new IdentityHashMap<>();
-    /** String constants (Debug.printf formats). */
-    private final Map<Value, String> strings = new IdentityHashMap<>();
+    /**
+     * Compile-time operands, as frontend-only intrinsics that the consuming call reads and that are
+     * removed before the function leaves the frontend: a string constant (a Debug.printf format), the
+     * method a DeviceKernel field names, and the Object[] of a varargs call with its element stores.
+     */
+    private static final String STRING = "tornado.string", DEVICE_KERNEL = "tornado.device_kernel", VARARGS = "tornado.varargs", VARARGS_SET = "tornado.varargs.set";
     /** Vector parameters of a kernel (hidden SSA variable → parameter): setters on them reach the host. */
-    private final Map<String, BlockArg> vectorParams = new java.util.LinkedHashMap<>();
+    private final Map<VectorParam, BlockArg> vectorParams = new java.util.LinkedHashMap<>();
 
     private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
         this(source, classFile, method, kind, null);
@@ -197,7 +215,7 @@ final class Translator {
             if (type instanceof Type.VectorType) {
                 // The object the caller passed: its value as setters change it. A kernel writes it back
                 // at return; a device function may not change it (checked after translation).
-                var key = "vparam#" + slot;
+                var key = new VectorParam(slot);
                 writeVariable(key, entry, arg);
                 vectorParams.put(key, arg);
             }
@@ -222,6 +240,7 @@ final class Translator {
         }
         removeUnreachable();
         removeTrivialArguments();
+        removeCompileTimeOperands();
         checkVectorParamsUnchanged();
         var problems = LocalArrays.resolveLengths(function);
         if (!problems.isEmpty()) {
@@ -317,7 +336,7 @@ final class Translator {
         int depth = entryDepth.getOrDefault(block, 0);
         var types = entryStackTypes.getOrDefault(block, List.of());
         for (int i = 0; i < depth; i++) {
-            stack.addLast(readVariable("S" + i, block, types.get(i), ""));
+            stack.addLast(readVariable(new StackSlot(i), block, types.get(i), ""));
         }
         int last = lastIndex(block);
         for (int i = startIndex.get(block); i <= last; i++) {
@@ -340,7 +359,7 @@ final class Translator {
         int i = 0;
         var types = new ArrayList<Type>();
         for (var value : stack) {
-            writeVariable("S" + i++, block, value);
+            writeVariable(new StackSlot(i++), block, value);
             types.add(value.type());
         }
         for (var s : successors) {
@@ -359,11 +378,11 @@ final class Translator {
 
     // ---------------------------------------------------------------- SSA variables (Braun et al.)
 
-    private void writeVariable(String key, Block block, Value value) {
+    private void writeVariable(Var key, Block block, Value value) {
         currentDef.computeIfAbsent(block, _k -> new HashMap<>()).put(key, value);
     }
 
-    private Value readVariable(String key, Block block, Type type, String name) {
+    private Value readVariable(Var key, Block block, Type type, String name) {
         var defs = currentDef.get(block);
         if (defs != null && defs.containsKey(key)) {
             return defs.get(key);
@@ -371,7 +390,10 @@ final class Translator {
         Value value;
         var blockPreds = preds.getOrDefault(block, List.of());
         if (!sealed.contains(block)) {
-            var known = type instanceof Type.ObjectType o && o.className().equals("?") ? probeType(key, block, Collections.newSetFromMap(new IdentityHashMap<>())) : null;
+            // A reference read in a loop header not sealed yet must know whether it is an array, a local
+            // array (pointer) or an object before its first use is translated.
+            var reaching = type instanceof Type.ObjectType o && o.className().equals("?") ? reachingDefinition(key, block, true, Collections.newSetFromMap(new IdentityHashMap<>())) : null;
+            var known = reaching == null ? null : reaching.type();
             var arg = block.addArg(known != null ? known : type, name);
             argumentKeys.put(arg, key);
             incomplete.computeIfAbsent(block, _k -> new LinkedHashMap<>()).put(key, arg);
@@ -379,7 +401,7 @@ final class Translator {
         } else if (blockPreds.size() == 1) {
             value = readVariable(key, blockPreds.get(0), type, name);
         } else if (blockPreds.isEmpty()) {
-            throw error("TC-E1006", "read of local " + key + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci());
+            throw error("TC-E1006", "read of " + describe(key) + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci());
         } else {
             var arg = block.addArg(type, name);
             argumentKeys.put(arg, key);
@@ -391,32 +413,8 @@ final class Translator {
         return value;
     }
 
-    /**
-     * The type of {@code key} as already defined on a path into {@code block}, without creating block
-     * arguments: a reference read in a loop header that is not sealed yet must know whether it is an
-     * array, a local array (pointer) or an object before its first use is translated.
-     */
-    private Type probeType(String key, Block block, Set<Block> visited) {
-        if (!visited.add(block)) {
-            return null;
-        }
-        var defs = currentDef.get(block);
-        if (defs != null && defs.containsKey(key)) {
-            return defs.get(key).type();
-        }
-        for (var pred : preds.getOrDefault(block, List.of())) {
-            if (filled.contains(pred)) {
-                var t = probeType(key, pred, visited);
-                if (t != null) {
-                    return t;
-                }
-            }
-        }
-        return null;
-    }
-
     /** Passes the value of {@code key} on every incoming edge of {@code block} to {@code arg}. */
-    private void addArgumentOperands(String key, Block block, BlockArg arg) {
+    private void addArgumentOperands(Var key, Block block, BlockArg arg) {
         for (var pred : distinctPreds(block)) {
             var value = readVariable(key, pred, arg.type(), arg.name());
             if (arg.type() instanceof Type.ObjectType o && o.className().equals("?")) {
@@ -555,11 +553,9 @@ final class Translator {
             }
             int bci = entry.getKey();
             for (int k = 0; k < header.args().size(); k++) {
-                var key = argumentKeys.get(header.args().get(k));
-                if (key == null || !key.startsWith("L")) {
+                if (!(argumentKeys.get(header.args().get(k)) instanceof Local(var slot, var kind))) {
                     continue;
                 }
-                int slot = Integer.parseInt(key.substring(1, key.length() - 1));
                 if (parallel.stream().anyMatch(a -> a.slot() == slot && a.covers(bci))) {
                     header.addAttribute(Attribute.of("parallel", "iv", k));
                 }
@@ -583,12 +579,7 @@ final class Translator {
                 case Float v -> b.constFloat(Type.F32, v);
                 case Long v -> b.constInt(Type.I64, v);
                 case Double v -> b.constFloat(Type.F64, v);
-                case String v -> {
-                    // Only a Debug.printf format: kept on the side, never an IR value.
-                    var placeholder = new Inst(new Opcode.Intrinsic("tc.string"), new Type.ObjectType("String"));
-                    strings.put(placeholder, v);
-                    yield placeholder;
-                }
+                case String v -> b.intrinsic(STRING, Immediates.of("value", v), new Type.ObjectType("String"), List.of()); // a Debug.printf format
                 default -> throw error("TC-E1002", "string constants are not supported in kernels", insn.bci());
             });
             case IINC -> {
@@ -711,9 +702,7 @@ final class Translator {
                 if (op == GETSTATIC && ref.descriptor().equals("L" + Bindings.DEVICE_KERNEL + ";")) {
                     var child = source.deviceKernel(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "the DeviceKernel " + ref.owner().replace('/', '.') + "." + ref.name()
                             + " cannot be resolved: KernelContext.launch needs a static final field, e.g. static final DeviceKernel CHILD = DeviceKernel.of(MyKernels::child)", insn.bci()));
-                    var placeholder = new Inst(new Opcode.Intrinsic("tc.device_kernel"), new Type.ObjectType("DeviceKernel"));
-                    deviceKernels.put(placeholder, child);
-                    push(placeholder);
+                    push(b.intrinsic(DEVICE_KERNEL, Immediates.of("owner", child.owner(), "name", child.name(), "descriptor", child.descriptor()), new Type.ObjectType("DeviceKernel"), List.of()));
                     break;
                 }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
@@ -743,9 +732,7 @@ final class Translator {
                 if (!classFile.constants().className(insn.index()).equals("java/lang/Object") || !(length instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n))) {
                     throw error("TC-E1002", "arrays of references are not supported in kernels", insn.bci());
                 }
-                var placeholder = new Inst(new Opcode.Intrinsic("tc.varargs"), new Type.ObjectType("Object[]"));
-                varargs.put(placeholder, new Value[(int) n]);
-                push(placeholder);
+                push(b.intrinsic(VARARGS, Immediates.of("length", n), new Type.ObjectType("Object[]"), List.of()));
             }
             case NEWARRAY -> {
                 var length = pop();
@@ -901,8 +888,9 @@ final class Translator {
         var value = pop();
         var index = pop();
         var array = pop();
-        if (varargs.containsKey(array)) {
-            varargs.get(array)[constantLane(index, bci)] = value;
+        if (array.type() instanceof Type.ObjectType o && o.className().equals("Object[]")) {
+            var varargs = compileTime(array, VARARGS, "the arguments of a varargs call must be passed directly", bci);
+            builder.intrinsic(VARARGS_SET, Immediates.of("index", constantLane(index, bci)), Type.VOID, List.of(varargs, value));
             return;
         }
         var element = switch (kind) {
@@ -946,7 +934,7 @@ final class Translator {
         }
     }
 
-    private boolean definedSomewhere(String key) {
+    private boolean definedSomewhere(Var key) {
         for (var defs : currentDef.values()) {
             if (defs.containsKey(key)) {
                 return true;
@@ -967,10 +955,88 @@ final class Translator {
     }
 
     private int constantLane(Value index, int bci) {
-        if (index instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var l)) {
-            return (int) l;
+        var lane = Constants.integer(throughTrivialMerges(index));
+        if (lane.isPresent()) {
+            return (int) lane.getAsLong();
         }
         throw error("TC-E1010", "vector lanes can only be accessed at a constant index", bci);
+    }
+
+    /**
+     * {@code v}, looking through block arguments whose incoming values are all one value: operand-stack
+     * slots carried across a branch such as {@code c ? x : y} (trivial arguments are only removed after
+     * translation).
+     */
+    private Value throughTrivialMerges(Value v) {
+        var seen = Collections.newSetFromMap(new IdentityHashMap<Value, Boolean>());
+        while (v instanceof BlockArg arg && seen.add(arg)) {
+            Value same = null;
+            for (var incoming : incomingValues(arg.block(), arg.block().args().indexOf(arg))) {
+                if (incoming != arg && incoming != same) {
+                    if (same != null) {
+                        return v;
+                    }
+                    same = incoming;
+                }
+            }
+            if (same == null) {
+                return v;
+            }
+            v = same;
+        }
+        return v;
+    }
+
+    /**
+     * The instruction defining compile-time operand {@code v}, a {@code intrinsic} reached directly or
+     * through trivial merges; anything else is TC-E1003 with {@code what}.
+     */
+    private Inst compileTime(Value value, String intrinsic, String what, int bci) {
+        var v = throughTrivialMerges(value);
+        if (v instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(intrinsic)) {
+            return i;
+        }
+        throw error("TC-E1003", what, bci);
+    }
+
+    /** The elements stored into a varargs array, by index; every element must be set. */
+    private List<Value> varargValues(Inst array, String call, int bci) {
+        var values = new Value[array.immediates().requireInt("length")];
+        for (var block : function.blocks()) {
+            for (var inst : block.insts()) {
+                if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(VARARGS_SET) && inst.operand(0) == array) {
+                    values[inst.immediates().requireInt("index")] = inst.operand(1);
+                }
+            }
+        }
+        for (var v : values) {
+            if (v == null) {
+                throw error("TC-E1003", "an argument of " + call + " is not set", bci);
+            }
+        }
+        return List.of(values);
+    }
+
+    /**
+     * Removes the compile-time operands once their calls have read them; one still used is a string,
+     * DeviceKernel or Object[] that reached something other than Debug.printf or KernelContext.launch.
+     */
+    private void removeCompileTimeOperands() {
+        var all = function.blocks().stream().flatMap(b -> b.insts().stream()).toList();
+        for (var inst : all) {
+            if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(VARARGS_SET)) {
+                inst.erase();
+            }
+        }
+        for (var inst : all) {
+            if (inst.opcode() instanceof Opcode.Intrinsic(var name) && (name.equals(STRING) || name.equals(DEVICE_KERNEL) || name.equals(VARARGS)) && inst.block().isPresent()) {
+                if (inst.hasUses()) {
+                    throw new FrontendError(new Diagnostic("TC-E1003", "a " + inst.type().text().replace("obj<", "").replace(">", "")
+                            + " can only be passed to Debug.printf or KernelContext.launch", "", inst.loc()));
+                }
+                inst.erase();
+            }
+        }
     }
 
     /**
@@ -979,10 +1045,8 @@ final class Translator {
      * three global sizes, the three local sizes and the child's arguments (without its KernelContext).
      */
     private void deviceLaunch(uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef ref, List<Value> args, int bci) {
-        var child = deviceKernels.get(args.get(1));
-        if (child == null) {
-            throw error("TC-E1003", "the DeviceKernel passed to KernelContext.launch must be read from a static final field", bci);
-        }
+        var kernel = compileTime(args.get(1), DEVICE_KERNEL, "the DeviceKernel passed to KernelContext.launch must be read from a static final field", bci);
+        var child = new Frontend.MethodRef(kernel.immediates().requireString("owner"), kernel.immediates().requireString("name"), kernel.immediates().requireString("descriptor"));
         int next = 2;
         var mode = "default";
         if (ref.descriptor().contains(Bindings.DEVICE_LAUNCH_MODE)) {
@@ -1005,14 +1069,8 @@ final class Translator {
             operands.addAll(List.of(args.get(next), one, one, args.get(next + 1), one, one));
             next += 2;
         }
-        var values = varargs.get(args.get(next));
-        if (values == null) {
-            throw error("TC-E1003", "the arguments of KernelContext.launch must be passed directly (as varargs)", bci);
-        }
+        var values = varargValues(compileTime(args.get(next), VARARGS, "the arguments of KernelContext.launch must be passed directly (as varargs)", bci), "KernelContext.launch", bci);
         for (var v : values) {
-            if (v == null) {
-                throw error("TC-E1003", "an argument of KernelContext.launch is not set", bci);
-            }
             if (v.type() instanceof Type.PointerType) {
                 throw error("TC-E1003", "a local-memory array cannot be passed to KernelContext.launch: it belongs to the launching block", bci);
             }
@@ -1095,7 +1153,7 @@ final class Translator {
             return Optional.empty();
         }
         for (var pred : preds.getOrDefault(arg.block(), List.of())) {
-            var reaching = reachingDefinition(key, pred, Collections.newSetFromMap(new IdentityHashMap<>()));
+            var reaching = reachingDefinition(key, pred, false, Collections.newSetFromMap(new IdentityHashMap<>()));
             var element = reaching == null ? Optional.<Type>empty() : localValueArrayElement(reaching, visited);
             if (element.isPresent()) {
                 return element;
@@ -1104,8 +1162,11 @@ final class Translator {
         return Optional.empty();
     }
 
-    /** The value of {@code key} at the end of {@code block}, if defined on a path into it, without creating block arguments. */
-    private Value reachingDefinition(String key, Block block, Set<Block> seen) {
+    /**
+     * The value of {@code key} at the end of {@code block}, if defined on a path into it, without
+     * creating block arguments; {@code filledOnly} follows only predecessors already translated.
+     */
+    private Value reachingDefinition(Var key, Block block, boolean filledOnly, Set<Block> seen) {
         if (!seen.add(block)) {
             return null;
         }
@@ -1114,7 +1175,10 @@ final class Translator {
             return defs.get(key);
         }
         for (var pred : preds.getOrDefault(block, List.of())) {
-            var v = reachingDefinition(key, pred, seen);
+            if (filledOnly && !filled.contains(pred)) {
+                continue;
+            }
+            var v = reachingDefinition(key, pred, filledOnly, seen);
             if (v != null) {
                 return v;
             }
@@ -1222,13 +1286,11 @@ final class Translator {
             return;
         }
         if (ref.owner().equals(Bindings.DEBUG) && ref.name().equals("printf")) {
-            var format = strings.get(args.get(0));
-            var values = varargs.get(args.get(1));
-            if (format == null || values == null || java.util.Arrays.stream(values).anyMatch(java.util.Objects::isNull)) {
-                throw error("TC-E1003", "Debug.printf needs a constant format string and its arguments passed directly", insn.bci());
-            }
+            var what = "Debug.printf needs a constant format string and its arguments passed directly";
+            var format = compileTime(args.get(0), STRING, what, insn.bci()).immediates().requireString("value");
+            var values = varargValues(compileTime(args.get(1), VARARGS, what, insn.bci()), "Debug.printf", insn.bci());
             // The format is kept as the Java string: each dialect spells (escapes) it itself.
-            builder.intrinsic("tornado.printf", Immediates.of("format", format), Type.VOID, List.of(values));
+            builder.intrinsic("tornado.printf", Immediates.of("format", format), Type.VOID, values);
             return;
         }
         if (ref.owner().equals(Bindings.KERNEL_CONTEXT) && (ref.name().equals("launch") || ref.name().equals("launch3D"))) {
@@ -1396,8 +1458,16 @@ final class Translator {
         return v.type().equals(Type.I64) || v.type().equals(Type.F64) ? 2 : 1;
     }
 
-    private static String localKey(int slot, char kind) {
-        return "L" + slot + kind;
+    private static Local localKey(int slot, char kind) {
+        return new Local(slot, kind);
+    }
+
+    private static String describe(Var key) {
+        return switch (key) {
+            case Local(var slot, var kind) -> "local slot " + slot;
+            case StackSlot(var depth) -> "operand-stack slot " + depth;
+            case VectorParam(var slot) -> "vector parameter in slot " + slot;
+        };
     }
 
     private static char descriptorKind(String descriptor) {

@@ -195,6 +195,18 @@ public class TcCompilerTest {
         }
     }
 
+    /** Compile-time operands (DeviceKernel, varargs) reach their call through a merge that carries one value. */
+    @Test
+    public void launchArgumentsMayBeChosenByATernary() throws Exception {
+        var urls = new java.net.URL[] { java.nio.file.Path.of("../tc-frontend/target/test-classes").toUri().toURL(), java.nio.file.Path.of("../../tornado-api/target/classes").toUri().toURL() };
+        try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
+            var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
+            var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.LaunchKernels", "chosenArgument", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
+            assertTrue(c.diagnostics().toString(), c.succeeded());
+            assertTrue(c.source(), c.source().contains("uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_scale_dp<<<"));
+        }
+    }
+
     /** TileContext kernels become CUDA Tile C++: typed tiles, auto views, a loop-carried mma accumulator. */
     @Test
     public void tileKernelsAreCudaTile() throws Exception {

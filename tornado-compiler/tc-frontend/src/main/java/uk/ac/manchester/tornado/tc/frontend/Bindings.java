@@ -374,13 +374,14 @@ final class Bindings {
         }
         // Inverse and hyperbolic functions bind directly too: their JDK bytecode (FdLibm) reads static
         // tables kernels cannot access; the device library is within the same ulp bounds Graal accepts.
-        for (var fn : new String[] { "sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil",
-                "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh", "atanh", "cbrt", "log10" }) {
+        // Each owner's own functions (BindingsTest checks them against the classes).
+        for (var fn : List.of("sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil", "atan", "asin", "acos", "asinh", "acosh")) {
             METHODS.put(TORNADO_MATH + "." + fn + "(F)F", new Intrinsic("math." + fn, Type.F32));
             METHODS.put(TORNADO_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
+        }
+        for (var fn : List.of("sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil", "atan", "asin", "acos", "sinh", "cosh", "cbrt", "log10")) {
             METHODS.put(JAVA_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
         }
-        METHODS.put(TORNADO_MATH + ".rsqrt(F)F", new Intrinsic("math.rsqrt", Type.F32));
         METHODS.put(JAVA_MATH + ".abs(F)F", new Intrinsic("math.abs", Type.F32));
         METHODS.put(JAVA_MATH + ".abs(I)I", new Intrinsic("math.abs", Type.I32));
         METHODS.put(JAVA_MATH + ".abs(J)J", new Intrinsic("math.abs", Type.I64));
@@ -412,7 +413,16 @@ final class Bindings {
         return Optional.ofNullable(METHODS.get(owner + "." + name + descriptor));
     }
 
-    /** The TC type of a field or parameter descriptor ({@code I}, {@code [F}, {@code Lpkg/Cls;}, …). */
+    /** Every bound method, as {@code owner.name(descriptor)} (checked against the API by BindingsTest). */
+    static java.util.Set<String> methodKeys() {
+        return java.util.Collections.unmodifiableSet(METHODS.keySet());
+    }
+
+    /** Every bound field, as {@code owner.name}. */
+    static java.util.Set<String> fieldKeys() {
+        return java.util.Collections.unmodifiableSet(FIELDS.keySet());
+    }
+
     // ---------------------------------------------------------------- CUDA Tile (TileContext)
 
     static final String TILE_API = "uk/ac/manchester/tornado/api/tile/";
@@ -441,7 +451,8 @@ final class Bindings {
         var views = Map.of("FloatArray", "F32", "HalfFloatArray", "F16", "BFloat16Array", "BF16", "IntArray", "S32", "Int8Array", "S8", "DoubleArray", "F64", "ByteArray", "S8");
         views.forEach((array, element) -> {
             var a = "L" + ARRAYS + array + ";";
-            for (var dims : List.of("I", "II", "III")) {
+            // One to three extents; ByteArray views have no three-extent form.
+            for (var dims : array.equals("ByteArray") ? List.of("I", "II") : List.of("I", "II", "III")) {
                 METHODS.put(ctx + "view(" + a + dims + ")" + view, new Intrinsic("tile.view", VIEW, Immediates.of("elem", element)));
             }
             METHODS.put(ctx + "viewStrided(" + a + "IIII)" + view, new Intrinsic("tile.view_strided", VIEW, Immediates.of("elem", element)));
@@ -526,6 +537,7 @@ final class Bindings {
         return Optional.of(new Collection(element, Integer.parseInt(m.group(2))));
     }
 
+    /** The TC type of a field or parameter descriptor ({@code I}, {@code [F}, {@code Lpkg/Cls;}, …). */
     static Type type(String descriptor) {
         return switch (descriptor.charAt(0)) {
             case 'I', 'Z', 'B', 'C', 'S' -> Type.I32;

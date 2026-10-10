@@ -103,6 +103,12 @@ public final class IntrinsicRegistry {
         add("tornado.local_array.length", EnumSet.noneOf(Effect.class), "the element count of a pending local array");
         add("tornado.local_array", EnumSet.of(Effect.SIDE_EFFECT), "a local array whose size is known after specialisation", "space", "elem");
         pure("tornado.local_collection", "a vector collection allocated in the kernel (removed after inlining)");
+        // Frontend-only compile-time operands, read by Debug.printf and KernelContext.launch and removed
+        // before the function leaves the frontend.
+        pure("tornado.string", "a string constant (a Debug.printf format)", "value");
+        pure("tornado.device_kernel", "the static method a DeviceKernel field names", "owner", "name", "descriptor");
+        pure("tornado.varargs", "the Object[] of a varargs call", "length");
+        add("tornado.varargs.set", EnumSet.of(Effect.WRITES), "an element of a varargs array", "index");
         add("tornado.dp4a.packed", EnumSet.noneOf(Effect.class), "dot product of packed int8 words");
         add("tornado.dp4a", EnumSet.of(Effect.READS), "dot product of int8 words read from memory");
         // CUDA Tile (TileContext): block geometry, views (element type an immediate or a DType operand) and extracts.
