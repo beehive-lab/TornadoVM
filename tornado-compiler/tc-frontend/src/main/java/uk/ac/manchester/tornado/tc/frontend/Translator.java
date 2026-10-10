@@ -766,6 +766,9 @@ final class Translator {
                 } else if (op == NEW && classFile.constants().className(insn.index()).equals(Bindings.HALF_FLOAT)) {
                     // Placeholder until the constructor call gives the value (see Bindings.ValueInit).
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), Type.F16));
+                } else if (op == NEW && Bindings.collection(classFile.constants().className(insn.index())).isPresent()) {
+                    // A vector collection made in the kernel: a private array, once its constructor runs.
+                    push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), Bindings.type("L" + classFile.constants().className(insn.index()) + ";")));
                 } else if (op == NEW && classFile.constants().className(insn.index()).equals(Bindings.ATOMIC_INTEGER)) {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), new Type.ObjectType("AtomicInteger")));
                 } else if (op == NEW && Bindings.type("L" + classFile.constants().className(insn.index()) + ";") instanceof Type.VectorType vec) {
@@ -1100,6 +1103,15 @@ final class Translator {
             args.add(0, pop());
         }
         var returnType = Bindings.type(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
+        var collection = Bindings.collection(ref.owner());
+        if (ref.name().equals("<init>") && ref.descriptor().equals("(I)V") && collection.isPresent()) {
+            var c = collection.get();
+            var n = args.get(1);
+            var width = builder.constInt(Type.I32, c.width());
+            var storage = localArray(AddressSpace.PRIVATE, c.element(), builder.binary(BinaryOp.MUL, n, width));
+            rebind(args.get(0), builder.intrinsic(LocalCollections.NAME, args.get(0).type(), List.of(storage, n, width)));
+            return;
+        }
         if (ref.owner().equals(Bindings.KERNEL_CONTEXT) && (ref.name().equals("launch") || ref.name().equals("launch3D"))) {
             deviceLaunch(ref, args, insn.bci());
             return;

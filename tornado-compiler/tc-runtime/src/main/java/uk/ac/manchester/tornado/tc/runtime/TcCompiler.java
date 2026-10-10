@@ -49,6 +49,7 @@ import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
 import uk.ac.manchester.tornado.tc.tornado.AtomicSlots;
 import uk.ac.manchester.tornado.tc.tornado.BatchOffset;
 import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
+import uk.ac.manchester.tornado.tc.frontend.LocalCollections;
 import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
 import uk.ac.manchester.tornado.tc.tornado.ReductionLowering;
 import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
@@ -191,6 +192,13 @@ public final class TcCompiler {
         List<Diagnostic> frontendDiagnostics = new ArrayList<>(translated.diagnostics());
         if (kernel.isPresent() && translated.module().get().functions().size() > 1) {
             var problems = Inliner.run(translated.module().get(), kernel.get());
+            if (!problems.isEmpty()) {
+                frontendDiagnostics.addAll(problems);
+                kernel = java.util.Optional.empty();
+            }
+        }
+        if (kernel.isPresent()) {
+            var problems = LocalCollections.run(kernel.get());
             if (!problems.isEmpty()) {
                 frontendDiagnostics.addAll(problems);
                 kernel = java.util.Optional.empty();

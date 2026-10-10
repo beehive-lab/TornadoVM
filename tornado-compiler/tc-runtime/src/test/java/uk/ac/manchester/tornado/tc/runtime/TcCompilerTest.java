@@ -93,12 +93,13 @@ public class TcCompilerTest {
     @Test
     public void vectorTypesAreValues() {
         // Float4 is a register vector: the parameter is loaded from the lanes the runtime copies,
-        // Float4.mult inlines to make_float4, setY replaces one lane.
+        // Float4.mult inlines to make_float4, setY replaces one lane. Only lanes are read, so the
+        // canonicaliser takes them straight from the lanes made (y is the 0 setY wrote).
         // The helpers' bytecode comes from the TornadoVM API classes.
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "vectorValue", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
         assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertTrue(c.source(), c.source().contains("make_float4(") && c.source().contains("tc_with_y(") && c.source().contains(".w"));
+        assertTrue(c.source(), c.source().contains("*((float *) v) * 2.0f + 0.0f + *((float *) v2) * 2.0f") && !c.source().contains("float4"));
         assertTrue(c.source(), c.source().contains("unsigned char *v"));
     }
 

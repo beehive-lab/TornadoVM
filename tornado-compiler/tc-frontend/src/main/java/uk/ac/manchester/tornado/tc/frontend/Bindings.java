@@ -221,6 +221,19 @@ final class Bindings {
                 METHODS.put(owner + ".set(I" + d + ")V", new VectorSet(-1));
             }
         }
+        // Half2: two f16 lanes (CUDA half2); its arithmetic is Java code over getX/getY and the constructor.
+        var half2 = new Type.VectorType(Type.F16, 2);
+        VECTORS.put("Half2", half2);
+        var halfOwner = VECTOR_PACKAGE + "Half2";
+        var h = "L" + HALF_FLOAT + ";";
+        METHODS.put(halfOwner + ".<init>()V", new VectorInit(half2));
+        METHODS.put(halfOwner + ".<init>(" + h + h + ")V", new VectorInit(half2));
+        METHODS.put(halfOwner + ".getX()" + h, new VectorGet(0));
+        METHODS.put(halfOwner + ".getY()" + h, new VectorGet(1));
+        METHODS.put(halfOwner + ".setX(" + h + ")V", new VectorSet(0));
+        METHODS.put(halfOwner + ".setY(" + h + ")V", new VectorSet(1));
+        METHODS.put(halfOwner + ".get(I)" + h, new VectorGet(-1));
+        METHODS.put(halfOwner + ".set(I" + h + ")V", new VectorSet(-1));
         // java.util.concurrent.atomic.AtomicInteger: counters in the kernel's atomics region; the JDK's
         // own implementation (Unsafe) is never translated.
         METHODS.put(ATOMIC_INTEGER + ".<init>(I)V", new AtomicNew());
@@ -364,6 +377,29 @@ final class Bindings {
     }
 
     /** The TC type of a field or parameter descriptor ({@code I}, {@code [F}, {@code Lpkg/Cls;}, …). */
+    /** A vector collection ({@code VectorFloat2}, ...): its element type and the lanes per element. */
+    record Collection(Type element, int width) {
+    }
+
+    private static final String COLLECTIONS = "uk/ac/manchester/tornado/api/types/collections/";
+
+    static Optional<Collection> collection(String internalName) {
+        if (!internalName.startsWith(COLLECTIONS)) {
+            return Optional.empty();
+        }
+        var m = java.util.regex.Pattern.compile("Vector(Float|Double|Int|Half)(\\d+)").matcher(internalName.substring(COLLECTIONS.length()));
+        if (!m.matches()) {
+            return Optional.empty();
+        }
+        var element = switch (m.group(1)) {
+            case "Float" -> Type.F32;
+            case "Double" -> Type.F64;
+            case "Int" -> Type.I32;
+            default -> Type.F16;
+        };
+        return Optional.of(new Collection(element, Integer.parseInt(m.group(2))));
+    }
+
     static Type type(String descriptor) {
         return switch (descriptor.charAt(0)) {
             case 'I', 'Z', 'B', 'C', 'S' -> Type.I32;

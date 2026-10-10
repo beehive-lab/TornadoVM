@@ -859,6 +859,10 @@ public final class CEmitter {
                 case F64 -> "double";
             };
             case Type.PointerType p -> "unsigned char *";
+            case Type.VectorType(var element, var length) when element.equals(Type.F16) && length == 2 -> {
+                usesHalf = true;
+                yield "half2";
+            }
             // Register vectors (tensor-core fragments): the CUDA built-in vector types.
             case Type.VectorType(var element, var length) when length >= 2 && length <= 4 && !element.equals(Type.F16) && !element.equals(Type.BF16) && !element.equals(Type.I1) ->
                 (element.equals(Type.I8) ? "char" : typeName(element).replace("long long", "longlong")) + length;
