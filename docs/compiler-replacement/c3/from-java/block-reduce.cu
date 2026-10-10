@@ -1,13 +1,8 @@
 extern "C" __global__ void C3Kernels_blockSum(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
 {
   __shared__ float scratch[256];
-  int gid;
-  int lid;
-  int grp;
-  int lsz;
-  float *in_data;
-  int s;
-  float *out_data;
+  int gid, lid, grp, lsz, s;
+  float *in_data, *out_data;
   gid = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:54
   lid = (int) threadIdx.x;  // C3Kernels.java:55
   grp = (int) blockIdx.x;  // C3Kernels.java:56

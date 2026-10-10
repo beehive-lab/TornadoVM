@@ -16,9 +16,9 @@ and `tornado --printKernel -cp . C3Kernels` ([c3/java/C3Kernels.java](c3/java/C3
 
 | Kernel | CUDA lines (TC) | CUDA lines (Graal) |
 |---|---:|---:|
-| Grid-stride vector addition (`add`) | 19 | 33 |
-| If/else with `sqrt` (`compute`) | 20 | 45 |
-| KernelContext shared-memory tree reduction (`blockSum`) | 30 | 73 |
+| Grid-stride vector addition (`add`) | 15 | 33 |
+| If/else with `sqrt` (`compute`) | 18 | 45 |
+| KernelContext shared-memory tree reduction (`blockSum`) | 25 | 73 |
 
 What the comparison shows, and what TC still owes (all in [optimizations.md](optimizations.md)):
 
@@ -26,7 +26,7 @@ What the comparison shows, and what TC still owes (all in [optimizations.md](opt
   and prints `while` loops, guard clauses and direct comparisons. Arrays are typed data pointers
   (`float *a_data = a + 16`) indexed as `a_data[i]`; loop-carried values are updated in place
   (`s = s / 2;`), not through SSA copies; TC-derived values get role names (`gid_x`, `gsize_x`,
-  `a_len`, `i_off`). Graal prints `arg1`, `f_10`, byte-offset casts and `// BLOCK n` labels.
+  `a_len`, `i_off`), and locals of one type share a declaration (`float x, v;`). Graal prints `arg1`, `f_10`, byte-offset casts and `// BLOCK n` labels.
 - **Optimiser (`tc-opt`, O2–O6, O10):** constants fold with Java semantics, the address
   `i * 4 + 16` is computed once and shared by all accesses (GVN), and loop-invariant values (array
   length, grid size, `i * cols`) move out of the loop (LICM). The Graal path recomputes the grid
@@ -184,12 +184,8 @@ kernel C3Kernels.add(ptr<global> a, ptr<global> b, ptr<global> c) -> void {
 ```cuda
 extern "C" __global__ void C3Kernels_add(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
 {
-  int a_len;
-  int gsize_x;
-  float *a_data;
-  float *b_data;
-  float *c_data;
-  int i;
+  int a_len, gsize_x, i;
+  float *a_data, *b_data, *c_data;
   i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:34
   a_len = (int) *((long long *) a);  // C3Kernels.java:34
   gsize_x = (int) (gridDim.x * blockDim.x);  // C3Kernels.java:34
@@ -407,10 +403,8 @@ kernel C3Kernels.compute(ptr<global> in, ptr<global> out) -> void {
 extern "C" __global__ void C3Kernels_compute(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
 {
   int i;
-  float *in_data;
-  float x;
-  float v;
-  float *out_data;
+  float *in_data, *out_data;
+  float x, v;
   i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:40
   if (i < (int) *((long long *) in)) {
     in_data = (float *) (in + 16LL);  // C3Kernels.java:42
@@ -767,13 +761,8 @@ kernel C3Kernels.blockSum(ptr<global> in, ptr<global> out) -> void {
 extern "C" __global__ void C3Kernels_blockSum(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
 {
   __shared__ float scratch[256];
-  int gid;
-  int lid;
-  int grp;
-  int lsz;
-  float *in_data;
-  int s;
-  float *out_data;
+  int gid, lid, grp, lsz, s;
+  float *in_data, *out_data;
   gid = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:54
   lid = (int) threadIdx.x;  // C3Kernels.java:55
   grp = (int) blockIdx.x;  // C3Kernels.java:56
@@ -892,11 +881,8 @@ public static void vectorAdd(FloatArray a, FloatArray b, FloatArray c) {
 ```cuda
 extern "C" __global__ void ParallelKernels_vectorAdd(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
 {
-  int gsize_x;
-  float *a_data;
-  float *b_data;
-  float *c_data;
-  int i;
+  int gsize_x, i;
+  float *a_data, *b_data, *c_data;
   gsize_x = (int) (gridDim.x * blockDim.x);  // ParallelKernels.java:33
   a_data = (float *) (a + 16LL);  // ParallelKernels.java:34
   b_data = (float *) (b + 16LL);  // ParallelKernels.java:34
@@ -930,15 +916,8 @@ public static void matrixAdd(FloatArray a, FloatArray b, FloatArray c, int rows,
 ```cuda
 extern "C" __global__ void ParallelKernels_matrixAdd(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c, int rows, int cols)
 {
-  int gid_x;
-  int gsize_x;
-  int gsize_y;
-  float *a_data;
-  float *b_data;
-  float *c_data;
-  int i;
-  int i_off;
-  int j;
+  int gid_x, gsize_x, gsize_y, i, i_off, j;
+  float *a_data, *b_data, *c_data;
   gid_x = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // ParallelKernels.java:40
   gsize_x = (int) (gridDim.x * blockDim.x);  // ParallelKernels.java:40
   gsize_y = (int) (gridDim.y * blockDim.y);  // ParallelKernels.java:39

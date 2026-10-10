@@ -12,20 +12,20 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 .ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
 .diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
 </style></head><body>
-<header><h1>ParallelKernels.matrixAdd</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 7.30 ms total &middot; entry <code>ParallelKernels_matrixAdd</code></p></header>
+<header><h1>ParallelKernels.matrixAdd</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 6.82 ms total &middot; entry <code>ParallelKernels_matrixAdd</code></p></header>
 <section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class="num">Time</th><th class="num">IR instructions</th><th>Share</th></tr></thead><tbody>
 <tr><td>0</td><td><a href="#stage-0">bytecode</a></td><td class="num">0.00 ms</td><td class="num">0</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>1</td><td>frontend</td><td class="num">2.30 ms</td><td class="num">26</td><td><span class="bar" style="width:34%"></span></td></tr>
+<tr><td>1</td><td>frontend</td><td class="num">1.79 ms</td><td class="num">26</td><td><span class="bar" style="width:29%"></span></td></tr>
 <tr><td>2</td><td><a href="#stage-2">input</a></td><td class="num">0.00 ms</td><td class="num">26</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>3</td><td>verify.pre-abi</td><td class="num">0.10 ms</td><td class="num">26</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>4</td><td><a href="#stage-4">specialise</a></td><td class="num">0.17 ms</td><td class="num">28</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>5</td><td><a href="#stage-5">parallel</a></td><td class="num">0.13 ms</td><td class="num">34</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>6</td><td><a href="#stage-6">optimize</a></td><td class="num">1.31 ms</td><td class="num">23</td><td><span class="bar" style="width:19%"></span></td></tr>
-<tr><td>7</td><td><a href="#stage-7">abi</a></td><td class="num">0.08 ms</td><td class="num">41</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>8</td><td>verify.post-abi</td><td class="num">0.14 ms</td><td class="num">41</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>9</td><td><a href="#stage-9">optimize.post-abi</a></td><td class="num">1.74 ms</td><td class="num">33</td><td><span class="bar" style="width:26%"></span></td></tr>
-<tr><td>10</td><td><a href="#stage-10">structure</a></td><td class="num">0.50 ms</td><td class="num">33</td><td><span class="bar" style="width:7%"></span></td></tr>
-<tr><td>11</td><td><a href="#stage-11">emit</a></td><td class="num">0.13 ms</td><td class="num">33</td><td><span class="bar" style="width:2%"></span></td></tr>
+<tr><td>3</td><td>verify.pre-abi</td><td class="num">0.16 ms</td><td class="num">26</td><td><span class="bar" style="width:2%"></span></td></tr>
+<tr><td>4</td><td><a href="#stage-4">specialise</a></td><td class="num">0.20 ms</td><td class="num">28</td><td><span class="bar" style="width:3%"></span></td></tr>
+<tr><td>5</td><td><a href="#stage-5">parallel</a></td><td class="num">0.12 ms</td><td class="num">34</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>6</td><td><a href="#stage-6">optimize</a></td><td class="num">1.23 ms</td><td class="num">23</td><td><span class="bar" style="width:20%"></span></td></tr>
+<tr><td>7</td><td><a href="#stage-7">abi</a></td><td class="num">0.10 ms</td><td class="num">41</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>8</td><td>verify.post-abi</td><td class="num">0.17 ms</td><td class="num">41</td><td><span class="bar" style="width:2%"></span></td></tr>
+<tr><td>9</td><td><a href="#stage-9">optimize.post-abi</a></td><td class="num">1.53 ms</td><td class="num">33</td><td><span class="bar" style="width:25%"></span></td></tr>
+<tr><td>10</td><td><a href="#stage-10">structure</a></td><td class="num">0.61 ms</td><td class="num">33</td><td><span class="bar" style="width:10%"></span></td></tr>
+<tr><td>11</td><td><a href="#stage-11">emit</a></td><td class="num">0.17 ms</td><td class="num">33</td><td><span class="bar" style="width:2%"></span></td></tr>
 </tbody></table></section>
 <section id="stage-0"><h2>0 &middot; bytecode <small>Java bytecode</small></h2>
 <pre class="code"><span class="ln">1</span>// uk.ac.manchester.tornado.tc.gpu.kernels.ParallelKernels.matrixAdd(Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;II)V
@@ -373,32 +373,25 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <section id="stage-11"><h2>11 &middot; emit <small>target source</small></h2>
 <pre class="code"><span class="ln">1</span>extern &quot;C&quot; __global__ void ParallelKernels_matrixAdd(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c, int rows, int cols)
 <span class="ln">2</span>{
-<span class="ln">3</span>  int gid_x;
-<span class="ln">4</span>  int gsize_x;
-<span class="ln">5</span>  int gsize_y;
-<span class="ln">6</span>  float *a_data;
-<span class="ln">7</span>  float *b_data;
-<span class="ln">8</span>  float *c_data;
-<span class="ln">9</span>  int i;
-<span class="ln">10</span>  int i_off;
-<span class="ln">11</span>  int j;
-<span class="ln">12</span>  gid_x = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // ParallelKernels.java:40
-<span class="ln">13</span>  gsize_x = (int) (gridDim.x * blockDim.x);  // ParallelKernels.java:40
-<span class="ln">14</span>  gsize_y = (int) (gridDim.y * blockDim.y);  // ParallelKernels.java:39
-<span class="ln">15</span>  a_data = (float *) (a + 16LL);  // ParallelKernels.java:41
-<span class="ln">16</span>  b_data = (float *) (b + 16LL);  // ParallelKernels.java:41
-<span class="ln">17</span>  c_data = (float *) (c + 16LL);  // ParallelKernels.java:41
-<span class="ln">18</span>  i = (int) (blockIdx.y * blockDim.y + threadIdx.y);
-<span class="ln">19</span>  while (i &lt; 512) {
-<span class="ln">20</span>    i_off = i * 1024;  // ParallelKernels.java:41
-<span class="ln">21</span>    j = gid_x;
-<span class="ln">22</span>    while (j &lt; 1024) {
-<span class="ln">23</span>      c_data[i_off + j] = a_data[i_off + j] + b_data[i_off + j];  // ParallelKernels.java:41
-<span class="ln">24</span>      j = j + gsize_x;  // ParallelKernels.java:40
-<span class="ln">25</span>    }
-<span class="ln">26</span>    i = i + gsize_y;  // ParallelKernels.java:39
-<span class="ln">27</span>  }
-<span class="ln">28</span>}
+<span class="ln">3</span>  int gid_x, gsize_x, gsize_y, i, i_off, j;
+<span class="ln">4</span>  float *a_data, *b_data, *c_data;
+<span class="ln">5</span>  gid_x = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // ParallelKernels.java:40
+<span class="ln">6</span>  gsize_x = (int) (gridDim.x * blockDim.x);  // ParallelKernels.java:40
+<span class="ln">7</span>  gsize_y = (int) (gridDim.y * blockDim.y);  // ParallelKernels.java:39
+<span class="ln">8</span>  a_data = (float *) (a + 16LL);  // ParallelKernels.java:41
+<span class="ln">9</span>  b_data = (float *) (b + 16LL);  // ParallelKernels.java:41
+<span class="ln">10</span>  c_data = (float *) (c + 16LL);  // ParallelKernels.java:41
+<span class="ln">11</span>  i = (int) (blockIdx.y * blockDim.y + threadIdx.y);
+<span class="ln">12</span>  while (i &lt; 512) {
+<span class="ln">13</span>    i_off = i * 1024;  // ParallelKernels.java:41
+<span class="ln">14</span>    j = gid_x;
+<span class="ln">15</span>    while (j &lt; 1024) {
+<span class="ln">16</span>      c_data[i_off + j] = a_data[i_off + j] + b_data[i_off + j];  // ParallelKernels.java:41
+<span class="ln">17</span>      j = j + gsize_x;  // ParallelKernels.java:40
+<span class="ln">18</span>    }
+<span class="ln">19</span>    i = i + gsize_y;  // ParallelKernels.java:39
+<span class="ln">20</span>  }
+<span class="ln">21</span>}
 </pre></section>
 <footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>
 </body></html>

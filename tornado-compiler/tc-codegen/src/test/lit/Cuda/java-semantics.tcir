@@ -16,18 +16,11 @@
 ; CHECK-NEXT:  }
 ; CHECK-LABEL: __device__ static int semantics(int x, int k, long long l, float f, double d)
 ; CHECK-NEXT:  {
-; CHECK-NEXT:    int s1;
-; CHECK-NEXT:    int s2;
-; CHECK-NEXT:    int u;
-; CHECK-NEXT:    long long ul;
-; CHECK-NEXT:    int fi;
-; CHECK-NEXT:    long long dl;
+; CHECK-NEXT:    int s1, s2, u, fi, bits;
+; CHECK-NEXT:    long long ul, dl;
 ; CHECK-NEXT:    float mn;
 ; CHECK-NEXT:    double mx;
-; CHECK-NEXT:    bool lt;
-; CHECK-NEXT:    bool ne;
-; CHECK-NEXT:    bool ucmp;
-; CHECK-NEXT:    int bits;
+; CHECK-NEXT:    bool lt, ne, ucmp;
 ; CHECK-NEXT:    s1 = x << (k & 31);
 ; CHECK-NEXT:    s2 = x >> 3;
 ; CHECK-NEXT:    u = (int) ((unsigned int) x >> (k & 31));

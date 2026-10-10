@@ -12,19 +12,19 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 .ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
 .diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
 </style></head><body>
-<header><h1>C3Kernels.blockSum</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 10.64 ms total &middot; entry <code>C3Kernels_blockSum</code></p></header>
+<header><h1>C3Kernels.blockSum</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 18.86 ms total &middot; entry <code>C3Kernels_blockSum</code></p></header>
 <section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class="num">Time</th><th class="num">IR instructions</th><th>Share</th></tr></thead><tbody>
 <tr><td>0</td><td><a href="#stage-0">bytecode</a></td><td class="num">0.00 ms</td><td class="num">0</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>1</td><td>frontend</td><td class="num">2.49 ms</td><td class="num">56</td><td><span class="bar" style="width:25%"></span></td></tr>
+<tr><td>1</td><td>frontend</td><td class="num">4.16 ms</td><td class="num">56</td><td><span class="bar" style="width:23%"></span></td></tr>
 <tr><td>2</td><td><a href="#stage-2">input</a></td><td class="num">0.00 ms</td><td class="num">56</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>3</td><td>verify.pre-abi</td><td class="num">0.52 ms</td><td class="num">56</td><td><span class="bar" style="width:5%"></span></td></tr>
-<tr><td>4</td><td><a href="#stage-4">parallel</a></td><td class="num">0.05 ms</td><td class="num">56</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>5</td><td><a href="#stage-5">optimize</a></td><td class="num">2.37 ms</td><td class="num">38</td><td><span class="bar" style="width:24%"></span></td></tr>
-<tr><td>6</td><td><a href="#stage-6">abi</a></td><td class="num">0.14 ms</td><td class="num">50</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>7</td><td>verify.post-abi</td><td class="num">0.23 ms</td><td class="num">50</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>8</td><td><a href="#stage-8">optimize.post-abi</a></td><td class="num">2.24 ms</td><td class="num">47</td><td><span class="bar" style="width:23%"></span></td></tr>
-<tr><td>9</td><td><a href="#stage-9">structure</a></td><td class="num">0.64 ms</td><td class="num">47</td><td><span class="bar" style="width:6%"></span></td></tr>
-<tr><td>10</td><td><a href="#stage-10">emit</a></td><td class="num">0.93 ms</td><td class="num">47</td><td><span class="bar" style="width:9%"></span></td></tr>
+<tr><td>3</td><td>verify.pre-abi</td><td class="num">0.53 ms</td><td class="num">56</td><td><span class="bar" style="width:3%"></span></td></tr>
+<tr><td>4</td><td><a href="#stage-4">parallel</a></td><td class="num">0.04 ms</td><td class="num">56</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>5</td><td><a href="#stage-5">optimize</a></td><td class="num">2.42 ms</td><td class="num">38</td><td><span class="bar" style="width:13%"></span></td></tr>
+<tr><td>6</td><td><a href="#stage-6">abi</a></td><td class="num">0.21 ms</td><td class="num">50</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>7</td><td>verify.post-abi</td><td class="num">0.21 ms</td><td class="num">50</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>8</td><td><a href="#stage-8">optimize.post-abi</a></td><td class="num">6.18 ms</td><td class="num">47</td><td><span class="bar" style="width:35%"></span></td></tr>
+<tr><td>9</td><td><a href="#stage-9">structure</a></td><td class="num">1.62 ms</td><td class="num">47</td><td><span class="bar" style="width:9%"></span></td></tr>
+<tr><td>10</td><td><a href="#stage-10">emit</a></td><td class="num">2.06 ms</td><td class="num">47</td><td><span class="bar" style="width:11%"></span></td></tr>
 </tbody></table></section>
 <section id="stage-0"><h2>0 &middot; bytecode <small>Java bytecode</small></h2>
 <pre class="code"><span class="ln">1</span>// uk.ac.manchester.tornado.tc.gpu.kernels.C3Kernels.blockSum(Luk/ac/manchester/tornado/api/KernelContext;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;)V
@@ -462,33 +462,28 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <pre class="code"><span class="ln">1</span>extern &quot;C&quot; __global__ void C3Kernels_blockSum(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
 <span class="ln">2</span>{
 <span class="ln">3</span>  __shared__ float scratch[256];
-<span class="ln">4</span>  int gid;
-<span class="ln">5</span>  int lid;
-<span class="ln">6</span>  int grp;
-<span class="ln">7</span>  int lsz;
-<span class="ln">8</span>  float *in_data;
-<span class="ln">9</span>  int s;
-<span class="ln">10</span>  float *out_data;
-<span class="ln">11</span>  gid = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:54
-<span class="ln">12</span>  lid = (int) threadIdx.x;  // C3Kernels.java:55
-<span class="ln">13</span>  grp = (int) blockIdx.x;  // C3Kernels.java:56
-<span class="ln">14</span>  lsz = (int) blockDim.x;  // C3Kernels.java:57
-<span class="ln">15</span>  in_data = (float *) (in + 16LL);  // C3Kernels.java:59
-<span class="ln">16</span>  scratch[lid] = in_data[gid];  // C3Kernels.java:59
-<span class="ln">17</span>  __syncthreads();  // C3Kernels.java:60
-<span class="ln">18</span>  s = lsz / 2;  // C3Kernels.java:61
-<span class="ln">19</span>  while (s &gt; 0) {
-<span class="ln">20</span>    if (lid &lt; s) {
-<span class="ln">21</span>      scratch[lid] = scratch[lid] + scratch[lid + s];  // C3Kernels.java:63
-<span class="ln">22</span>    }
-<span class="ln">23</span>    __syncthreads();  // C3Kernels.java:65
-<span class="ln">24</span>    s = s / 2;  // C3Kernels.java:61
-<span class="ln">25</span>  }
-<span class="ln">26</span>  if (lid == 0) {
-<span class="ln">27</span>    out_data = (float *) (out + 16LL);  // C3Kernels.java:68
-<span class="ln">28</span>    out_data[grp] = scratch[0];  // C3Kernels.java:68
-<span class="ln">29</span>  }
-<span class="ln">30</span>}
+<span class="ln">4</span>  int gid, lid, grp, lsz, s;
+<span class="ln">5</span>  float *in_data, *out_data;
+<span class="ln">6</span>  gid = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:54
+<span class="ln">7</span>  lid = (int) threadIdx.x;  // C3Kernels.java:55
+<span class="ln">8</span>  grp = (int) blockIdx.x;  // C3Kernels.java:56
+<span class="ln">9</span>  lsz = (int) blockDim.x;  // C3Kernels.java:57
+<span class="ln">10</span>  in_data = (float *) (in + 16LL);  // C3Kernels.java:59
+<span class="ln">11</span>  scratch[lid] = in_data[gid];  // C3Kernels.java:59
+<span class="ln">12</span>  __syncthreads();  // C3Kernels.java:60
+<span class="ln">13</span>  s = lsz / 2;  // C3Kernels.java:61
+<span class="ln">14</span>  while (s &gt; 0) {
+<span class="ln">15</span>    if (lid &lt; s) {
+<span class="ln">16</span>      scratch[lid] = scratch[lid] + scratch[lid + s];  // C3Kernels.java:63
+<span class="ln">17</span>    }
+<span class="ln">18</span>    __syncthreads();  // C3Kernels.java:65
+<span class="ln">19</span>    s = s / 2;  // C3Kernels.java:61
+<span class="ln">20</span>  }
+<span class="ln">21</span>  if (lid == 0) {
+<span class="ln">22</span>    out_data = (float *) (out + 16LL);  // C3Kernels.java:68
+<span class="ln">23</span>    out_data[grp] = scratch[0];  // C3Kernels.java:68
+<span class="ln">24</span>  }
+<span class="ln">25</span>}
 </pre></section>
 <footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>
 </body></html>

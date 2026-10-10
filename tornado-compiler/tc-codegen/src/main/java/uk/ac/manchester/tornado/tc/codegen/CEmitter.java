@@ -21,6 +21,7 @@
 package uk.ac.manchester.tornado.tc.codegen;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -163,10 +164,30 @@ public final class CEmitter {
             var a = alloca.kind();
             line(1, (a.space() == AddressSpace.SHARED ? "__shared__ " : "") + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "];");
         }
+        // Locals of one type share a declaration (`float x, v;`, `float *a_data, *b_data;`), in first-use order.
+        var groups = new java.util.LinkedHashMap<String, List<String>>();
         for (var v : k.locals()) {
             var element = elementTypes.get(v);
-            line(1, (element != null ? typeName(element) + " *" + names.get(v) : declaration(v.type(), names.get(v))) + ";");
+            var name = names.get(v);
+            var full = element != null ? typeName(element) + " *" + name : declaration(v.type(), name);
+            var prefix = full.substring(0, full.length() - name.length());
+            var base = prefix.replaceAll("[\\s*]+$", "");
+            var stars = prefix.substring(base.length()).replace(" ", "");
+            // Pointers and scalars of one base type get separate lines: `float x, v;` and `float *a_data, *b_data;`.
+            groups.computeIfAbsent(base + (stars.isEmpty() ? "" : " *"), x -> new ArrayList<>()).add(stars + name);
         }
+        groups.forEach((key, declarators) -> {
+            var base = key.endsWith(" *") ? key.substring(0, key.length() - 2) : key;
+            var current = new StringBuilder();
+            for (var d : declarators) {
+                if (current.length() > 0 && base.length() + current.length() + d.length() > 96) {
+                    line(1, base + " " + current + ";");
+                    current.setLength(0);
+                }
+                current.append(current.length() > 0 ? ", " : "").append(d);
+            }
+            line(1, base + " " + current + ";");
+        });
         var body = k.body();
         if (f.returnType() instanceof Type.VoidType && !body.isEmpty() && body.get(body.size() - 1) instanceof S.Return(var value) && value.isEmpty()) {
             body = body.subList(0, body.size() - 1); // a void function ends anyway

@@ -12,19 +12,19 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 .ln { display: inline-block; width: 3.5em; color: var(--muted); user-select: none; } .add { background: var(--add); }
 .diag { border-color: var(--bad); } a { color: var(--bar); } footer { color: var(--muted); margin-top: 32px; font-size: 12px; }
 </style></head><body>
-<header><h1>C3Kernels.add</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 53.39 ms total &middot; entry <code>C3Kernels_add</code></p></header>
+<header><h1>C3Kernels.add</h1><p class="meta">CUDA sm_89 &middot; <span class="ok">compiled</span> &middot; 58.79 ms total &middot; entry <code>C3Kernels_add</code></p></header>
 <section><h2>Stages</h2><table><thead><tr><th>#</th><th>Stage</th><th class="num">Time</th><th class="num">IR instructions</th><th>Share</th></tr></thead><tbody>
 <tr><td>0</td><td><a href="#stage-0">bytecode</a></td><td class="num">0.00 ms</td><td class="num">0</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>1</td><td>frontend</td><td class="num">18.41 ms</td><td class="num">14</td><td><span class="bar" style="width:40%"></span></td></tr>
+<tr><td>1</td><td>frontend</td><td class="num">19.68 ms</td><td class="num">14</td><td><span class="bar" style="width:39%"></span></td></tr>
 <tr><td>2</td><td><a href="#stage-2">input</a></td><td class="num">0.00 ms</td><td class="num">14</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>3</td><td>verify.pre-abi</td><td class="num">1.98 ms</td><td class="num">14</td><td><span class="bar" style="width:4%"></span></td></tr>
-<tr><td>4</td><td><a href="#stage-4">parallel</a></td><td class="num">0.90 ms</td><td class="num">14</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>5</td><td><a href="#stage-5">optimize</a></td><td class="num">7.09 ms</td><td class="num">13</td><td><span class="bar" style="width:15%"></span></td></tr>
-<tr><td>6</td><td><a href="#stage-6">abi</a></td><td class="num">1.03 ms</td><td class="num">32</td><td><span class="bar" style="width:2%"></span></td></tr>
-<tr><td>7</td><td>verify.post-abi</td><td class="num">0.77 ms</td><td class="num">32</td><td><span class="bar" style="width:1%"></span></td></tr>
-<tr><td>8</td><td><a href="#stage-8">optimize.post-abi</a></td><td class="num">4.80 ms</td><td class="num">24</td><td><span class="bar" style="width:10%"></span></td></tr>
-<tr><td>9</td><td><a href="#stage-9">structure</a></td><td class="num">6.18 ms</td><td class="num">24</td><td><span class="bar" style="width:13%"></span></td></tr>
-<tr><td>10</td><td><a href="#stage-10">emit</a></td><td class="num">3.91 ms</td><td class="num">24</td><td><span class="bar" style="width:8%"></span></td></tr>
+<tr><td>3</td><td>verify.pre-abi</td><td class="num">2.09 ms</td><td class="num">14</td><td><span class="bar" style="width:4%"></span></td></tr>
+<tr><td>4</td><td><a href="#stage-4">parallel</a></td><td class="num">0.84 ms</td><td class="num">14</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>5</td><td><a href="#stage-5">optimize</a></td><td class="num">7.24 ms</td><td class="num">13</td><td><span class="bar" style="width:14%"></span></td></tr>
+<tr><td>6</td><td><a href="#stage-6">abi</a></td><td class="num">1.52 ms</td><td class="num">32</td><td><span class="bar" style="width:3%"></span></td></tr>
+<tr><td>7</td><td>verify.post-abi</td><td class="num">0.88 ms</td><td class="num">32</td><td><span class="bar" style="width:1%"></span></td></tr>
+<tr><td>8</td><td><a href="#stage-8">optimize.post-abi</a></td><td class="num">4.76 ms</td><td class="num">24</td><td><span class="bar" style="width:9%"></span></td></tr>
+<tr><td>9</td><td><a href="#stage-9">structure</a></td><td class="num">8.47 ms</td><td class="num">24</td><td><span class="bar" style="width:16%"></span></td></tr>
+<tr><td>10</td><td><a href="#stage-10">emit</a></td><td class="num">4.82 ms</td><td class="num">24</td><td><span class="bar" style="width:9%"></span></td></tr>
 </tbody></table></section>
 <section id="stage-0"><h2>0 &middot; bytecode <small>Java bytecode</small></h2>
 <pre class="code"><span class="ln">1</span>// uk.ac.manchester.tornado.tc.gpu.kernels.C3Kernels.add(Luk/ac/manchester/tornado/api/KernelContext;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;Luk/ac/manchester/tornado/api/types/arrays/FloatArray;)V
@@ -229,23 +229,19 @@ pre { background: var(--code); border: 1px solid var(--line); border-radius: 6px
 <section id="stage-10"><h2>10 &middot; emit <small>target source</small></h2>
 <pre class="code"><span class="ln">1</span>extern &quot;C&quot; __global__ void C3Kernels_add(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c)
 <span class="ln">2</span>{
-<span class="ln">3</span>  int a_len;
-<span class="ln">4</span>  int gsize_x;
-<span class="ln">5</span>  float *a_data;
-<span class="ln">6</span>  float *b_data;
-<span class="ln">7</span>  float *c_data;
-<span class="ln">8</span>  int i;
-<span class="ln">9</span>  i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:34
-<span class="ln">10</span>  a_len = (int) *((long long *) a);  // C3Kernels.java:34
-<span class="ln">11</span>  gsize_x = (int) (gridDim.x * blockDim.x);  // C3Kernels.java:34
-<span class="ln">12</span>  a_data = (float *) (a + 16LL);  // C3Kernels.java:35
-<span class="ln">13</span>  b_data = (float *) (b + 16LL);  // C3Kernels.java:35
-<span class="ln">14</span>  c_data = (float *) (c + 16LL);  // C3Kernels.java:35
-<span class="ln">15</span>  while (i &lt; a_len) {
-<span class="ln">16</span>    c_data[i] = a_data[i] + b_data[i];  // C3Kernels.java:35
-<span class="ln">17</span>    i = i + gsize_x;  // C3Kernels.java:34
-<span class="ln">18</span>  }
-<span class="ln">19</span>}
+<span class="ln">3</span>  int a_len, gsize_x, i;
+<span class="ln">4</span>  float *a_data, *b_data, *c_data;
+<span class="ln">5</span>  i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:34
+<span class="ln">6</span>  a_len = (int) *((long long *) a);  // C3Kernels.java:34
+<span class="ln">7</span>  gsize_x = (int) (gridDim.x * blockDim.x);  // C3Kernels.java:34
+<span class="ln">8</span>  a_data = (float *) (a + 16LL);  // C3Kernels.java:35
+<span class="ln">9</span>  b_data = (float *) (b + 16LL);  // C3Kernels.java:35
+<span class="ln">10</span>  c_data = (float *) (c + 16LL);  // C3Kernels.java:35
+<span class="ln">11</span>  while (i &lt; a_len) {
+<span class="ln">12</span>    c_data[i] = a_data[i] + b_data[i];  // C3Kernels.java:35
+<span class="ln">13</span>    i = i + gsize_x;  // C3Kernels.java:34
+<span class="ln">14</span>  }
+<span class="ln">15</span>}
 </pre></section>
 <footer>Generated by TC (tc-debug HtmlReport). Stage dumps: <code>-Dtornado.tc.dump=all</code>; JFR: <code>jfr print --events tc.*</code>.</footer>
 </body></html>

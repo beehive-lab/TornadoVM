@@ -1,10 +1,8 @@
 extern "C" __global__ void C3Kernels_compute(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *in, unsigned char *out)
 {
   int i;
-  float *in_data;
-  float x;
-  float v;
-  float *out_data;
+  float *in_data, *out_data;
+  float x, v;
   i = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // C3Kernels.java:40
   if (i < (int) *((long long *) in)) {
     in_data = (float *) (in + 16LL);  // C3Kernels.java:42

@@ -1,14 +1,7 @@
 extern "C" __global__ void ParallelKernels_matrixAdd(long long *_kernel_context, unsigned char *_constant_region, unsigned char *_local_region, int *_atomics, unsigned char *a, unsigned char *b, unsigned char *c, int rows, int cols)
 {
-  int gid_x;
-  int gsize_x;
-  int gsize_y;
-  float *a_data;
-  float *b_data;
-  float *c_data;
-  int i;
-  int i_off;
-  int j;
+  int gid_x, gsize_x, gsize_y, i, i_off, j;
+  float *a_data, *b_data, *c_data;
   gid_x = (int) (blockIdx.x * blockDim.x + threadIdx.x);  // ParallelKernels.java:40
   gsize_x = (int) (gridDim.x * blockDim.x);  // ParallelKernels.java:40
   gsize_y = (int) (gridDim.y * blockDim.y);  // ParallelKernels.java:39
