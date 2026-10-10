@@ -25,12 +25,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.tc.ir.ApiTypes;
 import uk.ac.manchester.tornado.tc.ir.Attribute;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
-import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
@@ -65,7 +65,7 @@ public final class AtomicSlots {
         Map<Value, Integer> slots = new java.util.IdentityHashMap<>();
         for (int p = 0; p < function.params().size(); p++) {
             var param = function.params().get(p);
-            if (param.type() instanceof Type.ObjectType o && o.className().equals("AtomicInteger") && param.hasUses()) {
+            if (ApiTypes.ATOMIC_INTEGER.equals(param.type()) && param.hasUses()) {
                 slots.put(param, initial.size());
                 params.put(p, initial.size());
                 initial.add(PLACEHOLDER);

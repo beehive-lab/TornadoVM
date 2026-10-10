@@ -356,9 +356,9 @@ public final class TcHook {
     }
 
     /** The class name as TC's frontend writes it in obj<...>: the binary name after the package (Outer$Inner). */
+    /** The class as TC names object types: its fully qualified binary name ({@code pkg.Outer$Inner}). */
     private static String tcClassName(Class<?> cls) {
-        var name = cls.getName();
-        return name.substring(name.lastIndexOf('.') + 1);
+        return cls.getName();
     }
 
     private static Field declaredField(Class<?> cls, String name) throws NoSuchFieldException {

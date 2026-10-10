@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import uk.ac.manchester.tornado.tc.ir.ApiTypes;
 import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.ConvertOp;
@@ -434,9 +435,9 @@ final class Bindings {
      */
     private static void registerTiles() {
         // Locals, not constants: this runs from the static initialiser, before later fields are set.
-        final Type TILE = new Type.ObjectType("Tile");
-        final Type VIEW = new Type.ObjectType("TensorView");
-        final Type PARTITION = new Type.ObjectType("PartitionView");
+        final Type TILE = ApiTypes.TILE;
+        final Type VIEW = ApiTypes.TENSOR_VIEW;
+        final Type PARTITION = ApiTypes.PARTITION_VIEW;
         var ctx = TILE_API + "TileContext.";
         var tile = "L" + TILE_API + "Tile;";
         var view = "L" + TILE_API + "TensorView;";
@@ -561,7 +562,7 @@ final class Bindings {
                 if (cls.startsWith(ARRAYS) && NATIVE_ARRAYS.containsKey(cls.substring(ARRAYS.length()))) {
                     yield new Type.ArrayType(NATIVE_ARRAYS.get(cls.substring(ARRAYS.length())));
                 }
-                yield new Type.ObjectType(cls.substring(cls.lastIndexOf('/') + 1));
+                yield ApiTypes.of(cls);
             }
             default -> throw new IllegalArgumentException("bad descriptor " + descriptor);
         };

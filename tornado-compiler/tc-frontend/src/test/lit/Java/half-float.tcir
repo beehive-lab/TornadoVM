@@ -37,7 +37,7 @@
 ; BITS:         %h = bitcast %{{[0-9]+}} : f16
 ; BITS-NEXT:    array.store %out[%i.1], %h
 ; BITS-NEXT:    %{{[0-9]+}} = bitcast %h : i16
-; LOCAL-LABEL: kernel @HalfKernels.localAfterBranch(%context: obj<KernelContext>, %out: array<f32>) -> void {
+; LOCAL-LABEL: kernel @HalfKernels.localAfterBranch(%context: obj<uk.ac.manchester.tornado.api.KernelContext>, %out: array<f32>) -> void {
 ; LOCAL:         %local = alloca.shared f16[32] : ptr<shared>
 ; LOCAL:       ^bci29:
 ; LOCAL:         %{{[0-9]+}} = ptr.offset %local, %{{[0-9]+}} : ptr<shared>

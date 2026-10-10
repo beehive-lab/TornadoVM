@@ -37,10 +37,10 @@ public class AtomicSlotsTest {
     @Test
     public void createdAndArgumentCountersGetSlots() {
         var function = IrParser.parseFunction("""
-                kernel @K.count(%out: array<i32>, %ai: obj<AtomicInteger>) -> void {
+                kernel @K.count(%out: array<i32>, %ai: obj<java.util.concurrent.atomic.AtomicInteger>) -> void {
                 ^entry:
                   %v = const 200 : i32
-                  %local = tornado.atomic_int.new(%v) : obj<AtomicInteger>
+                  %local = tornado.atomic_int.new(%v) : obj<java.util.concurrent.atomic.AtomicInteger>
                   %one = const 1 : i32
                   %a = tornado.atomic_int.add_get(%local, %one) : i32
                   %b = tornado.atomic_int.get_add(%ai, %one) : i32

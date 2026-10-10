@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode.Insn;
 import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
 import uk.ac.manchester.tornado.tc.frontend.classfile.TypeAnnotations;
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
+import uk.ac.manchester.tornado.tc.ir.ApiTypes;
 import uk.ac.manchester.tornado.tc.ir.Attribute;
 import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
@@ -393,7 +394,7 @@ final class Translator {
         if (!sealed.contains(block)) {
             // A reference read in a loop header not sealed yet must know whether it is an array, a local
             // array (pointer) or an object before its first use is translated.
-            var reaching = type instanceof Type.ObjectType o && o.className().equals("?") ? reachingDefinition(key, block, true, Collections.newSetFromMap(new IdentityHashMap<>())) : null;
+            var reaching = ApiTypes.UNRESOLVED.equals(type) ? reachingDefinition(key, block, true, Collections.newSetFromMap(new IdentityHashMap<>())) : null;
             var known = reaching == null ? null : reaching.type();
             var arg = block.addArg(known != null ? known : type, name);
             argumentKeys.put(arg, key);
@@ -418,7 +419,7 @@ final class Translator {
     private void addArgumentOperands(Var key, Block block, BlockArg arg) {
         for (var pred : distinctPreds(block)) {
             var value = readVariable(key, pred, arg.type(), arg.name());
-            if (arg.type() instanceof Type.ObjectType o && o.className().equals("?")) {
+            if (ApiTypes.UNRESOLVED.equals(arg.type())) {
                 arg.setType(value.type());
             }
             var term = pred.terminator().orElseThrow();
@@ -580,7 +581,7 @@ final class Translator {
                 case Float v -> b.constFloat(Type.F32, v);
                 case Long v -> b.constInt(Type.I64, v);
                 case Double v -> b.constFloat(Type.F64, v);
-                case String v -> b.intrinsic(STRING, Immediates.of("value", v), new Type.ObjectType("String"), List.of()); // a Debug.printf format
+                case String v -> b.intrinsic(STRING, Immediates.of("value", v), ApiTypes.STRING, List.of()); // a Debug.printf format
                 default -> throw error("TC-E1002", "string constants are not supported in kernels", insn.bci());
             });
             case IINC -> {
@@ -703,7 +704,7 @@ final class Translator {
                 if (op == GETSTATIC && ref.descriptor().equals("L" + Bindings.DEVICE_KERNEL + ";")) {
                     var child = source.deviceKernel(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1013", "the DeviceKernel " + ref.owner().replace('/', '.') + "." + ref.name()
                             + " cannot be resolved: KernelContext.launch needs a static final field, e.g. static final DeviceKernel CHILD = DeviceKernel.of(MyKernels::child)", insn.bci()));
-                    push(b.intrinsic(DEVICE_KERNEL, Immediates.of("owner", child.owner(), "name", child.name(), "descriptor", child.descriptor()), new Type.ObjectType("DeviceKernel"), List.of()));
+                    push(b.intrinsic(DEVICE_KERNEL, Immediates.of("owner", child.owner(), "name", child.name(), "descriptor", child.descriptor()), ApiTypes.DEVICE_KERNEL, List.of()));
                     break;
                 }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
@@ -733,7 +734,7 @@ final class Translator {
                 if (!classFile.constants().className(insn.index()).equals("java/lang/Object") || !(length instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n))) {
                     throw error("TC-E1002", "arrays of references are not supported in kernels", insn.bci());
                 }
-                push(b.intrinsic(VARARGS, Immediates.of("length", n), new Type.ObjectType("Object[]"), List.of()));
+                push(b.intrinsic(VARARGS, Immediates.of("length", n), ApiTypes.OBJECT_ARRAY, List.of()));
             }
             case NEWARRAY -> {
                 var length = pop();
@@ -806,7 +807,7 @@ final class Translator {
                     // A vector collection made in the kernel: a private array, once its constructor runs.
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), Bindings.type("L" + classFile.constants().className(insn.index()) + ";")));
                 } else if (op == NEW && classFile.constants().className(insn.index()).equals(Bindings.ATOMIC_INTEGER)) {
-                    push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), new Type.ObjectType("AtomicInteger")));
+                    push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), ApiTypes.ATOMIC_INTEGER));
                 } else if (op == NEW && Bindings.type("L" + classFile.constants().className(insn.index()) + ";") instanceof Type.VectorType vec) {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), vec)); // a vector value, made by its constructor
                 } else if (op == NEW) {
@@ -832,7 +833,7 @@ final class Translator {
     private void load(Block block, int slot, int kindIndex, int bci) {
         char kind = "IJFDA".charAt(kindIndex);
         var name = localName(slot, bci);
-        push(readVariable(localKey(slot, kind), block, kind == 'A' ? new Type.ObjectType("?") : primitive(kind), name));
+        push(readVariable(localKey(slot, kind), block, kind == 'A' ? ApiTypes.UNRESOLVED : primitive(kind), name));
     }
 
     /** Slots are keyed by the bytecode's kind, as the JVM types them, whatever value TC made (a boxed Integer is an i32). */
@@ -889,7 +890,7 @@ final class Translator {
         var value = pop();
         var index = pop();
         var array = pop();
-        if (array.type() instanceof Type.ObjectType o && o.className().equals("Object[]")) {
+        if (ApiTypes.OBJECT_ARRAY.equals(array.type())) {
             var varargs = compileTime(array, VARARGS, "the arguments of a varargs call must be passed directly", bci);
             builder.intrinsic(VARARGS_SET, Immediates.of("index", constantLane(index, bci)), Type.VOID, List.of(varargs, value));
             return;
@@ -1301,7 +1302,7 @@ final class Translator {
         if (binding.isEmpty() || binding.get() instanceof Bindings.InlineJava) {
             // Static calls, and instance calls on objects: resolved against the static type (the
             // runtime checks object arguments have exactly their declared class) and inlined.
-            if (insn.opcode() == INVOKESTATIC || (!args.isEmpty() && args.get(0).type() instanceof Type.ObjectType o && !o.className().equals("KernelContext")) || enumOwner.isPresent()
+            if (insn.opcode() == INVOKESTATIC || (!args.isEmpty() && args.get(0).type() instanceof Type.ObjectType o && !o.equals(ApiTypes.KERNEL_CONTEXT)) || enumOwner.isPresent()
                     || binding.filter(Bindings.InlineJava.class::isInstance).isPresent()) {
                 var callee = calleeName(ref.owner(), ref.name(), ref.descriptor());
                 callees.put(callee, ref);
@@ -1374,7 +1375,7 @@ final class Translator {
             }
             case Bindings.AtomicNew a -> {
                 var initial = args.size() > 1 ? args.get(1) : builder.constInt(Type.I32, 0);
-                rebind(args.get(0), builder.intrinsic("tornado.atomic_int.new", new Type.ObjectType("AtomicInteger"), List.of(initial)));
+                rebind(args.get(0), builder.intrinsic("tornado.atomic_int.new", ApiTypes.ATOMIC_INTEGER, List.of(initial)));
             }
             case Bindings.AtomicOp(var name, var delta) -> {
                 var operands = new ArrayList<Value>(List.of(args.get(0)));

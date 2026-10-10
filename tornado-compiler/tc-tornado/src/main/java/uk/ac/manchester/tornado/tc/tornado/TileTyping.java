@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import uk.ac.manchester.tornado.tc.ir.ApiTypes;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
@@ -159,7 +160,7 @@ public final class TileTyping {
     }
 
     private static boolean isOpaque(Type type) {
-        return type instanceof Type.ObjectType o && (o.className().equals("Tile") || o.className().equals("TensorView") || o.className().equals("PartitionView"));
+        return ApiTypes.isTileObject(type);
     }
 
     private Optional<Type> incomingTile(BlockArg arg) {
