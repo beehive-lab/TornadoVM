@@ -88,7 +88,8 @@ public final class CEmitter {
     }
 
     /** Prefix of a device-side kernel launch ({@code KernelContext.launch}): {@code <prefix><mode>.<Owner>.<method>}. */
-    public static final String DEVICE_LAUNCH = "tornado.device_launch.";
+    /** A kernel launch from the device ({@code KernelContext.launch}); immediates {@code callee} and {@code mode}. */
+    public static final String DEVICE_LAUNCH = "tornado.device_launch";
 
     /** The entry point of a kernel launched from the device ({@code Owner.method}): {@code Owner_method_dp}. */
     public static String deviceKernelEntry(String ownerDotMethod) {
@@ -298,7 +299,7 @@ public final class CEmitter {
                 var declare = target.type() instanceof Type.TileType t && t.view() ? "auto " : "";
                 line(depth, declare + names.get(target) + " = " + text + ";" + comment(loc));
             }
-            case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(DEVICE_LAUNCH) -> deviceLaunch(name, op.operands(), loc, depth);
+            case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals(DEVICE_LAUNCH) -> deviceLaunch(op.inst(), op.operands(), loc, depth);
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.printf") -> {
                 // Debug.printf: every thread prints, prefixed with its global id (as on the Graal path).
                 var format = cEscape(op.inst().immediates().requireString("format"));
@@ -472,10 +473,9 @@ public final class CEmitter {
      * ABI regions of its parent and the launch arguments; a failed launch is reported (as on the
      * host, the child then does not run). TAIL and FIRE_AND_FORGET use the CUDA named streams.
      */
-    private void deviceLaunch(String name, List<S.Expr> operands, Loc loc, int depth) {
-        var rest = name.substring(DEVICE_LAUNCH.length());
-        var mode = rest.substring(0, rest.indexOf('.'));
-        var child = rest.substring(rest.indexOf('.') + 1);
+    private void deviceLaunch(Inst launch, List<S.Expr> operands, Loc loc, int depth) {
+        var mode = launch.immediates().requireString("mode");
+        var child = launch.immediates().requireString("callee");
         var e = operands.stream().map(o -> expr(o).text).toList();
         var stream = switch (mode) {
             case "tail" -> ", 0, cudaStreamTailLaunch";

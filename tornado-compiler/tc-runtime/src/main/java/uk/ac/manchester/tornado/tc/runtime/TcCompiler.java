@@ -179,9 +179,8 @@ public final class TcCompiler {
         var names = new ArrayList<String>();
         for (var block : function.blocks()) {
             for (var inst : block.insts()) {
-                if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(CEmitter.DEVICE_LAUNCH)) {
-                    var rest = name.substring(CEmitter.DEVICE_LAUNCH.length());
-                    names.add(rest.substring(rest.indexOf('.') + 1));
+                if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(CEmitter.DEVICE_LAUNCH)) {
+                    names.add(inst.immediates().requireString("callee"));
                 }
             }
         }

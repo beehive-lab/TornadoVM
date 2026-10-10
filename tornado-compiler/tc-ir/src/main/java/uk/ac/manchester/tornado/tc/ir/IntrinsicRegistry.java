@@ -99,7 +99,7 @@ public final class IntrinsicRegistry {
         add("tornado.atomic_int.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "AtomicInteger counter in the atomics region");
         add("tornado.async_copy.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "asynchronous global-to-shared copies and their groups");
         add("tornado.printf", EnumSet.of(Effect.SIDE_EFFECT), "Debug.printf", "format");
-        add("tornado.device_launch.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "a kernel launch from the device");
+        add("tornado.device_launch", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "a kernel launch from the device", "callee", "mode");
         add("tornado.local_array.length", EnumSet.noneOf(Effect.class), "the element count of a pending local array");
         add("tornado.local_array.", EnumSet.of(Effect.SIDE_EFFECT), "a local array whose size is known after specialisation");
         pure("tornado.local_collection", "a vector collection allocated in the kernel (removed after inlining)");

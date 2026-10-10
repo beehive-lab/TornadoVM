@@ -975,7 +975,7 @@ final class Translator {
 
     /**
      * {@code KernelContext.launch(child, [mode,] global..., local..., args...)}: a launch of the static
-     * method the DeviceKernel names, as {@code tornado.device_launch.<mode>.<Owner>.<method>} with the
+     * method the DeviceKernel names, as {@code tornado.device_launch<callee, mode>} with the
      * three global sizes, the three local sizes and the child's arguments (without its KernelContext).
      */
     private void deviceLaunch(uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef ref, List<Value> args, int bci) {
@@ -1018,7 +1018,7 @@ final class Translator {
             }
             operands.add(v);
         }
-        builder.intrinsic("tornado.device_launch." + mode + "." + child.owner().replace('/', '.') + "." + child.name(), Type.VOID, operands);
+        builder.intrinsic("tornado.device_launch", Immediates.of("mode", mode, "callee", child.owner().replace('/', '.') + "." + child.name()), Type.VOID, operands);
     }
 
     private static final String PARAM_UNCHANGED = "tc.vector_param_unchanged";

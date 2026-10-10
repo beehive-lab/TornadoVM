@@ -30,8 +30,8 @@ kernel @Parent.run(%a: ptr<global>, %n: i32) -> void {
 ^entry:
   %one = const 1 : i32
   %block = const 128 : i32
-  tornado.device_launch.default.pkg.Kernels.child(%n, %one, %one, %block, %one, %one, %a, %n)
+  tornado.device_launch<callee = "pkg.Kernels.child", mode = "default">(%n, %one, %one, %block, %one, %one, %a, %n)
   %half = const 2.5 : f32
-  tornado.device_launch.tail.pkg.Kernels$Inner.sum(%one, %one, %one, %one, %one, %one, %a, %half)
+  tornado.device_launch<callee = "pkg.Kernels$Inner.sum", mode = "tail">(%one, %one, %one, %one, %one, %one, %a, %half)
   ret
 }
