@@ -185,6 +185,12 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadBInt8([II)[B", new Intrinsic("tornado.mma.load_b_s8", new Type.VectorType(Type.I32, 2)));
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadBInt8([III)[B", new Intrinsic("tornado.mma.load_b_s8.offset", new Type.VectorType(Type.I32, 2)));
         METHODS.put(KERNEL_CONTEXT + ".mmaInt8([B[B[ILuk/ac/manchester/tornado/api/enums/MMAShape;)[I", new Intrinsic("tornado.mma.m16n8k32_s8", vecI));
+        // FP8 tiles are bytes like int8 tiles (same loads); bf16 fragments travel as HalfFloat[] like f16.
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadAFP8([II)[B", new Intrinsic("tornado.mma.load_a_s8", vecI));
+        METHODS.put(KERNEL_CONTEXT + ".mmaLoadBFP8([II)[B", new Intrinsic("tornado.mma.load_b_s8", new Type.VectorType(Type.I32, 2)));
+        METHODS.put(KERNEL_CONTEXT + ".mmaFP8E4M3([B[B[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k32_e4m3", vecC));
+        METHODS.put(KERNEL_CONTEXT + ".mmaFP8E5M2([B[B[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k32_e5m2", vecC));
+        METHODS.put(KERNEL_CONTEXT + ".mmaBF16([" + half + "[" + half + "[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k16_bf16", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaStoreInt([IL" + ARRAYS + "IntArray;III)V", new Intrinsic("tornado.mma.store_int", Type.VOID));
         // Atomics on global native arrays and on local int[] arrays.
         METHODS.put(KERNEL_CONTEXT + ".atomicAdd(L" + ARRAYS + "IntArray;II)V", new Atomic("add", Type.I32, false));

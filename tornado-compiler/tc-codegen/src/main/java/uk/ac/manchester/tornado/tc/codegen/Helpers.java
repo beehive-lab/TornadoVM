@@ -137,6 +137,34 @@ final class Helpers {
                       c[(r + 8) * ld + k + 1] = d.w;
                     }
                     """),
+            // Same fragments, other input formats: bf16 (m16n8k16) and FP8 E4M3/E5M2 (m16n8k32, sm_89+).
+            Map.entry("tc_mma_m16n8k16_bf16", """
+                    __device__ static inline float4 tc_mma_m16n8k16_bf16(int4 a, int2 b, float4 c) {
+                      float4 d;
+                      asm volatile("mma.sync.aligned.m16n8k16.row.col.f32.bf16.bf16.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%10,%11,%12,%13};"
+                                   : "=f"(d.x), "=f"(d.y), "=f"(d.z), "=f"(d.w)
+                                   : "r"(a.x), "r"(a.y), "r"(a.z), "r"(a.w), "r"(b.x), "r"(b.y), "f"(c.x), "f"(c.y), "f"(c.z), "f"(c.w));
+                      return d;
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k32_e4m3", """
+                    __device__ static inline float4 tc_mma_m16n8k32_e4m3(int4 a, int2 b, float4 c) {
+                      float4 d;
+                      asm volatile("mma.sync.aligned.m16n8k32.row.col.f32.e4m3.e4m3.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%10,%11,%12,%13};"
+                                   : "=f"(d.x), "=f"(d.y), "=f"(d.z), "=f"(d.w)
+                                   : "r"(a.x), "r"(a.y), "r"(a.z), "r"(a.w), "r"(b.x), "r"(b.y), "f"(c.x), "f"(c.y), "f"(c.z), "f"(c.w));
+                      return d;
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k32_e5m2", """
+                    __device__ static inline float4 tc_mma_m16n8k32_e5m2(int4 a, int2 b, float4 c) {
+                      float4 d;
+                      asm volatile("mma.sync.aligned.m16n8k32.row.col.f32.e5m2.e5m2.f32 {%0,%1,%2,%3}, {%4,%5,%6,%7}, {%8,%9}, {%10,%11,%12,%13};"
+                                   : "=f"(d.x), "=f"(d.y), "=f"(d.z), "=f"(d.w)
+                                   : "r"(a.x), "r"(a.y), "r"(a.z), "r"(a.w), "r"(b.x), "r"(b.y), "f"(c.x), "f"(c.y), "f"(c.z), "f"(c.w));
+                      return d;
+                    }
+                    """),
             Map.entry("tc_mma_m16n8k16", """
                     __device__ static inline float4 tc_mma_m16n8k16(int4 a, int2 b, float4 c) {
                       float4 d;

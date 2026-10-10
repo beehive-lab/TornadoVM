@@ -95,6 +95,9 @@ public final class Intrinsics {
         TABLE.put(new Key("tornado.mma.load_b_s8.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_b"));
         TABLE.put(new Key("tornado.mma.m16n8k32_s8", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k32_s8($0, $1, $2)", "tc_mma_m16n8k32_s8"));
         TABLE.put(new Key("tornado.mma.store_int", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store_int($0, (int *) ($1), $2, $3, $4)", "tc_mma_store_int"));
+        TABLE.put(new Key("tornado.mma.m16n8k16_bf16", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k16_bf16($0, $1, $2)", "tc_mma_m16n8k16_bf16"));
+        TABLE.put(new Key("tornado.mma.m16n8k32_e4m3", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k32_e4m3($0, $1, $2)", "tc_mma_m16n8k32_e4m3"));
+        TABLE.put(new Key("tornado.mma.m16n8k32_e5m2", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k32_e5m2($0, $1, $2)", "tc_mma_m16n8k32_e5m2"));
         TABLE.put(new Key("tornado.mma.m16n8k16", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k16($0, $1, $2)", "tc_mma_m16n8k16"));
         TABLE.put(new Key("tornado.mma.store", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store($0, (float *) ($1), $2, $3, $4)", "tc_mma_store"));
         // Atomics: $&0 is the address of the element ($0 is its pointer); typed by the value.
