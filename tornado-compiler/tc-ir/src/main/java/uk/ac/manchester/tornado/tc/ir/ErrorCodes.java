@@ -56,6 +56,8 @@ public final class ErrorCodes {
             Map.entry("TC-E1008", new Entry(Category.INTERNAL, "a class file could not be read")),
             Map.entry("TC-E1009", new Entry(Category.INVALID_KERNEL, "kernels cannot recurse; rewrite the recursion as a loop")),
             Map.entry("TC-E1011", new Entry(Category.BAILOUT, "kernels cannot allocate objects; create them on the host and pass them as task arguments")),
+            Map.entry("TC-E1013", new Entry(Category.INVALID_KERNEL, "Debug.printf and KernelContext.launch read their operands at compile time: a constant format, a DeviceKernel from a static final field, a constant launch mode and the arguments written in the call")),
+            Map.entry("TC-E1014", new Entry(Category.INVALID_KERNEL, "shared memory belongs to the launching work-group; pass a global array to the child kernel")),
             Map.entry("TC-E1012", new Entry(Category.UNSUPPORTED, "a helper method that changes a vector argument (setX, set) is not compiled by TC yet; return the changed vector, or the Graal path compiles it")),
             Map.entry("TC-E1010", new Entry(Category.INVALID_KERNEL, "vector lanes and tensor-core accumulator elements are registers: index them with a constant")),
             // IR text and verifier: broken invariants inside TC.
@@ -66,12 +68,13 @@ public final class ErrorCodes {
             Map.entry("TC-E2101", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2102", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2103", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2104", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2105", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2106", new Entry(Category.INTERNAL, "")),
-            Map.entry("TC-E2107", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2108", new Entry(Category.INVALID_KERNEL, "a kernel-local array needs at least one element")),
+            Map.entry("TC-E2107", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2108", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2109", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2110", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2111", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2112", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2113", new Entry(Category.INVALID_KERNEL, "shared (local) memory can only be allocated in the kernel itself, not in a called method")),
             Map.entry("TC-E2114", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2116", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E2117", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2118", new Entry(Category.INTERNAL, "")),
+            Map.entry("TC-E2119", new Entry(Category.INVALID_KERNEL, "a kernel-local array needs at least one element")), Map.entry("TC-E2120", new Entry(Category.INTERNAL, "")),
             // Structuring and TornadoVM lowering.
             Map.entry("TC-E2115", new Entry(Category.INTERNAL, "")),
             Map.entry("TC-E3001", new Entry(Category.BAILOUT, "the loops of this kernel jump into each other (irreducible control flow); restructure the loops")),

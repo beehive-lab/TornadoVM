@@ -78,7 +78,8 @@ import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
  *
  * <p>Error codes: {@code TC-E1001} exception handlers, {@code E1002} unsupported bytecode,
  * {@code E1003} unsupported call or field, {@code E1004} non-constant local-array size,
- * {@code E1005} unsupported type, {@code E1006} read of an undefined local.</p>
+ * {@code E1006} read of an undefined local, {@code E1013} a printf or launch operand not written in the
+ * call, {@code E1014} local memory passed to a launch; ErrorCodes lists them all.</p>
  */
 final class Translator {
 
@@ -700,7 +701,7 @@ final class Translator {
                     break;
                 }
                 if (op == GETSTATIC && ref.descriptor().equals("L" + Bindings.DEVICE_KERNEL + ";")) {
-                    var child = source.deviceKernel(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "the DeviceKernel " + ref.owner().replace('/', '.') + "." + ref.name()
+                    var child = source.deviceKernel(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1013", "the DeviceKernel " + ref.owner().replace('/', '.') + "." + ref.name()
                             + " cannot be resolved: KernelContext.launch needs a static final field, e.g. static final DeviceKernel CHILD = DeviceKernel.of(MyKernels::child)", insn.bci()));
                     push(b.intrinsic(DEVICE_KERNEL, Immediates.of("owner", child.owner(), "name", child.name(), "descriptor", child.descriptor()), new Type.ObjectType("DeviceKernel"), List.of()));
                     break;
@@ -996,7 +997,7 @@ final class Translator {
         if (v instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(intrinsic)) {
             return i;
         }
-        throw error("TC-E1003", what, bci);
+        throw error("TC-E1013", what, bci);
     }
 
     /** The elements stored into a varargs array, by index; every element must be set. */
@@ -1011,7 +1012,7 @@ final class Translator {
         }
         for (var v : values) {
             if (v == null) {
-                throw error("TC-E1003", "an argument of " + call + " is not set", bci);
+                throw error("TC-E1013", "an argument of " + call + " is not set", bci);
             }
         }
         return List.of(values);
@@ -1031,7 +1032,7 @@ final class Translator {
         for (var inst : all) {
             if (inst.opcode() instanceof Opcode.Intrinsic(var name) && (name.equals(STRING) || name.equals(DEVICE_KERNEL) || name.equals(VARARGS)) && inst.block().isPresent()) {
                 if (inst.hasUses()) {
-                    throw new FrontendError(new Diagnostic("TC-E1003", "a " + inst.type().text().replace("obj<", "").replace(">", "")
+                    throw new FrontendError(new Diagnostic("TC-E1013", "a " + inst.type().text().replace("obj<", "").replace(">", "")
                             + " can only be passed to Debug.printf or KernelContext.launch", "", inst.loc()));
                 }
                 inst.erase();
@@ -1051,7 +1052,7 @@ final class Translator {
         var mode = "default";
         if (ref.descriptor().contains(Bindings.DEVICE_LAUNCH_MODE)) {
             if (!(args.get(next++) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var m))) {
-                throw error("TC-E1010", "the DeviceLaunchMode of KernelContext.launch must be a constant", bci);
+                throw error("TC-E1013", "the DeviceLaunchMode of KernelContext.launch must be a constant", bci);
             }
             mode = switch ((int) m) {
                 case 1 -> "tail";
@@ -1072,7 +1073,7 @@ final class Translator {
         var values = varargValues(compileTime(args.get(next), VARARGS, "the arguments of KernelContext.launch must be passed directly (as varargs)", bci), "KernelContext.launch", bci);
         for (var v : values) {
             if (v.type() instanceof Type.PointerType) {
-                throw error("TC-E1003", "a local-memory array cannot be passed to KernelContext.launch: it belongs to the launching block", bci);
+                throw error("TC-E1014", "a local-memory array cannot be passed to KernelContext.launch: it belongs to the launching block", bci);
             }
             operands.add(v);
         }

@@ -336,13 +336,13 @@ public final class Verifier {
                 count(inst, 0);
                 resultIs(inst, result.equals(new PointerType(space)), "ptr<" + space.text() + ">");
                 if (size <= 0) {
-                    error(inst, "TC-E2108", "alloca needs a positive element count, found " + size);
+                    error(inst, "TC-E2119", "alloca needs a positive element count, found " + size);
                 }
                 if (space == AddressSpace.SHARED && function.kind() != Function.Kind.KERNEL) {
                     error(inst, "TC-E2113", "shared memory can only be allocated in a kernel");
                 }
                 if (space == AddressSpace.GLOBAL || space == AddressSpace.CONSTANT) {
-                    error(inst, "TC-E2108", "alloca can only allocate private or shared memory");
+                    error(inst, "TC-E2120", "alloca can only allocate private or shared memory");
                 }
             }
             case Opcode.Call _c -> {
