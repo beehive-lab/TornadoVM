@@ -56,6 +56,7 @@ public final class ErrorCodes {
             Map.entry("TC-E1008", new Entry(Category.INTERNAL, "a class file could not be read")),
             Map.entry("TC-E1009", new Entry(Category.INVALID_KERNEL, "kernels cannot recurse; rewrite the recursion as a loop")),
             Map.entry("TC-E1011", new Entry(Category.BAILOUT, "kernels cannot allocate objects; create them on the host and pass them as task arguments")),
+            Map.entry("TC-E1012", new Entry(Category.UNSUPPORTED, "a helper method that changes a vector argument (setX, set) is not compiled by TC yet; return the changed vector, or the Graal path compiles it")),
             Map.entry("TC-E1010", new Entry(Category.INVALID_KERNEL, "vector lanes and tensor-core accumulator elements are registers: index them with a constant")),
             // IR text and verifier: broken invariants inside TC.
             Map.entry("TC-E2001", new Entry(Category.INTERNAL, "")), Map.entry("TC-E2002", new Entry(Category.INTERNAL, "")),

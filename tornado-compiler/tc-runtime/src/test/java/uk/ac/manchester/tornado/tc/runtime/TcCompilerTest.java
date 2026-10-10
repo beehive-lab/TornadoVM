@@ -150,4 +150,48 @@ public class TcCompilerTest {
             assertTrue(r, r.contains("ct::tile<float, ct::shape<1, 1>>"));
         }
     }
+
+    private static TcCompiler.Compilation review(String kernel, java.util.List<uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact> facts) {
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
+        return TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ReviewKernels", kernel, TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, facts);
+    }
+
+    /** Design review TP-4: sibling @Parallel loops share dimension x (they ran once per thread of each other). */
+    @Test
+    public void siblingParallelLoopsShareADimension() {
+        var c = review("siblings", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(100), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(50)));
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertFalse(c.source(), c.source().contains("threadIdx.y"));
+        assertEquals(1, c.domain().size());
+        assertEquals(100, c.domain().get(0).upper());
+    }
+
+    /** Design review TP-2: a reduction into out[1] is refused, not lowered into the partials. */
+    @Test
+    public void reductionMustAccumulateIntoElementZero() {
+        var c = review("reduceAtOne", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1024), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Reduce(2)));
+        assertFalse(c.succeeded());
+        assertEquals("TC-E3204", c.diagnostics().get(0).code());
+    }
+
+    /** Design review FE-4: a helper that changes its vector argument is refused (the change was lost). */
+    @Test
+    public void helperChangingAVectorArgumentIsRefused() {
+        var c = review("helperSetter", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1)));
+        assertFalse(c.succeeded());
+        assertEquals("TC-E1012", c.diagnostics().get(0).code());
+    }
+
+    /** Design review TP-5: an array chosen at run time is lowered, and its length folds when all candidates agree. */
+    @Test
+    public void arraysThroughMergesAreLoweredAndTheirLengthsFold() {
+        var L = new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(10);
+        var same = review("lengthThroughMerge", java.util.List.of(L, L, new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1),
+                new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Unknown()));
+        assertTrue(same.diagnostics().toString(), same.succeeded());
+        assertTrue(same.source(), same.source().contains("= 10;"));
+        var different = review("lengthThroughMerge", java.util.List.of(L, new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(20),
+                new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Unknown()));
+        assertTrue(different.diagnostics().toString(), different.succeeded());
+    }
 }

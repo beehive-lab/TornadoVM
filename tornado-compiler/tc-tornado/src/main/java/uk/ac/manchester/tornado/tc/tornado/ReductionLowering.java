@@ -94,6 +94,10 @@ public final class ReductionLowering {
                     if (match.isEmpty() || store != null) {
                         return refuse("reduction store not in the form out[k] = out[k] op v (op: + * min max)");
                     }
+                    // The group partials go to out[1..], the result to out[0]: only out[0] accumulates.
+                    if (!(inst.operand(1) instanceof Inst k && k.opcode() instanceof Opcode.ConstInt(var slot) && slot == 0)) {
+                        return refuse("a @Reduce loop must accumulate into element 0 of the reduction array (out[0] = out[0] op v)");
+                    }
                     store = inst;
                     op = match.get().op();
                     value = match.get().value();

@@ -157,3 +157,9 @@ Recorded per finding as fixed, not reproduced, or deferred (with the commit).
 | CG-1 | **Reproduced and fixed.** `(long long) i + j * 2` printed for `(i + j) * 2`. Template operands are now parenthesised unless they fill a whole call argument, and the template's own precedence comes from its shape (lit `Cuda/printing.tcir`). |
 | CG-2 | **Reproduced and fixed.** `--x` printed for `-(-x)`, which is a decrement (lit `Cuda/printing.tcir`). |
 | CG-10 | **Reproduced and fixed.** Java `byte` printed as `char`; now `signed char` (lit `Cuda/printing.tcir`). |
+| TP-4 | **Reproduced and fixed.** Two sibling `@Parallel` loops got x and y over a 100x50 domain, so each element was incremented 50 or 100 times. A loop's dimension is now its nesting height, siblings share x, and the domain takes the widest (`TcCompilerTest.siblingParallelLoopsShareADimension`). |
+| TP-2 | **Reproduced and fixed.** `out[1] += v` lowered into writes at `out[group + 1]`; it is now refused with TC-E3204 (`reductionMustAccumulateIntoElementZero`). |
+| FE-4 | **Reproduced and fixed by refusal.** A helper's `v.setX(v.getX() + 1)` was lost (the kernel stored 1.0, not 2.0). It is refused with TC-E1012 (falls back to Graal); full support waits for the typed abstract stack in Phase C (`helperChangingAVectorArgumentIsRefused`). |
+| TP-5 | **Reproduced (a crash, not a miscompile) and fixed.** An array chosen by a ternary failed the verifier (TC-E2104): ABI lowering skipped array block arguments. Both are lowered now, and a length through a merge folds when all candidates agree (`arraysThroughMergesAreLoweredAndTheirLengthsFold`). |
+| TP-14 | **Not reproducible** (the frontend's entry block holds only a branch). Made robust anyway: scalar constants go to the start of the entry block. |
+

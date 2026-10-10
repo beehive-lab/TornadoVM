@@ -107,6 +107,19 @@ public final class AbiLowering {
                 }
             }
         }
+        // An array chosen at run time (a ternary, a loop-carried array) reaches a block argument: it is
+        // the same device pointer as the parameters that flow into it (TP-5).
+        for (var block : function.blocks()) {
+            if (block == function.entry()) {
+                continue;
+            }
+            for (var arg : block.args()) {
+                if (arg.type() instanceof ArrayType(var element)) {
+                    elements.put(arg, element);
+                    arg.setType(new Type.PointerType(AddressSpace.GLOBAL));
+                }
+            }
+        }
         // Dominator order: a reference is lowered (and its class known) before the fields read through it.
         for (var block : new uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree(function).reversePostorder()) {
             for (var inst : List.copyOf(block.insts())) {

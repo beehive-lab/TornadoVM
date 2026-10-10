@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Type;
+import uk.ac.manchester.tornado.tc.ir.Value;
 
 /**
  * Value specialisation (optimisation list item T1): folds what is known about the actual task
@@ -102,6 +103,79 @@ public final class ValueSpecialisation {
 
     /** {@code facts.get(i)} describes parameter {@code i} of {@code function} (Java order, before ABI lowering). */
     public static int run(Function function, List<Fact> facts) {
+        int folded = foldParameterFacts(function, facts);
+        return folded + foldMergedLengths(function, facts);
+    }
+
+    /**
+     * The length of an array chosen at run time ({@code x = c ? a : b}, a loop-carried array) folds
+     * when every array that can reach it has the same known length: the device header of an array the
+     * kernel only writes is not initialised, so a length read there would be garbage (TP-5).
+     */
+    private static int foldMergedLengths(Function function, List<Fact> facts) {
+        var lengths = new java.util.IdentityHashMap<Value, Long>();
+        var params = function.params();
+        for (int i = 0; i < Math.min(params.size(), facts.size()); i++) {
+            if (facts.get(i) instanceof Fact.Length(var elements)) {
+                lengths.put(params.get(i), elements);
+            }
+        }
+        int folded = 0;
+        for (var block : function.blocks()) {
+            if (block == function.entry()) {
+                continue;
+            }
+            for (var arg : block.args()) {
+                if (!(arg.type() instanceof Type.ArrayType)) {
+                    continue;
+                }
+                var roots = new java.util.HashSet<Long>();
+                if (!collectLengths(arg, lengths, roots, java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>())) || roots.size() != 1) {
+                    continue;
+                }
+                long elements = roots.iterator().next();
+                for (var user : List.copyOf(arg.users())) {
+                    if (user.opcode() instanceof Opcode.ArrayLength && (user.type().equals(Type.I64) || elements <= Integer.MAX_VALUE)) {
+                        var constant = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc()).constInt(user.type(), elements);
+                        constant.setName(user.name());
+                        user.replaceAllUsesWith(constant);
+                        user.erase();
+                        folded++;
+                    }
+                }
+            }
+        }
+        return folded;
+    }
+
+    /** The known lengths of the arrays that reach {@code v}; false when one of them is unknown. */
+    private static boolean collectLengths(Value v, Map<Value, Long> lengths, java.util.Set<Long> out, java.util.Set<Value> seen) {
+        if (!seen.add(v)) {
+            return true;
+        }
+        if (lengths.containsKey(v)) {
+            out.add(lengths.get(v));
+            return true;
+        }
+        if (!(v instanceof uk.ac.manchester.tornado.tc.ir.BlockArg arg) || arg.block() == arg.block().function().entry()) {
+            return false;
+        }
+        int index = arg.block().args().indexOf(arg);
+        for (var block : arg.block().function().blocks()) {
+            var term = block.terminator().orElse(null);
+            if (term == null) {
+                continue;
+            }
+            for (var s : term.successors()) {
+                if (s.target() == arg.block() && !collectLengths(s.args().get(index), lengths, out, seen)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static int foldParameterFacts(Function function, List<Fact> facts) {
         int folded = 0;
         var params = function.params();
         for (int i = 0; i < Math.min(params.size(), facts.size()); i++) {
@@ -147,9 +221,12 @@ public final class ValueSpecialisation {
                     }
                 }
                 case Fact.Scalar(var value) when param.hasUses() && (param.type().isInteger() || param.type().isFloat()) -> {
+                    // At the start of the entry block, so it dominates every use (TP-14).
                     var entry = function.entry();
                     var b = new IrBuilder(entry);
-                    entry.terminator().ifPresent(b::before);
+                    if (!entry.insts().isEmpty()) {
+                        b.before(entry.insts().get(0));
+                    }
                     Inst constant = param.type().isFloat() ? b.constFloat(param.type(), value.doubleValue()) : b.constInt(param.type(), value.longValue());
                     constant.setName(param.name());
                     param.replaceAllUsesWith(constant);

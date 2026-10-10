@@ -193,8 +193,9 @@ final class Translator {
             var name = code.localAt(slot, 0).map(ClassFile.LocalVariable::name).orElse("arg" + slot);
             var arg = entry.addArg(type, name);
             writeVariable(localKey(slot, descriptorKind(descriptor)), entry, arg);
-            if (function.kind() == Function.Kind.KERNEL && type instanceof Type.VectorType) {
-                // The object the host passed: its value as setters change it, written back at return.
+            if (type instanceof Type.VectorType) {
+                // The object the caller passed: its value as setters change it. A kernel writes it back
+                // at return; a device function may not change it (checked after translation).
                 var key = "vparam#" + slot;
                 writeVariable(key, entry, arg);
                 vectorParams.put(key, arg);
@@ -220,6 +221,7 @@ final class Translator {
         }
         removeUnreachable();
         removeTrivialArguments();
+        checkVectorParamsUnchanged();
         var problems = LocalArrays.resolveLengths(function);
         if (!problems.isEmpty()) {
             throw new FrontendError(problems.get(0));
@@ -675,7 +677,9 @@ final class Translator {
                 vectorParams.forEach((key, param) -> {
                     var current = readVariable(key, block, param.type(), param.name());
                     if (current != param) {
-                        b.intrinsic("tornado.vector.store_param", Type.VOID, List.of(param, current));
+                        // Kernel: write the new value back. Device function: a marker checked once the
+                        // trivial block arguments are gone (the value may still collapse to the parameter).
+                        b.intrinsic(function.kind() == Function.Kind.KERNEL ? "tornado.vector.store_param" : PARAM_UNCHANGED, Type.VOID, List.of(param, current));
                     }
                 });
                 b.ret();
@@ -1014,6 +1018,27 @@ final class Translator {
             operands.add(v);
         }
         builder.intrinsic("tornado.device_launch." + mode + "." + child.owner().replace('/', '.') + "." + child.name(), Type.VOID, operands);
+    }
+
+    private static final String PARAM_UNCHANGED = "tc.vector_param_unchanged";
+
+    /**
+     * Java passes a vector object by reference: a helper's {@code v.setX(..)} changes the caller's
+     * vector. TC's vectors are values, so a device function that changes a vector parameter is
+     * refused (TC-E1012) rather than compiled with the change lost.
+     */
+    private void checkVectorParamsUnchanged() {
+        for (var block : function.blocks()) {
+            for (var inst : List.copyOf(block.insts())) {
+                if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(PARAM_UNCHANGED)) {
+                    if (inst.operand(1) != inst.operand(0)) {
+                        throw error("TC-E1012", "this method changes its vector argument " + inst.operand(0).name()
+                                + " (Java passes vectors by reference); return the changed vector instead", inst.loc().bci());
+                    }
+                    inst.erase();
+                }
+            }
+        }
     }
 
     /** The descriptor's type, with enum classes as their ordinal ({@code i32}). */

@@ -21,8 +21,8 @@
 package uk.ac.manchester.tornado.tc.tornado;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import uk.ac.manchester.tornado.tc.ir.Attribute;
 import uk.ac.manchester.tornado.tc.ir.Block;
@@ -78,17 +78,38 @@ public final class ParallelLoopLowering {
                 }
             }
         }
-        // Innermost first: deeper loops get lower dimensions.
-        parallel.sort(Comparator.comparingInt((Parallel p) -> p.loop().depth()).reversed());
-        if (parallel.size() > 3) {
-            diagnostics.add(new Diagnostic("TC-E3202", "more than three nested @Parallel loops (" + parallel.size() + ")", "@" + function.name(), Loc.UNKNOWN));
+        // A loop's dimension is the longest chain of @Parallel loops nested inside it: the innermost
+        // is x. Sibling loops share a dimension (each grid-strides over its own bound); giving them
+        // different dimensions would run each body once per thread of the other.
+        var dims = new java.util.IdentityHashMap<LoopForest.Loop, Integer>();
+        for (var p : parallel) {
+            dimension(p.loop(), parallel.stream().map(Parallel::loop).toList(), dims);
+        }
+        int nesting = dims.values().stream().mapToInt(d -> d + 1).max().orElse(0);
+        if (nesting > 3) {
+            diagnostics.add(new Diagnostic("TC-E3202", "@Parallel loops nested " + nesting + " deep (at most three: x, y, z)", "@" + function.name(), Loc.UNKNOWN));
             return diagnostics;
         }
-        for (int dim = 0; dim < parallel.size(); dim++) {
-            var p = parallel.get(dim);
-            lower(p.loop(), p.iv(), dim).ifPresent(diagnostics::add);
+        for (var p : parallel) {
+            lower(p.loop(), p.iv(), dims.get(p.loop())).ifPresent(diagnostics::add);
         }
         return diagnostics;
+    }
+
+    /** 0 for a @Parallel loop with no @Parallel loop inside it, else one more than the deepest inside. */
+    private static int dimension(LoopForest.Loop loop, List<LoopForest.Loop> parallel, Map<LoopForest.Loop, Integer> dims) {
+        var known = dims.get(loop);
+        if (known != null) {
+            return known;
+        }
+        int d = 0;
+        for (var other : parallel) {
+            if (other != loop && loop.contains(other.header())) {
+                d = Math.max(d, 1 + dimension(other, parallel, dims));
+            }
+        }
+        dims.put(loop, d);
+        return d;
     }
 
     private static java.util.Optional<Diagnostic> lower(LoopForest.Loop loop, int ivIndex, int dim) {
@@ -150,8 +171,17 @@ public final class ParallelLoopLowering {
                 result.add(new Domain(Integer.parseInt(v[0].trim()), Long.parseLong(v[1].trim()), Long.parseLong(v[2].trim()), Long.parseLong(v[3].trim())));
             }
         }
-        result.sort(Comparator.comparingInt(Domain::dim));
-        return result;
+        // Sibling loops share a dimension: the launch covers the widest of them (each loop
+        // grid-strides, so any thread count is correct; the widest avoids idle loops).
+        var widest = new java.util.TreeMap<Integer, Domain>();
+        for (var d : result) {
+            widest.merge(d.dim(), d, (a, b) -> threads(b) > threads(a) ? b : a);
+        }
+        return List.copyOf(widest.values());
+    }
+
+    private static long threads(Domain d) {
+        return d.step() == 0 ? 0 : (d.upper() - d.offset() + d.step() - 1) / d.step();
     }
 
     /** Records offset, step and exclusive upper bound when all three are constants and the test is {@code i < upper} or {@code i <= last}. */
