@@ -171,7 +171,8 @@ public final class TcCompiler {
                 }, () -> IrPrinter.print(function));
             }
             stage("abi", Kind.IR, () -> {
-                var problems = AbiLowering.run(function, target);
+                var layouts = facts.stream().filter(f -> f instanceof ValueSpecialisation.Fact.Instance).flatMap(f -> ((ValueSpecialisation.Fact.Instance) f).layouts().stream()).toList();
+                var problems = AbiLowering.run(function, target, layouts);
                 if (!problems.isEmpty()) {
                     throw new Failed(problems);
                 }

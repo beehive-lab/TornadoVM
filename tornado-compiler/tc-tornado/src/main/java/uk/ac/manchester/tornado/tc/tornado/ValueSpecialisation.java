@@ -21,6 +21,7 @@
 package uk.ac.manchester.tornado.tc.tornado;
 
 import java.util.List;
+import java.util.Map;
 
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Inst;
@@ -53,6 +54,13 @@ public final class ValueSpecialisation {
         }
 
         record Scalar(Number value) implements Fact {
+        }
+
+        /**
+         * An object argument: the values of its final primitive fields (they fold, as on the Graal
+         * path) and the layouts of its device copy and of the objects it references.
+         */
+        record Instance(Map<String, Number> finalFields, List<ObjectLayout> layouts) implements Fact {
         }
 
         static Fact of(Object value) {
@@ -90,6 +98,19 @@ public final class ValueSpecialisation {
                         if (user.opcode() instanceof Opcode.ArrayLength && (user.type().equals(Type.I64) || elements <= Integer.MAX_VALUE)) {
                             var constant = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc()).constInt(user.type(), elements);
                             constant.setName(user.name());
+                            user.replaceAllUsesWith(constant);
+                            user.erase();
+                            folded++;
+                        }
+                    }
+                }
+                case Fact.Instance(var finals, var layouts) when param.type() instanceof Type.ObjectType -> {
+                    for (var user : List.copyOf(param.users())) {
+                        if (user.opcode() instanceof Opcode.FieldLoad(var field) && finals.containsKey(field) && (user.type().isInteger() || user.type().isFloat())) {
+                            var b = new IrBuilder(user.block().orElseThrow()).before(user).at(user.loc());
+                            var value = finals.get(field);
+                            var constant = user.type().isFloat() ? b.constFloat(user.type(), value.doubleValue()) : b.constInt(user.type(), value.longValue());
+                            constant.setName(user.name().isEmpty() || user.name().chars().allMatch(Character::isDigit) ? field : user.name());
                             user.replaceAllUsesWith(constant);
                             user.erase();
                             folded++;

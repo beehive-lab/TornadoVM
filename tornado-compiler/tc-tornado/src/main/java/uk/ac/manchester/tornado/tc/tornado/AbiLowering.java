@@ -61,13 +61,26 @@ public final class AbiLowering {
     /** Element type of each array parameter, recorded before parameters become pointers. */
     private final java.util.Map<Value, Type> elements = new java.util.IdentityHashMap<>();
 
-    private AbiLowering(TargetCaps target) {
+    /** Layouts of the object arguments' device copies, by simple class name. */
+    private final java.util.Map<String, ObjectLayout> layouts;
+    /** Class of each object-valued pointer (parameters and loaded references). */
+    private final java.util.Map<Value, String> classes = new java.util.IdentityHashMap<>();
+
+    private AbiLowering(TargetCaps target, java.util.Map<String, ObjectLayout> layouts) {
         this.target = target;
+        this.layouts = layouts;
     }
 
     /** Lowers {@code function} in place; returns diagnostics for constructs it cannot lower. */
     public static List<Diagnostic> run(Function function, TargetCaps target) {
-        var lowering = new AbiLowering(target);
+        return run(function, target, List.of());
+    }
+
+    /** As {@link #run(Function, TargetCaps)}, with the layouts of object arguments ({@link ObjectLayout}). */
+    public static List<Diagnostic> run(Function function, TargetCaps target, List<ObjectLayout> layouts) {
+        var byName = new java.util.HashMap<String, ObjectLayout>();
+        layouts.forEach(l -> byName.putIfAbsent(l.className(), l));
+        var lowering = new AbiLowering(target, byName);
         lowering.lower(function);
         return List.copyOf(lowering.diagnostics);
     }
@@ -83,17 +96,23 @@ public final class AbiLowering {
                 }
                 // The ABI drops KernelContext: its uses were replaced by intrinsics in the frontend.
                 case Type.ObjectType o when o.className().equals("KernelContext") && !param.hasUses() -> function.entry().removeArg(param);
+                case Type.ObjectType o when layouts.containsKey(o.className()) -> {
+                    classes.put(param, o.className());
+                    param.setType(new Type.PointerType(AddressSpace.GLOBAL));
+                }
                 case Type.ObjectType o -> diagnostics.add(new Diagnostic("TC-E3101", "object parameters are not lowered yet: " + o.text(), "%" + printer.name(param), uk.ac.manchester.tornado.tc.ir.Loc.UNKNOWN));
                 default -> {
                 }
             }
         }
-        for (var block : function.blocks()) {
+        // Dominator order: a reference is lowered (and its class known) before the fields read through it.
+        for (var block : new uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree(function).reversePostorder()) {
             for (var inst : List.copyOf(block.insts())) {
                 switch (inst.opcode()) {
                     case Opcode.ArrayLoad _l -> lowerLoad(inst);
                     case Opcode.ArrayStore _s -> lowerStore(inst);
                     case Opcode.ArrayLength _l -> lowerLength(inst);
+                    case Opcode.FieldLoad(var field) when classes.containsKey(inst.operand(0)) -> lowerField(inst, field, printer);
                     case Opcode.FieldLoad _f -> unsupported(inst, printer);
                     case Opcode.FieldStore _f -> unsupported(inst, printer);
                     default -> {
@@ -118,6 +137,44 @@ public final class AbiLowering {
         var address = elementAddress(b, inst.operand(0), inst.operand(1), elements.getOrDefault(inst.operand(0), inst.operand(2).type()));
         b.store(address, inst.operand(2));
         inst.erase();
+    }
+
+    /**
+     * A field of an object argument's device copy: primitives in place at the field's JVM offset;
+     * a reference as {@code object + 8 * u32} (the runtime's compressed relative offset).
+     */
+    private void lowerField(Inst inst, String field, IrPrinter printer) {
+        var object = inst.operand(0);
+        var layout = layouts.get(classes.get(object));
+        var offset = layout.offsets().get(field);
+        if (offset == null) {
+            diagnostics.add(new Diagnostic("TC-E3102", "field '" + field + "' is not in the device layout of " + layout.className(), printer.instText(inst), inst.loc()));
+            return;
+        }
+        var b = new IrBuilder(inst.block().orElseThrow()).before(inst).at(inst.loc());
+        var address = b.pointerOffset(object, b.constInt(Type.I64, offset));
+        Value result;
+        switch (inst.type()) {
+            case ArrayType(var element) -> {
+                result = reference(b, object, address);
+                elements.put(result, element);
+            }
+            case Type.ObjectType o -> {
+                result = reference(b, object, address);
+                classes.put(result, layout.referenceClasses().getOrDefault(field, o.className()));
+            }
+            default -> result = b.load(address, inst.type());
+        }
+        result.setName(inst.name().isEmpty() || inst.name().chars().allMatch(Character::isDigit) ? object.name() + "_" + field : inst.name());
+        inst.replaceAllUsesWith(result);
+        inst.erase();
+    }
+
+    private static Value reference(IrBuilder b, Value object, Value address) {
+        var compressed = b.load(address, Type.I32);
+        var wide = b.convert(ConvertOp.ZEXT, compressed, Type.I64);
+        var bytes = b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, ObjectLayout.REFERENCE_SCALE));
+        return b.pointerOffset(object, bytes);
     }
 
     private void lowerLength(Inst inst) {

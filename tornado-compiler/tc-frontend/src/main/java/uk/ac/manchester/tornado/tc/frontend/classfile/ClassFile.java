@@ -34,7 +34,7 @@ import java.util.Optional;
  * with their {@code Code} attribute, line numbers, local variable names and raw type annotations
  * (where {@code @Parallel} lives). Any class-file version is accepted: unknown attributes are skipped.
  */
-public record ClassFile(String name, int majorVersion, ConstantPool constants, List<Method> methods, List<BootstrapMethod> bootstrapMethods) {
+public record ClassFile(String name, Optional<String> superName, int majorVersion, ConstantPool constants, List<Method> methods, List<BootstrapMethod> bootstrapMethods) {
 
     /** One entry of the {@code BootstrapMethods} attribute: the method handle and its static arguments. */
     public record BootstrapMethod(int methodHandle, List<Integer> arguments) {
@@ -100,7 +100,8 @@ public record ClassFile(String name, int majorVersion, ConstantPool constants, L
         var pool = ConstantPool.read(in);
         in.readUnsignedShort(); // access flags
         var name = pool.className(in.readUnsignedShort());
-        in.readUnsignedShort(); // super class
+        int superIndex = in.readUnsignedShort();
+        Optional<String> superName = superIndex == 0 ? Optional.empty() : Optional.of(pool.className(superIndex));
         int interfaces = in.readUnsignedShort();
         for (int i = 0; i < interfaces; i++) {
             in.readUnsignedShort();
@@ -151,7 +152,7 @@ public record ClassFile(String name, int majorVersion, ConstantPool constants, L
                 in.skipNBytes(length);
             }
         }
-        return new ClassFile(name, major, pool, List.copyOf(methods), List.copyOf(bootstraps));
+        return new ClassFile(name, superName, major, pool, List.copyOf(methods), List.copyOf(bootstraps));
     }
 
     private static Code readCode(DataInputStream in, ConstantPool pool) throws IOException {

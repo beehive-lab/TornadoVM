@@ -119,6 +119,11 @@ final class Translator {
     private Deque<Value> stack;
 
     private Translator(ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
+        this(classFile, method, kind, null);
+    }
+
+    /** {@code name} overrides the function name (an inherited method is called by its subclass name). */
+    private Translator(ClassFile classFile, ClassFile.Method method, Function.Kind kind, String name) {
         this.classFile = classFile;
         this.method = method;
         this.code = method.code().orElseThrow(() -> new IllegalArgumentException(method.name() + " has no code"));
@@ -129,8 +134,8 @@ final class Translator {
             indexOfBci.put(insns.get(i).bci(), i);
         }
         var returnDescriptor = method.descriptor().substring(method.descriptor().indexOf(')') + 1);
-        var name = kind == Function.Kind.KERNEL ? simpleClass + "." + method.name() : calleeName(classFile.name(), method.name(), method.descriptor());
-        this.function = new Function(name, kind, Bindings.type(returnDescriptor));
+        var functionName = name != null ? name : kind == Function.Kind.KERNEL ? simpleClass + "." + method.name() : calleeName(classFile.name(), method.name(), method.descriptor());
+        this.function = new Function(functionName, kind, Bindings.type(returnDescriptor));
     }
 
     static Function translate(ClassFile classFile, ClassFile.Method method) {
@@ -146,6 +151,12 @@ final class Translator {
         return new Translated(translator.run(), translator.callees);
     }
 
+    /** A device function translated under the name its callers use. */
+    static Translated translateDevice(ClassFile classFile, ClassFile.Method method, String name) {
+        var translator = new Translator(classFile, method, Function.Kind.DEVICE, name);
+        return new Translated(translator.run(), translator.callees);
+    }
+
     /** The TC name of a Java static method: {@code Owner.name}, plus a descriptor hash for overloads. */
     static String calleeName(String owner, String name, String descriptor) {
         return owner.substring(owner.lastIndexOf('/') + 1).replace('$', '_') + "." + name + "_" + Integer.toHexString(descriptor.hashCode());
@@ -155,14 +166,20 @@ final class Translator {
         if (!code.handlers().isEmpty()) {
             throw error("TC-E1001", "exception handlers (try/catch/finally) are not supported in kernels", 0);
         }
-        if (!method.isStatic()) {
+        if (!method.isStatic() && function.kind() == Function.Kind.KERNEL) {
             throw error("TC-E1005", "kernels must be static methods", 0);
         }
         var entry = function.newBlock("entry");
         buildBlocks(entry);
-        // Parameters: slot numbers follow the descriptor; long and double take two slots.
+        // Parameters: slot numbers follow the descriptor; long and double take two slots. An instance
+        // method (a device function reached by devirtualised call) takes `this` first, in slot 0.
         var params = parameterDescriptors(method.descriptor());
         int slot = 0;
+        if (!method.isStatic()) {
+            var self = entry.addArg(Bindings.type("L" + classFile.name() + ";"), "this");
+            writeVariable(localKey(0, kindOf(self.type())), entry, self);
+            slot = 1;
+        }
         for (var descriptor : params) {
             var type = Bindings.type(descriptor);
             var name = code.localAt(slot, 0).map(ClassFile.LocalVariable::name).orElse("arg" + slot);
@@ -628,8 +645,17 @@ final class Translator {
             case RETURN -> b.ret();
             case GETFIELD, GETSTATIC -> {
                 var ref = classFile.constants().member(insn.index());
-                if (op == GETFIELD) {
-                    pop();
+                Value receiver = op == GETFIELD ? pop() : null;
+                if (receiver != null && receiver.type() instanceof Type.ObjectType && Bindings.field(ref.owner(), ref.name()).isEmpty()) {
+                    // A field of an object argument: read from its device copy (laid out like the JVM object).
+                    var memory = Bindings.elementType(ref.descriptor());
+                    var loaded = b.fieldLoad(receiver, ref.name(), memory);
+                    push(switch (ref.descriptor().charAt(0)) {
+                        case 'C', 'Z' -> b.convert(ConvertOp.ZEXT, loaded, Type.I32);
+                        case 'B', 'S' -> b.convert(ConvertOp.SEXT, loaded, Type.I32);
+                        default -> loaded;
+                    });
+                    break;
                 }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
                 if (binding instanceof Intrinsic(var name, var type)) {
@@ -873,7 +899,9 @@ final class Translator {
         }
         var returnType = Bindings.type(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
         if (binding.isEmpty()) {
-            if (insn.opcode() == INVOKESTATIC) {
+            // Static calls, and instance calls on objects: resolved against the static type (the
+            // runtime checks object arguments have exactly their declared class) and inlined.
+            if (insn.opcode() == INVOKESTATIC || (!args.isEmpty() && args.get(0).type() instanceof Type.ObjectType o && !o.className().equals("KernelContext"))) {
                 var callee = calleeName(ref.owner(), ref.name(), ref.descriptor());
                 callees.put(callee, ref);
                 var call = builder.call(callee, returnType, args);

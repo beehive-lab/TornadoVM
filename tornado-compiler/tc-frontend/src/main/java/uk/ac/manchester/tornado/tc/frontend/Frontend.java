@@ -169,11 +169,20 @@ public final class Frontend {
             }
             var calleeClass = ClassFile.parse(bytes.get());
             var calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
+            // An inherited instance method is declared in a superclass.
+            while (calleeMethod.isEmpty() && calleeClass.superName().isPresent()) {
+                var superBytes = source.classBytes(calleeClass.superName().get());
+                if (superBytes.isEmpty()) {
+                    break;
+                }
+                calleeClass = ClassFile.parse(superBytes.get());
+                calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
+            }
             if (calleeMethod.isEmpty() || calleeMethod.get().code().isEmpty()) {
                 return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode", "", Loc.UNKNOWN)), kernel.bytecode());
             }
             try {
-                var translated = Translator.translate(calleeClass, calleeMethod.get(), Function.Kind.DEVICE);
+                var translated = Translator.translateDevice(calleeClass, calleeMethod.get(), entry.getKey());
                 module.add(translated.function());
                 work.addAll(translated.callees().entrySet());
             } catch (Translator.FrontendError e) {
