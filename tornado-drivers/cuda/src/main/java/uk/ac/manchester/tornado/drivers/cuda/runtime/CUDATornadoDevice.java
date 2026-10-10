@@ -279,7 +279,8 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             TornadoProfiler profiler = task.getProfiler();
             // TC's own timers (Task-Compile-TC, Total-TC-Compilation-Time); a refused attempt counts too.
             profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
-            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads(), taskMeta.getNumThreads());
+            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads(), taskMeta.getNumThreads(),
+                    (long) executable.getBatchNumber() * executable.getBatchSize());
             profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
             profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
             if (kernel.isPresent()) {

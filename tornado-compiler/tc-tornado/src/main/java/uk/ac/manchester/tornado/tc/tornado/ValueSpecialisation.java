@@ -53,6 +53,14 @@ public final class ValueSpecialisation {
         record Length(long elements) implements Fact {
         }
 
+        /**
+         * Not an argument: in batch {@code n} of a batched task, the {@code @Parallel} index of this
+         * chunk is {@code offset + i} (offset = n x batch size) wherever it is used as a value; array
+         * indices stay chunk-local. Given after the argument facts.
+         */
+        record IndexOffset(long offset) implements Fact {
+        }
+
         /** A {@code @Reduce} array: the runtime gives the kernel one partial-result slot per work-group (see {@link ReductionLowering}). */
         record Reduce(long elements) implements Fact {
         }

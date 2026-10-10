@@ -91,7 +91,7 @@ public final class TcHook {
      * it; throws when fallback is disabled.
      */
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target) {
-        return compile(method, arguments, target, 0, 0);
+        return compile(method, arguments, target, 0, 0, 0);
     }
 
     /**
@@ -99,13 +99,8 @@ public final class TcHook {
      * batches; {@code numThreads > 0} when the runtime fixes the number of threads (a reduction over a
      * size that is not a power of two runs on the largest power-of-two prefix; the host folds the rest).
      */
-    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads) {
+    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
-        // In a batch the device buffers hold one chunk: lengths and indices are per chunk, which TC
-        // does not model yet (folding the full length would index past the chunk).
-        if (batchThreads > 0) {
-            return refuse(name, "TC-E3206", "batched execution (withBatch) is not compiled by TC yet");
-        }
         var facts = new ArrayList<ValueSpecialisation.Fact>();
         // An instance-method task: the runtime passes the receiver as the first argument.
         var parameterTypes = method.getParameterTypes();
@@ -118,12 +113,19 @@ public final class TcHook {
                 // The runtime has already swapped in the per-work-group partial-results array.
                 facts.add(new ValueSpecialisation.Fact.Reduce(array.getSizeLong()));
             } else if (argument instanceof TornadoNativeArray array) {
-                facts.add(new ValueSpecialisation.Fact.Length(array.getSizeLong()));
+                // In a batch each device buffer holds one chunk of batchThreads elements (with its
+                // header): lengths and indices are per chunk, as on the Graal path.
+                facts.add(new ValueSpecialisation.Fact.Length(batchThreads > 0 ? batchThreads : array.getSizeLong()));
+            } else if (batchThreads > 0 && argument != null && argument.getClass().isArray()) {
+                facts.add(new ValueSpecialisation.Fact.Length(batchThreads)); // a Java array chunk, as for native arrays
             } else if (isInstance(argument) && i < declared.length) {
                 facts.add(instanceFact(argument, declared[i]));
             } else {
                 facts.add(ValueSpecialisation.Fact.of(argument));
             }
+        }
+        if (batchIndexOffset > 0) {
+            facts.add(new ValueSpecialisation.Fact.IndexOffset(batchIndexOffset));
         }
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
