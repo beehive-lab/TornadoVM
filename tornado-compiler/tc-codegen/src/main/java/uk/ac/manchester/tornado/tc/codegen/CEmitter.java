@@ -248,7 +248,7 @@ public final class CEmitter {
         statements(body, Set.of(), 1);
         out.append("}\n");
 
-        var emitted = resolveLoopLabels(out.toString());
+        var emitted = out.toString();
         var source = new StringBuilder();
         var includes = dialect.preamble(features);
         includes.forEach(i -> source.append(i).append('\n'));
@@ -367,7 +367,9 @@ public final class CEmitter {
 
     private void loop(String label, List<S.Stmt> body, Set<String> fallthrough, int depth) {
         frames.push(new LoopFrame(label, fallthrough));
-        line(depth, "@@loop:" + label);
+        // A jump to the loop's label (a continue of an outer loop) can only come from its body: the
+        // label is written at the loop's start once the body shows it is needed.
+        int start = out.length();
         if (body.size() == 1 && body.get(0) instanceof S.If(var c, var t, var e) && isPlainBreak(e)) {
             line(depth, "while (" + expr(c).text + ") {");
             statements(t, Set.of(), depth + 1);
@@ -380,6 +382,9 @@ public final class CEmitter {
         }
         line(depth, "}");
         frames.pop();
+        if (neededLabels.contains(label)) {
+            out.insert(start, "  ".repeat(depth) + label + ":\n");
+        }
     }
 
     private static boolean endsInJump(List<S.Stmt> body) {
@@ -436,22 +441,6 @@ public final class CEmitter {
     }
 
     /** Places a label before each loop that a goto restarts; removes the other markers. */
-    private String resolveLoopLabels(String body) {
-        var sb = new StringBuilder();
-        for (var l : body.split("\n", -1)) {
-            var marker = l.indexOf("@@loop:");
-            if (marker >= 0) {
-                var label = l.substring(marker + "@@loop:".length()).trim();
-                if (neededLabels.contains(label)) {
-                    sb.append(l, 0, marker).append(label).append(":\n");
-                }
-                continue;
-            }
-            sb.append(l).append('\n');
-        }
-        return sb.substring(0, sb.length() - 1);
-    }
-
     /** A launch from the device ({@code KernelContext.launch}): the dialect prints it, in a block of its own. */
     private void deviceLaunch(Inst launch, List<S.Expr> operands, Loc loc, int depth) {
         var mode = launch.immediates().requireString("mode");
@@ -513,6 +502,7 @@ public final class CEmitter {
             case S.VarRef(var v) -> new R(names.get(v), ATOM);
             case S.Const(var inst) -> constant(inst);
             case S.AllocaRef(var alloca) -> new R("(" + dialect.pointer(alloca.kind().space(), "unsigned char") + ") " + allocaNames.get(alloca), UNARY);
+            case S.ElementAddress address -> expr(address.address());
             case S.Op(var inst, var ops) -> op(inst, ops);
         };
     }
@@ -681,7 +671,7 @@ public final class CEmitter {
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
         if (name.startsWith("tile.")) {
             // Tile values are always named variables; the result is a whole statement's expression.
-            return new R(TileSpellings.expression(name, inst, ops.stream().map(o -> wrap(expr(o), UNARY)).toList()), COND);
+            return new R(dialect.tileExpression(name, inst, ops.stream().map(o -> wrap(expr(o), UNARY)).toList()), COND);
         }
         if (name.equals("tornado.vector.make")) {
             // A vector value from its lanes (CUDA: make_float4(x, y, z, w)).
@@ -693,10 +683,7 @@ public final class CEmitter {
         spelling.helper().map(h -> Intrinsics.fillImmediates(h, inst.immediates())).ifPresent(helpers::add);
         var template = Intrinsics.fillImmediates(spelling.template(), inst.immediates());
         if (template.contains("$&0")) {
-            // The address of the element operand 0 points to: `&a_data[i]`, or a typed cast of the pointer.
-            var element = deref(ops.get(0), type);
-            var address = element.text.startsWith("*((") ? "((" + pointerTo(ops.get(0), type) + ") " + wrap(expr(ops.get(0)), UNARY) + ")" : "&" + element.text;
-            template = template.replace("$&0", address);
+            template = template.replace("$&0", addressOf(ops.get(0), type));
         }
         var operands = ops.stream().map(this::expr).toList();
         var text = Intrinsics.expand(template, operands.stream().map(R::text).toList(), i -> operands.get(i).prec >= UNARY);
@@ -704,24 +691,28 @@ public final class CEmitter {
     }
 
     /**
-     * A memory access of {@code type} through {@code pointer}. Element accesses through a typed data
-     * pointer or a local array print as {@code a_data[i]} / {@code scratch[i]}; anything else as a cast
-     * and dereference.
+     * A memory access of {@code type} through {@code pointer}: an element address the structurizer
+     * recognised prints as {@code a_data[i]} / {@code scratch[i]}, a typed data pointer itself as
+     * {@code a_data[0]}; anything else as a cast and dereference.
      */
     private R deref(S.Expr pointer, Type type) {
-        int size = sizeOf(type);
-        if (pointer instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.PointerOffset) {
-            var array = arrayName(ops.get(0), type);
-            var index = index(ops.get(1), size);
-            if (array != null && index != null) {
-                return new R(array + "[" + expr(index).text + "]", ATOM);
-            }
+        var element = element(pointer, type);
+        return element != null ? new R(element, ATOM) : new R("*((" + pointerTo(pointer, type) + ") " + wrap(expr(pointer), UNARY) + ")", UNARY);
+    }
+
+    /** The address an atomic or helper takes: {@code &a_data[i]}, or a typed cast of the pointer. */
+    private String addressOf(S.Expr pointer, Type type) {
+        var element = element(pointer, type);
+        return element != null ? "&" + element : "((" + pointerTo(pointer, type) + ") " + wrap(expr(pointer), UNARY) + ")";
+    }
+
+    /** {@code name[index]} when {@code pointer} addresses an element of {@code type} of a named array, else null. */
+    private String element(S.Expr pointer, Type type) {
+        if (pointer instanceof S.ElementAddress(var address, var base, var index, var element) && element.equals(type)) {
+            return arrayName(base, type) + "[" + expr(index).text + "]";
         }
         var array = arrayName(pointer, type);
-        if (array != null) {
-            return new R(array + "[0]", ATOM);
-        }
-        return new R("*((" + pointerTo(pointer, type) + ") " + wrap(expr(pointer), UNARY) + ")", UNARY);
+        return array != null ? array + "[0]" : null;
     }
 
     /** The C name of a typed data pointer or local array whose elements have {@code type}, else null. */
@@ -735,34 +726,6 @@ public final class CEmitter {
         return null;
     }
 
-    /** The element index of a byte offset {@code sext(i) * size} (or {@code i * size}, or {@code sext(i)} for bytes). */
-    private static S.Expr index(S.Expr offset, int size) {
-        if (offset instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.Binary(var op) && op == BinaryOp.MUL && ops.get(1) instanceof S.Const(var c)
-                && c.opcode() instanceof Opcode.ConstInt(var s) && s == size) {
-            return stripSext(ops.get(0));
-        }
-        if (size == 1 && offset instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.Convert(var op) && op == Opcode.ConvertOp.SEXT) {
-            return ops.get(0);
-        }
-        // A constant byte offset (an unrolled index): `r + 8` with 4-byte elements is r[2].
-        if (offset instanceof S.Const(var c) && c.opcode() instanceof Opcode.ConstInt(var bytes) && bytes % size == 0) {
-            return new S.Const(new Inst(new Opcode.ConstInt(bytes / size), Type.I32));
-        }
-        return null;
-    }
-
-    private static S.Expr stripSext(S.Expr e) {
-        return e instanceof S.Op(var inst, var ops) && inst.opcode() instanceof Opcode.Convert(var op) && op == Opcode.ConvertOp.SEXT ? ops.get(0) : e;
-    }
-
-    private static int sizeOf(Type type) {
-        return switch (type.text()) {
-            case "i8", "i1" -> 1;
-            case "i16", "f16", "bf16" -> 2;
-            case "i64", "f64" -> 8;
-            default -> 4;
-        };
-    }
 
     private static String wrap(R r, int min) {
         return r.prec >= min ? r.text : "(" + r.text + ")";
@@ -842,7 +805,7 @@ public final class CEmitter {
             case FloatType f when f.kind() == FloatType.Kind.F32 -> "float";
             case FloatType f when f.kind() == FloatType.Kind.F64 -> "double";
             case Type.PointerType(var space) -> dialect.pointer(space, "unsigned char");
-            case Type.TileType t when !t.view() -> TileSpellings.tileType(t);
+            case Type.TileType t when !t.view() -> dialect.tileType(t);
             case Type.VoidType v -> "void";
             default -> dialect.typeName(type, features).orElseThrow(() -> new EmitException("TC-E4001", "type " + type.text() + " is not supported on " + target.dialect() + " yet"));
         };

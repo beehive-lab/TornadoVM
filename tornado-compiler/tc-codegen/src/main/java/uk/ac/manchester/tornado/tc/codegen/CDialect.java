@@ -97,6 +97,12 @@ sealed interface CDialect permits CudaDialect {
     /** A conversion the C cast does not express (to f16 or bf16, rounding to nearest), else empty. */
     Optional<String> convertTo(Type to, String value, Set<Feature> features);
 
+    /** A tile-programming expression ({@code tile.*} intrinsics; CUDA Tile on CUDA); TC-E4001 where the target has none. */
+    String tileExpression(String name, uk.ac.manchester.tornado.tc.ir.Inst inst, List<String> operands);
+
+    /** The type of a tile value; TC-E4001 where the target has none. */
+    String tileType(Type.TileType type);
+
     /** The statement for a point control cannot reach. */
     String unreachable();
 

@@ -138,6 +138,17 @@ final class CudaDialect implements CDialect {
         return Optional.empty();
     }
 
+    /** CUDA Tile C++ ({@link TileSpellings}), compiled by nvcc. */
+    @Override
+    public String tileExpression(String name, uk.ac.manchester.tornado.tc.ir.Inst inst, List<String> operands) {
+        return TileSpellings.expression(name, inst, operands);
+    }
+
+    @Override
+    public String tileType(Type.TileType type) {
+        return TileSpellings.tileType(type);
+    }
+
     @Override
     public String unreachable() {
         return "__builtin_unreachable();";

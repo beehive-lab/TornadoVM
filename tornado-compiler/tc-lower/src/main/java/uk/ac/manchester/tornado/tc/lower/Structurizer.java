@@ -41,6 +41,7 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Successor;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
+import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree;
 
 /**
@@ -93,7 +94,7 @@ public final class Structurizer {
 
     private Structurizer(Function function) {
         this.function = function;
-        this.dominators = new DominatorTree(function);
+        this.dominators = Analyses.dominators(function);
         names.printFunction(function);
     }
 
@@ -328,6 +329,8 @@ public final class Structurizer {
             case S.Op(var inst, var operands) -> new S.Op(inst, operands.stream().map(o -> substitute(o, from, to)).toList());
             case S.Const _c -> expr;
             case S.AllocaRef _a -> expr;
+            case S.ElementAddress(var address, var base, var index, var element) ->
+                new S.ElementAddress((S.Op) substitute(address, from, to), substitute(base, from, to), substitute(index, from, to), element);
         };
     }
 
@@ -339,6 +342,7 @@ public final class Structurizer {
             }
             case S.AllocaRef _a -> {
             }
+            case S.ElementAddress e -> collectVars(e.address(), into);
         }
     }
 
@@ -521,10 +525,48 @@ public final class Structurizer {
                 return new S.AllocaRef(allocaByInst.get(inst));
             }
             if (isInline(inst)) {
-                return new S.Op(inst, inst.operands().stream().map(this::expr).toList());
+                var op = new S.Op(inst, inst.operands().stream().map(this::expr).toList());
+                return inst.opcode() instanceof Opcode.PointerOffset ? elementAddress(inst, op) : op;
             }
         }
         return new S.VarRef(variable(value));
+    }
+
+    /**
+     * {@code base + offset} as element {@code i} of {@code base}, when {@code base} is a typed data
+     * pointer or a local array of T and the offset is {@code sext(i) * sizeof(T)}, {@code i *
+     * sizeof(T)}, {@code sext(i)} for bytes, or a constant multiple of the size; else the plain address.
+     */
+    private S.Expr elementAddress(Inst address, S.Op op) {
+        var base = address.operand(0);
+        var element = base instanceof Inst b && b.opcode() instanceof Opcode.Alloca(var space, var e, var count) ? Optional.of(e) : elementTypeOf(base);
+        if (element.isEmpty() || !(op.operands().get(0) instanceof S.VarRef || op.operands().get(0) instanceof S.AllocaRef)) {
+            return op;
+        }
+        var index = elementIndex(address.operand(1), sizeOf(element.get()));
+        return index.<S.Expr> map(i -> new S.ElementAddress(op, op.operands().get(0), i, element.get())).orElse(op);
+    }
+
+    /** The element index a byte offset spells for elements of {@code size} bytes (the offset's arithmetic printed inline). */
+    private Optional<S.Expr> elementIndex(Value offset, int size) {
+        if (!(offset instanceof Inst o)) {
+            return Optional.empty();
+        }
+        if (o.opcode() instanceof Opcode.ConstInt(var bytes)) {
+            // A constant byte offset (an unrolled index): `r + 8` with 4-byte elements is r[2].
+            return bytes % size == 0 ? Optional.of(new S.Const(new Inst(new Opcode.ConstInt(bytes / size), Type.I32))) : Optional.empty();
+        }
+        if (!isInline(o)) {
+            return Optional.empty();
+        }
+        if (o.opcode() instanceof Opcode.Binary(var op) && op == Opcode.BinaryOp.MUL && o.operand(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var s) && s == size) {
+            var i = o.operand(0);
+            return Optional.of(i instanceof Inst x && isInline(x) && x.opcode() instanceof Opcode.Convert(var conv) && conv == Opcode.ConvertOp.SEXT ? expr(x.operand(0)) : expr(i));
+        }
+        if (size == 1 && o.opcode() instanceof Opcode.Convert(var conv) && conv == Opcode.ConvertOp.SEXT) {
+            return Optional.of(expr(o.operand(0)));
+        }
+        return Optional.empty();
     }
 
     private S.Var variable(Value value) {

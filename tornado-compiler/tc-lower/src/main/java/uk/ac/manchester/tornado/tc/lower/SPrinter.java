@@ -116,6 +116,7 @@ public final class SPrinter {
                 default -> inst.opcode().mnemonic();
             };
             case S.AllocaRef(var alloca) -> "&" + alloca.name();
+            case S.ElementAddress e -> expr(e.address());
             case S.Op(var inst, var ops) -> switch (inst.opcode()) {
                 case Opcode.Binary(var op) -> "(" + expr(ops.get(0)) + " " + symbol(op) + " " + expr(ops.get(1)) + ")";
                 case Opcode.ICmp(var p) -> "(" + expr(ops.get(0)) + " " + p.text() + " " + expr(ops.get(1)) + ")";

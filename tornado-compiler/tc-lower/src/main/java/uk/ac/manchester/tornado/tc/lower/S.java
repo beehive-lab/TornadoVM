@@ -95,6 +95,18 @@ public final class S {
         }
     }
 
+    /**
+     * Element {@code index} of {@code base} seen as an array of {@code element} (a typed data pointer or
+     * a local array), recognised once by the structurizer so every dialect prints {@code base[index]};
+     * {@code address} is the same address as a plain pointer computation, for accesses of another type.
+     */
+    public record ElementAddress(Op address, Expr base, Expr index, Type element) implements Expr {
+        @Override
+        public Type type() {
+            return address.type();
+        }
+    }
+
     // ---------------------------------------------------------------- statements
 
     public sealed interface Stmt {
