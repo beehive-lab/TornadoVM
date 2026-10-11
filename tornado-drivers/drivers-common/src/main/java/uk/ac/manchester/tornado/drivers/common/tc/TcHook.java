@@ -104,8 +104,17 @@ public final class TcHook {
     /** As above, for a task of a plan with {@code withStrictFloatingPoint()} when {@code strictFloatingPoint}. */
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId,
             boolean strictFloatingPoint) {
+        return compile(method, arguments, target, batchThreads, numThreads, batchIndexOffset, taskId, strictFloatingPoint, false);
+    }
+
+    /** As above; {@code workerGrid} when the task runs with a worker grid of the user's (no launch domain needed). */
+    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId,
+            boolean strictFloatingPoint, boolean workerGrid) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         var facts = TcArguments.facts(method, arguments, batchThreads, batchIndexOffset);
+        if (workerGrid) {
+            facts.add(new ValueSpecialisation.Fact.WorkerGrid());
+        }
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
@@ -115,6 +124,9 @@ public final class TcHook {
             c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, options, facts);
         } catch (RuntimeException | StackOverflowError e) {
             // An internal TC failure becomes a diagnostic, reported like any other.
+            if (VERBOSE) {
+                e.printStackTrace();
+            }
             return refuse(name, "TC-E9003", "internal compiler error: " + e);
         }
         if (options.htmlReport() && options.selects(name)) {

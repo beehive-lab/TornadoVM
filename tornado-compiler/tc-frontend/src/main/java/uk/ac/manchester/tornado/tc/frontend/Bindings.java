@@ -134,6 +134,10 @@ final class Bindings {
     record VectorWhole(String op) implements Binding {
     }
 
+    /** {@code v.asFloat3()}, {@code v.getLow()}, {@code v.getHigh()}: {@code count} lanes of a vector from {@code start}, as a new vector. */
+    record VectorSlice(int start, int count) implements Binding {
+    }
+
     record VectorSet(int lane) implements Binding {
     }
 
@@ -242,6 +246,16 @@ final class Bindings {
                 METHODS.put(owner + ".fill(" + d + ")V", new VectorWhole("fill"));
                 METHODS.put(owner + ".size()I", new VectorWhole("size"));
                 METHODS.put(owner + ".duplicate()L" + owner + ";", new Identity());
+                // The leading lanes (asFloat2, asFloat3) and the halves (getLow, getHigh), where the API has them.
+                boolean slices = !e.getKey().equals("Short") && !e.getKey().equals("Byte");
+                for (int k = 2; slices && k < lanes && lanes <= 4; k++) {
+                    METHODS.put(owner + ".as" + e.getKey() + k + "()L" + VECTOR_PACKAGE + e.getKey() + k + ";", new VectorSlice(0, k));
+                }
+                if (slices && (lanes == 8 || lanes == 4 && !e.getKey().equals("Int"))) {
+                    var half = VECTOR_PACKAGE + e.getKey() + lanes / 2;
+                    METHODS.put(owner + ".getLow()L" + half + ";", new VectorSlice(0, lanes / 2));
+                    METHODS.put(owner + ".getHigh()L" + half + ";", new VectorSlice(lanes / 2, lanes / 2));
+                }
             }
         }
         // QuantizationUtils.dp4a: four signed int8 products accumulated (CUDA __dp4a, sm_61+). The Java

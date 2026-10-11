@@ -217,7 +217,8 @@ public final class AbiLowering {
      * vector's storage array, without a header); the kernel works on the value loaded at entry.
      */
     private static void lowerVectorParam(Function function, uk.ac.manchester.tornado.tc.ir.BlockArg param, Type.VectorType vec) {
-        var users = List.copyOf(param.users());
+        // Once per user: an instruction using the parameter twice is listed twice.
+        var users = List.copyOf(new java.util.LinkedHashSet<>(param.users()));
         param.setType(new Type.PointerType(AddressSpace.GLOBAL));
         var entry = function.entry();
         var first = entry.insts().isEmpty() ? null : entry.insts().get(0);

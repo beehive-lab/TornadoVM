@@ -361,8 +361,9 @@ public final class TcCompiler {
             return problems;
         }
         // With the task's arguments known, every @Parallel loop must give a launch domain: without
-        // one the kernel would run on a single thread.
-        if (!facts.isEmpty() && hasParallelLoops && ParallelLoopLowering.domain(function).isEmpty()) {
+        // one the kernel would run on a single thread. A worker grid of the user's is the exception.
+        boolean workerGrid = facts.stream().anyMatch(f -> f instanceof ValueSpecialisation.Fact.WorkerGrid);
+        if (!facts.isEmpty() && !workerGrid && hasParallelLoops && ParallelLoopLowering.domain(function).isEmpty()) {
             return List.of(new Diagnostic("TC-E3103", "the bounds of the @Parallel loops are not compile-time constants after specialisation, so no launch domain can be derived", "", Loc.UNKNOWN));
         }
         return List.of();

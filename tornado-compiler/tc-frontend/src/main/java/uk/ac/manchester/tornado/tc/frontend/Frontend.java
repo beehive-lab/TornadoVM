@@ -59,6 +59,16 @@ public final class Frontend {
             return Optional.empty();
         }
 
+        /**
+         * The value of a primitive {@code static final} field that is not a compile-time constant
+         * (javac inlines those): one the class initialiser computes, such as
+         * {@code static final double TO_RADIANS = Math.PI / 180}. A kernel reads it as a constant.
+         * Only a source backed by the host's classes knows it; booleans and chars come as ints.
+         */
+        default Optional<Number> staticFinal(String ownerInternalName, String field) {
+            return Optional.empty();
+        }
+
         /** Class files on a path of directories and jars, separated by the platform path separator. */
         static BytecodeSource classpath(String path) {
             var entries = List.of(path.split(java.io.File.pathSeparator));
@@ -111,6 +121,23 @@ public final class Frontend {
                 @Override
                 public Optional<EnumInfo> enumInfo(String internalName) {
                     return enums.computeIfAbsent(internalName, n -> EnumInfo.of(loader, n));
+                }
+
+                @Override
+                public Optional<Number> staticFinal(String ownerInternalName, String field) {
+                    try {
+                        // Initialised as the JVM would before the kernel's host code ran.
+                        var f = Class.forName(ownerInternalName.replace('/', '.'), true, loader).getDeclaredField(field);
+                        int m = f.getModifiers();
+                        if (!java.lang.reflect.Modifier.isStatic(m) || !java.lang.reflect.Modifier.isFinal(m) || !f.getType().isPrimitive()) {
+                            return Optional.empty();
+                        }
+                        f.setAccessible(true);
+                        var v = f.get(null);
+                        return Optional.of(v instanceof Boolean bool ? (bool ? 1 : 0) : v instanceof Character ch ? (int) ch : (Number) v);
+                    } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+                        return Optional.empty();
+                    }
                 }
             };
         }

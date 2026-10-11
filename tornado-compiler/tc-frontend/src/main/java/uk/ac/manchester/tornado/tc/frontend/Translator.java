@@ -622,6 +622,18 @@ final class Translator {
                     push(b.intrinsic(DEVICE_KERNEL, Immediates.of("owner", child.owner(), "name", child.name(), "descriptor", child.descriptor()), ApiTypes.DEVICE_KERNEL, List.of()));
                     break;
                 }
+                if (op == GETSTATIC && Bindings.field(ref.owner(), ref.name()).isEmpty()) {
+                    var constant = source.staticFinal(ref.owner(), ref.name());
+                    if (constant.isPresent()) {
+                        push(switch (ref.descriptor().charAt(0)) {
+                            case 'J' -> b.constInt(Type.I64, constant.get().longValue());
+                            case 'F' -> b.constFloat(Type.F32, constant.get().floatValue());
+                            case 'D' -> b.constFloat(Type.F64, constant.get().doubleValue());
+                            default -> b.constInt(Type.I32, constant.get().intValue());
+                        });
+                        break;
+                    }
+                }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
                 if (binding instanceof Intrinsic(var name, var type, var immediates)) {
                     push(b.intrinsic(name, immediates, type, List.of()));
@@ -1357,6 +1369,15 @@ final class Translator {
                     case "fill" -> rebind(vector, builder.intrinsic("tornado.vector.make", vec, java.util.Collections.nCopies(vec.length(), narrow(args.get(1), vec.element()))));
                     default -> push(builder.constInt(Type.I32, vec.length()));
                 }
+            }
+            case Bindings.VectorSlice(var start, var count) -> {
+                var vector = args.get(0);
+                var element = ((Type.VectorType) vector.type()).element();
+                var lanes = new java.util.ArrayList<Value>();
+                for (int l = start; l < start + count; l++) {
+                    lanes.add(builder.intrinsic("tornado.vector.lane", Immediates.of("lane", l), element, List.of(vector)));
+                }
+                push(builder.intrinsic("tornado.vector.make", new Type.VectorType(element, count), lanes));
             }
             case Bindings.VectorSet(var lane) -> {
                 var vector = args.get(0);

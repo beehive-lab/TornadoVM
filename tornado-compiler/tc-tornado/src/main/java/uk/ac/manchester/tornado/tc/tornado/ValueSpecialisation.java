@@ -62,6 +62,14 @@ public final class ValueSpecialisation {
         record IndexOffset(long offset) implements Fact {
         }
 
+        /**
+         * Not an argument: the task runs with a worker grid the user gave ({@code GridScheduler}), so
+         * its {@code @Parallel} loops need no launch domain: they stride over whatever grid runs, and
+         * their bounds may be values only the device knows (array contents). Given after the argument facts.
+         */
+        record WorkerGrid() implements Fact {
+        }
+
         /** A {@code @Reduce} array: the runtime gives the kernel one partial-result slot per work-group (see {@link ReductionLowering}). */
         record Reduce(long elements) implements Fact {
         }

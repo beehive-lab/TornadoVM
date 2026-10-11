@@ -85,7 +85,7 @@ public final class TcKernels {
         TornadoProfiler profiler = executable.getProfiler();
         profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
         var kernel = TcHook.compile(method, executable.getArguments(), target, executable.getBatchThreads(), taskMeta.getNumThreads(),
-                (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint()).orElseThrow();
+                (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint(), taskMeta.isWorkerGridAvailable()).orElseThrow();
         profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
         if (TornadoOptions.FEATURE_EXTRACTION && deviceContext != null) {
             emitFeatures(method, kernel.features(), deviceContext);
