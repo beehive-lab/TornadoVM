@@ -1378,6 +1378,41 @@ class TornadoVMRunnerTool():
         else:
             return self.cmd + " " + executionFlags
 
+    def findTcIrViz(self):
+        """The tcirviz jar: $TCIRVIZ_JAR, the SDK's share/java/tcirviz, or $TCIRVIZ_HOME/build."""
+        candidates = []
+        if os.environ.get("TCIRVIZ_JAR"):
+            candidates.append(os.environ["TCIRVIZ_JAR"])
+        candidates.append(os.path.join(self.sdk, "share", "java", "tcirviz", "tcirviz.jar"))
+        if os.environ.get("TCIRVIZ_HOME"):
+            candidates.append(os.path.join(os.environ["TCIRVIZ_HOME"], "build", "tcirviz.jar"))
+        for jar in candidates:
+            if os.path.isfile(jar):
+                return jar
+        return None
+
+    def runTcIrViz(self, args):
+        """tornado --tcirviz [File.java]: the TC IR visualiser (a local web UI). Headless: no GPU needed."""
+        jar = self.findTcIrViz()
+        if jar is None:
+            print("[ERROR] tcirviz is not installed: build it from its repository (./install.sh puts it in")
+            print("        $TORNADOVM_HOME/share/java/tcirviz), or set TCIRVIZ_JAR to its jar.")
+            sys.exit(1)
+        classpath = os.path.join(self.sdk, "share", "java", "tornado", "*") + os.pathsep + jar
+        command = [self.cmd, "--enable-preview", "-cp", classpath]
+        if args.jvm_options:
+            command += shlex.split(args.jvm_options)
+        command.append("io.github.mikepapadim.tcirviz.TcIrViz")
+        for value in [args.application, args.param1, args.param2, args.param3, args.param4]:
+            if value is not None:
+                command.append(value)
+        if args.application_parameters:
+            command += shlex.split(args.application_parameters)
+        try:
+            sys.exit(subprocess.call(command))
+        except KeyboardInterrupt:
+            sys.exit(0)
+
     def executeCommand(self, args):
         javaFlags = self.buildJavaCommand(args)
 
@@ -1393,6 +1428,9 @@ class TornadoVMRunnerTool():
         if (args.generate_argfile):
             self.generateArgfile()
             sys.exit(0)
+
+        if (args.tcirviz):
+            self.runTcIrViz(args)
 
         if (args.showDevices):
             command = javaFlags + "uk.ac.manchester.tornado.drivers.TornadoDeviceQuery verbose"
@@ -1453,6 +1491,8 @@ def parseArguments():
                         help="Dump the profiler to a file")
     parser.add_argument('--printJavaFlags', action="store_true", dest="printFlags", default=False,
                         help="Print all the Java flags to enable the execution with TornadoVM")
+    parser.add_argument('--tcirviz', action="store_true", dest="tcirviz", default=False,
+                        help="Start the TC IR visualiser in the browser: Java, bytecode, every TC stage and pass, and the generated CUDA/OpenCL code, linked line by line (optional: a .java file)")
     parser.add_argument('--devices', action="store_true", dest="showDevices", default=False,
                         help="Print information about the  accelerators available")
     parser.add_argument('--enableConcurrentDevices', action="store_true", dest="enableConcurrentDevices", default=False,
