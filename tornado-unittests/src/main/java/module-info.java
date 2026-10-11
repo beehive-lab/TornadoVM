@@ -10,7 +10,6 @@ open module tornado.unittests {
     requires tornado.cudf;
     requires tornado.cutlass;
     requires tornado.cuvs;
-    requires lucene.core;
     requires java.desktop;
     requires jdk.incubator.vector;
 
