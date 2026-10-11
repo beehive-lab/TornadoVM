@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
@@ -137,6 +138,14 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public void sync(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
+        if (MetalObjects.batchesDispatches()) {
+            // The host sees results only by reading a buffer back, and every read waits for the
+            // command buffers that bind that buffer, so committing the open one is enough. Waiting
+            // here would drain the GPU at the end of every task graph, which is where a plan of
+            // many small graphs spends most of its time.
+            commandQueue.flush();
+            return;
+        }
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
