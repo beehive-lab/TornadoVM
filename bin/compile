@@ -595,27 +595,20 @@ def expand_argfile_template():
         print("[WARNING] TORNADOVM_HOME not set, skipping argfile expansion")
         return
 
-    template_path = os.path.join(tornado_home, "tornado-argfile.template")
-    output_path = os.path.join(tornado_home, "tornado-argfile")
-
-    if not os.path.exists(template_path):
-        print(f"[WARNING] Template file not found: {template_path}")
+    templates = sorted(f for f in os.listdir(tornado_home) if f.startswith("tornado-argfile") and f.endswith(".template"))
+    if not templates:
+        print(f"[WARNING] No argfile template found in {tornado_home}")
         return
 
     try:
-        # Read the template file
-        with open(template_path, "r") as template_file:
-            template_content = template_file.read()
-
-        # Expand ${TORNADOVM_HOME} placeholder with the actual path
-        # This works across all platforms (Linux, macOS, Windows)
-        expanded_content = template_content.replace("${TORNADOVM_HOME}", tornado_home)
-
-        # Write the expanded argfile
-        with open(output_path, "w") as output_file:
-            output_file.write(expanded_content)
-
-        print(f"   [argfile]: {output_path}")
+        for template in templates:
+            # Expand ${TORNADOVM_HOME} with the actual path (pure Python: Linux, macOS, Windows).
+            with open(os.path.join(tornado_home, template), "r") as template_file:
+                expanded_content = template_file.read().replace("${TORNADOVM_HOME}", tornado_home)
+            output_path = os.path.join(tornado_home, template[:-len(".template")])
+            with open(output_path, "w") as output_file:
+                output_file.write(expanded_content)
+            print(f"   [argfile]: {output_path}")
 
     except Exception as e:
         print(f"[ERROR] Failed to expand argfile template: {e}")

@@ -411,11 +411,18 @@ class TornadoVMRunnerTool():
         # supplies jdk.internal.vm.ci itself as a vendored application module and runs its
         # compilation pipeline via the reflection provider path.
         self.jvmci_absent = self.java_version >= 27
+        # gen-tornado-argfile-template.py writes the argfile of the other JDK range too (one SDK
+        # serves JDK 22+): TORNADOVM_JVMCI_MODE=absent|patched selects the flags of that range.
+        forced = os.environ.get("TORNADOVM_JVMCI_MODE")
         # JDK 22-26 still ship jdk.internal.vm.ci, but its interfaces have drifted from the
         # JDK-21 shape the reflection providers are compiled against. Patch the platform module
         # with the frozen JDK-21 jvmci classes so the runtime SPI matches the compiled code
         # (uniform vendoring; mirrors the compile-time --patch-module in the jdk25/jdk26 profiles).
         self.jvmci_patched = 22 <= self.java_version <= 26
+        if forced == "absent":
+            self.jvmci_absent, self.jvmci_patched = True, False
+        elif forced == "patched":
+            self.jvmci_absent, self.jvmci_patched = False, True
         self.sdk_jdk_floor, self.sdk_jdk_preview = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
