@@ -101,6 +101,7 @@ def parse(log):
 # Classes whose launches differ from run to run under either compiler: not compiler differences.
 RUN_DEPENDENT_LAUNCHES = {
     "reductions.TestReductionsAutomatic": "testIrregularSize03 draws its sizes from an unseeded Random",
+    "reductions.TestReductionsLong": "the generated reduction graphs are numbered in the order JUnit runs the methods",
     "functional.TestStreams": "tasks are named after ForkJoin worker threads",
     "warmup.TestWarmUp": "the warm-up loop is timed",
     "multithreaded.TestMultiThreadedExecutionPlans": "two threads share one WorkerGrid whose local size the runtime fills in (1024 once in run 12, 512 in 8 reruns under both compilers)",
