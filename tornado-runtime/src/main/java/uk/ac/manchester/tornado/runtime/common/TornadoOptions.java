@@ -100,6 +100,14 @@ public class TornadoOptions {
     public static final int DEFAULT_BACKEND_INDEX = Integer.parseInt(Tornado.getProperty("tornado.backend", "0"));
 
     /**
+     * The backends to load, as a comma-separated list of {@code opencl}, {@code cuda} and {@code metal}.
+     * Empty (the default) loads every installed backend. A backend left out is not initialised at all,
+     * which shortens start-up: an unused OpenCL backend costs about 170 ms on a machine with an NVIDIA GPU.
+     * Backend indices ({@code tornado.backend}, {@code tornado.device}) count only the loaded backends.
+     */
+    public static final String ENABLED_BACKENDS = Tornado.getProperty("tornado.enabled.backends", "");
+
+    /**
      * Index for the default device in TornadoVM. Default is 0.
      */
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));

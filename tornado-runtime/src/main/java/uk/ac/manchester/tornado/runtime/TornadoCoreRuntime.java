@@ -25,7 +25,9 @@ package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
@@ -65,7 +67,12 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     private TornadoAcceleratorBackend[] loadBackends() {
         ServiceLoader<TornadoBackendProvider> loader = ServiceLoader.load(TornadoBackendProvider.class);
-        List<TornadoBackendProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
+        List<TornadoBackendProvider> installed = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
+        List<TornadoBackendProvider> providerList = installed.stream().filter(TornadoCoreRuntime::isEnabled).toList();
+        if (providerList.isEmpty() && !installed.isEmpty()) {
+            throw new TornadoBackendNotFound("tornado.enabled.backends=" + TornadoOptions.ENABLED_BACKENDS + " selects none of the installed backends: " + installed.stream()
+                    .map(p -> p.getDevicePriority().name().toLowerCase(Locale.ROOT)).toList());
+        }
         TornadoAcceleratorBackend[] tornadoAcceleratorBackends = new TornadoAcceleratorBackend[TornadoBackends.values().length];
         int index = 0;
         for (TornadoBackendProvider provider : providerList) {
@@ -80,6 +87,15 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         }
         backendCount = index;
         return tornadoAcceleratorBackends;
+    }
+
+    private static boolean isEnabled(TornadoBackendProvider provider) {
+        String enabled = TornadoOptions.ENABLED_BACKENDS;
+        if (enabled.isBlank()) {
+            return true;
+        }
+        String name = provider.getDevicePriority().name();
+        return Arrays.stream(enabled.split(",")).map(String::trim).anyMatch(name::equalsIgnoreCase);
     }
 
     @Override

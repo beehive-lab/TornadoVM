@@ -361,6 +361,16 @@ directory in its paths. Retrain after changing the application or the SDK. For s
 (OpenCL, JDK 25), the process takes 0.54 s instead of 0.69 s, and TC compiles the kernel in 18 ms
 instead of 42 ms.
 
+**Load only the backend you use.** TornadoVM initialises every installed backend at start-up. On
+a machine with an NVIDIA GPU, an unused OpenCL backend costs about 170 ms of a CUDA application's
+start-up. `-Dtornado.enabled.backends=cuda` (or `opencl`, `metal`, or a comma-separated list) loads
+only those; backend indices then count only the loaded backends. Saxpy on CUDA starts in 0.48 s
+instead of 0.64 s, and in 0.32 s together with an AOT cache:
+
+```bash
+tornado --jvm="-Dtornado.enabled.backends=cuda" --aotCache app.aot --classpath app.jar com.example.Main
+```
+
 **Native image of an application (GraalVM for JDK 25+).** `tornado-native-image` builds the whole
 application as one executable: the TornadoVM runtime, the drivers (through FFM) and TC.
 
