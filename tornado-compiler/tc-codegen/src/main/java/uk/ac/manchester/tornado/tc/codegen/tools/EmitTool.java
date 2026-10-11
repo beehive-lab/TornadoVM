@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.tc.lower.Structurizer;
 
 /**
  * The {@code tc-emit} tool: reads post-ABI TC-SSA, verifies it, structures it and prints target
- * source. {@code tc-emit [--target=cuda|opencl] [--no-line-comments] <file | ->}.
+ * source. {@code tc-emit [--target=cuda|opencl|metal] [--no-line-comments] <file | ->}.
  */
 public final class EmitTool {
 
@@ -61,6 +61,7 @@ public final class EmitTool {
             switch (arg) {
                 case "--target=cuda" -> target = TargetCaps.CUDA_SM89;
                 case "--target=opencl" -> target = TargetCaps.OPENCL_GENERIC;
+                case "--target=metal" -> target = TargetCaps.METAL_APPLE;
                 case "--no-line-comments" -> lineComments = false;
                 default -> {
                     if (arg.startsWith("-") && !arg.equals("-")) {

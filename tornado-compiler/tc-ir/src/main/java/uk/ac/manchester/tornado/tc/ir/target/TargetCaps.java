@@ -52,6 +52,12 @@ public record TargetCaps(Dialect dialect, int computeCapability, boolean fp64, b
      */
     public static final TargetCaps OPENCL_GENERIC = new TargetCaps(Dialect.OPENCL, 0, true, true, 16, 1024, 48 * 1024, 0, false);
 
+    /**
+     * An Apple-silicon GPU through Metal, for headless use: no double precision, halves, 32-wide SIMD
+     * groups, 1024 threads and 32 KB of threadgroup memory per work-group; no device-side launches.
+     */
+    public static final TargetCaps METAL_APPLE = new TargetCaps(Dialect.METAL, 0, false, true, 16, 1024, 32 * 1024, 32, false);
+
     public TargetCaps withArrayHeaderBytes(int bytes) {
         return new TargetCaps(dialect, computeCapability, fp64, fp16, bytes, maxWorkGroupSize, localMemoryBytes, warpSize, deviceLaunch);
     }

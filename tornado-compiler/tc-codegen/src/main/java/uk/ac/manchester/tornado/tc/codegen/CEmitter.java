@@ -155,7 +155,8 @@ public final class CEmitter {
     private sealed interface Frame {
     }
 
-    private record LoopFrame(String label, Set<String> breakTargets) implements Frame {
+    /** {@code continueTargets}: labelled blocks that end just before the loop's latch, so leaving them is {@code continue}. */
+    private record LoopFrame(String label, Set<String> breakTargets, Set<String> continueTargets) implements Frame {
     }
 
     private record SwitchFrame(Set<String> breakTargets) implements Frame {
@@ -220,9 +221,11 @@ public final class CEmitter {
         }
         if (f.kind() == Function.Kind.KERNEL) {
             header.append(dialect.kernelPrefix(tiles)).append(entry).append('(').append(dialect.abiParameters());
+            int index = dialect.abiParameterCount();
             for (var p : k.params()) {
-                header.append(", ").append(declaration(p.type(), names.get(p)));
+                header.append(", ").append(dialect.kernelParameter(p.type(), declaration(p.type(), names.get(p)), names.get(p), index++));
             }
+            header.append(dialect.trailingKernelParameters(index));
         } else {
             header.append(dialect.functionPrefix()).append(typeName(f.returnType())).append(' ').append(entry).append('(');
             header.append(k.params().stream().map(p -> declaration(p.type(), names.get(p))).collect(Collectors.joining(", ")));
@@ -309,6 +312,9 @@ public final class CEmitter {
                 line(depth, declare + names.get(target) + " = " + text + ";" + comment(loc));
             }
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals(DEVICE_LAUNCH) -> deviceLaunch(op.inst(), op.operands(), loc, depth);
+            case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.printf") && !dialect.printf() ->
+                // As on the Graal path: the target has no printf, so the call is left out.
+                line(depth, "// Debug.printf(\"" + cEscape(op.inst().immediates().requireString("format")) + "\"): not supported on this target" + comment(loc));
             case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tornado.printf") -> {
                 // Debug.printf: every thread prints, prefixed with its global id (as on the Graal path).
                 var format = cEscape(op.inst().immediates().requireString("format"));
@@ -392,25 +398,83 @@ public final class CEmitter {
     }
 
     private void loop(String label, List<S.Stmt> body, Set<String> fallthrough, int depth) {
-        frames.push(new LoopFrame(label, fallthrough));
         // A jump to the loop's label (a continue of an outer loop) can only come from its body: the
         // label is written at the loop's start once the body shows it is needed.
         int start = out.length();
-        if (body.size() == 1 && body.get(0) instanceof S.If(var c, var t, var e) && isPlainBreak(e)) {
-            line(depth, "while (" + expr(c).text + ") {");
-            statements(t, Set.of(), depth + 1);
-        } else if (body.size() == 1 && body.get(0) instanceof S.If(var c, var t, var e) && isPlainBreak(t)) {
-            line(depth, "while (" + negate(c) + ") {");
-            statements(e, Set.of(), depth + 1);
+        String condition = null;
+        var inner = body;
+        if (body.size() == 1 && body.get(0) instanceof S.If(var c, var t, var e) && isPlainBreakOf(e, fallthrough)) {
+            condition = expr(c).text;
+            inner = t;
+        } else if (body.size() == 1 && body.get(0) instanceof S.If(var c, var t, var e) && isPlainBreakOf(t, fallthrough)) {
+            condition = negate(c);
+            inner = e;
+        }
+        var latch = latch(label, inner);
+        if (latch != null) {
+            // `{ block L { ... break L; ... } i = i + step; }` is `for (; c; i = i + step) { ... continue; ... }`.
+            var block = (S.Labelled) inner.get(inner.size() - latch.size() - 1);
+            frames.push(new LoopFrame(label, fallthrough, Set.of(block.label())));
+            var text = new ArrayList<String>();
+            for (var a : latch) {
+                text.add(assignment((S.Assign) a));
+            }
+            line(depth, "for (; " + (condition == null ? "" : condition) + "; " + String.join(", ", text) + ") {");
+            statements(inner.subList(0, inner.size() - latch.size()), Set.of(), depth + 1);
         } else {
-            line(depth, "for (;;) {");
-            statements(body, Set.of(), depth + 1);
+            frames.push(new LoopFrame(label, fallthrough, Set.of()));
+            line(depth, condition == null ? "for (;;) {" : "while (" + condition + ") {");
+            statements(inner, Set.of(), depth + 1);
         }
         line(depth, "}");
         frames.pop();
         if (neededLabels.contains(label)) {
             out.insert(start, "  ".repeat(depth) + label + ":\n");
         }
+    }
+
+    /**
+     * The trailing assignments of a loop body that follow a labelled block, when they can be the
+     * latch of a {@code for}: plain assignments only, and no {@code continue} of this loop in the body
+     * (a C {@code continue} would now run them). Null when the body has no such shape.
+     */
+    private List<S.Stmt> latch(String loop, List<S.Stmt> body) {
+        int k = body.size();
+        while (k > 0 && body.get(k - 1) instanceof S.Assign(var target, var value, var loc) && !(target.type() instanceof Type.TileType)) {
+            k--;
+        }
+        if (k == body.size() || k == 0 || !(body.get(k - 1) instanceof S.Labelled) || continues(loop, body)) {
+            return null;
+        }
+        return body.subList(k, body.size());
+    }
+
+    private static boolean continues(String loop, List<S.Stmt> body) {
+        for (var stmt : body) {
+            boolean found = switch (stmt) {
+                case S.Continue(var label) -> label.equals(loop);
+                case S.If(var c, var t, var e) -> continues(loop, t) || continues(loop, e);
+                case S.Loop(var label, var b) -> continues(loop, b);
+                case S.Labelled(var label, var b) -> continues(loop, b);
+                case S.Switch(var sel, var cases, var d) -> continues(loop, d) || cases.stream().anyMatch(c -> continues(loop, c.body()));
+                default -> false;
+            };
+            if (found) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String assignment(S.Assign a) {
+        var element = elementTypes.get(a.target());
+        var text = element != null ? "(" + dataPointer(a.target(), element) + ") (" + expr(a.value()).text + ")" : expr(a.value()).text;
+        return names.get(a.target()) + " = " + text;
+    }
+
+    /** A body that only leaves the loop being entered (its break targets are {@code fallthrough}). */
+    private static boolean isPlainBreakOf(List<S.Stmt> body, Set<String> fallthrough) {
+        return body.size() == 1 && body.get(0) instanceof S.Break(var label) && fallthrough.contains(label);
     }
 
     private static boolean endsInJump(List<S.Stmt> body) {
@@ -421,10 +485,6 @@ public final class CEmitter {
             case S.Unreachable u -> true;
             default -> false;
         };
-    }
-
-    private boolean isPlainBreak(List<S.Stmt> body) {
-        return body.size() == 1 && body.get(0) instanceof S.Break(var label) && frames.peek() instanceof LoopFrame(var l, var targets) && targets.contains(label);
     }
 
     private void caseBody(List<S.Stmt> body, int depth) {
@@ -439,7 +499,7 @@ public final class CEmitter {
         if (isBreak) {
             for (var frame : frames) {
                 switch (frame) {
-                    case LoopFrame(var l, var targets) -> {
+                    case LoopFrame(var l, var targets, var latch) -> {
                         if (targets.contains(label)) {
                             return "break;";
                         }
@@ -452,10 +512,19 @@ public final class CEmitter {
                 }
                 break; // only the innermost loop or switch can be left with a plain break
             }
+            // Leaving a block that ends just before the latch of a `for` is `continue` (a switch does not catch it).
+            for (var frame : frames) {
+                if (frame instanceof LoopFrame(var l, var targets, var latch)) {
+                    if (latch.contains(label)) {
+                        return "continue;";
+                    }
+                    break;
+                }
+            }
         } else {
             for (var frame : frames) {
-                if (frame instanceof LoopFrame(var l, var targets)) {
-                    if (l.equals(label)) {
+                if (frame instanceof LoopFrame(var l, var targets, var latch)) {
+                    if (l.equals(label) && latch.isEmpty()) {
                         return "continue;";
                     }
                     break;
@@ -654,7 +723,9 @@ public final class CEmitter {
             case SEXT, TRUNC, I2F, FEXT, FTRUNC -> cast(from, to, v);
             case ZEXT -> from.equals(Type.I1) ? cast(from, to, v) : cast(from, to, new R("(" + unsignedName(from) + ") " + wrap(v, UNARY), UNARY));
             case F2I_SAT -> new R(dialect.saturatingToInt(from, to, features) + "(" + v.text + ")", ATOM);
-            case BITCAST -> new R(dialect.bitcast(from, to, features) + "(" + v.text + ")", ATOM);
+            // A narrow constant prints as an int literal: give it its own width (Metal's as_type checks sizes).
+            case BITCAST -> new R(dialect.bitcast(from, to, features) + "(" + (value instanceof S.Const && from instanceof Type.IntType(var bits) && bits < 32
+                    ? "(" + typeName(from) + ") " + wrap(v, UNARY) : v.text) + ")", ATOM);
         };
     }
 

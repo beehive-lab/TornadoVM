@@ -161,6 +161,7 @@ public final class Intrinsics {
         cudaTyped("math.abs", "i32", "abs($0)");
         cudaTyped("math.abs", "i64", "llabs($0)");
         openCl();
+        metal();
     }
 
     /** OpenCL C 1.2 spellings (OpenCL C specification, built-in functions). */
@@ -221,6 +222,66 @@ public final class Intrinsics {
         // abs returns the unsigned type in OpenCL C; Java keeps MIN_VALUE, which the cast back restores.
         openclTyped("math.abs", "i32", "(int) abs($0)");
         openclTyped("math.abs", "i64", "(long) abs($0)");
+    }
+
+    /** Metal Shading Language spellings (MSL specification); thread positions are the kernel's system-value parameters. */
+    private static void metal() {
+        metal("tornado.thread_id.global", "(int) _thread_position_in_grid.{dim|xyz}");
+        metal("tornado.thread_id.local", "(int) _thread_position_in_threadgroup.{dim|xyz}");
+        metal("tornado.group_id", "(int) _threadgroup_position_in_grid.{dim|xyz}");
+        metal("tornado.group_size.local", "(int) _local_size.{dim|xyz}");
+        metal("tornado.group_count", "(int) _threadgroups_per_grid.{dim|xyz}");
+        metal("tornado.global_size", "(int) _global_sizes[{dim}]");
+        // Vector lanes by index (.x-.w and [] work for every MSL width, at most four).
+        metal("tornado.vector.lane", "$0[{lane}]");
+        // AtomicInteger counters in the atomics region (a device int array).
+        metal("tornado.atomic_int.add_get", "atomic_fetch_add_explicit((device atomic_int *) &_atomics[$0], $1, memory_order_relaxed) + $1");
+        metal("tornado.atomic_int.get_add", "atomic_fetch_add_explicit((device atomic_int *) &_atomics[$0], $1, memory_order_relaxed)");
+        metal("tornado.atomic_int.sub_get", "atomic_fetch_sub_explicit((device atomic_int *) &_atomics[$0], $1, memory_order_relaxed) - $1");
+        metal("tornado.atomic_int.get_sub", "atomic_fetch_sub_explicit((device atomic_int *) &_atomics[$0], $1, memory_order_relaxed)");
+        metal("tornado.atomic_int.get", "atomic_load_explicit((device atomic_int *) &_atomics[$0], memory_order_relaxed)");
+        metal("tornado.atomic_int.set", "atomic_exchange_explicit((device atomic_int *) &_atomics[$0], $1, memory_order_relaxed)");
+        // Atomics on array elements: overloaded helpers for device and threadgroup addresses.
+        for (var op : List.of("add", "cas", "exchange", "min", "max")) {
+            TABLE.put(new Key("tornado.atomic." + op, Dialect.METAL, "i32"), Spelling.withHelper("tc_atomic_" + op + "($&0, $1" + (op.equals("cas") ? ", $2" : "") + ")", "tc_atomic_" + op + "_i32"));
+        }
+        TABLE.put(new Key("tornado.atomic.add", Dialect.METAL, "f32"), Spelling.withHelper("tc_atomic_add($&0, $1)", "tc_atomic_add_f32"));
+        metal("tornado.barrier.local", "threadgroup_barrier(mem_flags::mem_threadgroup)");
+        metal("tornado.barrier.global", "threadgroup_barrier(mem_flags::mem_device)");
+        // SIMD-group (warp) functions.
+        metal("tornado.simd.sum", "simd_sum($0)");
+        metal("tornado.simd.shuffle_down", "simd_shuffle_down($0, (ushort) $1)");
+        metal("tornado.simd.broadcast_first", "simd_broadcast_first($0)");
+        metal("tornado.simd.any", "(int) simd_any($0 != 0)");
+        metal("tornado.simd.all", "(int) simd_all($0 != 0)");
+        // Math (MSL has no double and no cbrt).
+        for (var fn : new String[] { "sqrt", "rsqrt", "exp", "log", "sin", "cos", "tan", "tanh", "floor", "ceil", "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh",
+                "atanh", "log10", "sinpi", "cospi" }) {
+            metalTyped("math." + fn, "f32", fn + "($0)");
+            metalTyped("math." + fn, "f16", fn + "($0)");
+        }
+        metalTyped("math.toRadians", "f32", "($0 * 0.017453292519943295f)");
+        metalTyped("math.abs", "f32", "fabs($0)");
+        metalTyped("math.atan2", "f32", "atan2($0, $1)");
+        metalTyped("math.pow", "f32", "pow($0, $1)");
+        metalTyped("math.fma", "f32", "fma($0, $1, $2)");
+        TABLE.put(new Key("math.min", Dialect.METAL, "f32"), Spelling.withHelper("java_fminf($0, $1)", "java_fminf"));
+        TABLE.put(new Key("math.max", Dialect.METAL, "f32"), Spelling.withHelper("java_fmaxf($0, $1)", "java_fmaxf"));
+        for (var t : List.of("i32", "i64")) {
+            metalTyped("math.min", t, "min($0, $1)");
+            metalTyped("math.max", t, "max($0, $1)");
+        }
+        // abs of an integer returns the unsigned type in MSL; Java keeps MIN_VALUE, which the cast restores.
+        metalTyped("math.abs", "i32", "(int) abs($0)");
+        metalTyped("math.abs", "i64", "(long) abs($0)");
+    }
+
+    private static void metal(String name, String template) {
+        TABLE.put(new Key(name, Dialect.METAL, ""), Spelling.of(template));
+    }
+
+    private static void metalTyped(String name, String type, String template) {
+        TABLE.put(new Key(name, Dialect.METAL, type), Spelling.of(template));
     }
 
     private static void opencl(String name, String template) {

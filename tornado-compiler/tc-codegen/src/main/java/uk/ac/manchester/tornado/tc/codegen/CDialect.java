@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
  * <p>Methods that spell a type or a conversion record the {@link Feature}s it needs, so the preamble
  * comes from what was used, never from scanning the emitted text.</p>
  */
-sealed interface CDialect permits CudaDialect, OpenClDialect {
+sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
 
     /** Something the preamble must provide. */
     enum Feature {
@@ -61,7 +61,7 @@ sealed interface CDialect permits CudaDialect, OpenClDialect {
         return switch (dialect) {
             case CUDA -> new CudaDialect();
             case OPENCL -> new OpenClDialect();
-            default -> throw new CEmitter.EmitException("TC-E4001", "dialect " + dialect + " is not implemented yet (CUDA first, then OpenCL and Metal)");
+            case METAL -> new MetalDialect();
         };
     }
 
@@ -81,6 +81,29 @@ sealed interface CDialect permits CudaDialect, OpenClDialect {
 
     /** The runtime's leading kernel parameters (kernel context, constant, local and atomics regions). */
     String abiParameters();
+
+    /** How many arguments {@link #abiParameters} binds: the kernel's own parameters start at this index. */
+    default int abiParameterCount() {
+        return 4;
+    }
+
+    /**
+     * The declaration of the kernel parameter {@code name} at argument {@code index} ({@code declaration}
+     * is the core's {@code type name}): Metal adds the buffer index the runtime binds it at.
+     */
+    default String kernelParameter(Type type, String declaration, String name, int index) {
+        return declaration;
+    }
+
+    /** Parameters after the kernel's own (Metal's thread positions and grid size), from argument {@code nextIndex}; with a leading comma. */
+    default String trailingKernelParameters(int nextIndex) {
+        return "";
+    }
+
+    /** Whether the target can print from a kernel ({@code Debug.printf}). */
+    default boolean printf() {
+        return true;
+    }
 
     /** The same regions as arguments, passed on by a device launch. */
     String abiArguments();

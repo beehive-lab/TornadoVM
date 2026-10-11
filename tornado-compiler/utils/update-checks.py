@@ -49,6 +49,8 @@ def checks(output, prefix="CHECK"):
     lines = []
     new_function = True
     for line in output.splitlines():
+        # FileCheck reads [[...]] as a variable and {{...}} as a regex: match MSL attributes literally.
+        line = line.replace("[[", "{{\\[\\[}}").replace("]]", "{{\\]\\]}}")
         if not line.strip():
             new_function = True
             continue

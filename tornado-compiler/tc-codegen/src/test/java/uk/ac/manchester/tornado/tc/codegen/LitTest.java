@@ -66,6 +66,13 @@ public class LitTest {
             features.add("opencl");
             tools.put("clbuild", ExternalTool.of(".cl", List.of(clbuild.toAbsolutePath().toString(), "%in")));
         }
+        // utils/mslcheck: Metal source type-checked by clang against a mock metal_stdlib (no Mac needed).
+        var mslcheck = Path.of("..", "utils", "mslcheck", "mslcheck");
+        var clang = ExternalTool.find("clang++", System.getProperty("user.home") + "/.local/share/tc-llvm/bin");
+        if (java.nio.file.Files.isExecutable(mslcheck) && clang.isPresent()) {
+            features.add("mslcheck");
+            tools.put("mslcheck", ExternalTool.of(".metal", List.of("env", "CLANG=" + clang.get(), mslcheck.toAbsolutePath().toString(), "%in")));
+        }
         LIT = new Lit(tools, features);
     }
 

@@ -42,6 +42,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.drivers.common.tc.TcHook;
+import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -273,6 +276,36 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
+        if (TcHook.ENABLED) {
+            // TC, the Graal-free compiler (docs/compiler-replacement), as on the CUDA and OpenCL
+            // backends: Metal Shading Language with the kernel ABI MetalInstalledCode binds (regions at
+            // buffers 0-3, parameters from 4, _global_sizes last). Falls back to Graal below when TC
+            // reports a diagnostic, unless -Dtornado.compiler.fallback=false.
+            TornadoProfiler profiler = task.getProfiler();
+            profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads(), taskMeta.getNumThreads(),
+                    (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId());
+            profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
+            if (kernel.isPresent()) {
+                profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+                kernel.get().domain().ifPresent(taskMeta::setDomain);
+                // The runtime finds a task's atomics region through the compiled method, as for Graal.
+                taskMeta.setCompiledGraph(resolvedMethod);
+                var atomics = kernel.get().atomics();
+                if (!atomics.isEmpty()) {
+                    TornadoAtomicIntegerNode.globalAtomics.put(resolvedMethod, new ArrayList<>(atomics.initial()));
+                    if (!atomics.params().isEmpty()) {
+                        TornadoAtomicIntegerNode.globalAtomicsParameters.put(resolvedMethod, new HashMap<>(atomics.params()));
+                    }
+                }
+                var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());
+                profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+                profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+                return installed;
+            }
+        }
+
         try {
             MetalProviders providers = (MetalProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
@@ -313,6 +346,13 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
                 throw e;
             }
         }
+    }
+
+    /** What TC may assume about this GPU: Apple GPUs have no double precision and 32-wide SIMD groups. */
+    private TargetCaps tcTarget() {
+        var d = getDeviceContext().getDevice();
+        return new TargetCaps(TargetCaps.Dialect.METAL, 0, d.isDeviceDoubleFPSupported(), true, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(),
+                (int) d.getDeviceLocalMemorySize(), 32, false);
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {

@@ -20,6 +20,7 @@
  */
 package uk.ac.manchester.tornado.tc.codegen;
 
+import java.util.List;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
@@ -327,11 +328,73 @@ final class Helpers {
                     }
                     """));
 
+    /**
+     * Metal helpers. MSL atomics need an {@code atomic_*} object: the helpers take the element's
+     * address and are overloaded on its address space (device, threadgroup). Float add is a
+     * compare-and-swap loop on the bits, as on OpenCL.
+     */
+    private static final Map<String, String> METAL = Map.ofEntries(
+            Map.entry("java_fminf", """
+                    static inline float java_fminf(float a, float b) {
+                      if (isnan(a) || isnan(b)) return as_type<float>(0x7fc00000);
+                      if (a == 0.0f && b == 0.0f) return as_type<float>(as_type<int>(a) | as_type<int>(b));
+                      return a < b ? a : b;
+                    }
+                    """),
+            Map.entry("java_fmaxf", """
+                    static inline float java_fmaxf(float a, float b) {
+                      if (isnan(a) || isnan(b)) return as_type<float>(0x7fc00000);
+                      if (a == 0.0f && b == 0.0f) return as_type<float>(as_type<int>(a) & as_type<int>(b));
+                      return a > b ? a : b;
+                    }
+                    """),
+            Map.entry("tc_atomic_add_i32", atomicOverloads("int", "add", "int v", "atomic_fetch_add_explicit(a, v, memory_order_relaxed)")),
+            Map.entry("tc_atomic_exchange_i32", atomicOverloads("int", "exchange", "int v", "atomic_exchange_explicit(a, v, memory_order_relaxed)")),
+            Map.entry("tc_atomic_min_i32", atomicOverloads("int", "min", "int v", "atomic_fetch_min_explicit(a, v, memory_order_relaxed)")),
+            Map.entry("tc_atomic_max_i32", atomicOverloads("int", "max", "int v", "atomic_fetch_max_explicit(a, v, memory_order_relaxed)")),
+            Map.entry("tc_atomic_cas_i32", """
+                    static inline int tc_atomic_cas(device int *p, int expected, int desired) {
+                      atomic_compare_exchange_weak_explicit((device atomic_int *) p, &expected, desired, memory_order_relaxed, memory_order_relaxed);
+                      return expected;
+                    }
+                    static inline int tc_atomic_cas(threadgroup int *p, int expected, int desired) {
+                      atomic_compare_exchange_weak_explicit((threadgroup atomic_int *) p, &expected, desired, memory_order_relaxed, memory_order_relaxed);
+                      return expected;
+                    }
+                    """),
+            Map.entry("tc_atomic_add_f32", """
+                    static inline float tc_atomic_add(device float *p, float v) {
+                      device atomic_uint *a = (device atomic_uint *) p;
+                      uint old = atomic_load_explicit(a, memory_order_relaxed);
+                      while (!atomic_compare_exchange_weak_explicit(a, &old, as_type<uint>(as_type<float>(old) + v), memory_order_relaxed, memory_order_relaxed)) {
+                      }
+                      return as_type<float>(old);
+                    }
+                    static inline float tc_atomic_add(threadgroup float *p, float v) {
+                      threadgroup atomic_uint *a = (threadgroup atomic_uint *) p;
+                      uint old = atomic_load_explicit(a, memory_order_relaxed);
+                      while (!atomic_compare_exchange_weak_explicit(a, &old, as_type<uint>(as_type<float>(old) + v), memory_order_relaxed, memory_order_relaxed)) {
+                      }
+                      return as_type<float>(old);
+                    }
+                    """));
+
+    /** One read-modify-write atomic for device and threadgroup addresses ({@code a}: the atomic object). */
+    private static String atomicOverloads(String type, String op, String params, String body) {
+        var sb = new StringBuilder();
+        for (var space : List.of("device", "threadgroup")) {
+            sb.append("static inline ").append(type).append(" tc_atomic_").append(op).append('(').append(space).append(' ').append(type).append(" *p, ").append(params).append(") {\n");
+            sb.append("  ").append(space).append(" atomic_").append(type).append(" *a = (").append(space).append(" atomic_").append(type).append(" *) p;\n");
+            sb.append("  return ").append(body).append(";\n}\n");
+        }
+        return sb.toString();
+    }
+
     static String source(String helper, Dialect dialect) {
         var text = switch (dialect) {
             case CUDA -> CUDA.get(helper);
             case OPENCL -> OPENCL.get(helper);
-            case METAL -> null;
+            case METAL -> METAL.get(helper);
         };
         if (text == null) {
             throw new IllegalArgumentException("no " + dialect + " definition for helper " + helper);
