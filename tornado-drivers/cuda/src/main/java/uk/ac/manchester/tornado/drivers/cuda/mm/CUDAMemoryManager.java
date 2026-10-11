@@ -58,7 +58,7 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
     public CUDAKernelStackFrame createKernelStackFrame(long executionPlanId, final int numberOfArguments) {
         if (!oclKernelStackFrame.containsKey(executionPlanId)) {
             // Create one stack frame per execution plan ID 
-            long kernelStackFramePtr = deviceContext.getPlatformContext().createBuffer(CUDAMemFlags.CL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
+            long kernelStackFramePtr = createBuffer(RESERVED_SLOTS * Long.BYTES, CUDAMemFlags.CL_MEM_READ_ONLY).getBuffer();
             oclKernelStackFrame.put(executionPlanId, new CUDAKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
         }
         return oclKernelStackFrame.get(executionPlanId);
@@ -84,11 +84,11 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
     }
 
     public CUDAContext.CUDABufferResult createBuffer(long size, long flags) {
-        return deviceContext.getPlatformContext().createBuffer(flags, size);
+        return deviceContext.getPlatformContext().createBuffer(deviceContext.getDeviceIndex(), flags, size);
     }
 
     public void releaseBuffer(long bufferId) {
-        deviceContext.getPlatformContext().releaseBuffer(bufferId);
+        deviceContext.getPlatformContext().releaseBuffer(deviceContext.getDeviceIndex(), bufferId);
     }
 
     long toConstantAddress() {
@@ -101,13 +101,13 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
 
     void allocateAtomicRegion() {
         if (this.atomicsRegionPointer == NON_EXISTING_ADDRESS) {
-            this.atomicsRegionPointer = deviceContext.getPlatformContext().createBuffer(CUDAMemFlags.CL_MEM_READ_WRITE | CUDAMemFlags.CL_MEM_ALLOC_HOST_PTR, atomicRegionSize()).getBuffer();
+            this.atomicsRegionPointer = createBuffer(atomicRegionSize(), CUDAMemFlags.CL_MEM_READ_WRITE | CUDAMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
         }
     }
 
     void deallocateAtomicRegion() {
         if (this.atomicsRegionPointer != NON_EXISTING_ADDRESS) {
-            deviceContext.getPlatformContext().releaseBuffer(this.atomicsRegionPointer);
+            releaseBuffer(this.atomicsRegionPointer);
             this.atomicsRegionPointer = NON_EXISTING_ADDRESS;
         }
     }

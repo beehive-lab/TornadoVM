@@ -703,6 +703,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     @Override
+    public void makeNativeContextCurrent() {
+        getDeviceContext().makeCurrent();
+    }
+
+    @Override
     public void nvtxRangePush(String name) {
         CUDACommandQueue.nvtxRangePush(name);
     }

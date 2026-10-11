@@ -46,6 +46,16 @@ public interface TornadoNativeStreamSupport {
     long getNativeContext(long executionPlanId);
 
     /**
+     * Makes this device's native context current on the calling thread. The
+     * vendor runtimes under the native libraries act on the current context,
+     * so this runs before a library handle is created, used or destroyed;
+     * otherwise, on a multi-GPU host, the call would land on whichever device
+     * the thread last touched. Default: no-op.
+     */
+    default void makeNativeContextCurrent() {
+    }
+
+    /**
      * Opens a host-side NVTX range labelled {@code name} on the issuing thread,
      * so a native library task shows up as a named span in NVIDIA Nsight
      * Systems (alongside the backend's own kernel/transfer ranges). NVTX is a

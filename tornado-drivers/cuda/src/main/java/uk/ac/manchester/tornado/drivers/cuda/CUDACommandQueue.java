@@ -244,6 +244,8 @@ public class CUDACommandQueue extends CommandQueue {
      * bracket a timed operation.
      */
     private static long recordEvent(CUDAHandles.Queue queue) throws CUDAException {
+        // An event can only be recorded on a stream of the context it was created in.
+        CUDADriverAPI.cuCtxSetCurrent(queue.context());
         long event = createEvent(eventFlags(), "cuEventCreate");
         // A marker alone is no work to wait for. With asynchronous graph launches it must not
         // re-arm the drain, or the flush after every execution waits for the graph just launched.
@@ -908,8 +910,15 @@ public class CUDACommandQueue extends CommandQueue {
         return getContextPointer(commandQueuePtr);
     }
 
-    /** CU_STREAM_CAPTURE_MODE_GLOBAL. */
-    private static final int CU_STREAM_CAPTURE_MODE_GLOBAL = 0;
+    /**
+     * CU_STREAM_CAPTURE_MODE_THREAD_LOCAL: while this stream is capturing, potentially unsafe calls
+     * (allocation, synchronous memset, graph instantiation, ...) are refused on the capturing thread
+     * only. In global mode they were refused on every thread of the process, so two plans capturing
+     * on two threads at the same time failed at random: one plan's {@code cuGraphInstantiate} or
+     * buffer allocation hit {@code CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED} because of the other's
+     * capture.
+     */
+    private static final int CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1;
 
     /** True while this queue's stream is recording operations into a CUDA graph. */
     private boolean capturing = false;
@@ -936,7 +945,7 @@ public class CUDACommandQueue extends CommandQueue {
      * stream into a CUDA graph.
      */
     public void beginGraphCapture() {
-        long result = cuStreamBeginCapture(commandQueuePtr, CU_STREAM_CAPTURE_MODE_GLOBAL);
+        long result = cuStreamBeginCapture(commandQueuePtr, CU_STREAM_CAPTURE_MODE_THREAD_LOCAL);
         if (result != 0) {
             throw new TornadoBailoutRuntimeException("cuStreamBeginCapture failed. CUresult=" + result);
         }

@@ -55,6 +55,7 @@ public final class CUDADeviceBackend {
         }
         if (!VIRTUAL_DEVICE_ENABLED) {
             deviceContext.getMemoryManager().allocateDeviceMemoryRegions();
+            deviceContext.warmUp();
         }
         initialised = true;
     }
