@@ -132,12 +132,14 @@ public final class ParallelLoopLowering {
         var entry = counted.entry().terminator();
         var before = IrBuilder.insertingBefore(entry);
         var gid = before.intrinsic("tornado.thread_id.global", Immediates.of("dim", dim), Type.I32, List.of());
-        counted.entry().setArgument(ivIndex, before.add(counted.init(), scaled(before, gid, step)));
+        // The grid-stride arithmetic is TC's own and stays within the loop's int range: no signed wrap
+        // (the emitter prints wrapping arithmetic for everything else, as Java defines it).
+        counted.entry().setArgument(ivIndex, noSignedWrap(before.add(counted.init(), scaled(before, gid, step))));
 
         var latch = counted.backEdge().terminator();
         var inLatch = IrBuilder.insertingBefore(latch);
         var size = inLatch.intrinsic("tornado.global_size", Immediates.of("dim", dim), Type.I32, List.of());
-        var advanced = inLatch.add(iv, scaled(inLatch, size, step));
+        var advanced = noSignedWrap(inLatch.add(iv, scaled(inLatch, size, step)));
         var add = counted.increment();
         advanced.setName(add.name());
         counted.backEdge().setArgument(ivIndex, advanced);
@@ -189,9 +191,15 @@ public final class ParallelLoopLowering {
     private static Value scaled(IrBuilder b, Value v, Value step) {
         if (step instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var k)) {
             // A fresh constant at the use: the original may live in the loop latch.
-            return k == 1 ? v : b.binary(BinaryOp.MUL, v, b.constInt(step.type(), k));
+            return k == 1 ? v : noSignedWrap(b.binary(BinaryOp.MUL, v, b.constInt(step.type(), k)));
         }
-        return b.binary(BinaryOp.MUL, v, step);
+        return noSignedWrap(b.binary(BinaryOp.MUL, v, step));
+    }
+
+    /** Marks arithmetic TC generated and knows cannot overflow: the emitter prints it as plain C. */
+    static Inst noSignedWrap(Inst inst) {
+        inst.addAttribute(Attribute.of("nsw"));
+        return inst;
     }
 
     private static Diagnostic error(Block header, String message) {

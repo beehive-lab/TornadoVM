@@ -14,17 +14,17 @@
 ; CHECK-NEXT:      }
 ; CHECK-NEXT:      j = 0;
 ; CHECK-NEXT:      while (j < n) {
-; CHECK-NEXT:        ij = i * n;
-; CHECK-NEXT:        idx = ij + j;
-; CHECK-NEXT:        v = *((int *) (grid + (long long) idx * 4LL));
-; CHECK-NEXT:        j1 = j + 1;
+; CHECK-NEXT:        ij = (int) ((unsigned int) i * (unsigned int) n);
+; CHECK-NEXT:        idx = (int) ((unsigned int) ij + (unsigned int) j);
+; CHECK-NEXT:        v = *((int *) (grid + (long long) ((unsigned long long) (long long) idx * (unsigned long long) 4LL)));
+; CHECK-NEXT:        j1 = (int) ((unsigned int) j + (unsigned int) 1);
 ; CHECK-NEXT:        if (v == key) {
 ; CHECK-NEXT:          r = idx;
 ; CHECK-NEXT:          goto L_done;
 ; CHECK-NEXT:        }
 ; CHECK-NEXT:        j = j1;
 ; CHECK-NEXT:      }
-; CHECK-NEXT:      i = i + 1;
+; CHECK-NEXT:      i = (int) ((unsigned int) i + (unsigned int) 1);
 ; CHECK-NEXT:    }
 ; CHECK-NEXT:    L_done: ;
 ; CHECK-NEXT:    return r;
@@ -54,16 +54,16 @@
 ; CHECK-NEXT:    while (i < n) {
 ; CHECK-NEXT:      j = 0;
 ; CHECK-NEXT:      while (j < n) {
-; CHECK-NEXT:        i1 = i + 1;
-; CHECK-NEXT:        acc1 = acc + j;
+; CHECK-NEXT:        i1 = (int) ((unsigned int) i + (unsigned int) 1);
+; CHECK-NEXT:        acc1 = (int) ((unsigned int) acc + (unsigned int) j);
 ; CHECK-NEXT:        if (j == i) {
 ; CHECK-NEXT:          i = i1;
 ; CHECK-NEXT:          acc = acc1;
 ; CHECK-NEXT:          goto L_outer;
 ; CHECK-NEXT:        }
-; CHECK-NEXT:        j = j + 1;
+; CHECK-NEXT:        j = (int) ((unsigned int) j + (unsigned int) 1);
 ; CHECK-NEXT:      }
-; CHECK-NEXT:      i = i + 1;
+; CHECK-NEXT:      i = (int) ((unsigned int) i + (unsigned int) 1);
 ; CHECK-NEXT:    }
 ; CHECK-NEXT:    return acc;
 ; CHECK-NEXT:  }

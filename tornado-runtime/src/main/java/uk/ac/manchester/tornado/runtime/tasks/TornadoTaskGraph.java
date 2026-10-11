@@ -498,6 +498,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             String combined = (existing == null || existing.isBlank()) ? "--fmad=false" : existing + " --fmad=false";
             executionContext.meta().setCompilerFlags(TornadoVMBackendType.CUDA, combined);
         }
+        // OpenCL: the default options relax IEEE semantics (-cl-fast-relaxed-math lets the compiler
+        // reassociate, so (2^52 + x) - 2^52 folds to x) and fuse (-cl-mad-enable). Strict drops both and
+        // asks for correctly rounded float division and sqrt (OpenCL allows 2.5 and 3 ulp: x / x is then
+        // not always 1).
+        String opencl = executionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL);
+        if (opencl != null) {
+            String strict = opencl.replace("-cl-fast-relaxed-math", "").replace("-cl-mad-enable", "").replaceAll("\\s+", " ").trim();
+            if (!strict.contains("-cl-fp32-correctly-rounded-divide-sqrt")) {
+                strict = (strict + " -cl-fp32-correctly-rounded-divide-sqrt").trim();
+            }
+            executionContext.meta().setCompilerFlags(TornadoVMBackendType.OPENCL, strict);
+        }
     }
 
     public void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {

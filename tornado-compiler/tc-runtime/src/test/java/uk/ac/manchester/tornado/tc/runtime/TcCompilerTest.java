@@ -329,7 +329,8 @@ public class TcCompilerTest {
         var c = review("batchShared", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(100),
                 new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.IndexOffset(1000)));
         assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertTrue(c.source(), c.source().contains("i_global = i + 1000;") && c.source().contains("k = i_global + 1;") && c.source().contains("out_data[k - 1 - 1000] = k;"));
+        assertTrue(c.source(), c.source().contains("i_global = i + 1000;") && c.source().contains("k = (int) ((unsigned int) i_global + (unsigned int) 1);")
+                && c.source().contains("out_data[(int) ((unsigned int) (int) ((unsigned int) k - (unsigned int) 1) - (unsigned int) 1000)] = k;"));
     }
 
     /** Design review FE-5 (not reproduced): a vector setter after a branch that defined another reference compiles. */

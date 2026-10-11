@@ -59,7 +59,8 @@ public final class BatchOffset {
                 var counted = forest.loopWithHeader(header).flatMap(loop -> CountedLoop.of(loop, a.integer("iv")));
                 var first = header.insts().get(0);
                 var b = IrBuilder.insertingBefore(first);
-                var global = b.binary(Opcode.BinaryOp.ADD, iv, b.constInt(iv.type(), offset));
+                // The global index of a batch element is within the task's int range: no signed wrap.
+                var global = ParallelLoopLowering.noSignedWrap(b.binary(Opcode.BinaryOp.ADD, iv, b.constInt(iv.type(), offset)));
                 global.setName(iv.name() + "_global");
                 for (var user : List.copyOf(iv.users())) {
                     if (user == global || counted.map(c -> c.controls(user)).orElse(false)) {

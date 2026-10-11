@@ -433,7 +433,9 @@ final class Bindings {
             METHODS.put(TORNADO_MATH + "." + fn + "(F)F", new Intrinsic("math." + fn, Type.F32));
             METHODS.put(TORNADO_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
         }
-        for (var fn : List.of("sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil", "atan", "asin", "acos", "sinh", "cosh", "cbrt", "log10")) {
+        // rint too: the JDK's version rounds by adding and subtracting 2^52, which fast-math device
+        // compilers (TornadoVM's OpenCL default, -cl-fast-relaxed-math) fold away; the built-in is exact.
+        for (var fn : List.of("sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil", "rint", "atan", "asin", "acos", "sinh", "cosh", "cbrt", "log10")) {
             METHODS.put(JAVA_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
         }
         METHODS.put(JAVA_MATH + ".abs(F)F", new Intrinsic("math.abs", Type.F32));

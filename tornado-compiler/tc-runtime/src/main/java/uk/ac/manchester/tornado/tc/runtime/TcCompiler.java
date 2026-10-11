@@ -44,7 +44,9 @@ import uk.ac.manchester.tornado.tc.opt.CfgSimplify;
 import uk.ac.manchester.tornado.tc.opt.DeadCodeElimination;
 import uk.ac.manchester.tornado.tc.opt.Inliner;
 import uk.ac.manchester.tornado.tc.opt.FmaRematerialization;
+import uk.ac.manchester.tornado.tc.opt.FloatNarrowing;
 import uk.ac.manchester.tornado.tc.opt.MathPeepholes;
+import uk.ac.manchester.tornado.tc.opt.NoWrapInference;
 import uk.ac.manchester.tornado.tc.opt.PassManager;
 import uk.ac.manchester.tornado.tc.lower.S;
 import uk.ac.manchester.tornado.tc.lower.SPrinter;
@@ -331,6 +333,8 @@ public final class TcCompiler {
             new Step("optimize.post-abi", c -> true, c -> {
                 PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(c.options.verifyEach())
                         .observe((run, fn) -> TcTrace.current().ir("optimize.post-abi", run.pass(), run.changed(), run.nanos(), fn)).run(c.function);
+                // After the passes, which rebuild instructions: loop increments that cannot overflow.
+                new NoWrapInference().run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI),
             // Last: GVN would merge the copies again. Only where FMA is allowed (tornado.enable.fma, and
@@ -371,6 +375,8 @@ public final class TcCompiler {
 
     private List<Diagnostic> optimize() {
         var passes = PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach());
+        // Float Math written in double, in float where that is exact for this target (see FloatNarrowing).
+        passes.add(new FloatNarrowing(target.dialect() == TargetCaps.Dialect.CUDA || !target.fp64())).add(new DeadCodeElimination());
         if (options.mathOptimizations()) {
             passes.add(new MathPeepholes()).add(new DeadCodeElimination());
         }
@@ -438,7 +444,7 @@ public final class TcCompiler {
             var emitted = new CEmitter.Result[1];
             stage("emit", Kind.SOURCE, () -> {
                 try {
-                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task());
+                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd());
                 } catch (CEmitter.EmitException e) {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }

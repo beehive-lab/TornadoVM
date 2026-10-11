@@ -138,6 +138,7 @@ public final class Intrinsics {
         unaryMath("math.abs", "fabsf", "fabs");
         unaryMath("math.floor", "floorf", "floor");
         unaryMath("math.ceil", "ceilf", "ceil");
+        unaryMath("math.rint", "rintf", "rint");
         for (var fn : new String[] { "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh", "atanh", "cbrt", "log10" }) {
             unaryMath("math." + fn, fn + "f", fn);
         }
@@ -159,8 +160,10 @@ public final class Intrinsics {
         cudaTyped("math.max", "i32", "max($0, $1)");
         cudaTyped("math.min", "i64", "llmin($0, $1)");
         cudaTyped("math.max", "i64", "llmax($0, $1)");
-        cudaTyped("math.abs", "i32", "abs($0)");
-        cudaTyped("math.abs", "i64", "llabs($0)");
+        // Integer abs without the built-ins: Java wraps abs(MIN_VALUE) to MIN_VALUE; C leaves it undefined and
+        // device compilers assume a non-negative result (Intel OpenCL: max(abs(MIN_VALUE), 2) gave MIN_VALUE).
+        cudaTyped("math.abs", "i32", "($0 < 0 ? (int) (0u - (unsigned int) $0) : $0)");
+        cudaTyped("math.abs", "i64", "($0 < 0 ? (long long) (0ull - (unsigned long long) $0) : $0)");
         openCl();
         metal();
     }
@@ -194,7 +197,7 @@ public final class Intrinsics {
         opencl("tornado.barrier.local", "barrier(CLK_LOCAL_MEM_FENCE)");
         opencl("tornado.barrier.global", "barrier(CLK_GLOBAL_MEM_FENCE)");
         // Math: OpenCL C built-ins are overloaded for float and double.
-        for (var fn : new String[] { "sqrt", "rsqrt", "exp", "log", "sin", "cos", "tan", "tanh", "floor", "ceil", "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh",
+        for (var fn : new String[] { "sqrt", "rsqrt", "exp", "log", "sin", "cos", "tan", "tanh", "floor", "ceil", "rint", "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh",
                 "atanh", "cbrt", "log10" }) {
             openclTyped("math." + fn, "f32", fn + "($0)");
             openclTyped("math." + fn, "f64", fn + "($0)");
@@ -221,8 +224,8 @@ public final class Intrinsics {
             openclTyped("math.max", t, "max($0, $1)");
         }
         // abs returns the unsigned type in OpenCL C; Java keeps MIN_VALUE, which the cast back restores.
-        openclTyped("math.abs", "i32", "(int) abs($0)");
-        openclTyped("math.abs", "i64", "(long) abs($0)");
+        openclTyped("math.abs", "i32", "($0 < 0 ? (int) (0u - (uint) $0) : $0)");
+        openclTyped("math.abs", "i64", "($0 < 0 ? (long) (0ul - (ulong) $0) : $0)");
     }
 
     /** Metal Shading Language spellings (MSL specification); thread positions are the kernel's system-value parameters. */
@@ -274,7 +277,7 @@ public final class Intrinsics {
         metal("tornado.simd.any", "(int) simd_any($0 != 0)");
         metal("tornado.simd.all", "(int) simd_all($0 != 0)");
         // Math (MSL has no double and no cbrt).
-        for (var fn : new String[] { "sqrt", "rsqrt", "exp", "log", "sin", "cos", "tan", "tanh", "floor", "ceil", "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh",
+        for (var fn : new String[] { "sqrt", "rsqrt", "exp", "log", "sin", "cos", "tan", "tanh", "floor", "ceil", "rint", "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh",
                 "atanh", "log10", "sinpi", "cospi" }) {
             metalTyped("math." + fn, "f32", fn + "($0)");
             metalTyped("math." + fn, "f16", fn + "($0)");
@@ -291,8 +294,8 @@ public final class Intrinsics {
             metalTyped("math.max", t, "max($0, $1)");
         }
         // abs of an integer returns the unsigned type in MSL; Java keeps MIN_VALUE, which the cast restores.
-        metalTyped("math.abs", "i32", "(int) abs($0)");
-        metalTyped("math.abs", "i64", "(long) abs($0)");
+        metalTyped("math.abs", "i32", "($0 < 0 ? (int) (0u - (uint) $0) : $0)");
+        metalTyped("math.abs", "i64", "($0 < 0 ? (long) (0ul - (ulong) $0) : $0)");
     }
 
     private static void metal(String name, String template) {

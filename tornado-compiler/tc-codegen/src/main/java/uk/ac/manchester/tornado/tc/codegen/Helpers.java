@@ -323,30 +323,32 @@ final class Helpers {
                       return b == -1 ? 0 : a % b;
                     }
                     """),
+            // NaN tests on the bits: TornadoVM builds OpenCL with -cl-fast-relaxed-math, which lets the
+            // compiler fold isnan(x) and x != x to false.
             Map.entry("java_fminf", """
                     static inline float java_fminf(float a, float b) {
-                      if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
+                      if ((as_uint(a) & 0x7fffffffu) > 0x7f800000u || (as_uint(b) & 0x7fffffffu) > 0x7f800000u) return as_float(0x7fc00000);
                       if (a == 0.0f && b == 0.0f) return as_float(as_int(a) | as_int(b));
                       return a < b ? a : b;
                     }
                     """),
             Map.entry("java_fmaxf", """
                     static inline float java_fmaxf(float a, float b) {
-                      if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
+                      if ((as_uint(a) & 0x7fffffffu) > 0x7f800000u || (as_uint(b) & 0x7fffffffu) > 0x7f800000u) return as_float(0x7fc00000);
                       if (a == 0.0f && b == 0.0f) return as_float(as_int(a) & as_int(b));
                       return a > b ? a : b;
                     }
                     """),
             Map.entry("java_fmin", """
                     static inline double java_fmin(double a, double b) {
-                      if (isnan(a) || isnan(b)) return as_double(0x7ff8000000000000L);
+                      if ((as_ulong(a) & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL || (as_ulong(b) & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL) return as_double(0x7ff8000000000000L);
                       if (a == 0.0 && b == 0.0) return as_double(as_long(a) | as_long(b));
                       return a < b ? a : b;
                     }
                     """),
             Map.entry("java_fmax", """
                     static inline double java_fmax(double a, double b) {
-                      if (isnan(a) || isnan(b)) return as_double(0x7ff8000000000000L);
+                      if ((as_ulong(a) & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL || (as_ulong(b) & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL) return as_double(0x7ff8000000000000L);
                       if (a == 0.0 && b == 0.0) return as_double(as_long(a) & as_long(b));
                       return a > b ? a : b;
                     }

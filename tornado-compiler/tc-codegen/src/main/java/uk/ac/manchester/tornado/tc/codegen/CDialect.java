@@ -41,6 +41,8 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
 
     /** Something the preamble must provide. */
     enum Feature {
+        /** Floating-point contraction (FMA formation by the device compiler) is not allowed: a strict-floating-point plan. */
+        NO_CONTRACT,
         /** 16-bit floats. */
         HALF,
         /** bfloat16. */

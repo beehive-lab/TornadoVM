@@ -8,12 +8,12 @@
 ; CHECK-NEXT:  #pragma OPENCL EXTENSION cl_khr_fp16 : enable
 ; CHECK-NEXT:  #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 ; CHECK-LABEL: static inline float java_fminf(float a, float b) {
-; CHECK-NEXT:    if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
+; CHECK-NEXT:    if ((as_uint(a) & 0x7fffffffu) > 0x7f800000u || (as_uint(b) & 0x7fffffffu) > 0x7f800000u) return as_float(0x7fc00000);
 ; CHECK-NEXT:    if (a == 0.0f && b == 0.0f) return as_float(as_int(a) | as_int(b));
 ; CHECK-NEXT:    return a < b ? a : b;
 ; CHECK-NEXT:  }
 ; CHECK-LABEL: static inline double java_fmax(double a, double b) {
-; CHECK-NEXT:    if (isnan(a) || isnan(b)) return as_double(0x7ff8000000000000L);
+; CHECK-NEXT:    if ((as_ulong(a) & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL || (as_ulong(b) & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL) return as_double(0x7ff8000000000000L);
 ; CHECK-NEXT:    if (a == 0.0 && b == 0.0) return as_double(as_long(a) & as_long(b));
 ; CHECK-NEXT:    return a > b ? a : b;
 ; CHECK-NEXT:  }
@@ -29,7 +29,7 @@
 ; CHECK-NEXT:    u = (int) ((uint) x >> (k & 31));
 ; CHECK-NEXT:    ul = (long) ((ulong) l >> (l & 63));
 ; CHECK-NEXT:    fi = convert_int_sat_rtz(f);
-; CHECK-NEXT:    dl = convert_long_sat_rtz(d);
+; CHECK-NEXT:    dl = ((as_ulong(d) & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL ? 0 : convert_long_sat_rtz(d));
 ; CHECK-NEXT:    mn = java_fminf(f, f);
 ; CHECK-NEXT:    mx = java_fmax(d, d);
 ; CHECK-NEXT:    lt = !(f >= as_float(0x7fc00000));

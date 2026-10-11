@@ -193,6 +193,10 @@ final class OpenClDialect implements CDialect {
         lines.add("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
         lines.add("#pragma OPENCL EXTENSION cl_khr_fp16 : enable");
         lines.add("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable");
+        if (features.contains(Feature.NO_CONTRACT)) {
+            // OpenCL C contracts a * b + c by default; a strict plan keeps Java's separate roundings.
+            lines.add("#pragma OPENCL FP_CONTRACT OFF");
+        }
         if (features.contains(Feature.HALF_BITS)) {
             lines.add("static inline short tc_half_as_short(half h) { return *((__private short *) &h); }");
             lines.add("static inline half tc_short_as_half(short s) { return *((__private half *) &s); }");

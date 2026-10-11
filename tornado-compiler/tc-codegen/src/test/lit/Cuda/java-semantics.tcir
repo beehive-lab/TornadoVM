@@ -26,7 +26,7 @@
 ; CHECK-NEXT:    u = (int) ((unsigned int) x >> (k & 31));
 ; CHECK-NEXT:    ul = (long long) ((unsigned long long) l >> (l & 63));
 ; CHECK-NEXT:    fi = __float2int_rz(f);
-; CHECK-NEXT:    dl = __double2ll_rz(d);
+; CHECK-NEXT:    dl = (d != d ? 0 : __double2ll_rz(d));
 ; CHECK-NEXT:    mn = java_fminf(f, f);
 ; CHECK-NEXT:    mx = java_fmax(d, d);
 ; CHECK-NEXT:    lt = !(f >= __int_as_float(0x7fc00000));

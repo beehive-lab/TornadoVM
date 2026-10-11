@@ -292,7 +292,7 @@ public final class AbiLowering {
     private static Value reference(IrBuilder b, Value object, Value address) {
         var compressed = b.load(address, Type.I32);
         var wide = b.convert(ConvertOp.ZEXT, compressed, Type.I64);
-        var bytes = b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, ObjectLayout.REFERENCE_SCALE));
+        var bytes = ParallelLoopLowering.noSignedWrap(b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, ObjectLayout.REFERENCE_SCALE)));
         return b.pointerOffset(object, bytes);
     }
 
@@ -328,12 +328,13 @@ public final class AbiLowering {
         if (array.type() instanceof Type.PointerType(var space) && space != AddressSpace.GLOBAL) {
             // A local (shared/private) array reached a Java-level access through an inlined helper: no header.
             var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);
-            return b.pointerOffset(array, b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element))));
+            return b.pointerOffset(array, ParallelLoopLowering.noSignedWrap(b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element)))));
         }
         var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
         data.setDerivedName(array.name().isEmpty() ? "data" : array.name() + "_data");
         var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);
-        var scaled = b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element)));
+        // A sign-extended int index times an element size cannot overflow a long.
+        var scaled = ParallelLoopLowering.noSignedWrap(b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element))));
         return b.pointerOffset(data, scaled);
     }
 

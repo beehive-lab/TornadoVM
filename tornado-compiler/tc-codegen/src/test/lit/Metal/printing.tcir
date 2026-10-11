@@ -18,7 +18,7 @@
 ; CHECK-NEXT:  #endif
 ; CHECK-LABEL: static inline float negneg(int x, float y)
 ; CHECK-NEXT:  {
-; CHECK-NEXT:    return (float) -(-x) + -(-y);
+; CHECK-NEXT:    return (float) (int) ((uint) 0 - (uint) (int) ((uint) 0 - (uint) x)) + -(-y);
 ; CHECK-NEXT:  }
 ; CHECK-LABEL: #include <metal_stdlib>
 ; CHECK-NEXT:  using namespace metal;

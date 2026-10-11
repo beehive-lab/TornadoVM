@@ -224,9 +224,20 @@ public final class CEmitter {
 
     /** {@code task}: the runtime's task id, printed by device-launch reports. */
     public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task) {
+        return emit(kernel, target, lineComments, task, true);
+    }
+
+    /**
+     * As above; {@code contract} false for a strict-floating-point plan: Java does not fuse a * b + c,
+     * and OpenCL C lets the compiler contract unless the kernel says otherwise.
+     */
+    public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task, boolean contract) {
         var wrapped = new HashSet<String>();
         while (true) {
             var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped));
+            if (!contract) {
+                emitter.features.add(CDialect.Feature.NO_CONTRACT);
+            }
             var result = emitter.kernel(kernel);
             if (emitter.toWrap.isEmpty() || !wrapped.addAll(emitter.toWrap)) {
                 return result;
@@ -744,9 +755,13 @@ public final class CEmitter {
 
     private R op(Inst inst, List<S.Expr> ops) {
         return switch (inst.opcode()) {
-            case Opcode.Binary(var op) -> binary(op, inst.type(), ops.get(0), ops.get(1));
+            case Opcode.Binary(var op) -> wrapsLikeJava(op, inst) ? wrapping(op, inst.type(), ops.get(0), ops.get(1)) : binary(op, inst.type(), ops.get(0), ops.get(1));
             case Opcode.Unary(var op) -> switch (op) {
-                case NEG, FNEG -> new R("-" + prefixOperand(expr(ops.get(0))), UNARY);
+                // -MIN_VALUE wraps to MIN_VALUE in Java; negate in the unsigned type (see wrapsLikeJava).
+                case NEG -> !SIGNED_OVERFLOW_UNDEFINED && (inst.type().equals(Type.I32) || inst.type().equals(Type.I64))
+                        ? new R("(" + typeName(inst.type()) + ") ((" + unsignedName(inst.type()) + ") 0 - (" + unsignedName(inst.type()) + ") " + wrap(expr(ops.get(0)), UNARY) + ")", UNARY)
+                        : new R("-" + prefixOperand(expr(ops.get(0))), UNARY);
+                case FNEG -> new R("-" + prefixOperand(expr(ops.get(0))), UNARY);
                 case NOT -> new R((inst.type().equals(Type.I1) ? "!" : "~") + prefixOperand(expr(ops.get(0))), UNARY);
             };
             case Opcode.ICmp(var p) -> icmp(p, ops.get(0), ops.get(1));
@@ -821,6 +836,33 @@ public final class CEmitter {
         }
         helpers.add(helper);
         return new R(helper + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
+    }
+
+    /**
+     * Java's int and long +, - and * wrap around; in C and OpenCL C signed overflow is undefined, and
+     * the device compilers use that: {@code 0 < x + x} became {@code 0 < x} for x = Long.MIN_VALUE.
+     * So they compute in the unsigned type, which wraps, and convert back (two's complement on every
+     * target). Arithmetic TC generated and marked {@code nsw} (grid strides, address offsets) cannot
+     * overflow and stays plain, which keeps the driver compilers' loop and address optimisations.
+     */
+    /**
+     * {@code -Dtornado.tc.signedOverflowUndefined=true} prints int and long arithmetic as plain C (as
+     * Graal did): faster where the driver compiler exploits it, wrong where Java code relies on wrapping.
+     */
+    private static final boolean SIGNED_OVERFLOW_UNDEFINED = Boolean.getBoolean("tornado.tc.signedOverflowUndefined");
+
+    private static boolean wrapsLikeJava(BinaryOp op, Inst inst) {
+        return !SIGNED_OVERFLOW_UNDEFINED && (op == BinaryOp.ADD || op == BinaryOp.SUB || op == BinaryOp.MUL) && (inst.type().equals(Type.I32) || inst.type().equals(Type.I64)) && !inst.hasAttribute("nsw");
+    }
+
+    private R wrapping(BinaryOp op, Type type, S.Expr a, S.Expr b) {
+        var unsigned = "(" + unsignedName(type) + ") ";
+        var symbol = switch (op) {
+            case ADD -> " + ";
+            case SUB -> " - ";
+            default -> " * ";
+        };
+        return new R("(" + typeName(type) + ") (" + unsigned + wrap(expr(a), UNARY) + symbol + unsigned + wrap(expr(b), UNARY) + ")", UNARY);
     }
 
     /** Java masks the shift count to the operand width. */
@@ -909,7 +951,21 @@ public final class CEmitter {
         return switch (op) {
             case SEXT, TRUNC, I2F, FEXT, FTRUNC -> cast(from, to, v);
             case ZEXT -> from.equals(Type.I1) ? cast(from, to, v) : cast(from, to, new R("(" + unsignedName(from) + ") " + wrap(v, UNARY), UNARY));
-            case F2I_SAT -> new R(dialect.saturatingToInt(from, to, features) + "(" + v.text + ")", ATOM);
+            case F2I_SAT -> {
+                var converted = dialect.saturatingToInt(from, to, features) + "(" + v.text + ")";
+                // Java converts NaN to 0. The CUDA and OpenCL saturating conversions give MIN_VALUE for
+                // NaN except from float to int (measured: __float2ll_rz, __double2int_rz and NVIDIA's
+                // convert_long_sat_rtz), so NaN is tested first; Metal's helpers already do.
+                if (target.dialect() == TargetCaps.Dialect.METAL || from.equals(Type.F32) && to.equals(Type.I32)) {
+                    yield new R(converted, ATOM);
+                }
+                var x = wrap(v, UNARY);
+                // On OpenCL the NaN test reads the bits: -cl-fast-relaxed-math (TornadoVM's default) folds x != x.
+                var nan = target.dialect() == TargetCaps.Dialect.OPENCL
+                        ? (from.equals(Type.F64) ? "(as_ulong(" + v.text + ") & 0x7fffffffffffffffUL) > 0x7ff0000000000000UL" : "(as_uint(" + v.text + ") & 0x7fffffffu) > 0x7f800000u")
+                        : x + " != " + x;
+                yield new R("(" + nan + " ? 0 : " + converted + ")", ATOM);
+            }
             // A narrow constant prints as an int literal: give it its own width (Metal's as_type checks sizes).
             case BITCAST -> new R(dialect.bitcast(from, to, features) + "(" + (value instanceof S.Const && from instanceof Type.IntType(var bits) && bits < 32
                     ? "(" + typeName(from) + ") " + wrap(v, UNARY) : v.text) + ")", ATOM);

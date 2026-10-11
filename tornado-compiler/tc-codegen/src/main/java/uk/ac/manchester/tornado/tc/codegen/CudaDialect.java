@@ -149,7 +149,8 @@ final class CudaDialect implements CDialect {
 
     @Override
     public String saturatingToInt(Type from, Type to, Set<Feature> features) {
-        // The CUDA round-toward-zero conversions saturate and map NaN to 0, as Java does.
+        // The CUDA round-toward-zero conversions saturate; only __float2int_rz maps NaN to 0, so the
+        // emitter tests NaN first for the others (see CEmitter, F2I_SAT).
         if (from.equals(Type.F16)) {
             features.add(Feature.HALF);
             return to.equals(Type.I64) ? "__half2ll_rz" : "__half2int_rz";

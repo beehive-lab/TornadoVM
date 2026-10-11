@@ -47,7 +47,8 @@ public record Attribute(String name, Immediates values) {
             def("domain", Scope.FUNCTION, "the launch domain of one dimension: offset, step and exclusive upper bound", "dim", "offset", "step", "upper"),
             def("atomic_slot", Scope.FUNCTION, "an AtomicInteger slot of the atomics region and its initial value", "slot", "init"),
             def("atomic_param", Scope.FUNCTION, "an AtomicInteger parameter and the slot it uses", "param", "slot"),
-            def("contract", Scope.INST, "a floating-point op that may be contracted (FMA)"));
+            def("contract", Scope.INST, "a floating-point op that may be contracted (FMA)"),
+            def("nsw", Scope.INST, "integer arithmetic TC generated that cannot overflow (printed as plain signed C)"));
 
     private static Map.Entry<String, Def> def(String name, Scope scope, String description, String... values) {
         return Map.entry(name, new Def(name, scope, List.of(values), description));
