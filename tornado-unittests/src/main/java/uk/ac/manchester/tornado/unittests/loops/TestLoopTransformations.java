@@ -25,15 +25,20 @@ import java.util.stream.IntStream;
 
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -187,6 +192,49 @@ public class TestLoopTransformations extends TornadoTestBase {
             for (int j = 0; j < N; j++) {
                 assertEquals(resultSeq.get(i * N + j), matrixB.get(i * N + j), 0.1);
             }
+        }
+    }
+    /**
+     * A loop-variant division of a division by loop invariants, {@code (u / a) / b}: the shape loop
+     * reassociation used to pick up and fail on ("unhandled node in reassociation"), because the
+     * backends' division node reported itself associative. The divisors are loaded from an array,
+     * so they are loop invariants rather than constants.
+     */
+    public static void nestedDivision(KernelContext context, IntArray divisors, IntArray out) {
+        int a = divisors.get(0);
+        int b = divisors.get(1);
+        int acc = 0;
+        for (int u = context.groupIdx; u < out.getSize(); u += context.globalGroupSizeX / context.localGroupSizeX) {
+            acc += (u / a) / b * context.localGroupSizeX;
+        }
+        out.set(context.globalIdx, acc + context.localIdx);
+    }
+
+    @Test
+    public void testNestedDivisionInLoop() throws TornadoExecutionPlanException {
+        final int groups = 8;
+        final int local = 32;
+        final int n = groups * local;
+        IntArray divisors = IntArray.fromElements(3, 5);
+        IntArray out = new IntArray(n);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, divisors) //
+                .task("t0", TestLoopTransformations::nestedDivision, new KernelContext(), divisors, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+
+        WorkerGrid worker = new WorkerGrid1D(n);
+        worker.setLocalWork(local, 1, 1);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.withGridScheduler(new GridScheduler("s0.t0", worker)).execute();
+        }
+
+        for (int i = 0; i < n; i++) {
+            int expected = 0;
+            for (int u = i / local; u < n; u += groups) {
+                expected += (u / 3) / 5 * local;
+            }
+            assertEquals(expected + i % local, out.get(i));
         }
     }
     // CHECKSTYLE:ON
