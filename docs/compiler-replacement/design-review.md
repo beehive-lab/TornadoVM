@@ -218,3 +218,19 @@ Every suite class, `TestMemoryLeak` included (its only run, as asked), fallback 
 passes exactly Graal's **1522 of 1522** tests (1516 plus TestMemoryLeak's 6; 88,753 kernels
 compiled by TC in its loops), 20 accepted differences unchanged, 0 launch differences, no class
 changed against run 21.
+
+## OpenCL dialect (2026-10-11)
+
+The OpenCL dialect reuses the C core unchanged in structure: `OpenClDialect` supplies integer
+spellings, address-space pointees (`__global`/`__local`/`__constant`), the Graal-captured kernel ABI,
+and its built-in table; the core composes declarations and pointers. Findings while porting, now fixed:
+
+| Finding | Fix |
+|---|---|
+| Sub-int scalar parameters were declared `int`; OpenCL checks argument sizes (`CL_INVALID_KERNEL_ARGS`) | declared at their width (`char`, `ushort`, `short`) and widened at entry; CUDA unchanged in behaviour (run 25) |
+| Each lane of an object-field array access re-read and re-decoded the reference field (80 registers vs Graal's 40; `CL_OUT_OF_RESOURCES` at 1024 threads) | AbiLowering decodes each (object, reference field) once at the object's definition (reference fields are read-only on the device); the structurizer keeps a decoded reference as a variable. The old inline rule could also move that load past stores in a loop: closed by the same change |
+| A local-size cap from `CL_KERNEL_WORK_GROUP_SIZE` (first attempt) broke Graal's reductions, sized for full groups | removed; register pressure was the cause |
+| Double-precision Java bodies of `TornadoMath.sinpi/cospi/toRadians` made float kernels need fp64 | bound as device built-ins |
+
+Result: parity on both OpenCL devices with only accepted differences ([parity-matrix.md](parity-matrix.md)).
+**Next: the Metal dialect** (build- and golden-tested only: no Apple device here).

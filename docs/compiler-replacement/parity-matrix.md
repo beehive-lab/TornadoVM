@@ -32,6 +32,44 @@ The two left: `TestComputePi` fails on Graal as well (baseline), and the one dif
 | `fails.BitOpsUnsupportedFail#testReverseUnsupported` | expects the compiler to reject `Integer.reverse`; TC compiles its JDK bytecode | **accepted difference**: TC is more capable, result checked correct by the other `Integer.reverse` tests |
 | memory stress tests (9, not run) | with `-Dtornado.tc.verbose=true` each compile prints a line; `tornado-test` does not drain the pipe until exit, so the hot loop blocked on stdout | harness issue, not TC: full runs use `tornado.tc.stats` only |
 
+## OpenCL parity (2026-10-11, fallback off, every family)
+
+The same differential harness ([baseline/tc-diff.py](baseline/tc-diff.py)) on the two OpenCL devices,
+Graal on OpenCL as the reference, all 223 suite classes except `memory.leak.TestMemoryLeak`. The
+CUDA rerun (`run25`) checks that the OpenCL work changed nothing there.
+
+| Run | Device | Tests | Graal PASS | TC PASS | TC worse | TC better | Launch differences |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `ocl8` | RTX 4090, OpenCL (0:0) | 1703 | 1027 | **1053** | 1 | 26 | 0 |
+| `igpu3` | Intel UHD 770, OpenCL (0:1) | 1703 | 932 | **930** | 1 (+1 racy) | 0 | 0 |
+| `run25` | RTX 4090, CUDA (1:0) | 1692 | 1516 | **1534** | 1 | 19 | 0 |
+
+TC passes every test Graal passes on each device, except:
+
+- `fails.BitOpsUnsupportedFail#testReverseUnsupported` (all three): the test expects the compiler to
+  reject `Integer.reverse`; TC compiles it correctly. **Accepted difference**, as on CUDA.
+- `compute.TransformerKernelsTest#testReductionOneBlockWithLayer` (UHD 770 only): **racy test**.
+  Thread 0 of group 0 sums the other groups' partial results without global synchronisation, so
+  the result depends on the order groups run (CUDA: Graal FAILED / TC PASS; UHD 770: Graal PASS /
+  TC FAILED, 3 of 3 runs each). `tc-diff.py` lists it in `RACY_TESTS`, outside the better/worse counts.
+
+TC better: `vectortypes.TestHalfFloats` (Half3/4/8/16, 26/26 everywhere; Graal 3 on the 4090
+OpenCL, 8 on CUDA), the half-float local-memory reductions, and `TestComputePi`. The UHD 770 has no
+fp64: TC refuses double kernels with TC-E4012 where Graal fails them (`None→FAILED` rows).
+
+What closed the gap, in order (OpenCL runs `ocl1`→`ocl8`, `igpu1`→`igpu3`):
+
+| Change | Tests |
+|---|---|
+| OpenCL dialect (ABI from Graal's `--printKernel`, `__global`/`__local` pointees, built-ins, Java min/max and float atomics helpers) | baseline: `ocl1` TC 951 / Graal 1027 |
+| fp16 legality skipped on OpenCL (the 4090 compiles `half` without advertising `cl_khr_fp16`); half bits through private memory | half-float families |
+| byte/char/short kernel parameters declared at their width (`clSetKernelArg` checks sizes), widened at entry | scalar-parameter tests |
+| Float/Int/Double 8- and 16-lane vectors; `lane_at`/`insert_at` folded to constant lanes | `vectortypes` |
+| object reference fields decoded once per object; decoded references printed as variables (16-lane kernel 80 → 40 registers, = Graal; it failed with `CL_OUT_OF_RESOURCES` at 1024 threads) | `TestFloats#testVectorFloat16Int16` |
+| Half3/4/8/16 bindings | 18 tests on the UHD 770 |
+| `TornadoMath.sinpi/cospi/toRadians` as device built-ins (their Java bodies are double) | 3 tests on the UHD 770 |
+| write-only API matrices allocated in a kernel are dropped (escape-analysis equivalent) | `fails.CodeFail#codeFail02` |
+
 ## Differential run 5 (2026-10-10, fallback off, every family) - CUDA parity
 
 All 223 suite classes except `memory.leak.TestMemoryLeak` (run only as the final validation of the
