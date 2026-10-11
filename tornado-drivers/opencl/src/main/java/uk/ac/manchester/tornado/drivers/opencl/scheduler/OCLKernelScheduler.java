@@ -116,6 +116,36 @@ public abstract class OCLKernelScheduler {
         }
     }
 
+    /**
+     * Halves the default local work size until it fits the kernel ({@code CL_KERNEL_WORK_GROUP_SIZE}):
+     * the device maximum is too large for a kernel that needs many registers per work-item, and the launch
+     * would fail with {@code CL_OUT_OF_RESOURCES}. Halving keeps the global size a multiple of it.
+     */
+    private static void fitLocalWorkToKernel(final OCLKernel kernel, final TaskDataContext meta) {
+        final long[] local = meta.getLocalWork();
+        final long max = kernel.getMaxWorkGroupSize();
+        if (local == null || max <= 0) {
+            return;
+        }
+        long product = 1;
+        for (long l : local) {
+            product *= Math.max(l, 1);
+        }
+        while (product > max) {
+            int widest = 0;
+            for (int i = 1; i < local.length; i++) {
+                if (local[i] > local[widest]) {
+                    widest = i;
+                }
+            }
+            if (local[widest] <= 1 || local[widest] % 2 != 0) {
+                return;
+            }
+            local[widest] /= 2;
+            product /= 2;
+        }
+    }
+
     public int submit(long executionPlanId, final OCLKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
         if (!meta.isWorkerGridAvailable()) {
             if (!meta.isGlobalWorkDefined()) {
@@ -124,6 +154,7 @@ public abstract class OCLKernelScheduler {
             if (!meta.isLocalWorkDefined()) {
                 calculateLocalWork(meta);
                 checkAndAdaptLocalWork(meta);
+                fitLocalWorkToKernel(kernel, meta);
             }
         } else {
             checkLocalWorkGroupFitsOnDevice(meta);

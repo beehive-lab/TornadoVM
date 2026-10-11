@@ -38,7 +38,8 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * driver's device queries). Each check names the construct and the limit:
  * <ul>
  * <li>TC-E4012: double precision on a device without it;</li>
- * <li>TC-E4013: half precision on a device without it;</li>
+ * <li>TC-E4013: half precision on a device without it (not on OpenCL, whose compilers take half
+ * with the pragma);</li>
  * <li>TC-E4014: more shared (local) memory than a work-group has;</li>
  * <li>TC-E4015: warp operations, written for 32-lane warps, on another SIMD width;</li>
  * <li>TC-E4016: a device launch where kernels cannot launch kernels;</li>
@@ -55,7 +56,9 @@ public final class Legality {
         if (!target.fp64()) {
             first(function, t -> uses(t, Type.F64)).ifPresent(i -> problems.add(at(function, i, "TC-E4012", "this kernel uses double precision, which the device does not support")));
         }
-        if (!target.fp16()) {
+        // OpenCL compilers accept half, scalars and vectors, with the cl_khr_fp16 pragma even where the
+        // extension is not advertised (the RTX 4090's driver), which the Graal path relies on too.
+        if (!target.fp16() && target.dialect() != TargetCaps.Dialect.OPENCL) {
             first(function, t -> uses(t, Type.F16)).ifPresent(i -> problems.add(at(function, i, "TC-E4013", "this kernel uses half precision, which the device does not support")));
         }
         long shared = insts(function).mapToLong(i -> i.opcode() instanceof Opcode.Alloca(var space, var element, var count) && space == AddressSpace.SHARED ? (long) bytes(element) * count : 0).sum();
@@ -71,7 +74,9 @@ public final class Legality {
             insts(function).filter(i -> intrinsic(i, "tornado.device_launch")).findFirst()
                     .ifPresent(i -> problems.add(at(function, i, "TC-E4016", "KernelContext.launch needs kernels that launch kernels (CUDA dynamic parallelism), which this target lacks")));
         }
-        if (TileTyping.usesTiles(function)) {
+        insts(function).filter(i -> intrinsic(i, "tornado.vector.lane_at") || intrinsic(i, "tornado.vector.insert_at")).findFirst()
+                .ifPresent(i -> problems.add(at(function, i, "TC-E1010", "vector lanes can only be accessed at a constant index (a loop over lanes must have a constant trip count to unroll)")));
+                if (TileTyping.usesTiles(function)) {
             if (target.dialect() != TargetCaps.Dialect.CUDA) {
                 problems.add(new Diagnostic("TC-E4010", "TileContext kernels are CUDA Tile C++: they run only on the CUDA backend", "@" + function.name(), Loc.UNKNOWN));
             } else {

@@ -50,8 +50,8 @@ public class BindingsTest {
                 int dot = key.lastIndexOf('.', paren);
                 var owner = key.substring(0, dot);
                 var name = key.substring(dot + 1, paren);
-                // Lane accessors are bound for the whole vector family; the API defines them class by class.
-                boolean vectorFamily = owner.startsWith("uk/ac/manchester/tornado/api/types/vectors/") && name.matches("getS\\d|setS\\d|fill");
+                // Lane accessors, fill and duplicate are bound for the whole vector family; the API defines them class by class.
+                boolean vectorFamily = owner.startsWith("uk/ac/manchester/tornado/api/types/vectors/") && name.matches("getS\\d+|setS\\d+|fill|duplicate");
                 if (!vectorFamily && !hasMethod(loader, owner, name, key.substring(paren))) {
                     missing.add(key);
                 }

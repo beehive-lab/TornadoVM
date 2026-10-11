@@ -99,6 +99,25 @@ public class OCLKernel {
         MemorySegment.copy(value, FFMSupport.C_CHAR, 0, buffer, 0, buffer.length);
     }
 
+    private static final int CL_KERNEL_WORK_GROUP_SIZE = 0x11B0;
+
+    private long maxWorkGroupSize = -1;
+
+    /**
+     * The largest work-group this kernel can be launched with on its device ({@code
+     * CL_KERNEL_WORK_GROUP_SIZE}): a kernel that needs many registers per work-item fits fewer of them
+     * than the device maximum. Zero when the driver cannot say.
+     */
+    public long getMaxWorkGroupSize() {
+        if (maxWorkGroupSize < 0) {
+            MemorySegment value = INFO_STAGING.forBytes(Long.BYTES);
+            maxWorkGroupSize = OpenCLAPI.clGetKernelWorkGroupInfo(oclKernelID, deviceContext.getDeviceId(), CL_KERNEL_WORK_GROUP_SIZE, Long.BYTES, value, MemorySegment.NULL) == OpenCLAPI.CL_SUCCESS
+                    ? value.get(FFMSupport.C_LONG, 0)
+                    : 0;
+        }
+        return maxWorkGroupSize;
+    }
+
     public void setArg(int index, ByteBuffer buffer) {
         try {
             clSetKernelArg(oclKernelID, index, buffer.position(), buffer.array());

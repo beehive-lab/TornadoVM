@@ -197,12 +197,21 @@ final class Translator {
             ssa.write(localKey(0, 'A'), entry, self);
             slot = 1;
         }
+        builder = new IrBuilder(entry);
         for (var descriptor : params) {
             // Enum values are ordinals inside the kernel; a kernel's own parameters come from the host.
             var type = function.kind() == Function.Kind.KERNEL ? Bindings.type(descriptor) : typeOf(descriptor);
             var name = code.localAt(slot, 0).map(ClassFile.LocalVariable::name).orElse("arg" + slot);
-            var arg = entry.addArg(type, name);
-            ssa.write(localKey(slot, descriptorKind(descriptor)), entry, arg);
+            // A kernel's byte, boolean, char and short parameters arrive at their own width (the runtime sets
+            // 1- and 2-byte kernel arguments, and OpenCL checks the size); the body sees Java's int.
+            var narrow = function.kind() == Function.Kind.KERNEL ? narrowParameter(descriptor) : null;
+            var arg = entry.addArg(narrow != null ? narrow : type, name);
+            Value value = arg;
+            if (narrow != null) {
+                value = builder.convert(descriptor.equals("C") || descriptor.equals("Z") ? ConvertOp.ZEXT : ConvertOp.SEXT, arg, Type.I32);
+                value.setDerivedName(name);
+            }
+            ssa.write(localKey(slot, descriptorKind(descriptor)), entry, value);
             if (type instanceof Type.VectorType) {
                 // The object the caller passed: its value as setters change it. A kernel writes it back
                 // at return; a device function may not change it (checked after translation).
@@ -213,7 +222,6 @@ final class Translator {
             slot += descriptor.equals("J") || descriptor.equals("D") ? 2 : 1;
         }
         ssa.seal(entry);
-        builder = new IrBuilder(entry);
         var first = blockAt.get(0);
         builder.br(first, List.of());
         ssa.filled(entry);
@@ -302,6 +310,15 @@ final class Translator {
         }
         var zero = element instanceof Type.FloatType ? builder.constFloat(element, 0) : builder.constInt(element, 0);
         return Optional.of(builder.intrinsic("tornado.vector.make", new Type.VectorType(element, length), java.util.Collections.nCopies(length, zero)));
+    }
+
+    /** The width a sub-int kernel parameter is passed at ({@code byte}, {@code boolean}: i8; {@code char}, {@code short}: i16), else null. */
+    private static Type narrowParameter(String descriptor) {
+        return switch (descriptor) {
+            case "B", "Z" -> Type.I8;
+            case "C", "S" -> Type.I16;
+            default -> null;
+        };
     }
 
     /** Bytecode successors of {@code block}, one entry per edge. */
@@ -859,6 +876,9 @@ final class Translator {
     private Value throughTrivialMerges(Value v) {
         var seen = Collections.newSetFromMap(new IdentityHashMap<Value, Boolean>());
         while (v instanceof BlockArg arg && seen.add(arg)) {
+            if (!ssa.isSealed(arg.block())) {
+                return v; // a loop header still being built: its incoming values are not all known yet
+            }
             Value same = null;
             for (var incoming : ssa.incomingValues(arg.block(), arg.block().args().indexOf(arg))) {
                 if (incoming != arg && incoming != same) {
@@ -1259,9 +1279,12 @@ final class Translator {
             }
             case Bindings.VectorGet(var lane) -> {
                 var vector = args.get(0);
-                int l = lane >= 0 ? lane : constantLane(args.get(1), insn.bci());
                 var element = ((Type.VectorType) vector.type()).element();
-                var value = builder.intrinsic("tornado.vector.lane", Immediates.of("lane", l), element, List.of(vector));
+                var known = lane >= 0 ? java.util.OptionalLong.of(lane) : Constants.integer(throughTrivialMerges(args.get(1)));
+                // A lane by a loop index (Float8.add's loop) stays an operand until unrolling makes it a
+                // constant; legality refuses one that is still variable after optimisation (TC-E1010).
+                var value = known.isPresent() ? builder.intrinsic("tornado.vector.lane", Immediates.of("lane", known.getAsLong()), element, List.of(vector))
+                        : builder.intrinsic("tornado.vector.lane_at", element, List.of(vector, args.get(1)));
                 push(element.equals(Type.I8) || element.equals(Type.I16) ? builder.convert(ConvertOp.SEXT, value, Type.I32) : value);
             }
             case Bindings.ReceiverIntrinsic(var name, var type) -> {
@@ -1281,9 +1304,11 @@ final class Translator {
             }
             case Bindings.VectorSet(var lane) -> {
                 var vector = args.get(0);
-                int l = lane >= 0 ? lane : constantLane(args.get(1), insn.bci());
                 var element = ((Type.VectorType) vector.type()).element();
-                var updated = builder.intrinsic("tornado.vector.insert", Immediates.of("lane", l), vector.type(), List.of(vector, narrow(args.get(args.size() - 1), element)));
+                var known = lane >= 0 ? java.util.OptionalLong.of(lane) : Constants.integer(throughTrivialMerges(args.get(1)));
+                var value = narrow(args.get(args.size() - 1), element);
+                var updated = known.isPresent() ? builder.intrinsic("tornado.vector.insert", Immediates.of("lane", known.getAsLong()), vector.type(), List.of(vector, value))
+                        : builder.intrinsic("tornado.vector.insert_at", vector.type(), List.of(vector, args.get(1), value));
                 rebind(vector, updated);
             }
             case Bindings.HalfBits h -> push(builder.convert(ConvertOp.SEXT, builder.convert(ConvertOp.BITCAST, args.get(0), Type.I16), Type.I32));

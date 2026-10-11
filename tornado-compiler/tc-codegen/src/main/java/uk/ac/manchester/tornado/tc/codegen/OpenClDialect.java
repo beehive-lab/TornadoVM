@@ -134,7 +134,10 @@ final class OpenClDialect implements CDialect {
     @Override
     public String bitcast(Type from, Type to, Set<Feature> features) {
         if (from.equals(Type.F16) || to.equals(Type.F16)) {
+            // as_half / as_short(half) need the full cl_khr_fp16; the bits go through private memory instead.
             features.add(Feature.HALF);
+            features.add(Feature.HALF_BITS);
+            return from.equals(Type.F16) ? "tc_half_as_short" : "tc_short_as_half";
         }
         // as_<type> reinterprets the bits of a value of the same size.
         return "as_" + (to instanceof Type.IntType(var bits) ? integerName(bits) : to.equals(Type.F32) ? "float" : to.equals(Type.F64) ? "double" : "half");
@@ -152,8 +155,10 @@ final class OpenClDialect implements CDialect {
     @Override
     public Optional<String> convertTo(Type from, Type to, String value, Set<Feature> features) {
         if (to.equals(Type.F16)) {
+            // A (half) cast, rounding to nearest even: convert_half_rte needs the full cl_khr_fp16, which
+            // the RTX 4090's OpenCL compiler lacks (it accepts half storage and casts, as Graal emits).
             features.add(Feature.HALF);
-            return Optional.of("convert_half_rte(" + value + ")"); // rounds once, from float or double
+            return Optional.empty();
         }
         if (to.equals(Type.BF16)) {
             throw new CEmitter.EmitException("TC-E4001", "bfloat16 has no OpenCL C type");
@@ -188,6 +193,10 @@ final class OpenClDialect implements CDialect {
         lines.add("#pragma OPENCL EXTENSION cl_khr_fp64 : enable");
         lines.add("#pragma OPENCL EXTENSION cl_khr_fp16 : enable");
         lines.add("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable");
+        if (features.contains(Feature.HALF_BITS)) {
+            lines.add("static inline short tc_half_as_short(half h) { return *((__private short *) &h); }");
+            lines.add("static inline half tc_short_as_half(short s) { return *((__private half *) &s); }");
+        }
         return lines;
     }
 }

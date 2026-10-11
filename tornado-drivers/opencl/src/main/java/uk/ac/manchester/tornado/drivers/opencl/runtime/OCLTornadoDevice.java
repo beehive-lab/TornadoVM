@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
@@ -77,6 +78,7 @@ import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
+import uk.ac.manchester.tornado.drivers.common.tc.TcHook;
 import uk.ac.manchester.tornado.drivers.opencl.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
@@ -104,6 +106,7 @@ import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
 public class OCLTornadoDevice implements TornadoXPUDevice {
 
@@ -262,6 +265,34 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
+        if (TcHook.ENABLED) {
+            // TC, the Graal-free compiler (docs/compiler-replacement), as on the CUDA backend: falls back
+            // to Graal below when TC reports a diagnostic, unless -Dtornado.compiler.fallback=false.
+            TornadoProfiler profiler = task.getProfiler();
+            profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads(), taskMeta.getNumThreads(),
+                    (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId());
+            profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+            profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
+            if (kernel.isPresent()) {
+                profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+                kernel.get().domain().ifPresent(taskMeta::setDomain);
+                // The runtime finds a task's atomics region through the compiled method, as for Graal.
+                taskMeta.setCompiledGraph(resolvedMethod);
+                var atomics = kernel.get().atomics();
+                if (!atomics.isEmpty()) {
+                    TornadoAtomicIntegerNode.globalAtomics.put(resolvedMethod, new ArrayList<>(atomics.initial()));
+                    if (!atomics.params().isEmpty()) {
+                        TornadoAtomicIntegerNode.globalAtomicsParameters.put(resolvedMethod, new HashMap<>(atomics.params()));
+                    }
+                }
+                var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());
+                profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
+                profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+                return installed;
+            }
+        }
+
         try {
             OCLProviders providers = (OCLProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
@@ -302,6 +333,15 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
                 throw e;
             }
         }
+    }
+
+    /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */
+    private TargetCaps tcTarget() {
+        var d = getDeviceContext().getDevice();
+        boolean fp16 = d.getDeviceExtensions().contains("cl_khr_fp16");
+        // No warp width is assumed (sub-group sizes vary by vendor) and OpenCL 1.2 has no device-side enqueue.
+        return new TargetCaps(TargetCaps.Dialect.OPENCL, 0, d.isDeviceDoubleFPSupported(), fp16, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(),
+                (int) d.getDeviceLocalMemorySize(), 0, false);
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {

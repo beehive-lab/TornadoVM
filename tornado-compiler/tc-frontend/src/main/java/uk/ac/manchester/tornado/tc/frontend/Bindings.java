@@ -208,9 +208,10 @@ final class Bindings {
         METHODS.put(KERNEL_CONTEXT + ".simdAll(Z)Z", new Intrinsic("tornado.simd.all", Type.I32));
         METHODS.put(KERNEL_CONTEXT + ".simdBallot(Z)I", new Intrinsic("tornado.simd.ballot", Type.I32));
         for (var e : Map.of("Float", Type.F32, "Double", Type.F64, "Int", Type.I32, "Short", Type.I16, "Byte", Type.I8).entrySet()) {
-            for (int lanes = 2; lanes <= 4; lanes++) {
+            // 8 and 16 lanes exist for Float, Double and Int (OpenCL C has them; CUDA refuses them in the dialect).
+            for (int lanes : new int[] { 2, 3, 4, 8, 16 }) {
                 var name = e.getKey() + lanes;
-                if ((name.equals("Short4")) || name.equals("Byte2")) {
+                if (name.equals("Short4") || name.equals("Byte2") || (lanes > 4 && !(e.getKey().equals("Float") || e.getKey().equals("Double") || e.getKey().equals("Int")))) {
                     continue; // not in the API
                 }
                 var vec = new Type.VectorType(e.getValue(), lanes);
@@ -226,7 +227,7 @@ final class Bindings {
                 METHODS.put(owner + ".<init>()V", new VectorInit(vec));
                 METHODS.put(owner + ".<init>(" + d.repeat(lanes) + ")V", new VectorInit(vec));
                 var lanesNames = List.of("X", "Y", "Z", "W");
-                for (int l = 0; l < lanes; l++) {
+                for (int l = 0; lanes <= 4 && l < lanes; l++) {
                     METHODS.put(owner + ".get" + lanesNames.get(l) + "()" + d, new VectorGet(l));
                     METHODS.put(owner + ".set" + lanesNames.get(l) + "(" + d + ")V", new VectorSet(l));
                 }

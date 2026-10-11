@@ -48,7 +48,9 @@ sealed interface CDialect permits CudaDialect, OpenClDialect {
         /** 8-bit floats (CUDA Tile). */
         FP8,
         /** CUDA Tile C++. */
-        TILES
+        TILES,
+        /** Reinterpreting half bits where the dialect has no built-in for it (OpenCL without full cl_khr_fp16). */
+        HALF_BITS
     }
 
     /** One device launch ({@code KernelContext.launch}), its operands already printed. */

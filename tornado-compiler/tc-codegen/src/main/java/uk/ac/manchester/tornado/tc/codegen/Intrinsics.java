@@ -249,10 +249,10 @@ public final class Intrinsics {
 
     /**
      * Fills a template's immediate placeholders: {@code {key}} is the immediate's value and
-     * {@code {key|xyz}} the character at that index (a dimension or lane as x, y, z, w).
+     * {@code {key|xyz}} the character at that index (a dimension or lane as x, y, z, w; or 0-9a-f).
      */
     static String fillImmediates(String template, uk.ac.manchester.tornado.tc.ir.Immediates immediates) {
-        var m = java.util.regex.Pattern.compile("\\{([a-z_]+)(?:\\|([a-z]+))?}").matcher(template);
+        var m = java.util.regex.Pattern.compile("\\{([a-z_]+)(?:\\|([a-z0-9]+))?}").matcher(template);
         var out = new StringBuilder();
         while (m.find()) {
             var key = m.group(1);

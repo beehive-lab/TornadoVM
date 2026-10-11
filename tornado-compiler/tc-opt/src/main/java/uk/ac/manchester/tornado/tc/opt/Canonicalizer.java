@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
@@ -129,6 +130,11 @@ public final class Canonicalizer implements Pass {
             case Opcode.PointerOffset p -> Constants.number(ops.get(1)).filter(c -> c.longValue() == 0).map(c -> ops.get(0));
             case Opcode.Intrinsic(var name) when name.equals(INSERT) && type instanceof Type.VectorType vec -> wholeVector(inst, vec);
             case Opcode.Intrinsic(var name) when name.equals(LANE) -> laneOf(inst, ops.get(0), inst.immediates().requireInt("lane"));
+            // A lane by an index that became a constant (an unrolled Float8.add) is an ordinary lane access.
+            case Opcode.Intrinsic(var name) when name.equals("tornado.vector.lane_at") && Constants.integer(ops.get(1)).isPresent() ->
+                Optional.of(IrBuilder.insertingBefore(inst).intrinsic(LANE, Immediates.of("lane", Constants.integer(ops.get(1)).getAsLong()), type, List.of(ops.get(0))));
+            case Opcode.Intrinsic(var name) when name.equals("tornado.vector.insert_at") && Constants.integer(ops.get(1)).isPresent() ->
+                Optional.of(IrBuilder.insertingBefore(inst).intrinsic(INSERT, Immediates.of("lane", Constants.integer(ops.get(1)).getAsLong()), type, List.of(ops.get(0), ops.get(2))));
             default -> Optional.empty();
         };
     }

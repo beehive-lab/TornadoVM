@@ -97,6 +97,7 @@ public final class OpenCLAPI {
     private static final MethodHandle CL_RELEASE_KERNEL;
     private static final MethodHandle CL_SET_KERNEL_ARG;
     private static final MethodHandle CL_GET_KERNEL_INFO;
+    private static final MethodHandle CL_GET_KERNEL_WORK_GROUP_INFO;
 
     private static final MethodHandle CL_ENQUEUE_ND_RANGE_KERNEL;
     private static final MethodHandle CL_ENQUEUE_READ_BUFFER;
@@ -140,6 +141,7 @@ public final class OpenCLAPI {
             CL_RELEASE_KERNEL = null;
             CL_SET_KERNEL_ARG = null;
             CL_GET_KERNEL_INFO = null;
+            CL_GET_KERNEL_WORK_GROUP_INFO = null;
             CL_ENQUEUE_ND_RANGE_KERNEL = null;
             CL_ENQUEUE_READ_BUFFER = null;
             CL_ENQUEUE_WRITE_BUFFER = null;
@@ -188,6 +190,7 @@ public final class OpenCLAPI {
             CL_RELEASE_KERNEL = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG), "clReleaseKernel");
             CL_SET_KERNEL_ARG = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_POINTER), "clSetKernelArg");
             CL_GET_KERNEL_INFO = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_LONG, C_POINTER, C_POINTER), "clGetKernelInfo");
+            CL_GET_KERNEL_WORK_GROUP_INFO = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_LONG, C_POINTER, C_POINTER), "clGetKernelWorkGroupInfo");
 
             CL_ENQUEUE_ND_RANGE_KERNEL = downcall(LIBOPENCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_POINTER, C_POINTER, C_POINTER, C_INT, C_POINTER, C_POINTER),
                     "clEnqueueNDRangeKernel");
@@ -484,6 +487,14 @@ public final class OpenCLAPI {
     public static int clGetKernelInfo(long kernel, int paramName, long paramValueSize, MemorySegment paramValue, MemorySegment paramValueSizeRet) {
         try {
             return (int) CL_GET_KERNEL_INFO.invokeExact(kernel, paramName, paramValueSize, paramValue, paramValueSizeRet);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int clGetKernelWorkGroupInfo(long kernel, long device, int paramName, long paramValueSize, MemorySegment paramValue, MemorySegment paramValueSizeRet) {
+        try {
+            return (int) CL_GET_KERNEL_WORK_GROUP_INFO.invokeExact(kernel, device, paramName, paramValueSize, paramValue, paramValueSizeRet);
         } catch (Throwable t) {
             throw rethrow(t);
         }
