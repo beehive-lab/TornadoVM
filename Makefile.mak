@@ -4,7 +4,7 @@ all: build
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
-# JDK profile used by the `sdk`, `test-reflection`, and `test-reflection-only` targets { jdk21, jdk22plus }.
+# JDK profile used by the `sdk` and `test-reflection` targets { jdk21, jdk22plus }.
 # Default is `jdk21` to preserve historical bare `nmake sdk`/`nmake test-reflection` behavior.
 # nmake sdk JDK=<jdk21|jdk22plus> BACKEND=<comma_separated_backend_list>
 # Prefer the sdk-jdkNN targets below over `nmake sdk JDK=...` when building a specific JDK's SDK.
@@ -12,7 +12,7 @@ JDK = jdk21
 
 # jdk25/jdk26/jdk27 no longer exist as Maven profiles: one jdk22plus profile serves every JDK
 # from 22 up. Map the legacy names onto it so `JDK=jdk25` and CI callers keep working.
-!IF "$(JDK)" == "jdk21" || "$(JDK)" == "graal-jdk-21"
+!IF "$(JDK)" == "jdk21"
 JDK_PROFILE = $(JDK)
 !ELSE
 JDK_PROFILE = jdk22plus
@@ -33,19 +33,13 @@ rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
 	python bin\compile --jdk jdk22plus --rebuild --backend $(BACKEND)
 
 rebuild-deps:
-	python bin\compile --jdk graal-jdk-21 --rebuild --backend $(BACKEND)
-
-graal-jdk-21:
-	python bin\compile --jdk graal-jdk-21 --backend $(BACKEND)
+	python bin\compile --jdk jdk21 --rebuild --backend $(BACKEND)
 
 mvn-single-threaded-jdk21:
 	python bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
 
 mvn-single-threaded-jdk22plus:
 	python bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded
-
-mvn-single-threaded-graal-jdk-21:
-	python bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
 
 
 cuda:
@@ -72,12 +66,6 @@ checkstyle:
 # another JDK (JDK is declared once, near BACKEND, at the top of this file).
 test-reflection:
 	.\mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
-
-# Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
-# the standalone metadata API, a subset of what test-reflection runs. Same JDK override and
-# clean+-am rationale as test-reflection.
-test-reflection-only:
-	.\mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
 
 clean:
 	.\mvnw -Popencl-backend,cuda-backend clean

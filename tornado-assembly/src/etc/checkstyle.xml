@@ -25,6 +25,10 @@
         <property name="message" value=".*IllegalStateException occurred while parsing file.*"/>
     </module>
     <module name="TreeWalker">
+        <!-- TornadoVM has no Graal or JVMCI dependency: TC is its compiler. -->
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="tornado.graal, jdk.vm.ci, org.graalvm, jdk.graal"/>
+        </module>
         <module name="AvoidStarImport">
             <property name="allowClassImports" value="false"/>
             <property name="allowStaticMemberImports" value="false"/>

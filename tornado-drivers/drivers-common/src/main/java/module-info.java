@@ -1,22 +1,11 @@
 open module tornado.drivers.common {
-    requires transitive jdk.internal.vm.ci;
-    requires transitive tornado.graal;
     requires transitive tornado.runtime;
     requires transitive tornado.tc.runtime;
     requires tornado.tc.debug;
     
-    exports uk.ac.manchester.tornado.drivers.providers;
     exports uk.ac.manchester.tornado.drivers.common;
-    exports uk.ac.manchester.tornado.drivers.common.architecture;
     exports uk.ac.manchester.tornado.drivers.common.mm;
-    exports uk.ac.manchester.tornado.drivers.common.code;
     exports uk.ac.manchester.tornado.drivers.common.logging;
-    exports uk.ac.manchester.tornado.drivers.common.compiler.cfg;
-    exports uk.ac.manchester.tornado.drivers.common.compiler.phases.guards;
-    exports uk.ac.manchester.tornado.drivers.common.compiler.phases.memalloc;
-    exports uk.ac.manchester.tornado.drivers.common.compiler.phases.loops;
-    exports uk.ac.manchester.tornado.drivers.common.compiler.phases.utils;
-    exports uk.ac.manchester.tornado.drivers.common.compiler.phases.analysis;
     exports uk.ac.manchester.tornado.drivers.common.utils;
     exports uk.ac.manchester.tornado.drivers.common.power;
     exports uk.ac.manchester.tornado.drivers.common.ffm;

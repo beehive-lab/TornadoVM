@@ -22,15 +22,12 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 /**
@@ -185,7 +182,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
     void setAtomicRegion(XPUBuffer bufferAtomics);
 
     /**
-     * It returns from the sketch of a task whether the loop index is written in the output buffer.
+     * Whether a task's kernel writes its loop index into an output buffer (batched execution).
      * 
      * @param task
      *     {@link SchedulableTask}
@@ -193,10 +190,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      */
     default boolean loopIndexInWrite(SchedulableTask task) {
         if (task instanceof CompilableTask executable) {
-            return KernelAccess.writesLoopIndex(executable.getMethod(), () -> {
-                final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-                return TornadoSketcher.lookupOrBuild(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex()).getBatchWriteThreadIndex();
-            });
+            return KernelAccess.writesLoopIndex(executable.getMethod());
         } else {
             return false;
         }

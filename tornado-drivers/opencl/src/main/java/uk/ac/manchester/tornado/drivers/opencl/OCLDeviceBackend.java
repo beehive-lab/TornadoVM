@@ -27,25 +27,17 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
-import java.util.function.Function;
-
-import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
-
 /**
  * One OpenCL device as the runtime uses it: its device context and the TornadoVM memory regions on
- * it. The Graal compiler backend for the device is built only when Graal compiles a kernel (never
- * under TC, the Graal-free compiler), from the same device context.
+ * it.
  */
 public final class OCLDeviceBackend {
 
     private final OCLDeviceContextInterface deviceContext;
-    private final Function<OCLDeviceContextInterface, OCLBackend> graalFactory;
-    private volatile OCLBackend graal;
     private volatile boolean initialised;
 
-    OCLDeviceBackend(OCLDeviceContextInterface deviceContext, Function<OCLDeviceContextInterface, OCLBackend> graalFactory) {
+    OCLDeviceBackend(OCLDeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
-        this.graalFactory = graalFactory;
     }
 
     public OCLDeviceContextInterface getDeviceContext() {
@@ -65,15 +57,5 @@ public final class OCLDeviceBackend {
             deviceContext.getMemoryManager().allocateDeviceMemoryRegions();
         }
         initialised = true;
-    }
-
-    /** The Graal compiler backend of this device, built on first use. */
-    public synchronized OCLBackend graal() {
-        if (graal == null) {
-            init();
-            graal = graalFactory.apply(deviceContext);
-            graal.markInitialised();
-        }
-        return graal;
     }
 }

@@ -9,7 +9,6 @@ bin/sdk
 dist/
 docs/build/
 etc/dependencies/
-graalJars/
 graal_dumps/
 level-zero/
 levelzero-jni/

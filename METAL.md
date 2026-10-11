@@ -100,13 +100,13 @@ tornado --devices           # the Apple GPU under the Metal driver, e.g. 0:0
    If arguments arrive in the wrong buffers, compare `--printKernel` against Graal's
    (`-Dtornado.compiler=graal`) for the same task. Also check the runtime's argument-reflection log
    (`MetalInstalledCode`, `[Metal-reflection]`).
-3. **Graal reference, then TC, with the differential harness.** Use the device id from
-   `tornado --devices`:
+3. **The suite, against the last run.** Use the device id from `tornado --devices`. Graal has
+   been removed; the reference is the run recorded when Graal was still there (Metal parity: TC 941
+   vs Graal 942 on the M3 Pro):
    ```bash
-   python3 docs/compiler-replacement/baseline/tc-diff.py run --device 0:0 --compilers graal,tc --out ~/tc-diff/metal1
-   python3 docs/compiler-replacement/baseline/tc-diff.py diff --out ~/tc-diff/metal1
+   python3 docs/compiler-replacement/baseline/tc-diff.py run --device 0:0 --out ~/tc-diff/metal2 --against ~/tc-diff/metal1
    ```
-   The goal, as on CUDA and OpenCL: TC passes every test Graal on Metal passes, with fallback off.
+   The goal: no test that passed before fails now.
    Each remaining difference is either fixed or recorded with its reason in
    `docs/compiler-replacement/parity-matrix.md`.
 4. **jitLLM on Metal.** Greedy output must be token-identical, as on CUDA and OpenCL:

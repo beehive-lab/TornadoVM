@@ -20,7 +20,6 @@
 import argparse
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -30,7 +29,6 @@ tornadoReq.check_python_dependencies()
 import config_utils as cutils
 
 import update_paths as updp
-import pull_graal_jars
 
 
 
@@ -113,7 +111,6 @@ FLOOR_PROFILES = {"jdk22plus": 22}
 #           these SDKs are not forward compatible however new the runtime is.
 SDK_JDK_CONTRACT = {
     "jdk21": (21, True),
-    "graal-jdk-21": (21, True),
     "jdk22plus": (22, False),
 }
 
@@ -129,7 +126,7 @@ def write_sdk_jdk_contract(jdk):
 
 def _parse_expected_version(jdk):
     """Extract the target major version from a --jdk value, e.g. 'jdk21' -> 21,
-    'graal-jdk-21' -> 21, 'jdk22plus' -> 22."""
+    'jdk22plus' -> 22."""
     if jdk in FLOOR_PROFILES:
         return FLOOR_PROFILES[jdk]
     match = re.search(r'(\d+)$', jdk) if jdk else None
@@ -142,12 +139,10 @@ def verify_jdk_matches_java_home(jdk):
 
     The jdkNN Maven profile (e.g. -Pjdk21) only selects compiler flags and
     dependencies -- it does not switch the javac/jar toolchain, which is always
-    whatever JAVA_HOME points at. Since jdk.vm.ci.* (JVMCI) internals are not a
-    stable API and can differ even between JDK feature releases that both still
-    ship JVMCI (e.g. jdk.vm.ci.code.Architecture's constructor changed between
-    JDK 21 and JDK 25), building --jdk jdk21 under a JDK 25 JAVA_HOME silently
-    produces an SDK that links against the wrong JVMCI shape at runtime instead
-    of failing at build time. Catch that here instead.
+    whatever JAVA_HOME points at. The jdk21 profile compiles with enable-preview,
+    which pins the class files to exactly the JDK that compiled them, so building
+    --jdk jdk21 under a JDK 25 JAVA_HOME would produce an SDK that JDK 21 cannot
+    load. Catch that here instead.
     """
     expected = _parse_expected_version(jdk)
     if expected is None:
@@ -171,44 +166,11 @@ def verify_jdk_matches_java_home(jdk):
             f"JDK {actual}:\n\t  {java_home}\n\n"
             f"\tThe --jdk flag only selects Maven compiler flags/dependencies -- it does\n"
             f"\tNOT switch the build toolchain, which always comes from JAVA_HOME. A\n"
-            f"\tmismatch here compiles against one JVMCI shape and links against another\n"
-            f"\tat runtime, which fails late with a confusing NoSuchMethodError instead.\n\n"
+            f"\tmismatch here produces class files the target JDK cannot load.\n\n"
             f"\tSuggestion: export JAVA_HOME=<path-to-jdk-{expected}> before building.\n"
         )
         sys.exit(-1)
     print("[OK]")
-
-
-def pull_graal_jars_if_needed(graal_jars_status, jdk):
-    """
-    Pulls GraalVM jars if the specified JDK version does not contain the binaries.
-
-    Args:
-        graal_jars_status (bool): Whether to pull GraalVM jars.
-        jdk (str): The JDK version.
-    """
-    if graal_jars_status:
-        pull_graal_jars.main(jdk=jdk)
-
-
-def should_handle_graal_jars(jdk):
-    """
-    Whether this build has to stage the vendored Graal jars.
-
-    True for every jdkNN profile, including on a GraalVM JAVA_HOME. This used to also
-    require that JAVA_HOME was NOT GraalVM, back when Graal came from the JDK itself
-    (jdk.internal.vm.compiler on --upgrade-module-path) and pulling graalJars would have
-    been redundant. The jdkNN profiles no longer work that way: Graal is always vendored
-    as the relocated `tornado.graal` application module and every TornadoVM module
-    `requires transitive tornado.graal`, so the module has to be built whatever the JDK
-    is. Skipping it on GraalVM left the reactor with no tornado.graal at all -- or, on a
-    machine where another JDK's build had already installed one, with that JDK's
-    module-info, failing as "module not found: tornado.graal".
-
-    The `graal-jdk-21` profile, which does take Graal from the JDK, is excluded
-    by the profile list rather than by inspecting JAVA_HOME.
-    """
-    return jdk in ("jdk21", "jdk22plus")
 
 
 def maven_cleanup():
@@ -348,22 +310,6 @@ def build_tornadovm(args, backend_profiles):
     return result
 
 
-def copy_jars(graal_jars_src_dir, graal_jars_dst_dir):
-    """
-    Copies GraalVM jars to the TornadoVM distribution directory.
-
-    Args:
-        graal_jars_src_dir (str): Path to the directory containing GraalVM jars.
-        graal_jars_dst_dir (str): Path to the directory to copy the GraalVM jars to.
-    """
-    files_to_copy = os.listdir(graal_jars_src_dir)
-
-    for file_name in files_to_copy:
-        source_file = os.path.join(graal_jars_src_dir, file_name)
-        destination_file = os.path.join(graal_jars_dst_dir, file_name)
-        if os.path.isfile(source_file):
-            shutil.copy(source_file, destination_file)
-
 def generate_setvars_files():
     """
     Generate setvars.cmd (Windows) or setvars.sh (Unix/Linux/Mac) file with the correct TORNADOVM_HOME path.
@@ -420,7 +366,7 @@ export PATH="$TORNADOVM_HOME/bin:$PATH"
         print(f"   [Unix-env]: {setvars_sh_path}")
 
 
-def post_installation_actions(backend_profiles, mvn_build_result, args, graal_jars_status):
+def post_installation_actions(backend_profiles, mvn_build_result, args):
     """
     Performs post-installation actions.
 
@@ -444,9 +390,6 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
         os.makedirs(os.path.dirname(backend_file_path), exist_ok=True)
         with open(backend_file_path, "w") as backend_file:
             backend_file.write(f"tornado.backends={backend_profiles}\n")
-
-        # Note: Graal JARs are now included by Maven assembly from graalJars/ directory
-        # See tornado-assembly/assembly.xml for the fileSet configuration
 
         # Generate argfile template and final argfile
         # This creates two files in the TORNADOVM_HOME directory (dist/):
@@ -483,7 +426,7 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Tool to compile TornadoVM")
     parser.add_argument(
-        "--jdk", help="JDK profile (jdk21, jdk22plus, graal-jdk-21)"
+        "--jdk", help="JDK profile (jdk21, jdk22plus)"
     )
     parser.add_argument("--backend", help="e.g., opencl,cuda,metal")
     parser.add_argument(
@@ -722,11 +665,7 @@ def main():
 
     verify_jdk_matches_java_home(args.jdk)
 
-    graal_jars_status = should_handle_graal_jars(args.jdk)
-
     maven_cleanup()
-
-    pull_graal_jars_if_needed(graal_jars_status, args.jdk)
 
     backend_profiles = process_backends_as_mvn_profiles(args.backend)
 
@@ -735,9 +674,7 @@ def main():
 
     mvn_build_result = build_tornadovm(args, backend_profiles)
 
-    post_installation_actions(
-        backend_profiles, mvn_build_result, args, graal_jars_status
-    )
+    post_installation_actions(backend_profiles, mvn_build_result, args)
 
 
 if __name__ == "__main__":

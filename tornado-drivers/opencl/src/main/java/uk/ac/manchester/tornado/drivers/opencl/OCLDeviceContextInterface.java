@@ -26,8 +26,7 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -41,8 +40,6 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
     boolean isCached(long executionPlanId, String id, String entryPoint);
 
     OCLInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint);
-
-    OCLInstalledCode installCode(long executionPlanId, OCLCompilationResult result);
 
     OCLInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code);
 

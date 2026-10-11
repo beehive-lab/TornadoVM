@@ -32,8 +32,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import tornado.graal.compiler.options.OptionValues;
-import tornado.graal.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -41,9 +39,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalHotSpotBackendFactory;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalSuitesProvider;
-import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -62,7 +57,7 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
     private volatile List<TornadoDevice> devices;
     private final TornadoLogger logger;
 
-    public MetalBackendImpl(final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    public MetalBackendImpl(TornadoVMConfigAccess vmConfig) {
         // Only allow Metal backend initialization on macOS hosts.
         String osName = System.getProperty("os.name").toLowerCase();
         if (!osName.contains("mac") && !osName.contains("darwin")) {
@@ -83,7 +78,7 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         backends = new MetalDeviceBackend[numPlatforms][];
         contexts = new ArrayList<>();
         logger = new TornadoLogger(this.getClass());
-        discoverDevices(options, vmConfig);
+        discoverDevices(vmConfig);
         flatBackends = flattenBackends(backends);
         flatBackends = orderFlattenBackends();
 
@@ -214,16 +209,15 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         }
     }
 
-    private MetalDeviceBackend createMetalJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final MetalContextInterface context,
+    private MetalDeviceBackend createMetalJITCompiler(TornadoVMConfigAccess vmConfig, final MetalContextInterface context,
             final int deviceIndex) {
         final MetalTargetDevice device = context.devices().get(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
-        // The Graal compiler backend is built only if Graal compiles for this device.
         var deviceContext = (MetalDeviceContextInterface) context.createDeviceContext(device.getIndex());
-        return new MetalDeviceBackend(deviceContext, dc -> MetalHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device, dc));
+        return new MetalDeviceBackend(deviceContext);
     }
 
-    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void installDevices(int platformIndex, TornadoPlatformInterface platform, TornadoVMConfigAccess vmConfig) {
         logger.info("Metal[%d]: Platform %s", platformIndex, platform.getName());
         final MetalContextInterface context = platform.createContext();
         assert context != null : "Metal context is null";
@@ -234,30 +228,20 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
             final MetalTargetDevice device = context.devices().get(deviceIndex);
             logger.info("Metal[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][deviceIndex] = createMetalJITCompiler(options, vmConfig, context, deviceIndex);
+            backends[platformIndex][deviceIndex] = createMetalJITCompiler(vmConfig, context, deviceIndex);
         }
     }
 
-    private void discoverDevices(final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void discoverDevices(TornadoVMConfigAccess vmConfig) {
         IntStream.range(0, Metal.getNumPlatforms()).forEach(i -> {
             final TornadoPlatformInterface platform = Metal.getPlatform(i);
-            installDevices(i, platform, options, vmConfig);
+            installDevices(i, platform, vmConfig);
         });
     }
 
-    /** The Graal compiler backend of a device, built on first use. */
-    public MetalBackend getBackend(int platform, int device) {
-        return checkAndInitBackend(platform, device).graal();
-    }
-
-    /** A device without its Graal backend: its context and memory. */
+    /** A device: its context and memory. */
     public MetalDeviceBackend getDeviceBackend(int platform, int device) {
         return checkAndInitBackend(platform, device);
-    }
-
-    @Override
-    public MetalBackend getDefaultBackend() {
-        return checkAndInitBackend(0, 0).graal();
     }
 
     public int getNumDevices(int platform) {
@@ -275,16 +259,6 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
 
     public MetalContextInterface getPlatformContext(final int index) {
         return (index < contexts.size()) ? contexts.get(index) : contexts.get(0);
-    }
-
-    @Override
-    public Providers getProviders() {
-        return getDefaultBackend().getProviders();
-    }
-
-    @Override
-    public MetalSuitesProvider getSuitesProvider() {
-        return getDefaultBackend().getTornadoSuites();
     }
 
     @Override

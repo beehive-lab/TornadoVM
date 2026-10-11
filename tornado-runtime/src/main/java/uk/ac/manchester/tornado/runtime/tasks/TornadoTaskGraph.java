@@ -50,10 +50,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import tornado.graal.compiler.graph.Graph;
-import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.tile.TileContext;
@@ -120,16 +117,12 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -182,7 +175,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<StreamingObject> inputModesObjects; // List of objects with its data transfer mode (IN)
     private List<StreamingObject> outputModeObjects; // List of objects with its data transfer mode (OUT)
     private StringBuilder bufferLogProfiler = new StringBuilder();
-    private Graph compilationGraph;
 
     /**
      * Options for new reductions - experimental.
@@ -365,7 +357,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.executionContext.withProfiler(timeProfiler);
 
         // The graph object is used when rewriting task-graphs (e.g., reductions)
-        newTaskGraph.compilationGraph = this.compilationGraph;
 
         return newTaskGraph;
     }
@@ -630,13 +621,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         meta().setDevice(device);
 
-        // Make sure that a sketch is available for the device.
+        // Recompile for the new device unless its code is cached.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
             task.meta().setDevice(device);
             if (task instanceof CompilableTask compilableTask) {
-                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-                if (!meta().getXPUDevice().getDeviceContext().isCached(executionPlanId, method.getName(), compilableTask)) {
+                if (!meta().getXPUDevice().getDeviceContext().isCached(executionPlanId, compilableTask.getMethod().getName(), compilableTask)) {
                     updateInner(i, executionContext.getTask(i));
                 }
             }
@@ -795,15 +785,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         TornadoDevice oldDevice = meta().getXPUDevice();
 
-        // Make sure that a sketch is available for the device.
+        // Recompile for the new device unless its code is cached.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
             String name = task.getId();
             if (name.equals(taskName)) {
                 task.meta().setDevice(device);
                 if (task instanceof CompilableTask) {
-                    ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                    if (!task.getDevice().getDeviceContext().isCached(executionPlanId, method.getName(), task)) {
+                    if (!task.getDevice().getDeviceContext().isCached(executionPlanId, ((CompilableTask) task).getMethod().getName(), task)) {
                         updateInner(i, task);
                     }
                 }
@@ -835,46 +824,18 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void updateInner(int index, SchedulableTask task) {
         executionContext.setTask(index, task);
-
-        if (task instanceof CompilableTask compilableTask && KernelAccess.needsSketch(compilableTask.getMethod())) {
-            int driverIndex = task.meta().getBackendIndex();
-            Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
-            TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            final TaskDataContext taskMetaData = compilableTask.meta();
-            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
-
-            Sketch sketchGraph = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex());
-            this.compilationGraph = sketchGraph.getGraph();
-        }
     }
 
     @Override
     public void addInner(SchedulableTask task) {
         int index = executionContext.addTask(task);
 
-        if (task instanceof CompilableTask compilableTask && !KernelAccess.needsSketch(compilableTask.getMethod())) {
-            // TC: the accesses come from TC and no Graal sketch is built.
+        if (task instanceof CompilableTask compilableTask) {
             checkForMemorySegmentAsTaskParameter(compilableTask);
-            this.compilationGraph = null;
-            this.accesses = KernelAccess.choose(compilableTask.getMethod(), () -> {
-                throw new IllegalStateException("no sketch under TC");
-            });
-        } else if (task instanceof CompilableTask compilableTask) {
-            int driverIndex = task.meta().getBackendIndex();
-            Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
-            TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
-            checkForMemorySegmentAsTaskParameter(compilableTask);
-
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            final TaskDataContext taskMetaData = compilableTask.meta();
-            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
-
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getBackendIndex(), compilableTask.meta().getDeviceIndex());
-            this.compilationGraph = lookup.getGraph();
-            this.accesses = KernelAccess.choose(compilableTask.getMethod(), lookup::getArgumentsAccess);
+            // How the kernel reads and writes its parameters, from TC (KernelAccess).
+            this.accesses = KernelAccess.of(compilableTask.getMethod(), compilableTask.meta().getArgumentsAccess().length);
         } else {
-            // Pre-built and library tasks carry explicit accesses (no sketch)
+            // Pre-built and library tasks carry explicit accesses
             this.accesses = task.getArgumentsAccess();
         }
 
@@ -1703,7 +1664,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, inputModesObjects, streamOutObjects, outputModeObjects, compilationGraph, this);
+        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, inputModesObjects, streamOutObjects, outputModeObjects, this);
         reduceTaskGraph.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }

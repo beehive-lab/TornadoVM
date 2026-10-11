@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
+import uk.ac.manchester.tornado.drivers.cuda.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.drivers.cuda.virtual.VirtualDeviceDescriptor;
 import uk.ac.manchester.tornado.drivers.cuda.virtual.VirtualJSONParser;

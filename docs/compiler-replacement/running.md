@@ -64,6 +64,6 @@ NVRTC time stays in `TASK_COMPILE_DRIVER_TIME`. `getCompileTime()` adds Graal + 
 ## Tests
 
 ```bash
-tornado-test --verbose -J"-Dtornado.unittests.device=1:0 -Dtornado.compiler=tc -Dtornado.compiler.fallback=false" <TestClass>
-python3 docs/compiler-replacement/baseline/tc-diff.py run --families <family> --out ~/tc-diff/<name>   # Graal vs TC
+tornado-test --verbose -J"-Dtornado.unittests.device=1:0" <TestClass>
+python3 docs/compiler-replacement/baseline/tc-diff.py run --families <family> --out ~/tc-diff/<name> --against ~/tc-diff/<earlier>   # regression check
 ```

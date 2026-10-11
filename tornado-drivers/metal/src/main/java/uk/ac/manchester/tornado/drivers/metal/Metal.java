@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
+import uk.ac.manchester.tornado.drivers.metal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;

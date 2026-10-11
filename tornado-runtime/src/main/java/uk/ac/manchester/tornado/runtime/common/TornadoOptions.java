@@ -27,8 +27,6 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
-import java.lang.management.ManagementFactory;
-import java.util.List;
 
 public class TornadoOptions {
 
@@ -107,20 +105,6 @@ public class TornadoOptions {
     public static final int DEFAULT_DEVICE_INDEX = Integer.parseInt(Tornado.getProperty("tornado.device", "0"));
 
     /**
-     * Enable/disable loop interchange optimization from the Sketcher compilation. This optimization is enabled
-     * by default. The optimization that reverses the ordering of the loops is:
-     * {@link uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoApiReplacement}.
-     */
-    public static final boolean TORNADO_LOOP_INTERCHANGE = getBooleanValue("tornado.loop.interchange", "True");
-
-    /**
-     * Option to batch the global loads of a shared-memory staging sequence in the CUDA
-     * backend, so that independent loads issue back to back instead of one per shared
-     * store. Only reorders across provably disjoint address spaces.
-     */
-    public static final boolean CUDA_BATCH_GLOBAL_LOADS = getBooleanValue("tornado.cuda.batchGlobalLoads", "True");
-
-    /**
      * Enable thread deployment debugging from the TornadoVM runtime and code dispatcher.
      */
     public static final boolean THREAD_INFO = getBooleanValue("tornado.threadInfo", FALSE);
@@ -149,11 +133,6 @@ public class TornadoOptions {
      * Option to set the device maximum memory usage. It is set to 4GB by default.
      */
     public static final long DEVICE_AVAILABLE_MEMORY = RuntimeUtilities.parseSize(System.getProperty("tornado.device.memory", "4GB"));
-    /**
-     * Option to enable exceptions for the OpenCL generated code. This is
-     * experimental.
-     */
-    public static final boolean ENABLE_EXCEPTIONS = Boolean.parseBoolean(System.getProperty("tornado.exceptions", FALSE));
     /**
      * Option to print TornadoVM Internal Bytecodes.
      */
@@ -205,18 +184,6 @@ public class TornadoOptions {
      */
     public static final boolean EXPERIMENTAL_REDUCE = getBooleanValue("tornado.experimental.reduce", TRUE);
     /**
-     * Temporal option for disabling null checks for Apache-Flink.
-     */
-    public static final boolean IGNORE_NULL_CHECKS = getBooleanValue("tornado.ignore.nullchecks", FALSE);
-    /**
-     * Option to enable profiler-feature extractions.
-     */
-    public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
-    /**
-     * Enable/Disable Fix Reads Optimization. True by default.
-     */
-    public static final boolean ENABLE_FIX_READS = getBooleanValue("tornado.enable.fix.reads", TRUE);
-    /**
      * Enable/Disable events dumping on program finish. False by default.
      */
     public static final boolean DUMP_EVENTS = Boolean.parseBoolean(getProperty("tornado.events.dump", FALSE));
@@ -231,10 +198,6 @@ public class TornadoOptions {
      */
     public static final boolean CIRCULAR_EVENTS = Boolean.parseBoolean(getProperty("tornado.circularevents", TRUE));
     /**
-     * Sets the array memory alignment for OpenCL devices. Default is 128 bytes.
-     */
-    public static final int OPENCL_ARRAY_ALIGNMENT = Integer.parseInt(getProperty("tornado.opencl.array.align", "128"));
-    /**
      * Enables OpenCL code generation based on a virtual device. Default is False.
      */
     public static final boolean VIRTUAL_DEVICE_ENABLED = getBooleanValue("tornado.virtual.device", FALSE);
@@ -247,11 +210,6 @@ public class TornadoOptions {
      * Option to redirect profiler output.
      */
     public static final String PROFILER_DIRECTORY = getProperty("tornado.profiler.dump.dir", "");
-    /**
-     * Dump the Control-Flow-Graph with IGV for the compiled-graph after the last
-     * phase in the Low-Tier.
-     */
-    public static final boolean DUMP_LOW_TIER_WITH_IGV = getBooleanValue("tornado.debug.lowtier", FALSE);
     /**
      * In the case of a TornadoVM runtime, JIT compiler or driver failure (OpenCL
      * or CUDA), this option silently re-runs the task as plain sequential Java
@@ -282,23 +240,6 @@ public class TornadoOptions {
      * port.
      */
     public static final String SOCKET_PORT = getProperty("tornado.dump.to.ip", "");
-    /**
-     * Sets the number of threads for the Tornado Sketcher. Default is 4.
-     */
-    public static final int TORNADO_SKETCHER_THREADS = Integer.parseInt(getProperty("tornado.sketcher.threads", "4"));
-    /**
-     * It enables automatic discovery and parallelization of loops. Please note that
-     * this option is experimental and may cause issues if enabled.
-     */
-    public static final boolean AUTO_PARALLELISATION = getBooleanValue("tornado.parallelise.auto", FALSE);
-    /**
-     * Full Inlining Policy with the TornadoVM JIT compiler. Default is False.
-     */
-    public static final boolean FULL_INLINING = getBooleanValue("tornado.compiler.fullInlining", FALSE);
-    /**
-     * It enables inlining during Java bytecode parsing. Default is False.
-     */
-    public static final boolean INLINE_DURING_BYTECODE_PARSING = getBooleanValue("tornado.compiler.bytecodeInlining", FALSE);
 
     /**
      * Check I/O parameters for every task within a task-graph.
@@ -313,31 +254,11 @@ public class TornadoOptions {
      */
     public static final boolean TRACE_BUILD_LIR = getBooleanValue("tornado.logger.buildlir", FALSE);
     /**
-     * It enables native math functions for the code generation.
-     */
-    public static final boolean ENABLE_NATIVE_FUNCTION = getBooleanValue("tornado.enable.nativeFunctions", TRUE);
-    /**
-     * - It enables more aggressive math optimizations.
-     */
-    public static final boolean MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.mathOptimizations", TRUE);
-    /**
-     * It enables more fast math optimizations.
-     */
-    public static final boolean FAST_MATH_OPTIMIZATIONS = getBooleanValue("tornado.enable.fastMathOptimizations", TRUE);
-    /**
      * Opt-in: compile Metal kernels with fast/relaxed math ({@code MTLMathModeFast}),
      * the Metal analogue of OpenCL's {@code -cl-fast-relaxed-math}. Trades a small
      * amount of FP precision for speed. Default OFF to preserve strict precision.
      */
     public static final boolean METAL_FAST_MATH = getBooleanValue("tornado.metal.fastmath", FALSE);
-    /**
-     * Opt-in: emit a {@code [[max_total_threads_per_threadgroup(N)]]} attribute on
-     * Metal kernels when the local work-group size is statically known (a worker
-     * grid is attached at compile time). Lets the Metal compiler tune register
-     * allocation/occupancy. Default OFF because the bound is baked into the cached
-     * kernel - re-dispatching the same kernel with a larger threadgroup would fail.
-     */
-    public static final boolean METAL_THREADGROUP_HINT = getBooleanValue("tornado.metal.threadgroupHint", FALSE);
     /**
      * If enabled, the TornadoVM will substitute the last READ (data transfer from
      * the device to the host) using a STREAM_OUT_BLOCKING. This is FALSE by
@@ -417,11 +338,6 @@ public class TornadoOptions {
     }
 
     /**
-     * Set Loop unrolling factor. Default is set to 4.
-     */
-    public static final int UNROLL_FACTOR = Integer.parseInt(getProperty("tornado.unroll.factor", "4"));
-
-    /**
      * Enable basic debug information. Disabled by default.
      */
     public static final boolean DEBUG = getBooleanValue("tornado.debug", FALSE);
@@ -430,11 +346,6 @@ public class TornadoOptions {
      * Enable Full Debug Mode. Disabled by default.
      */
     public static final boolean FULL_DEBUG = getBooleanValue("tornado.fullDebug", FALSE);
-
-    /**
-     * Enable debugging of the kernel parameters. Disable by default.
-     */
-    public static final boolean DEBUG_KERNEL_ARGS = getBooleanValue("tornado.debug.kernelargs", FALSE);
 
     /**
      * Use flush in OpenCL to sync all pending commands from the command queue. Disabled by default.
@@ -457,11 +368,6 @@ public class TornadoOptions {
     public static final int EVENT_WINDOW = getIntValue("tornado.eventpool.size", "1024");
 
     /**
-     * Enable BIFS Math operations. Disabled by default.
-     */
-    public static final boolean TORNADO_ENABLE_BIFS = getBooleanValue("tornado.bifs.enable", FALSE);
-
-    /**
      * Enable VM Dependency Path. Disabled by default. This option is only for testing.
      */
     public static boolean VM_USE_DEPS = getBooleanValue("tornado.vm.deps", FALSE);
@@ -475,11 +381,6 @@ public class TornadoOptions {
      * Enable Metal Profiling. Enabled by default.
      */
     public static final boolean ENABLE_METAL_PROFILING = getBooleanValue("tornado.metal.profiling.enable", TRUE);
-
-    /**
-     * Enable to dump the generated methods to a file for debugging purposes. Disabled by default.
-     */
-    public static final boolean DUMP_COMPILED_METHODS = getBooleanValue("tornado.compiled.dump", FALSE);
 
     /**
      * Enable out-of-order execution. False by default.
@@ -520,11 +421,4 @@ public class TornadoOptions {
         return getBooleanValue("tornado.clean.atomics.space", FALSE);
     }
 
-    public static boolean coopsUsed() {
-        List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
-        boolean isUncompressed = jvmArgs.contains("-XX:-UseCompressedOops") ||
-                jvmArgs.contains("-XX:-UseCompressedClassPointers");
-
-        return isUncompressed ? false : true;
-    }
 }

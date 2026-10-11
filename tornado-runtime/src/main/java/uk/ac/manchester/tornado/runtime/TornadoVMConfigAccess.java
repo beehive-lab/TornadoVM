@@ -21,81 +21,52 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import java.lang.reflect.Field;
+import java.lang.management.ManagementFactory;
 
-import sun.misc.Unsafe;
+import com.sun.management.HotSpotDiagnosticMXBean;
 
-import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 
 /**
- * JDK-neutral view of the HotSpot object/array memory layout needed to marshal
- * Java objects into accelerator buffers. Previously this extended
- * {@code jdk.vm.ci.hotspot.HotSpotVMConfigAccess} and read raw VM struct offsets
- * through JVMCI; it now derives the same values from {@link Unsafe}, so it works
- * without JVMCI being present.
- *
- * <p>
- * The values are validated to match the JVMCI-reported layout for both
- * compressed and uncompressed class pointers: the object header size (hence the
- * array-length offset) is obtained from a probe field offset, the klass pointer
- * sits immediately after the 8-byte mark word, and array base offsets/index
- * scales come directly from {@code Unsafe}.
+ * The parts of the JVM's object layout the runtime still mirrors when it copies Java arrays to a
+ * device: the object header size, which places the array length. It is derived from the VM's
+ * documented flags, so neither JVMCI nor {@code Unsafe} is needed. Objects use TornadoVM's own
+ * layout ({@link FieldLayout}), which does not depend on the JVM.
  */
 public class TornadoVMConfigAccess {
 
     /** HotSpot 64-bit mark-word size; the klass pointer (object hub) lives immediately after it. */
     private static final int MARK_WORD_SIZE = 8;
 
-    private static final Unsafe UNSAFE = initUnsafe();
+    /** Object header size in bytes: mark word, plus the klass pointer unless headers are compact. */
+    private static final int HEADER_SIZE = headerSize();
 
-    /** Object header size in bytes: the offset of the first instance field is the end of the header. */
-    private static final int HEADER_SIZE = (int) UNSAFE.objectFieldOffset(firstField(HeaderProbe.class));
-
-    // Offset at which the object's hub/klass placeholder is zeroed when marshalling to the device.
-    // Pre-Lilliput layouts keep the klass pointer immediately after the 8-byte mark word (hub at
-    // MARK_WORD_SIZE). JDK 24+ compact object headers (HEADER_SIZE == 8) fold the klass into the mark
-    // word, so the first field sits at offset 8; hub must then be written at offset 0 to stay inside the
-    // header rather than overrunning the buffer / clobbering the first field.
-    public final int hubOffset = HEADER_SIZE > MARK_WORD_SIZE ? MARK_WORD_SIZE : 0;
-
-    private static final class HeaderProbe {
-        @SuppressWarnings("unused")
-        int field;
-    }
+    /** Offset at which an object's hub/klass placeholder is zeroed when marshalling it to the device. */
+    public final int hubOffset = FieldLayout.HUB_OFFSET;
 
     public TornadoVMConfigAccess() {
     }
 
-    private static Unsafe initUnsafe() {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return (Unsafe) f.get(null);
-        } catch (ReflectiveOperationException e) {
-            throw new InternalError("Unable to obtain sun.misc.Unsafe for object layout", e);
+    private static int headerSize() {
+        if (flag("UseCompactObjectHeaders")) {
+            return MARK_WORD_SIZE;
         }
+        // Without the HotSpot bean (another VM, a native image) assume HotSpot's default.
+        String compressed = option("UseCompressedClassPointers");
+        return compressed == null || Boolean.parseBoolean(compressed) ? MARK_WORD_SIZE + 4 : MARK_WORD_SIZE + 8;
     }
 
-    private static Field firstField(Class<?> clazz) {
-        try {
-            return clazz.getDeclaredField("field");
-        } catch (NoSuchFieldException e) {
-            throw new InternalError(e);
-        }
+    private static boolean flag(String name) {
+        return Boolean.parseBoolean(option(name));
     }
 
-    private static Class<?> arrayClassFor(JavaKind kind) {
-        return switch (kind) {
-            case Boolean -> boolean[].class;
-            case Byte -> byte[].class;
-            case Short -> short[].class;
-            case Char -> char[].class;
-            case Int -> int[].class;
-            case Long -> long[].class;
-            case Float -> float[].class;
-            case Double -> double[].class;
-            default -> Object[].class;
-        };
+    private static String option(String name) {
+        try {
+            return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption(name).getValue();
+        } catch (RuntimeException | LinkageError e) {
+            // Not a HotSpot VM, or a flag this JDK does not have (UseCompactObjectHeaders before 24).
+            return null;
+        }
     }
 
     /** Offset of the array length field: it is stored immediately after the object header. */
@@ -103,17 +74,9 @@ public class TornadoVMConfigAccess {
         return HEADER_SIZE;
     }
 
-    public int getArrayBaseOffset(JavaKind kind) {
-        return UNSAFE.arrayBaseOffset(arrayClassFor(kind));
-    }
-
-    public int getArrayIndexScale(JavaKind kind) {
-        return UNSAFE.arrayIndexScale(arrayClassFor(kind));
-    }
-
-    /** Base size (bytes) of an instance with no fields: the object header. */
+    /** Where an object's fields start in its device copy. */
     public int instanceKlassFieldsOffset() {
-        return HEADER_SIZE;
+        return FieldLayout.HEADER_BYTES;
     }
 
 }

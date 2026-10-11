@@ -25,6 +25,7 @@
  */
 package uk.ac.manchester.tornado.runtime.utils;
 
+import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 
@@ -78,12 +79,7 @@ public class TornadoUtils {
     }
 
     public static Object getObjectFromField(Field field, Object obj) {
-        try {
-            field.setAccessible(true);
-            return field.get(obj);
-        } catch (IllegalAccessException e) {
-            throw new TornadoRuntimeException(e);
-        }
+        return FieldLayout.get(field, obj);
     }
 
 }

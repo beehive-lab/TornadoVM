@@ -20,7 +20,6 @@
  */
 package uk.ac.manchester.tornado.drivers.common.tc;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -30,8 +29,7 @@ import java.util.Map;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 import uk.ac.manchester.tornado.tc.tornado.ObjectLayout;
 import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
@@ -63,7 +61,7 @@ final class TcArguments {
                 facts.add(new ValueSpecialisation.Fact.Reduce(array.getSizeLong()));
             } else if (argument instanceof TornadoNativeArray array) {
                 // In a batch each device buffer holds one chunk of batchThreads elements (with its
-                // header): lengths and indices are per chunk, as on the Graal path.
+                // header): lengths and indices are per chunk.
                 facts.add(new ValueSpecialisation.Fact.Length(batchThreads > 0 ? batchThreads : array.getSizeLong()));
             } else if (batchThreads > 0 && argument != null && argument.getClass().isArray()) {
                 facts.add(new ValueSpecialisation.Fact.Length(batchThreads)); // a Java array chunk, as for native arrays
@@ -87,14 +85,14 @@ final class TcArguments {
 
     /**
      * The fact for an object argument: its final primitive field values and the device layouts of it
-     * and the objects it references. Offsets come from the same JVMCI lookup the runtime's field
+     * and the objects it references. Offsets come from {@link FieldLayout}, which the runtime's field
      * buffers serialise with, so they match by construction. Calls on the object are resolved
      * against its declared class, so only an argument of exactly that class is described.
      */
     private static ValueSpecialisation.Fact instanceFact(Object argument, Class<?> declared) {
         // A subclass of the declared type is fine for its fields (inherited ones keep their offsets);
         // calls on the object are resolved against the declared class, so it must override nothing.
-        if (!declared.isAssignableFrom(argument.getClass()) || overridesAnything(argument.getClass(), declared) || !TornadoOptions.coopsUsed()) {
+        if (!declared.isAssignableFrom(argument.getClass()) || overridesAnything(argument.getClass(), declared)) {
             return new ValueSpecialisation.Fact.Unknown();
         }
         var lengths = new java.util.HashMap<String, Long>();
@@ -110,8 +108,7 @@ final class TcArguments {
             for (var c = argument.getClass(); c != null; c = c.getSuperclass()) {
                 for (var field : c.getDeclaredFields()) {
                     if (!Modifier.isStatic(field.getModifiers()) && TornadoNativeArray.class.isAssignableFrom(field.getType())) {
-                        field.setAccessible(true);
-                        if (field.get(argument) instanceof TornadoNativeArray array) {
+                        if (FieldLayout.get(field, argument) instanceof TornadoNativeArray array) {
                             lengths.putIfAbsent(field.getName(), array.getSizeLong());
                         }
                     }
@@ -121,8 +118,7 @@ final class TcArguments {
                 for (var field : c.getDeclaredFields()) {
                     if (Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers()) && field.getType().isPrimitive() && field.getType() != boolean.class
                             && field.getType() != char.class) {
-                        field.setAccessible(true);
-                        finals.putIfAbsent(field.getName(), (Number) field.get(argument));
+                        finals.putIfAbsent(field.getName(), (Number) FieldLayout.get(field, argument));
                     }
                 }
             }
@@ -137,16 +133,14 @@ final class TcArguments {
         if (!seen.add(cls)) {
             return;
         }
-        var type = TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaType(cls);
+        var layout = FieldLayout.of(cls);
         var offsets = new java.util.HashMap<String, Integer>();
         var references = new java.util.HashMap<String, String>();
-        for (var field : type.getInstanceFields(includeSuper)) {
-            offsets.putIfAbsent(field.getName(), field.getOffset());
-            var reflected = declaredField(cls, field.getName());
-            var fieldType = reflected.getType();
+        for (var field : layout.fields(includeSuper)) {
+            offsets.putIfAbsent(field.getName(), layout.offset(field));
+            var fieldType = field.getType();
             if (!fieldType.isPrimitive() && !fieldType.isArray() && !TornadoNativeArray.class.isAssignableFrom(fieldType)) {
-                reflected.setAccessible(true);
-                var value = reflected.get(object);
+                var value = FieldLayout.get(field, object);
                 if (value != null) {
                     references.put(field.getName(), tcClassName(value.getClass()));
                     describe(value, includeSuper, out, seen);
@@ -195,17 +189,6 @@ final class TcArguments {
     /** The class as TC names object types: its fully qualified binary name ({@code pkg.Outer$Inner}). */
     private static String tcClassName(Class<?> cls) {
         return cls.getName();
-    }
-
-    private static Field declaredField(Class<?> cls, String name) throws NoSuchFieldException {
-        for (var c = cls; c != null; c = c.getSuperclass()) {
-            try {
-                return c.getDeclaredField(name);
-            } catch (NoSuchFieldException e) {
-                // declared higher up
-            }
-        }
-        throw new NoSuchFieldException(cls.getName() + "." + name);
     }
 
     /** Native arrays are serialised without superclass fields (as the runtime's field buffers do). */

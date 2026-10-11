@@ -25,8 +25,8 @@ package uk.ac.manchester.tornado.runtime.analyzer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
-import tornado.graal.compiler.nodes.StructuredGraph;
 
 /**
  * Mapping between the input tasks and the parameters indexes in which reduce
@@ -35,17 +35,16 @@ import tornado.graal.compiler.nodes.StructuredGraph;
  */
 public class MetaReduceTasks {
 
-    private HashMap<Integer, ArrayList<Integer>> reduceList;
-    private HashMap<Integer, Integer> reduceSize;
-    private StructuredGraph graph;
-    private java.util.List<ReduceCodeAnalysis.REDUCE_OPERATION> operations;
+    private final HashMap<Integer, ArrayList<Integer>> reduceList;
+    private final HashMap<Integer, Integer> reduceSize;
+    private final List<ReduceCodeAnalysis.REDUCE_OPERATION> operations;
 
-    MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
+    MetaReduceTasks(int taskIndex, ArrayList<Integer> reduceIndexes, int inputSize, List<ReduceCodeAnalysis.REDUCE_OPERATION> operations) {
         reduceList = new HashMap<>();
         reduceSize = new HashMap<>();
         reduceList.put(taskIndex, reduceIndexes);
         reduceSize.put(taskIndex, inputSize);
-        this.graph = graph;
+        this.operations = operations;
     }
 
     public ArrayList<Integer> getListOfReduceParameters(int taskID) {
@@ -56,17 +55,8 @@ public class MetaReduceTasks {
         return reduceSize.get(taskIndex);
     }
 
-    /** From TC (no Graal graph): the operations, one per reduce parameter; null on the Graal path. */
-    MetaReduceTasks(int taskIndex, ArrayList<Integer> reduceIndexes, int inputSize, java.util.List<ReduceCodeAnalysis.REDUCE_OPERATION> operations) {
-        this(taskIndex, null, reduceIndexes, inputSize);
-        this.operations = operations;
-    }
-
-    public java.util.List<ReduceCodeAnalysis.REDUCE_OPERATION> getOperations() {
+    /** The operations, one per reduce parameter. */
+    public List<ReduceCodeAnalysis.REDUCE_OPERATION> getOperations() {
         return operations;
-    }
-
-    public StructuredGraph getGraph() {
-        return graph;
     }
 }

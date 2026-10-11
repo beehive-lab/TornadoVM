@@ -90,7 +90,7 @@ def parse(log):
                 if mm := re.match(r"\s+(Dims|Global work size|Local\s+work size)\s*:\s*(.*)", lines[j]):
                     info[mm.group(1).replace("  ", " ")] = mm.group(2).strip()
             launches[m.group(1)].append((info.get("Dims"), info.get("Global work size"), info.get("Local work size")))
-        elif m := re.search(r"kernels compiled by TC: (\d+), fell back to Graal: (\d+) \{(.*)\}", line):
+        elif m := re.search(r"kernels compiled by TC: (\d+), (?:fell back to Graal|refused): (\d+) \{(.*)\}", line):
             stats["tc"] += int(m.group(1))
             for code, n in re.findall(r"(TC-E\d+)=(\d+)", m.group(3)):
                 stats[code] += int(n)

@@ -45,8 +45,7 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResult;
+import uk.ac.manchester.tornado.drivers.cuda.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.power.CUDAEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.cuda.power.CUDANvidiaPowerMetricHandler;
@@ -977,10 +976,6 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     public boolean isKernelAvailable(long executionPlanId) {
         CUDACodeCache oclCodeCache = getCUDACodeCache(executionPlanId);
         return oclCodeCache.isKernelAvailable();
-    }
-
-    public CUDAInstalledCode installCode(long executionPlanId, CUDACompilationResult result) {
-        return installCode(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }
 
     @Override

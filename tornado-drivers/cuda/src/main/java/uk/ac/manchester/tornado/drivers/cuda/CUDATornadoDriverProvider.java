@@ -23,7 +23,6 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
-import tornado.graal.compiler.options.OptionValues;
 
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
@@ -43,8 +42,8 @@ public class CUDATornadoDriverProvider implements TornadoBackendProvider {
     }
 
     @Override
-    public TornadoAcceleratorBackend createBackend(OptionValues options, TornadoVMConfigAccess vmConfig) {
-        return new CUDABackendImpl(options, vmConfig);
+    public TornadoAcceleratorBackend createBackend(TornadoVMConfigAccess vmConfig) {
+        return new CUDABackendImpl(vmConfig);
     }
 
     @Override

@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import tornado.graal.compiler.nodes.StructuredGraph;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
@@ -46,40 +45,6 @@ public final class FeatureExtractionUtilities {
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
 
     private FeatureExtractionUtilities() {
-    }
-
-    public static void emitFeatureProfileJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, StructuredGraph graph, TornadoDeviceContext deviceContext) {
-        String name = graph.name.split("-")[1];
-
-        if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
-            HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
-            String fullName = getBaseClass(graph.method().getDeclaringClass().toClassName()) + "." + name;
-            task.put(fullName, encodeFeatureMap(entry));
-            JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(encodeFeatureMap(entry), fullName, deviceContext);
-            if (!FEATURES_DIRECTORY.isEmpty()) {
-                File fileLog = new File(FEATURES_DIRECTORY);
-                try {
-                    try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
-                        file.write(json);
-                        file.write("\n");
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                System.out.println(json);
-            }
-
-            if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
-                TornadoVMClient tornadoVMClient = new TornadoVMClient();
-                try {
-                    tornadoVMClient.sentLogOverSocket(json);
-                } catch (IOException e) {
-                    System.out.println(e);
-                }
-            }
-        }
     }
 
     private static String getBaseClass(String fullDeclaredClass) {

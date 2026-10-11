@@ -35,8 +35,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import tornado.graal.compiler.graph.Graph;
-import tornado.graal.compiler.nodes.StructuredGraph;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -79,7 +77,6 @@ class ReduceTaskGraph {
     private final List<StreamingObject> inputModeObjects;
     private final List<StreamingObject> outputModeObjects;
     private final TornadoTaskGraph originalTaskGraph;
-    private final Graph sketchGraph;
     private String idTaskGraph;
     private List<TaskPackage> taskPackages;
     private List<Object> streamOutObjects;
@@ -100,9 +97,8 @@ class ReduceTaskGraph {
     private TornadoExecutionResult executionResult;
 
     ReduceTaskGraph(String taskScheduleID, List<TaskPackage> taskPackages, List<Object> streamInObjects, List<StreamingObject> streamingObjects, List<Object> streamOutObjects,
-            List<StreamingObject> outputModeObjects, Graph graph, TornadoTaskGraph originalTaskGraph) {
+            List<StreamingObject> outputModeObjects, TornadoTaskGraph originalTaskGraph) {
         this.idTaskGraph = taskScheduleID;
-        this.sketchGraph = graph;
         this.originalTaskGraph = originalTaskGraph;
 
         // We need to make all lists mutable again in order to re-write the expressions
@@ -489,14 +485,7 @@ class ReduceTaskGraph {
 
                 MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
                 List<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
-                StructuredGraph graph = metaReduceTasks.getGraph();
-                List<REDUCE_OPERATION> operations = metaReduceTasks.getOperations() != null ? metaReduceTasks.getOperations()
-                        : ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
-
-                if (operations.isEmpty()) {
-                    // perform analysis with cached graph (after sketch phase)
-                    operations = ReduceCodeAnalysis.getReduceOperatorFromSketch(sketchGraph, listOfReduceParameters);
-                }
+                List<REDUCE_OPERATION> operations = metaReduceTasks.getOperations();
 
                 List<Object> streamUpdateList = streamReduceTable.get(taskNumber);
 

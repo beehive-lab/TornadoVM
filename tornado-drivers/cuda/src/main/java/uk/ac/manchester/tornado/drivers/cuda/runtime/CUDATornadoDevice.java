@@ -39,13 +39,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
@@ -53,38 +51,18 @@ import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
-import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
-import uk.ac.manchester.tornado.api.types.arrays.CharArray;
-import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
-import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
-import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
-import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
-import uk.ac.manchester.tornado.api.types.arrays.IntArray;
-import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
-import uk.ac.manchester.tornado.drivers.common.tc.TcHook;
+import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
-import uk.ac.manchester.tornado.drivers.cuda.CUDACodeCache;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAProviders;
-import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDABackend;
-import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResult;
-import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompiler;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
-import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.TornadoAtomicIntegerNode;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDACharArrayWrapper;
@@ -107,11 +85,8 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
 
@@ -189,10 +164,6 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return driver.getDeviceBackend(platformIndex, deviceIndex).getDeviceContext();
     }
 
-    public CUDABackend getBackend() {
-        return driver.getBackend(platformIndex, deviceIndex);
-    }
-
     private void disableProfilerOptions() {
         TornadoOptions.TORNADO_PROFILER_LOG = false;
         TornadoOptions.TORNADO_PROFILER = false;
@@ -257,93 +228,12 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final CUDADeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        // The Graal sketch is built only when Graal compiles (under TC, only for a fallback).
-        final java.util.function.Supplier<Sketch> sketch = () -> TornadoSketcher.lookupOrBuild(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-
+        final String name = executable.getMethod().getName();
         // Return the code from the cache
-        if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), resolvedMethod.getName())) {
-            return deviceContext.getInstalledCode(executionPlanId, task.getId(), resolvedMethod.getName());
+        if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), name)) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), name);
         }
-
-        // copy meta data into task
-        final TaskDataContext taskMeta = executable.meta();
-        final Access[] sketchAccess = uk.ac.manchester.tornado.runtime.common.KernelAccess.choose(executable.getMethod(), () -> sketch.get().getArgumentsAccess());
-        final Access[] taskAccess = taskMeta.getArgumentsAccess();
-        System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
-
-        if (TcHook.ENABLED) {
-            // TC, the Graal-free compiler (docs/compiler-replacement). Falls back to Graal below when
-            // TC reports a diagnostic, unless -Dtornado.compiler.fallback=false.
-            TornadoProfiler profiler = task.getProfiler();
-            // TC's own timers (Task-Compile-TC, Total-TC-Compilation-Time); a refused attempt counts too.
-            profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
-            var kernel = TcHook.compile(executable.getMethod(), executable.getArguments(), tcTarget(), executable.getBatchThreads(), taskMeta.getNumThreads(),
-                    (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId());
-            profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
-            profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
-            if (kernel.isPresent()) {
-                profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-                kernel.get().domain().ifPresent(taskMeta::setDomain);
-                // The runtime finds a task's atomics region through the compiled method, as for Graal.
-                taskMeta.setCompiledGraph(resolvedMethod);
-                var atomics = kernel.get().atomics();
-                if (!atomics.isEmpty()) {
-                    TornadoAtomicIntegerNode.globalAtomics.put(resolvedMethod, new ArrayList<>(atomics.initial()));
-                    if (!atomics.params().isEmpty()) {
-                        TornadoAtomicIntegerNode.globalAtomicsParameters.put(resolvedMethod, new HashMap<>(atomics.params()));
-                    }
-                }
-                var installed = deviceContext.installCode(executionPlanId, taskMeta, task.getId(), kernel.get().entryName(), kernel.get().source());
-                profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-                profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
-                reportCompileTimes(executable, "tc", profiler, taskMeta.getId());
-                return installed;
-            }
-        }
-
-        try {
-            CUDAProviders providers = (CUDAProviders) getBackend().getProviders();
-            TornadoProfiler profiler = task.getProfiler();
-            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            final CUDACompilationResult result = CUDACompiler.compileSketchForDevice(sketch.get(), executable, providers, getBackend(), executable.getProfiler());
-
-            // Update atomics buffer for inner methods that are not inlined
-            ResolvedJavaMethod[] methods = result.getMethods();
-            if (methods.length > 1) {
-                HashMap<Integer, Integer> mapping;
-                for (ResolvedJavaMethod m : methods) {
-                    if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(m)) {
-                        mapping = TornadoAtomicIntegerNode.globalAtomicsParameters.get(m);
-                        for (ResolvedJavaMethod mInternal : methods) {
-                            // RE-MAP position
-                            TornadoAtomicIntegerNode.globalAtomicsParameters.put(mInternal, mapping);
-                        }
-                    }
-                }
-            }
-
-            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
-
-            profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            // Compile the code
-            CUDAInstalledCode installedCode = deviceContext.installCode(executionPlanId, result);
-            installedCode.setDeviceLaunchTree(result.getDeviceLaunchTree());
-            profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
-            profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
-            reportCompileTimes(executable, "graal", profiler, taskMeta.getId());
-
-            return installedCode;
-        } catch (Exception e) {
-            logger.fatal("Unable to compile %s for device %s\n", task.getId(), getDeviceName());
-            logger.fatal("Exception occurred when compiling %s\n", ((CompilableTask) task).getMethod().getName());
-            if (TornadoOptions.RECOVER_BAILOUT) {
-                throw new TornadoBailoutRuntimeException("[Error during the Task Compilation]: " + e.getMessage());
-            } else {
-                throw e;
-            }
-        }
+        return TcKernels.compile(executable, tcTarget(), (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
     }
 
     private static final boolean REPORT_COMPILE_TIMES = Boolean.getBoolean("tornado.tc.compileTimes");
@@ -419,8 +309,8 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
 
     @Override
     public int[] checkAtomicsForTask(SchedulableTask task) {
-        if (TornadoAtomicIntegerNode.globalAtomics.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
-            ArrayList<Integer> values = TornadoAtomicIntegerNode.globalAtomics.get(task.meta().getCompiledResolvedJavaMethod());
+        if (TcKernels.ATOMICS.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
+            ArrayList<Integer> values = TcKernels.ATOMICS.get(task.meta().getCompiledResolvedJavaMethod());
             int[] atomicsArray = new int[values.size()];
             int j = 0;
             for (Integer i : values) {
@@ -436,8 +326,8 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
         if (value instanceof AtomicInteger ai) {
             Object compiledResolvedJavaMethod = task.meta().getCompiledResolvedJavaMethod();
-            if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(compiledResolvedJavaMethod)) {
-                HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(compiledResolvedJavaMethod);
+            if (TcKernels.ATOMIC_PARAMETERS.containsKey(compiledResolvedJavaMethod)) {
+                HashMap<Integer, Integer> values = TcKernels.ATOMIC_PARAMETERS.get(compiledResolvedJavaMethod);
                 int index = values.get(paramIndex);
                 array[index] = ai.get();
             }
@@ -458,8 +348,8 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
 
     @Override
     public int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex) {
-        if (TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
-            HashMap<Integer, Integer> values = TornadoAtomicIntegerNode.globalAtomicsParameters.get(task.meta().getCompiledResolvedJavaMethod());
+        if (TcKernels.ATOMIC_PARAMETERS.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
+            HashMap<Integer, Integer> values = TcKernels.ATOMIC_PARAMETERS.get(task.meta().getCompiledResolvedJavaMethod());
             return values.get(paramIndex);
         }
         return -1;
@@ -467,7 +357,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
 
     @Override
     public boolean checkAtomicsParametersForTask(SchedulableTask task) {
-        return TornadoAtomicIntegerNode.globalAtomicsParameters.containsKey(task.meta().getCompiledResolvedJavaMethod());
+        return TcKernels.ATOMIC_PARAMETERS.containsKey(task.meta().getCompiledResolvedJavaMethod());
     }
 
     @Override

@@ -12,7 +12,7 @@ Change the IntelliJ maximum memory to 2 GB or more (follow `these instructions <
 
 For IntelliJ to pick up the required TornadoVM dependencies from the `pom.xml` file, go to **View > Tool Windows > Maven**, and select the following profiles:
 
-- **graal-jdk-21**
+- **jdk21**
 - **cuda-backend**
 - **opencl-backend**
 
@@ -251,13 +251,12 @@ The output will differ depending on the backends you've built. For example, if y
 
    .. code:: bash
 
-      <path-to-TornadoVM-directory>/etc/dependencies/TornadoVM-graal-jdk-21/graalvm-community-openjdk-21.0.1+12.1/bin/java
-      -server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseCompressedClassPointers --enable-preview -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
+      <JAVA_HOME>/bin/java
+      -server --enable-preview -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
       -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado
-      -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel
-      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/common-exports
+      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/common-exports --enable-native-access=tornado.runtime
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/opencl-exports
-      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/cuda-exports --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common,tornado.drivers.opencl,tornado.drivers.opencl,tornado.drivers.cuda
+      @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/cuda-exports --add-modules jdk.unsupported,java.management,java.logging,jdk.jfr,java.naming,jdk.management,tornado.runtime,tornado.drivers.common,tornado.drivers.opencl,tornado.drivers.cuda
 
 Copy the flags starting from `-server` to the end.
 

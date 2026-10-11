@@ -28,18 +28,11 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * Declaring a multi-dimensional array (e.g. {@code int[][]}) INSIDE a kernel is not supported --
- * the lowering provider has no handling for the {@code NewMultiArray} node (distinct from the
- * SUPPORTED flattened {@code Matrix2DInt}-style off-heap types passed in from the host). Confirmed
- * empirically: it fails compilation with a raw {@code org.graalvm.compiler.debug.GraalError}
- * ("should not reach here: Node implementing Lowerable not handled: NewMultiArray") -- this
- * particular unhandled-node case escapes as Graal's own error rather than being wrapped in
- * TornadoVM's {@code TornadoInternalError} (unlike {@link DynamicArrayFail}, which IS wrapped).
- * GraalError lives in a JDK-internal module not exported to {@code tornado.unittests}, so this
- * asserts the common supertype, plain {@link Error}, instead of the concrete Graal type --
- * accurate either way since both extend {@link Error} rather than {@code RuntimeException},
- * meaning callers must catch broadly to recover from either. This pins down the restriction with
- * a regression test instead of leaving it undocumented-by-test.
+ * Declaring a multi-dimensional array (e.g. {@code int[][]}) INSIDE a kernel is not supported
+ * (distinct from the SUPPORTED flattened {@code Matrix2DInt}-style off-heap types passed in from the
+ * host). The compiler refuses the kernel with an {@link Error} (a {@code TornadoInternalError}), so this asserts
+ * {@link Error}: callers must catch broadly to recover. This pins down the restriction with a
+ * regression test instead of leaving it undocumented-by-test.
  * <p>
  * How to run?
  * </p>

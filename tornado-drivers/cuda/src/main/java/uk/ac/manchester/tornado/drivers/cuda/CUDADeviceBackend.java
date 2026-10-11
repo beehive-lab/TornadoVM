@@ -27,25 +27,17 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
 
-import java.util.function.Function;
-
-import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDABackend;
-
 /**
  * One CUDA device as the runtime uses it: its device context and the TornadoVM memory regions on
- * it. The Graal compiler backend for the device is built only when Graal compiles a kernel (never
- * under TC, the Graal-free compiler), from the same device context.
+ * it.
  */
 public final class CUDADeviceBackend {
 
     private final CUDADeviceContextInterface deviceContext;
-    private final Function<CUDADeviceContextInterface, CUDABackend> graalFactory;
-    private volatile CUDABackend graal;
     private volatile boolean initialised;
 
-    CUDADeviceBackend(CUDADeviceContextInterface deviceContext, Function<CUDADeviceContextInterface, CUDABackend> graalFactory) {
+    CUDADeviceBackend(CUDADeviceContextInterface deviceContext) {
         this.deviceContext = deviceContext;
-        this.graalFactory = graalFactory;
     }
 
     public CUDADeviceContextInterface getDeviceContext() {
@@ -65,15 +57,5 @@ public final class CUDADeviceBackend {
             deviceContext.getMemoryManager().allocateDeviceMemoryRegions();
         }
         initialised = true;
-    }
-
-    /** The Graal compiler backend of this device, built on first use. */
-    public synchronized CUDABackend graal() {
-        if (graal == null) {
-            init();
-            graal = graalFactory.apply(deviceContext);
-            graal.markInitialised();
-        }
-        return graal;
     }
 }

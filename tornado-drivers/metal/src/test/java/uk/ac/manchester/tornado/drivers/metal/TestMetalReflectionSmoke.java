@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
+import uk.ac.manchester.tornado.drivers.metal.MetalInstalledCode;
 
 public class TestMetalReflectionSmoke {
 

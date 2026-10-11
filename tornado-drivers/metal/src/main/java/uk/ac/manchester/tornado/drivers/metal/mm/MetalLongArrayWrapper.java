@@ -23,10 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.mm;
 
-import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.runtime.common.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
-import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
 
 public class MetalLongArrayWrapper extends MetalArrayWrapper<long[]> {
 
@@ -60,7 +59,7 @@ public class MetalLongArrayWrapper extends MetalArrayWrapper<long[]> {
 
     @Override
     public int getSizeOfType() {
-        return MetalKind.LONG.getSizeInBytes();
+        return Long.BYTES;
     }
 
 }

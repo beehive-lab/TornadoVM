@@ -28,8 +28,7 @@ Convenience targets: `make cuda` (= `--backend cuda`), `make metal` (= `metal,op
 - The built SDK lands in `dist/tornadovm-<version>-jdk21-dev-<variant>-<os>-<arch>/...`; `TORNADOVM_HOME` and the `bin/tornado*` launchers point into it.
 
 ### Build gotchas
-1. **Stale `graalJars/`** — switching between branch families that vendor Graal differently leaves incompatible jars in the git-ignored `graalJars/` dir. Symptom: the *first* module (`tornado-api`) fails with `error: cannot access module-info` (not a code or JDK error). Fix: `rm -rf graalJars` then rebuild — `bin/pull_graal_jars.py` re-fetches the correct set.
-2. **Stale `setvars.sh` `JAVA_HOME`** — an out-of-date `setvars.sh` can export the wrong JDK (e.g. JDK 27 → `invalid source release 21 with --enable-preview`). After sourcing, verify `java -version`; pin `JAVA_HOME` to a JDK 21 explicitly if it's wrong.
+1. **Stale `setvars.sh` `JAVA_HOME`** — an out-of-date `setvars.sh` can export the wrong JDK (e.g. JDK 27 → `invalid source release 21 with --enable-preview`). After sourcing, verify `java -version`; pin `JAVA_HOME` to a JDK 21 explicitly if it's wrong.
 
 ## Test
 

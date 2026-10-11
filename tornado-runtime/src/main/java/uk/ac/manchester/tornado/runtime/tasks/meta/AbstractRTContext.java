@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -98,7 +97,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     private TornadoProfiler profiler;
 
-    private ResolvedJavaMethod graph;
+    private Object graph;
     private boolean useGridScheduler;
     private final ConcurrentHashMap<TornadoVMBackendType, String> compilerOptionsPerBackend;
 
@@ -372,9 +371,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     @Override
     public void setCompiledGraph(Object graph) {
-        if (graph instanceof ResolvedJavaMethod) {
-            this.graph = (ResolvedJavaMethod) graph;
-        }
+        this.graph = graph;
     }
 
     @Override

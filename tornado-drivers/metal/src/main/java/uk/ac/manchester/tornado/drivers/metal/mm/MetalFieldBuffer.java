@@ -29,15 +29,11 @@ import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import sun.misc.Unsafe;
-
-import jdk.vm.ci.meta.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
@@ -55,7 +51,7 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
-import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalKind;
+import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -63,11 +59,6 @@ import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class MetalFieldBuffer implements XPUBuffer {
 
-    private static final long BYTES_OBJECT_REFERENCE_UNCOMPRESSED = 8;
-    private static final Unsafe UNSAFE = initUnsafe();
-
-    private final boolean areCoopsEnabled;
-    private final long bytesObjectReference;
     private final Field[] fields;
     private final FieldBuffer[] wrappedFields;
     private final Class<?> objectType;
@@ -86,8 +77,6 @@ public class MetalFieldBuffer implements XPUBuffer {
         this.deviceContext = device;
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
-        this.areCoopsEnabled = TornadoOptions.coopsUsed();
-        this.bytesObjectReference = areCoopsEnabled ? 4 : BYTES_OBJECT_REFERENCE_UNCOMPRESSED;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
@@ -128,35 +117,35 @@ public class MetalFieldBuffer implements XPUBuffer {
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.FLOAT.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Float.BYTES);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.CHAR.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Byte.BYTES);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.DOUBLE.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Double.BYTES);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.INT.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Integer.BYTES);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.SHORT.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.LONG.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Long.BYTES);
             } else if (type == HalfFloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.SHORT.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
             } else if (type == Int8Array.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((Int8Array) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, MetalKind.CHAR.getSizeInBytes());
+                wrappedField = new MetalMemorySegmentWrapper(size, device, 0, access, Byte.BYTES);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new MetalVectorWrapper(device, object, 0, access);
             } else if (!type.isPrimitive()) {
@@ -191,37 +180,14 @@ public class MetalFieldBuffer implements XPUBuffer {
         return false;
     }
 
-    private static Unsafe initUnsafe() {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return (Unsafe) f.get(null);
-        } catch (ReflectiveOperationException e) {
-            throw new InternalError("Unable to obtain sun.misc.Unsafe for object marshalling", e);
-        }
-    }
 
-    /**
-     * Object field offset from {@code Unsafe} — the JDK-neutral equivalent of
-     * {@code HotSpotResolvedJavaField.getOffset()} (identical value: the field's
-     * location in the object layout).
-     */
+
     private static int offsetOf(Field field) {
-        return (int) UNSAFE.objectFieldOffset(field);
+        return FieldLayout.of(field.getDeclaringClass()).offset(field);
     }
 
-    /** All non-static instance fields (optionally across the superclass chain), matching JVMCI's getInstanceFields. */
     private static Field[] gatherInstanceFields(Class<?> clazz, boolean includeSuperClasses) {
-        List<Field> list = new ArrayList<>();
-        for (Class<?> c = clazz; c != null; c = includeSuperClasses ? c.getSuperclass() : null) {
-            for (Field f : c.getDeclaredFields()) {
-                if (!Modifier.isStatic(f.getModifiers())) {
-                    f.setAccessible(true);
-                    list.add(f);
-                }
-            }
-        }
-        return list.toArray(new Field[0]);
+        return FieldLayout.of(clazz).fields(includeSuperClasses);
     }
 
     @Override
@@ -249,21 +215,14 @@ public class MetalFieldBuffer implements XPUBuffer {
         Class<?> fieldType = field.getType();
         if (fieldType.isPrimitive()) {
             try {
-                PrimitiveSerialiser.put(buffer, field.get(obj));
-            } catch (IllegalArgumentException | IllegalAccessException e) {
+                PrimitiveSerialiser.put(buffer, FieldLayout.get(field, obj));
+            } catch (IllegalArgumentException e) {
                 shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            if (areCoopsEnabled) {
-                // calculate the relative offset
-                long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
-                // Compress it by dividing by 8
-                int compressedOffset = (int) (relativeOffset / 8);
-                // Write compressed value
-                buffer.putInt(compressedOffset);
-            } else {
-                buffer.putLong(wrappedFields[index].getBufferOffset());
-            }
+            // A compressed reference: the field's copy relative to this object's, scaled (see FieldLayout).
+            long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
+            buffer.putInt((int) (relativeOffset / FieldLayout.REFERENCE_SCALE));
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -272,29 +231,27 @@ public class MetalFieldBuffer implements XPUBuffer {
     private void readFieldFromBuffer(int index, Field field, Object obj) {
         Class<?> fieldType = field.getType();
         if (fieldType.isPrimitive()) {
-            try {
-                if (fieldType == int.class) {
-                    field.setInt(obj, buffer.getInt());
-                } else if (fieldType == long.class) {
-                    field.setLong(obj, buffer.getLong());
-                } else if (fieldType == short.class) {
-                    field.setShort(obj, buffer.getShort());
-                } else if (fieldType == byte.class) {
-                    field.set(obj, buffer.get());
-                } else if (fieldType == float.class) {
-                    field.setFloat(obj, buffer.getFloat());
-                } else if (fieldType == double.class) {
-                    field.setDouble(obj, buffer.getDouble());
-                }
-            } catch (IllegalAccessException e) {
-                shouldNotReachHere("unable to read field: ", e.getMessage());
-            }
-        } else if (wrappedFields[index] != null) {
-            if (areCoopsEnabled) {
-                buffer.getInt();
+            Object value;
+            if (fieldType == int.class) {
+                value = buffer.getInt();
+            } else if (fieldType == long.class) {
+                value = buffer.getLong();
+            } else if (fieldType == short.class) {
+                value = buffer.getShort();
+            } else if (fieldType == byte.class) {
+                value = buffer.get();
+            } else if (fieldType == float.class) {
+                value = buffer.getFloat();
+            } else if (fieldType == double.class) {
+                value = buffer.getDouble();
+            } else if (fieldType == char.class) {
+                value = buffer.getChar();
             } else {
-                buffer.getLong();
+                value = buffer.get() != 0;
             }
+            FieldLayout.set(field, obj, value);
+        } else if (wrappedFields[index] != null) {
+            buffer.getInt();
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -331,10 +288,10 @@ public class MetalFieldBuffer implements XPUBuffer {
 
             for (int i = 0; i < fields.length; i++) {
                 Field f = fields[i];
-                f.setAccessible(true);
                 if (DEBUG) {
                     logger.trace("reading field: name=%s, offset=%d", f.getName(), offsetOf(f));
                 }
+                buffer.position(offsetOf(f));
                 readFieldFromBuffer(i, f, object);
             }
         }
@@ -479,14 +436,10 @@ public class MetalFieldBuffer implements XPUBuffer {
         long size = fieldsOffset;
         if (fields.length > 0) {
             Field field = fields[fields.length - 1];
-            JavaKind kind = JavaKind.fromJavaClass(field.getType());
-            size = offsetOf(field) + ((kind == JavaKind.Object) ? bytesObjectReference : kind.getByteCount());
+            size = offsetOf(field) + FieldLayout.sizeOf(field);
         }
-        // when coops are enabled, padding is required to ensure an 8-byte object alignment
-        if (areCoopsEnabled && (size % 8 != 0)) {
-            size = size + (8 - (size % 8));
-        }
-        return size;
+        // Objects are 8-byte aligned.
+        return (size + 7) & ~7L;
     }
 
     @Override
