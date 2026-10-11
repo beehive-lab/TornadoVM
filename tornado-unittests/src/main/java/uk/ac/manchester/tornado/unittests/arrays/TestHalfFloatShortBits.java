@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -197,6 +198,41 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
 
         for (int i = 0; i < out.getSize(); i++) {
             assertEquals("out[" + i + "]", 1.0f, out.get(i).getFloat32(), 0.0f);
+        }
+    }
+
+    /**
+     * Two halves packed in an int, decoded with {@link Float#float16ToFloat(short)}: the shape a
+     * kernel uses after a 16-byte copy of F16 weights into an int tile. The conversion has to
+     * reinterpret the bits; converting the integer's value turns 0x3C00 into 15360.0f.
+     */
+    public static void decodePackedHalves(KernelContext ctx, IntArray packed, FloatArray out) {
+        int i = ctx.globalIdx;
+        int bits = packed.get(i);
+        out.set(2 * i, Float.float16ToFloat((short) (bits & 0xFFFF)));
+        out.set(2 * i + 1, Float.float16ToFloat((short) (bits >>> 16)));
+    }
+
+    @Test
+    public void testFloat16ToFloatDecodesPackedBits() throws TornadoExecutionPlanException {
+        assumeCudaBackend();
+        IntArray packed = new IntArray(VALUES.length);
+        for (int i = 0; i < VALUES.length; i++) {
+            int lo = Float.floatToFloat16(VALUES[i]) & 0xFFFF;
+            int hi = Float.floatToFloat16(VALUES[VALUES.length - 1 - i]) & 0xFFFF;
+            packed.set(i, lo | (hi << 16));
+        }
+        FloatArray out = new FloatArray(2 * VALUES.length);
+
+        TaskGraph tg = new TaskGraph("ph") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, packed) //
+                .task("t0", TestHalfFloatShortBits::decodePackedHalves, new KernelContext(), packed, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        executeWithGrid(tg, "ph");
+
+        for (int i = 0; i < VALUES.length; i++) {
+            assertEquals("lo[" + i + "]", Float.float16ToFloat(Float.floatToFloat16(VALUES[i])), out.get(2 * i), 0.0f);
+            assertEquals("hi[" + i + "]", Float.float16ToFloat(Float.floatToFloat16(VALUES[VALUES.length - 1 - i])), out.get(2 * i + 1), 0.0f);
         }
     }
 
