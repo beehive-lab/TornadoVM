@@ -388,8 +388,9 @@ public final class Structurizer {
             return false;
         }
         if (opcode instanceof Opcode.PointerOffset) {
-            // Element addresses print as `a_data[i]`; the data pointer itself (base + constant) is one variable.
-            return !isDataPointer(inst);
+            // Element addresses print as `a_data[i]`; the data pointer itself (base + constant) is one
+            // variable, and so is a decoded object reference (its offset is read from memory).
+            return !isDataPointer(inst) && !isReference(inst);
         }
         if (opcode instanceof Opcode.Load && inst.users().size() == 1) {
             return loadCanMove(inst);
@@ -439,8 +440,19 @@ public final class Structurizer {
         // `array + header` of a global array. A constant offset into a local array (`r + 4` after
         // unrolling) is an element address instead: it prints as `r[1]`, which keeps the array
         // promotable to registers by nvcc (a byte-pointer cast of its address would not).
-        return inst.opcode() instanceof Opcode.PointerOffset && !(inst.operand(0) instanceof Inst base && (base.opcode() instanceof Opcode.PointerOffset || base.opcode() instanceof Opcode.Alloca))
+        return inst.opcode() instanceof Opcode.PointerOffset
+                && !(inst.operand(0) instanceof Inst base && ((base.opcode() instanceof Opcode.PointerOffset && !isReference(base)) || base.opcode() instanceof Opcode.Alloca))
                 && inst.operand(1) instanceof Inst offset && offset.opcode() instanceof Opcode.ConstInt;
+    }
+
+    /**
+     * An object reference decoded from a field of a device copy ({@code object + 8 * u32}): its offset
+     * depends on a load, so printing it at each use would re-read memory there.
+     */
+    static boolean isReference(Inst inst) {
+        return inst.opcode() instanceof Opcode.PointerOffset && inst.operand(1) instanceof Inst scaled && scaled.opcode() instanceof Opcode.Binary(var op) && op == Opcode.BinaryOp.MUL
+                && scaled.operand(0) instanceof Inst wide && wide.opcode() instanceof Opcode.Convert(var conv) && conv == Opcode.ConvertOp.ZEXT
+                && wide.operand(0) instanceof Inst compressed && compressed.opcode() instanceof Opcode.Load && compressed.type().equals(Type.I32);
     }
 
     /**

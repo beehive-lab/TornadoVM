@@ -66,6 +66,7 @@ public final class AbiLowering {
     private final java.util.Map<String, ObjectLayout> layouts;
     /** Class of each object-valued pointer (parameters and loaded references). */
     private final java.util.Map<Value, String> classes = new java.util.IdentityHashMap<>();
+    private final java.util.Map<FieldKey, Value> references = new java.util.HashMap<>();
 
     private AbiLowering(TargetCaps target, java.util.Map<String, ObjectLayout> layouts) {
         this.target = target;
@@ -184,21 +185,29 @@ public final class AbiLowering {
             diagnostics.add(new Diagnostic("TC-E3102", "field '" + field + "' is not in the device layout of " + layout.className(), printer.instText(inst), inst.loc()));
             return;
         }
-        var b = IrBuilder.insertingBefore(inst);
-        var address = b.pointerOffset(object, b.constInt(Type.I64, offset));
         Value result;
-        switch (inst.type()) {
-            case ArrayType(var element) -> {
-                result = reference(b, object, address);
-                elements.put(result, element);
+        if (inst.type() instanceof ArrayType || inst.type() instanceof Type.ObjectType) {
+            // Reference fields cannot be written on the device (lowerFieldStore): decode each one once,
+            // where its object is defined, instead of once per access (a 16-lane vector loop otherwise
+            // re-derives the storage base per lane and spills past the register budget).
+            var key = new FieldKey(object, field);
+            result = references.get(key);
+            if (result == null) {
+                var b = afterDefinition(object);
+                result = reference(b, object, b.pointerOffset(object, b.constInt(Type.I64, offset)));
+                switch (inst.type()) {
+                    case ArrayType(var element) -> elements.put(result, element);
+                    case Type.ObjectType o -> classes.put(result, layout.referenceClasses().getOrDefault(field, o.className()));
+                    default -> throw new IllegalStateException();
+                }
+                result.setName(inst.name().isEmpty() || inst.name().chars().allMatch(Character::isDigit) ? object.name() + "_" + field : inst.name());
+                references.put(key, result);
             }
-            case Type.ObjectType o -> {
-                result = reference(b, object, address);
-                classes.put(result, layout.referenceClasses().getOrDefault(field, o.className()));
-            }
-            default -> result = b.load(address, inst.type());
+        } else {
+            var b = IrBuilder.insertingBefore(inst);
+            result = b.load(b.pointerOffset(object, b.constInt(Type.I64, offset)), inst.type());
+            result.setName(inst.name().isEmpty() || inst.name().chars().allMatch(Character::isDigit) ? object.name() + "_" + field : inst.name());
         }
-        result.setName(inst.name().isEmpty() || inst.name().chars().allMatch(Character::isDigit) ? object.name() + "_" + field : inst.name());
         inst.replaceAllUsesWith(result);
         inst.erase();
     }
@@ -255,6 +264,28 @@ public final class AbiLowering {
         var b = IrBuilder.insertingBefore(inst);
         b.store(b.pointerOffset(object, b.constInt(Type.I64, offset)), value);
         inst.erase();
+    }
+
+    private record FieldKey(Value object, String field) {
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof FieldKey(var o, var f) && o == object && f.equals(field);
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(object) * 31 + field.hashCode();
+        }
+    }
+
+    /** A builder inserting right after {@code value}'s definition (at the top of its block for a block argument). */
+    private static IrBuilder afterDefinition(Value value) {
+        if (value instanceof Inst def) {
+            var insts = def.block().orElseThrow().insts();
+            return IrBuilder.insertingBefore(insts.get(insts.indexOf(def) + 1));
+        }
+        var block = ((uk.ac.manchester.tornado.tc.ir.BlockArg) value).block();
+        return IrBuilder.insertingBefore(block.insts().get(0));
     }
 
     private static Value reference(IrBuilder b, Value object, Value address) {
