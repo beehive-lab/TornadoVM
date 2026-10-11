@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.tc.opt.Canonicalizer;
 import uk.ac.manchester.tornado.tc.opt.CfgSimplify;
 import uk.ac.manchester.tornado.tc.opt.DeadCodeElimination;
 import uk.ac.manchester.tornado.tc.opt.Inliner;
+import uk.ac.manchester.tornado.tc.opt.FmaRematerialization;
 import uk.ac.manchester.tornado.tc.opt.MathPeepholes;
 import uk.ac.manchester.tornado.tc.opt.PassManager;
 import uk.ac.manchester.tornado.tc.lower.S;
@@ -329,6 +330,12 @@ public final class TcCompiler {
             new Step("optimize.post-abi", c -> true, c -> {
                 PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(c.options.verifyEach())
                         .observe((run, fn) -> TcTrace.current().ir("optimize.post-abi", run.pass(), run.changed(), run.nanos(), fn)).run(c.function);
+                return List.of();
+            }, Verifier.Stage.POST_ABI),
+            // Last: GVN would merge the copies again. NVRTC contracts a*b+c by default; the other
+            // dialects keep the shared product.
+            new Step("fma-remat", c -> c.options.mathOptimizations() && c.target.dialect() == TargetCaps.Dialect.CUDA && FmaRematerialization.applies(c.function), c -> {
+                new FmaRematerialization().run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI));
 

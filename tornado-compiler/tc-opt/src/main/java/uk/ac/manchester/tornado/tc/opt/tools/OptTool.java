@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.tc.opt.DeadCodeElimination;
 import uk.ac.manchester.tornado.tc.opt.FullLoopUnroll;
 import uk.ac.manchester.tornado.tc.opt.GlobalValueNumbering;
 import uk.ac.manchester.tornado.tc.opt.LoopInvariantCodeMotion;
+import uk.ac.manchester.tornado.tc.opt.FmaRematerialization;
 import uk.ac.manchester.tornado.tc.opt.MathPeepholes;
 import uk.ac.manchester.tornado.tc.opt.Pass;
 import uk.ac.manchester.tornado.tc.opt.PassManager;
@@ -124,6 +125,7 @@ public final class OptTool {
             case "licm" -> new LoopInvariantCodeMotion();
             case "unroll" -> new FullLoopUnroll();
             case "math-peepholes" -> new MathPeepholes();
+            case "fma-remat" -> new FmaRematerialization();
             default -> throw new IllegalArgumentException("unknown pass '" + name + "'");
         };
     }
