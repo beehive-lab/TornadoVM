@@ -49,8 +49,6 @@ import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
@@ -236,22 +234,6 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return TcKernels.compile(executable, tcTarget(), (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
     }
 
-    private static final boolean REPORT_COMPILE_TIMES = Boolean.getBoolean("tornado.tc.compileTimes");
-
-    /**
-     * With {@code -Dtornado.tc.compileTimes=true} (and the profiler enabled), one line per compiled task
-     * from the profiler's task timers: the compiler (Graal or TC) and the driver (NVRTC) time. Used to
-     * compare compile latency of the two compilers on the same tasks.
-     */
-    private static void reportCompileTimes(CompilableTask task, String compiler, TornadoProfiler profiler, String taskId) {
-        if (REPORT_COMPILE_TIMES) {
-            var timer = compiler.equals("tc") ? ProfilerType.TASK_COMPILE_TC_TIME : ProfilerType.TASK_COMPILE_GRAAL_TIME;
-            System.out.printf("[compile-times] compiler=%s method=%s.%s task=%s compilerNs=%d driverNs=%d%n", compiler, task.getMethod().getDeclaringClass().getSimpleName(),
-                    task.getMethod().getName(), taskId, profiler.getTaskTimer(timer, taskId), profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskId));
-        }
-    }
-
-    /** What TC needs to know about this device. */
     /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */
     private TargetCaps tcTarget() {
         if (!(getDeviceContext().getDevice() instanceof CUDADevice d)) {

@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.tile.TileContext;
@@ -69,8 +70,10 @@ class ReduceTaskGraph {
     private static final String SEQUENTIAL_TASK_REDUCE_NAME = "reduce_seq";
 
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
-    private static final int DEFAULT_BACKEND_INDEX = 0;
-    private static final int DEFAULT_DEVICE_INDEX = 0;
+    // The device a task runs on when nothing names one (tornado.backend / tornado.device): the
+    // generated reduction tasks must follow the same default as the tasks they finish.
+    private static final int DEFAULT_BACKEND_INDEX = TornadoOptions.DEFAULT_BACKEND_INDEX;
+    private static final int DEFAULT_DEVICE_INDEX = TornadoOptions.DEFAULT_DEVICE_INDEX;
     private static AtomicInteger counterName = new AtomicInteger(0);
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
     private final List<StreamingObject> inputModeObjects;
@@ -521,10 +524,32 @@ class ReduceTaskGraph {
         TornadoTaskGraph.performStreamOutThreads(DataTransferMode.EVERY_EXECUTION, rewrittenTaskGraph, streamOutObjects);
         ImmutableTaskGraph immutableTaskGraph = rewrittenTaskGraph.snapshot();
         this.executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        // The rewritten graph has a generated name, so the worker grids the user set for this graph's
+        // tasks (graph.task) are re-keyed to it; without them a KernelContext task falls back to a
+        // default launch domain.
+        GridScheduler grids = renamedGridScheduler(originalTaskGraph.getGridScheduler(), graphName, taskScheduleReduceName);
+        if (grids != null) {
+            executionPlan.withGridScheduler(grids);
+        }
 
         executeExpression();
         counterName.incrementAndGet();
         return rewrittenTaskGraph;
+    }
+
+    /** {@code original}'s worker grids for tasks of graph {@code from}, keyed for graph {@code to}; null if there are none. */
+    static GridScheduler renamedGridScheduler(GridScheduler original, String from, String to) {
+        if (original == null) {
+            return null;
+        }
+        GridScheduler renamed = new GridScheduler();
+        String prefix = from + ".";
+        for (String key : original.keySet()) {
+            if (key.startsWith(prefix)) {
+                renamed.addWorkerGrid(to + "." + key.substring(prefix.length()), original.get(key));
+            }
+        }
+        return renamed.keySet().isEmpty() ? null : renamed;
     }
 
     private boolean checkAllArgumentsPerTask() {

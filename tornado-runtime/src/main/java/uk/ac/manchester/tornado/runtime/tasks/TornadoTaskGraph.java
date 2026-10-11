@@ -467,6 +467,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         checkGridSchedulerNames();
     }
 
+    /** The grid scheduler set on this graph, or null: the reduction rewrite carries it over. */
+    GridScheduler getGridScheduler() {
+        return gridScheduler;
+    }
+
     @Override
     public long getCurrentDeviceMemoryUsage() {
         return executionContext.getCurrentDeviceMemoryUsage();

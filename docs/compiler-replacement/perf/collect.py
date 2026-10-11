@@ -18,7 +18,7 @@ for f in sorted(glob.glob(f"{RUN}/*.prof1.log")):
             rec.setdefault("methods", []).append(m.group(2)) if m.group(2) not in rec.get("methods", []) else None
             comp.append(int(m.group(3))); drv.append(int(m.group(4)))
             rec.setdefault("compiledBy", set()).add(m.group(1))
-        m = re.search(r"kernels compiled by TC: (\d+), fell back to Graal: (\d+)", t)
+        m = re.search(r"kernels compiled by TC: (\d+), (?:fell back to Graal|refused): (\d+)", t)
         if m: tcn, fb = int(m.group(1)), int(m.group(2))
     if mins:
         rec["kernelMinNs"] = statistics.median(mins); rec["kernelAvgNs"] = statistics.median(avgs)

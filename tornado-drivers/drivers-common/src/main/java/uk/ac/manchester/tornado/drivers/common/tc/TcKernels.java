@@ -42,6 +42,12 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  */
 public final class TcKernels {
 
+    /**
+     * With {@code -Dtornado.tc.compileTimes=true} (and the profiler on), one line per compiled task:
+     * TC's time and the driver's (NVRTC, clBuildProgram, Metal library) time.
+     */
+    private static final boolean REPORT_COMPILE_TIMES = Boolean.getBoolean("tornado.tc.compileTimes");
+
     /** The initial values of the {@code AtomicInteger}s a kernel creates, by kernel method. */
     public static final Map<Object, ArrayList<Integer>> ATOMICS = Collections.synchronizedMap(new HashMap<>());
 
@@ -83,6 +89,10 @@ public final class TcKernels {
         var installed = installer.install(kernel.entryName(), kernel.source());
         profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
         profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+        if (REPORT_COMPILE_TIMES) {
+            System.out.printf("[compile-times] compiler=tc method=%s.%s task=%s compilerNs=%d driverNs=%d%n", method.getDeclaringClass().getSimpleName(), method.getName(), taskMeta.getId(),
+                    profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()), profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
+        }
         return installed;
     }
 }
