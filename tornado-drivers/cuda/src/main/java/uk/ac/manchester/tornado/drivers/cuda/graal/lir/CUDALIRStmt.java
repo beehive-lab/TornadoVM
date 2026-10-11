@@ -513,10 +513,16 @@ public class CUDALIRStmt {
             asm.space();
             asm.assign();
             asm.space();
-            asm.emit("__half2float(");
-            // The half may be a lane of a half vector (an op such as v.x), not only a variable.
+            // A __half operand converts as is; it may be a lane of a half vector (an op such as v.x,
+            // whose kind is the vector's), not only a variable. An integer operand is the bit pattern
+            // of a half, as Float.float16ToFloat(short) passes it: __half2float(int) would convert
+            // the integer's value (15360 -> 15360.0f) instead of reinterpreting its bits
+            // (0x3C00 -> 1.0f).
+            PlatformKind operandKind = halfValue.getPlatformKind();
+            boolean bits = operandKind == CUDAKind.SHORT || operandKind == CUDAKind.USHORT || operandKind == CUDAKind.INT || operandKind == CUDAKind.UINT;
+            asm.emit(bits ? "__half2float(__ushort_as_half((unsigned short) (" : "__half2float(");
             asm.emitValueOrOp(crb, halfValue);
-            asm.emit(")");
+            asm.emit(bits ? ")))" : ")");
             asm.delimiter();
             asm.eol();
         }
