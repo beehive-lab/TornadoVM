@@ -244,6 +244,8 @@ public class CUDACommandQueue extends CommandQueue {
      * bracket a timed operation.
      */
     private static long recordEvent(CUDAHandles.Queue queue) throws CUDAException {
+        // An event can only be recorded on a stream of the context it was created in.
+        CUDADriverAPI.cuCtxSetCurrent(queue.context());
         long event = createEvent(eventFlags(), "cuEventCreate");
         // A marker alone is no work to wait for. With asynchronous graph launches it must not
         // re-arm the drain, or the flush after every execution waits for the graph just launched.

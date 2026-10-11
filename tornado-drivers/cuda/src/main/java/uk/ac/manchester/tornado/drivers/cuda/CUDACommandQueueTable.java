@@ -73,7 +73,7 @@ public class CUDACommandQueueTable {
                 long commandProperties = context.getProperties();
                 long commandQueuePtr;
                 try {
-                    commandQueuePtr = context.clCreateCommandQueue(context.getContextId(), device.getDevicePointer(), commandProperties);
+                    commandQueuePtr = context.clCreateCommandQueue(context.getContextId(device.getIndex()), device.getDevicePointer(), commandProperties);
                 } catch (CUDAException e) {
                     throw new TornadoRuntimeException(e);
                 }

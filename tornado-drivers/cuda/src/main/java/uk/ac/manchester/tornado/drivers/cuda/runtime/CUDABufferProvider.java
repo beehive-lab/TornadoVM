@@ -75,7 +75,7 @@ public class CUDABufferProvider extends TornadoBufferProvider {
     public synchronized long getOrAllocateBufferWithSize(long sizeInBytes, Access access) {
         long buffer = super.getOrAllocateBufferWithSize(sizeInBytes, access);
         if (access == Access.WRITE_ONLY) {
-            ((CUDADeviceContext) deviceContext).getPlatformContext().zeroBuffer(buffer, sizeInBytes);
+            ((CUDADeviceContext) deviceContext).getPlatformContext().zeroBuffer(((CUDADeviceContext) deviceContext).getDeviceIndex(), buffer, sizeInBytes);
         }
         return buffer;
     }
