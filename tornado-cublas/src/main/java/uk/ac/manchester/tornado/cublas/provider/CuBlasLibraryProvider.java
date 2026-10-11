@@ -49,11 +49,14 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CuBlasContext implements LibraryContext {
         private final long handle;
+        /** The stream the handle is bound to. */
+        private long stream;
         private long workspacePtr;
         private long workspaceBytes;
 
-        private CuBlasContext(long handle) {
+        private CuBlasContext(long handle, long stream) {
             this.handle = handle;
+            this.stream = stream;
         }
     }
 
@@ -117,7 +120,7 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] cublasCreate failed");
         }
         CuBlasNativeLib.checkStatus(CuBlasNativeLib.cublasSetStream(handle, stream), "cublasSetStream");
-        return new CuBlasContext(handle);
+        return new CuBlasContext(handle, stream);
     }
 
     /**
@@ -140,6 +143,15 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
         }
         CuBlasContext context = (CuBlasContext) invocation.getContext();
         CuBlasOptions options = (invocation.getTuning() instanceof CuBlasOptions cuBlasOptions) ? cuBlasOptions : null;
+
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            CuBlasNativeLib.checkStatus(CuBlasNativeLib.cublasSetStream(context.handle, stream), "cublasSetStream");
+            context.stream = stream;
+        }
 
         applyOptions(context, options);
         try {
