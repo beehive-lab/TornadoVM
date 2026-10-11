@@ -139,6 +139,11 @@ public class MetalBackend extends XPUBackend<MetalProviders> implements FrameMap
         return backEndInitialized;
     }
 
+    /** The device's memory regions are already allocated (by its {@code MetalDeviceBackend}). */
+    public void markInitialised() {
+        backEndInitialized = true;
+    }
+
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return new MetalReferenceMapBuilder();

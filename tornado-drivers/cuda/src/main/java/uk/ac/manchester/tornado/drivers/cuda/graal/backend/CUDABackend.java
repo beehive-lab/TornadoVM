@@ -140,6 +140,11 @@ public class CUDABackend extends XPUBackend<CUDAProviders> implements FrameMap.R
         return backEndInitialized;
     }
 
+    /** The device's memory regions are already allocated (by its {@code CUDADeviceBackend}). */
+    public void markInitialised() {
+        backEndInitialized = true;
+    }
+
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return new CUDAReferenceMapBuilder();

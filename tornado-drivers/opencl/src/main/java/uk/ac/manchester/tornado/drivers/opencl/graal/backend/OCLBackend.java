@@ -135,6 +135,11 @@ public class OCLBackend extends XPUBackend<OCLProviders> implements FrameMap.Ref
         return backEndInitialized;
     }
 
+    /** The device's memory regions are already allocated (by its {@code OCLDeviceBackend}). */
+    public void markInitialised() {
+        backEndInitialized = true;
+    }
+
     @Override
     public ReferenceMapBuilder newReferenceMapBuilder(int totalFrameSize) {
         return new OCLReferenceMapBuilder();

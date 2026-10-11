@@ -127,6 +127,66 @@ public final class TcCompiler {
         return compileJava(source, className, methodName, null, target, options, facts);
     }
 
+    /**
+     * How the kernel uses each parameter ({@link uk.ac.manchester.tornado.tc.tornado.AccessAnalysis}
+     * bit sets, Java parameter order), from its bytecode alone: frontend and inlining, no target and
+     * no argument facts. Empty when the frontend cannot translate the method.
+     */
+    public static java.util.Optional<int[]> access(Frontend.BytecodeSource source, String className, String methodName, String descriptor) {
+        return javaLevel(source, className, methodName, descriptor).map(uk.ac.manchester.tornado.tc.tornado.AccessAnalysis::run);
+    }
+
+    /** Whether the kernel writes a loop index as data (batched execution offsets it per batch). */
+    public static java.util.Optional<Boolean> writesLoopIndex(Frontend.BytecodeSource source, String className, String methodName, String descriptor) {
+        return javaLevel(source, className, methodName, descriptor).map(uk.ac.manchester.tornado.tc.tornado.AccessAnalysis::writesLoopIndex);
+    }
+
+    /** The reductions of a task with {@code @Reduce} parameters {@code reduceIndices}, for the runtime's task-graph rewrite. */
+    public static java.util.Optional<uk.ac.manchester.tornado.tc.tornado.ReductionLowering.Info> reductions(Frontend.BytecodeSource source, String className, String methodName, String descriptor,
+            List<Integer> reduceIndices) {
+        return javaLevel(source, className, methodName, descriptor).map(f -> {
+            // An instance method's receiver is parameter 0 of the function, not of the Java signature.
+            int receiver = f.params().size() - parameterCount(descriptor);
+            var info = uk.ac.manchester.tornado.tc.tornado.ReductionLowering.info(f, reduceIndices.stream().map(i -> i + receiver).toList());
+            return new uk.ac.manchester.tornado.tc.tornado.ReductionLowering.Info(info.operations(), info.boundParameter() < 0 ? -1 : info.boundParameter() - receiver, info.boundConstant());
+        });
+    }
+
+    private static int parameterCount(String descriptor) {
+        int count = 0;
+        for (int i = 1; descriptor.charAt(i) != ')'; i++) {
+            char c = descriptor.charAt(i);
+            while (c == '[') {
+                c = descriptor.charAt(++i);
+            }
+            if (c == 'L') {
+                i = descriptor.indexOf(';', i);
+            }
+            count++;
+        }
+        return count;
+    }
+
+    /** The kernel's IR after the frontend, inlining and local collections: the Java-level view the runtime asks about. */
+    private static java.util.Optional<Function> javaLevel(Frontend.BytecodeSource source, String className, String methodName, String descriptor) {
+        var translated = Frontend.translateWithCallees(source, className, methodName, descriptor);
+        if (translated.module().isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        var module = translated.module().get();
+        var function = module.functions().get(0);
+        if (module.functions().size() > 1 && !Inliner.run(module, function).isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        if (!LocalCollections.run(function).isEmpty()) {
+            return java.util.Optional.empty();
+        }
+        // Fold inlining's return blocks (a callee's result reaches its use through a block argument).
+        new uk.ac.manchester.tornado.tc.opt.Canonicalizer().run(function);
+        new uk.ac.manchester.tornado.tc.opt.CfgSimplify().run(function);
+        return java.util.Optional.of(function);
+    }
+
     /** As above for one overload: {@code descriptor} is the JVM method descriptor, {@code null} for the first match. */
     public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
             List<ValueSpecialisation.Fact> facts) {

@@ -123,7 +123,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public OCLDeviceContextInterface getDeviceContext() {
-        return getBackend().getDeviceContext();
+        return findDriver().getDeviceBackend(platformIndex, deviceIndex).getDeviceContext();
     }
 
     public OCLBackend getBackend() {
@@ -169,10 +169,8 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void ensureLoaded(long executionPlanId) {
-        final OCLBackend backend = getBackend();
-        if (!backend.isInitialised()) {
-            backend.init();
-        }
+        // The device's memory, without building the Graal backend.
+        findDriver().getDeviceBackend(platformIndex, deviceIndex).init();
     }
 
     @Override

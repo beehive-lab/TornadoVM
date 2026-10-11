@@ -123,7 +123,7 @@ public class VirtualCUDATornadoDevice implements TornadoXPUDevice {
 
     @Override
     public CUDADeviceContextInterface getDeviceContext() {
-        return getBackend().getDeviceContext();
+        return findDriver().getDeviceBackend(platformIndex, deviceIndex).getDeviceContext();
     }
 
     public CUDABackend getBackend() {
@@ -169,10 +169,8 @@ public class VirtualCUDATornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void ensureLoaded(long executionPlanId) {
-        final CUDABackend backend = getBackend();
-        if (!backend.isInitialised()) {
-            backend.init();
-        }
+        // The device's memory, without building the Graal backend.
+        findDriver().getDeviceBackend(platformIndex, deviceIndex).init();
     }
 
     @Override

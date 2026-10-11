@@ -76,6 +76,12 @@ public class CUDAHotSpotBackendFactory {
     private static final CUDAAddressLowering addressLowering = new CUDAAddressLowering();
 
     public static CUDABackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, CUDAContextInterface tornadoContext, CUDATargetDevice device) {
+        return createJITCompiler(options, config, tornadoContext, device, (CUDADeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex()));
+    }
+
+    /** As above, for a device context that already exists. */
+    public static CUDABackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, CUDAContextInterface tornadoContext, CUDATargetDevice device,
+            CUDADeviceContextInterface oclDeviceContextImpl) {
         MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
         ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
@@ -91,7 +97,6 @@ public class CUDAHotSpotBackendFactory {
         CUDAArchitecture arch = new CUDAArchitecture(wordKind, device.getByteOrder());
         CUDATargetDescription target = new CUDATargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         CUDACodeProvider codeCache = new CUDACodeProvider(target);
-        CUDADeviceContextInterface oclDeviceContextImpl = (CUDADeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
 
         CUDAProviders providers;
         CUDALoweringProvider lowerer;

@@ -84,6 +84,28 @@ public class TornadoSketcher {
     private static final OptimisticOptimizations optimisticOpts = OptimisticOptimizations.ALL;
     private static TornadoLogger logger = new TornadoLogger();
 
+    /**
+     * The sketch of {@code resolvedMethod} for the device, built now if the task graph did not build
+     * one (under TC it does not: a sketch is then needed only when a kernel falls back to Graal).
+     */
+    public static Sketch lookupOrBuild(ResolvedJavaMethod resolvedMethod, int driverIndex, int deviceIndex) {
+        boolean present;
+        var entries = cache.get(resolvedMethod);
+        if (entries == null) {
+            present = false;
+        } else {
+            synchronized (entries) {
+                present = entries.stream().anyMatch(e -> e.matchesDriverAndDevice(driverIndex, deviceIndex));
+            }
+        }
+        if (!present) {
+            var backend = uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
+            var suites = backend.getSuitesProvider();
+            new SketchRequest(resolvedMethod, backend.getProviders(), suites.getGraphBuilderSuite(), suites.getSketchTier(), driverIndex, deviceIndex).run();
+        }
+        return lookup(resolvedMethod, driverIndex, deviceIndex);
+    }
+
     public static Sketch lookup(ResolvedJavaMethod resolvedMethod, int driverIndex, int deviceIndex) {
         Sketch sketch = null;
         guarantee(cache.containsKey(resolvedMethod), "cache miss for: %s", resolvedMethod.getName());

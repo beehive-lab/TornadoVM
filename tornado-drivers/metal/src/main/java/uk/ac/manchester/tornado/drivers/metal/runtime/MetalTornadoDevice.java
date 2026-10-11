@@ -190,7 +190,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public MetalDeviceContextInterface getDeviceContext() {
-        return getBackend().getDeviceContext();
+        return driver.getDeviceBackend(platformIndex, deviceIndex).getDeviceContext();
     }
 
     public MetalBackend getBackend() {
@@ -237,10 +237,8 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void ensureLoaded(long executionPlanId) {
-        final MetalBackend backend = getBackend();
-        if (!backend.isInitialised()) {
-            backend.init();
-        }
+        // The device's memory, without building the Graal backend.
+        driver.getDeviceBackend(platformIndex, deviceIndex).init();
     }
 
     @Override
@@ -262,7 +260,8 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
         final MetalDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
         final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
+        // The Graal sketch is built only when Graal compiles (under TC, only for a fallback).
+        final java.util.function.Supplier<Sketch> sketch = () -> TornadoSketcher.lookupOrBuild(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
 
         // Return the code from the cache
         String kernelName = MetalUtils.makeMethodName(resolvedMethod);
@@ -272,7 +271,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
 
         // copy meta data into task
         final TaskDataContext taskMeta = executable.meta();
-        final Access[] sketchAccess = sketch.getArgumentsAccess();
+        final Access[] sketchAccess = uk.ac.manchester.tornado.runtime.common.KernelAccess.choose(executable.getMethod(), () -> sketch.get().getArgumentsAccess());
         final Access[] taskAccess = taskMeta.getArgumentsAccess();
         System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
 
@@ -310,7 +309,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
             MetalProviders providers = (MetalProviders) getBackend().getProviders();
             TornadoProfiler profiler = task.getProfiler();
             profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            final MetalCompilationResult result = MetalCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
+            final MetalCompilationResult result = MetalCompiler.compileSketchForDevice(sketch.get(), executable, providers, getBackend(), executable.getProfiler());
 
             // Update atomics buffer for inner methods that are not inlined
             ResolvedJavaMethod[] methods = result.getMethods();

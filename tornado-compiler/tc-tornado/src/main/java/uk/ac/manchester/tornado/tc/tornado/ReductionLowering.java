@@ -186,6 +186,54 @@ public final class ReductionLowering {
         return List.of();
     }
 
+    /**
+     * The reductions the {@code @Reduce} parameters perform ({@code add}, {@code mul}, {@code min},
+     * {@code max}; one per parameter a reduction is found for) and the {@code @Parallel} loop's bound: the parameter
+     * whose length it is (or -1) and a constant bound (or -1). What the runtime needs to rewrite a
+     * task graph with reductions, read from the IR before any lowering.
+     */
+    public record Info(List<String> operations, int boundParameter, long boundConstant) {
+    }
+
+    public static Info info(Function function, List<Integer> reduceIndices) {
+        var operations = new ArrayList<String>();
+        for (int index : reduceIndices) {
+            String op = null;
+            if (index < function.params().size()) {
+                var target = function.params().get(index);
+                for (var block : function.blocks()) {
+                    for (var inst : block.insts()) {
+                        if (op == null && inst.opcode() instanceof Opcode.ArrayStore && inst.operand(0) == target) {
+                            op = match(inst).map(Match::op).orElse(null);
+                        }
+                    }
+                }
+            }
+            if (op != null) {
+                operations.add(op); // as the runtime expects: one operation per reduction found
+            }
+        }
+        int boundParameter = -1;
+        long boundConstant = -1;
+        for (var header : function.blocks()) {
+            if (!header.hasAttribute("parallel") || header.terminator().isEmpty()) {
+                continue;
+            }
+            var branch = header.terminator().get();
+            if (branch.opcode() instanceof Opcode.CondBranch && branch.operand(0) instanceof Inst cmp && cmp.opcode() instanceof Opcode.ICmp) {
+                for (var operand : cmp.operands()) {
+                    if (operand instanceof Inst bound && bound.opcode() instanceof Opcode.ConstInt(var v)) {
+                        boundConstant = v;
+                    } else if (operand instanceof Inst bound && bound.opcode() instanceof Opcode.ArrayLength) {
+                        boundParameter = function.params().indexOf(bound.operand(0));
+                    }
+                }
+            }
+            break;
+        }
+        return new Info(List.copyOf(operations), boundParameter, boundConstant);
+    }
+
     private record Match(String op, Value value) {
     }
 

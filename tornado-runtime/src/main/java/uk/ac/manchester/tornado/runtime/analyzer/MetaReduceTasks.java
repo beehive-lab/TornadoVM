@@ -38,6 +38,7 @@ public class MetaReduceTasks {
     private HashMap<Integer, ArrayList<Integer>> reduceList;
     private HashMap<Integer, Integer> reduceSize;
     private StructuredGraph graph;
+    private java.util.List<ReduceCodeAnalysis.REDUCE_OPERATION> operations;
 
     MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
         reduceList = new HashMap<>();
@@ -53,6 +54,16 @@ public class MetaReduceTasks {
 
     public int getInputSize(int taskIndex) {
         return reduceSize.get(taskIndex);
+    }
+
+    /** From TC (no Graal graph): the operations, one per reduce parameter; null on the Graal path. */
+    MetaReduceTasks(int taskIndex, ArrayList<Integer> reduceIndexes, int inputSize, java.util.List<ReduceCodeAnalysis.REDUCE_OPERATION> operations) {
+        this(taskIndex, null, reduceIndexes, inputSize);
+        this.operations = operations;
+    }
+
+    public java.util.List<ReduceCodeAnalysis.REDUCE_OPERATION> getOperations() {
+        return operations;
     }
 
     public StructuredGraph getGraph() {

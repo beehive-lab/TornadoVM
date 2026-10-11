@@ -27,6 +27,7 @@ package uk.ac.manchester.tornado.runtime.analyzer;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +64,7 @@ import uk.ac.manchester.tornado.api.common.PrebuiltTaskPackage;
 import uk.ac.manchester.tornado.api.common.TaskPackage;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.graal.nodes.StoreAtomicIndexedNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoReduceAddNode;
@@ -402,6 +404,43 @@ public class ReduceCodeAnalysis {
             // kernel's arguments, so there is no lambda in slot 0 to resolve or to skip over.
             final boolean methodTask = taskMetadata.isMethodTask();
             final int argOffset = methodTask ? 0 : 1;
+
+            // TC (the Graal-free compiler) reads the reductions from the kernel's bytecode.
+            final Method kernel = methodTask ? taskMetadata.getMethod() : TaskUtils.resolveMethodHandle(taskMetadata.getTaskParameters()[0]);
+            ArrayList<Integer> tcIndices = new ArrayList<>();
+            Annotation[][] declared = kernel.getParameterAnnotations();
+            for (int paramIndex = 0; paramIndex < declared.length; paramIndex++) {
+                for (Annotation annotation : declared[paramIndex]) {
+                    if (annotation instanceof Reduce) {
+                        tcIndices.add(paramIndex);
+                    }
+                }
+            }
+            if (tcIndices.isEmpty()) {
+                taskIndex++;
+                continue;
+            }
+            var tc = KernelAccess.reductions(kernel, tcIndices);
+            Integer tcSize = null;
+            List<REDUCE_OPERATION> tcOperations = null;
+            if (tc.isPresent() && !tc.get().operations().isEmpty()) {
+                tcOperations = tc.get().operations().stream().map(ReduceCodeAnalysis::operationOf).toList();
+                if (tc.get().boundParameter() >= 0) {
+                    Object bound = taskPackages.get(taskIndex).getTaskParameters()[tc.get().boundParameter() + argOffset];
+                    tcSize = bound instanceof TornadoNativeArray array ? array.getSize() : bound.getClass().isArray() ? Array.getLength(bound) : null;
+                } else if (tc.get().boundConstant() >= 0) {
+                    tcSize = (int) tc.get().boundConstant();
+                }
+            }
+            if (KernelAccess.TC && !KernelAccess.CHECK && tcOperations != null) {
+                if (tcSize != null) {
+                    inputSize = tcSize;
+                }
+                tableMetaDataReduce.put(taskIndex, new MetaReduceTasks(taskIndex, tcIndices, inputSize, tcOperations));
+                taskIndex++;
+                continue;
+            }
+
             StructuredGraph graph = methodTask
                     ? CodeAnalysis.buildHighLevelGraalGraph(taskMetadata.getMethod())
                     : CodeAnalysis.buildHighLevelGraalGraph(taskMetadata.getTaskParameters()[0]);
@@ -442,7 +481,14 @@ public class ReduceCodeAnalysis {
                     }
                 }
             }
-            MetaReduceTasks reduceTasks = new MetaReduceTasks(taskIndex, graph, reduceIndices, inputSize);
+            if (KernelAccess.CHECK) {
+                var graalOperations = getReduceOperation(graph, reduceIndices);
+                if (!java.util.Objects.equals(graalOperations, tcOperations) || (tcSize != null && tcSize != inputSize)) {
+                    System.out.println("[TC-REDUCE] " + kernel.getDeclaringClass().getName() + "." + kernel.getName() + " graal=" + graalOperations + "/" + inputSize + " tc=" + tcOperations + "/" + tcSize);
+                }
+            }
+            MetaReduceTasks reduceTasks = KernelAccess.TC && tcOperations != null ? new MetaReduceTasks(taskIndex, reduceIndices, tcSize != null ? tcSize : inputSize, tcOperations)
+                    : new MetaReduceTasks(taskIndex, graph, reduceIndices, inputSize);
             tableMetaDataReduce.put(taskIndex, reduceTasks);
             taskIndex++;
         }
@@ -477,6 +523,16 @@ public class ReduceCodeAnalysis {
                 }
             }
         }
+    }
+
+    /** The operation TC names a reduction by. */
+    static REDUCE_OPERATION operationOf(String name) {
+        return switch (name) {
+            case "add" -> REDUCE_OPERATION.SUM;
+            case "mul" -> REDUCE_OPERATION.MUL;
+            case "min" -> REDUCE_OPERATION.MIN;
+            default -> REDUCE_OPERATION.MAX;
+        };
     }
 
     public enum REDUCE_OPERATION { //

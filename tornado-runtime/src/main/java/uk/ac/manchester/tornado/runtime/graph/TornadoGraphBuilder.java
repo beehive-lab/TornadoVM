@@ -268,9 +268,11 @@ public class TornadoGraphBuilder {
 
 
                 if (task instanceof CompilableTask compilableTask) {
-                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod((compilableTask.getMethod()));
-                    Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-                    accesses = sketch.getArgumentsAccess();
+                    final CompilableTask kernel = compilableTask;
+                    accesses = uk.ac.manchester.tornado.runtime.common.KernelAccess.choose(kernel.getMethod(), () -> {
+                        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(kernel.getMethod());
+                        return TornadoSketcher.lookupOrBuild(resolvedMethod, kernel.meta().getBackendIndex(), kernel.meta().getDeviceIndex()).getArgumentsAccess();
+                    });
                 } else {
                     accesses = task.getArgumentsAccess();
                 }

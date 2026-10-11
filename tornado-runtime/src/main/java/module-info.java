@@ -42,5 +42,6 @@ open module tornado.runtime {
     exports uk.ac.manchester.tornado.runtime.jvmci;
 
     uses TornadoBackendProvider;
+    uses uk.ac.manchester.tornado.runtime.common.KernelAccess.Provider;
     uses TornadoLibraryProvider;
 }

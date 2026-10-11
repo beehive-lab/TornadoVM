@@ -51,6 +51,7 @@ def suite_entries(bindir):
 
 def run_class(bindir, cls, params, methods, compiler, device, out):
     jvm = [f"-Dtornado.unittests.device={device}", f"-Dtornado.compiler={compiler}", "-Dtornado.compiler.fallback=false", "-Dtornado.tc.stats=true"] + params
+    jvm += os.environ.get("TC_DIFF_JVM", "").split()  # extra flags, e.g. -Dtornado.tc.checkAccess=true
     if cls not in NO_THREAD_INFO:
         jvm.append("-Dtornado.threadInfo=True")
     targets = [f"{cls}#{m}" for m in methods] or [cls]

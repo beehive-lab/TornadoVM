@@ -490,7 +490,8 @@ class ReduceTaskGraph {
                 MetaReduceTasks metaReduceTasks = tableReduce.get(taskNumber);
                 List<Integer> listOfReduceParameters = metaReduceTasks.getListOfReduceParameters(taskNumber);
                 StructuredGraph graph = metaReduceTasks.getGraph();
-                List<REDUCE_OPERATION> operations = ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
+                List<REDUCE_OPERATION> operations = metaReduceTasks.getOperations() != null ? metaReduceTasks.getOperations()
+                        : ReduceCodeAnalysis.getReduceOperation(graph, listOfReduceParameters);
 
                 if (operations.isEmpty()) {
                     // perform analysis with cached graph (after sketch phase)

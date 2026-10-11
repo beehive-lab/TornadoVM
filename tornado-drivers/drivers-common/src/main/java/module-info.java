@@ -21,4 +21,6 @@ open module tornado.drivers.common {
     exports uk.ac.manchester.tornado.drivers.common.power;
     exports uk.ac.manchester.tornado.drivers.common.ffm;
     exports uk.ac.manchester.tornado.drivers.common.tc;
+
+    provides uk.ac.manchester.tornado.runtime.common.KernelAccess.Provider with uk.ac.manchester.tornado.drivers.common.tc.TcAccessProvider;
 }

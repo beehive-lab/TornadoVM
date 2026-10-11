@@ -76,6 +76,12 @@ public class MetalHotSpotBackendFactory {
     private static final MetalAddressLowering addressLowering = new MetalAddressLowering();
 
     public static MetalBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, MetalContextInterface tornadoContext, MetalTargetDevice device) {
+        return createJITCompiler(options, config, tornadoContext, device, (MetalDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex()));
+    }
+
+    /** As above, for a device context that already exists. */
+    public static MetalBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, MetalContextInterface tornadoContext, MetalTargetDevice device,
+            MetalDeviceContextInterface metalDeviceContextImpl) {
         MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
         ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
 
@@ -91,7 +97,6 @@ public class MetalHotSpotBackendFactory {
         MetalArchitecture arch = new MetalArchitecture(wordKind, device.getByteOrder());
         MetalTargetDescription target = new MetalTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.isDeviceFP16Supported(), device.isDeviceInt64AtomicsSupported());
         MetalCodeProvider codeCache = new MetalCodeProvider(target);
-        MetalDeviceContextInterface metalDeviceContextImpl = (MetalDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
 
         MetalProviders providers;
         MetalLoweringProvider lowerer;

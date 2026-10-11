@@ -113,6 +113,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
+import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -833,13 +834,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void updateInner(int index, SchedulableTask task) {
-        int driverIndex = task.meta().getBackendIndex();
-        Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
-        TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
-
         executionContext.setTask(index, task);
 
-        if (task instanceof CompilableTask compilableTask) {
+        if (task instanceof CompilableTask compilableTask && KernelAccess.needsSketch(compilableTask.getMethod())) {
+            int driverIndex = task.meta().getBackendIndex();
+            Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
+            TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
             final TaskDataContext taskMetaData = compilableTask.meta();
             new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
@@ -851,13 +851,19 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void addInner(SchedulableTask task) {
-        int driverIndex = task.meta().getBackendIndex();
-        Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
-        TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
-
         int index = executionContext.addTask(task);
 
-        if (task instanceof CompilableTask compilableTask) {
+        if (task instanceof CompilableTask compilableTask && !KernelAccess.needsSketch(compilableTask.getMethod())) {
+            // TC: the accesses come from TC and no Graal sketch is built.
+            checkForMemorySegmentAsTaskParameter(compilableTask);
+            this.compilationGraph = null;
+            this.accesses = KernelAccess.choose(compilableTask.getMethod(), () -> {
+                throw new IllegalStateException("no sketch under TC");
+            });
+        } else if (task instanceof CompilableTask compilableTask) {
+            int driverIndex = task.meta().getBackendIndex();
+            Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
+            TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
             checkForMemorySegmentAsTaskParameter(compilableTask);
 
             final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
@@ -866,7 +872,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
             Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getBackendIndex(), compilableTask.meta().getDeviceIndex());
             this.compilationGraph = lookup.getGraph();
-            this.accesses = lookup.getArgumentsAccess();
+            this.accesses = KernelAccess.choose(compilableTask.getMethod(), lookup::getArgumentsAccess);
         } else {
             // Pre-built and library tasks carry explicit accesses (no sketch)
             this.accesses = task.getArgumentsAccess();

@@ -76,6 +76,12 @@ public class OCLHotSpotBackendFactory {
     private static final OCLAddressLowering addressLowering = new OCLAddressLowering();
 
     public static OCLBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, OCLContextInterface tornadoContext, OCLTargetDevice device) {
+        return createJITCompiler(options, config, tornadoContext, device, (OCLDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex()));
+    }
+
+    /** As above, for a device context that already exists. */
+    public static OCLBackend createJITCompiler(OptionValues options, TornadoVMConfigAccess config, OCLContextInterface tornadoContext, OCLTargetDevice device,
+            OCLDeviceContextInterface oclDeviceContextImpl) {
         // Type/constant metadata is served by the reflection + Unsafe providers on every JDK.
         MetaAccessProvider metaAccess = new TornadoMetaAccessProvider();
         ConstantReflectionProvider constantReflection = new TornadoConstantReflectionProvider(snippetReflection);
@@ -92,7 +98,6 @@ public class OCLHotSpotBackendFactory {
         OCLArchitecture arch = new OCLArchitecture(wordKind, device.getByteOrder());
         OCLTargetDescription target = new OCLTargetDescription(arch, device.isDeviceDoubleFPSupported(), device.getDeviceExtensions());
         OCLCodeProvider codeCache = new OCLCodeProvider(target);
-        OCLDeviceContextInterface oclDeviceContextImpl = (OCLDeviceContextInterface) tornadoContext.createDeviceContext(device.getIndex());
 
         OCLProviders providers;
         OCLLoweringProvider lowerer;
