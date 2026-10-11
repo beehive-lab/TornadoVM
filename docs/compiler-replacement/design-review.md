@@ -233,4 +233,20 @@ and its built-in table; the core composes declarations and pointers. Findings wh
 | Double-precision Java bodies of `TornadoMath.sinpi/cospi/toRadians` made float kernels need fp64 | bound as device built-ins |
 
 Result: parity on both OpenCL devices with only accepted differences ([parity-matrix.md](parity-matrix.md)).
-**Next: the Metal dialect** (build- and golden-tested only: no Apple device here).
+Then the Metal dialect, build- and golden-tested on Linux.
+
+## Metal dialect on the device (2026-10-11)
+
+On an Apple M3 Pro. Apple's compiler (`utils/metalc`, `newLibraryWithSource:` as the driver calls it)
+now checks the golden tests and the whole EmitSweep corpus (778/778); the clang mock (`mslcheck`)
+stays for Linux. Findings, now fixed:
+
+| Finding | Fix |
+|---|---|
+| MSL rejects `goto` and labels, which the mock accepted | `CDialect.gotos()`: without goto the emitter leaves loops through a jump flag (`tc_jump_`) and repeats the jump after each statement it breaks out of; a labelled block left from inside is printed `do { } while (false)` (the kernel is emitted again with that block wrapped). CUDA and OpenCL output unchanged |
+| Fast math, Metal's default, assumes no NaN, so `x != x` folds to false (`Math.signum(NaN)` returned 1.0) | `CDialect.fastMath()`: NaN tests and unordered comparisons spelled with `isnan` |
+| `thread_elements()` of `simdgroup_float8x8` is the whole 64-float storage on this SDK, not the lane's two floats, so a fragment cannot be a vector value | `Matrix8x8Float` stays an object type (`ApiTypes.isDeviceValue`, allowed after ABI lowering); `MetalDialect` names it `simdgroup_float8x8` |
+| fp64 refusals failed tests that Graal marks unsupported | TC-E4012 raises `TornadoDeviceFP64NotSupported` (all backends) |
+| CUDA lit files without `REQUIRES: nvcc` broke the build on a machine without nvcc | `Lit` skips a RUN line whose tool this machine lacks (`nvcc-ptx`, `clbuild`, `mslcheck`, `metalc`); the file's FileCheck lines still run, so `REQUIRES:` was dropped |
+
+Result: parity on Metal with only accepted differences ([parity-matrix.md](parity-matrix.md)).

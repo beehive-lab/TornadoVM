@@ -32,8 +32,8 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -132,7 +132,8 @@ public final class TcHook {
                 long upper = reduction && d.dim() == 0 && numThreads > 0 ? d.offset() + numThreads : d.upper();
                 // The runtime's launch domains are int: a wider one would wrap, so the kernel goes to Graal.
                 if (d.offset() != (int) d.offset() || d.step() != (int) d.step() || upper != (int) upper) {
-                    return reject(name, new Diagnostic("TC-E3209", "the launch domain of dimension " + d.dim() + " (" + d.offset() + " to " + upper + ") does not fit the runtime's int domains", "", Loc.UNKNOWN));
+                    var why = "the launch domain of dimension " + d.dim() + " (" + d.offset() + " to " + upper + ") does not fit the runtime's int domains";
+                    return reject(name, new Diagnostic("TC-E3209", why, "", Loc.UNKNOWN));
                 }
                 tree.set(d.dim(), new IntDomain((int) d.offset(), (int) d.step(), (int) upper));
             }
@@ -181,6 +182,10 @@ public final class TcHook {
     /** The TornadoVM exception for a diagnostic, matching what the Graal path throws for the same kind of kernel. */
     static Throwable exception(String name, Diagnostic d, ErrorCodes.Category category) {
         var text = message(name, d);
+        if (d.code().equals("TC-E4012")) {
+            // A device without fp64 (Metal; OpenCL without cl_khr_fp64): what the Graal FP64 phases throw.
+            return new TornadoDeviceFP64NotSupported(text);
+        }
         return switch (category) {
             // TornadoInternalError formats its message: pass the text as an argument, not as the format.
             case INTERNAL -> new TornadoInternalError("%s", "TC internal error (please report with the kernel): " + text);

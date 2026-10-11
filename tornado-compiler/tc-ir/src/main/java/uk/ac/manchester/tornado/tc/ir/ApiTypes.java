@@ -37,6 +37,13 @@ public final class ApiTypes {
     public static final Type.ObjectType TILE = new Type.ObjectType(API + "tile.Tile");
     public static final Type.ObjectType TENSOR_VIEW = new Type.ObjectType(API + "tile.TensorView");
     public static final Type.ObjectType PARTITION_VIEW = new Type.ObjectType(API + "tile.PartitionView");
+    /** An Apple simdgroup matrix fragment: a value of the dialect's own type (MSL simdgroup_float8x8). */
+    public static final Type.ObjectType MATRIX_8X8_FLOAT = new Type.ObjectType(API + "types.matrix.Matrix8x8Float");
+    /** Object types that stay values on the device (the dialect names their type), not Java objects. */
+    public static boolean isDeviceValue(Type type) {
+        return type.equals(MATRIX_8X8_FLOAT);
+    }
+
     public static final Type.ObjectType DEVICE_KERNEL = new Type.ObjectType(API + "DeviceKernel");
     public static final Type.ObjectType ATOMIC_INTEGER = new Type.ObjectType("java.util.concurrent.atomic.AtomicInteger");
     public static final Type.ObjectType STRING = new Type.ObjectType("java.lang.String");

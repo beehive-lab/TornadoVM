@@ -95,6 +95,8 @@ public final class IntrinsicRegistry {
         add("tornado.simd.", EnumSet.of(Effect.CONVERGENT), "warp (SIMD-group) operations");
         add("tornado.mma.store", EnumSet.of(Effect.CONVERGENT, Effect.WRITES), "stores a tensor-core result fragment");
         add("tornado.mma.", EnumSet.of(Effect.CONVERGENT, Effect.READS), "tensor-core fragments and multiply-accumulate (warp-collective)");
+        add("tornado.simdgroup_matrix.store", EnumSet.of(Effect.CONVERGENT, Effect.WRITES), "stores an Apple simdgroup-matrix fragment");
+        add("tornado.simdgroup_matrix.", EnumSet.of(Effect.CONVERGENT, Effect.READS), "Apple simdgroup-matrix fragments and multiply-accumulate (SIMD-group collective)");
         // Atomics and other effects.
         add("tornado.atomic.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "atomic read-modify-write on memory");
         add("tornado.atomic_int.", EnumSet.of(Effect.SIDE_EFFECT, Effect.READS, Effect.WRITES), "AtomicInteger counter in the atomics region");

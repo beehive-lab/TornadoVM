@@ -1,5 +1,10 @@
 # TC on Metal: hand-over for the Mac
 
+**Status (2026-10-11, Apple M3 Pro): done.** TC on Metal passes every test Graal on Metal passes,
+with fallback off, except two accepted differences; jitLLM output is token-identical. See
+[Results on the Mac](#results-on-the-mac) and the Metal section of
+[parity-matrix.md](docs/compiler-replacement/parity-matrix.md).
+
 This file is for continuing the TC Metal backend on a Mac with an Apple-silicon GPU. Everything up to
 running on the device was done and checked on Linux (2026-10-11). This lists:
 - what exists;
@@ -21,9 +26,10 @@ is the third dialect on the same C core.
 | Dialect hooks | `CDialect.kernelParameter`, `trailingKernelParameters`, `printf()` | Done. Metal's `[[buffer(n)]]` parameters and system values |
 | Target caps | `TargetCaps.METAL_APPLE` (headless), `MetalTornadoDevice.tcTarget()` (runtime) | Done. No fp64, fp16, SIMD 32 |
 | Runtime hook | `MetalTornadoDevice.compileTask` | Written like the OpenCL hook; **compiles on Linux, never run** |
-| Golden tests | `tc-codegen/src/test/lit/Metal/*.tcir` (8 files) | Pass. Each also runs `mslcheck` |
+| Golden tests | `tc-codegen/src/test/lit/Metal/*.tcir` (10 files) | Pass. Each also runs `mslcheck`, and `metalc` on a Mac |
 | Whole-suite sweep | `tc-runtime/.../tools/EmitSweep` | 1338 unit-test kernels → 770 Metal sources |
-| Offline MSL check | `tornado-compiler/utils/mslcheck/` | clang plus a mock `metal_stdlib`: **770/770 pass** |
+| Offline MSL check | `tornado-compiler/utils/mslcheck/` | clang plus a mock `metal_stdlib`: **770/770 pass** on Linux |
+| Apple's compiler | `tornado-compiler/utils/metalc/` (build line in `metalc.m`) | `newLibraryWithSource:` on the GPU, as the driver compiles: **778/778** |
 | Visualiser | `tornado --tcirviz`, Metal target | Shows every stage and the emitted MSL |
 
 ### The kernel ABI (must match `MetalInstalledCode`)
@@ -127,3 +133,39 @@ tornado --devices           # the Apple GPU under the Metal driver, e.g. 0:0
 - Plan and gates: `docs/compiler-replacement/plan.md` and `checkpoints.md`.
 - CUDA/OpenCL precedent for every piece above: `CudaDialect` and `OpenClDialect`, plus the TcHook blocks in `CUDATornadoDevice` and `OCLTornadoDevice`.
 - Debugging a kernel: `-Dtornado.tc.dump=all -Dtornado.tc.dumpDir=DIR`, or `tornado --tcirviz` with the Metal target. That shows each stage and pass with links back to the Java line.
+
+## Results on the Mac
+
+Apple M3 Pro, macOS 26.6, JDK 21.0.2, `make BACKEND=metal`, device 0:0.
+
+1. **Apple's compiler on the corpus**: 778/778 with `utils/metalc` after one fix (MSL has no
+   `goto`). Xcode is not needed: `metalc` uses the Metal framework's runtime compiler, the call the
+   driver makes. `LitTest` runs it on `lit/Metal/*.tcir` when `utils/metalc/metalc` is built.
+2. **Smoke test**: `foundation.TestIntegers` 7/7 under TC with fallback off; arguments landed in
+   the right buffers first time.
+3. **Differential runs**: `metal1` Graal 942 / TC 921 → `metal3` Graal 942 / TC 941 (TC better on
+   one test, two accepted differences). Fixes in between: goto-free control flow, fp64 refusals as
+   `TornadoDeviceFP64NotSupported`, simdgroup matrices, dp4a, 64-bit atomic add, NaN tests under
+   fast math. Details in parity-matrix.md.
+4. **jitLLM**: Greedy output token-identical to Graal on Metal for Llama-3.2-1B-Instruct F16 (181 kernels by TC) and Qwen3-1.7B F16 (313 kernels), fallback off, `--fp32-kv-cache` (jitLLM has no FP16 key/value path on Metal). Bench (`jitllm bench --pp 128,512 --tg 64`) in progress; to be recorded here.
+
+Answers to the open questions:
+
+| Question | Answer |
+|---|---|
+| Fast math | On (the driver passes no `MTLCompileOptions`). It folds `x != x`; TC now spells NaN tests with `isnan`, which fast math keeps. `TestMath` and `TestTornadoMathCollection` match Graal |
+| Threadgroup memory | Declared `threadgroup T x[N]` with slot 2 unbound works: reductions and `kernelcontext` local-memory tests match Graal |
+| `atomic_fetch_min/max` on `threadgroup` | Compiles on the M3 (`TestAtomicRmw` kernels in the sweep); the tests themselves skip Metal under both compilers |
+| Vectors wider than 4 lanes | `vectortypes` matches Graal (the same 2 tests unsupported under both) |
+| `double` | Both compilers report the fp64 tests unsupported |
+| `Debug.printf` | Dropped with a comment under both; `TestHello` matches Graal |
+| `dp4a`, simdgroup matrices | Implemented (helpers; `simdgroup_float8x8` values). `simd_ballot` and tensor-core MMA: no Graal test passes with them on Metal |
+| Argument sizes | `TestShorts` and `TestSignedBytes` match Graal |
+
+Notes for whoever continues:
+- `xcrun metal` needs full Xcode with its licence accepted (and, on Xcode 26+, the Metal
+  toolchain component); `metalc` avoids both.
+- On macOS, `mslcheck` uses Apple clang; 7 sweep files with `half2` across address spaces fail the
+  mock header only (Apple's compiler accepts them).
+- `tc-diff.py` launch-configuration differences in the reduction classes come from JUnit's method
+  order, not from the compilers.

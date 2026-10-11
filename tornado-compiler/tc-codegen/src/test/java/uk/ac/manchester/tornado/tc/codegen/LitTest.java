@@ -39,9 +39,11 @@ import uk.ac.manchester.tornado.tc.check.Lit;
 import uk.ac.manchester.tornado.tc.codegen.tools.EmitTool;
 
 /**
- * Runs every {@code .tcir} file under {@code src/test/lit}. When {@code nvcc} is available, tests
- * marked {@code REQUIRES: nvcc} also compile the emitted CUDA to PTX for sm_89; when
- * {@code utils/clbuild/clbuild} is built, OpenCL tests are built with clBuildProgram on the GPUs.
+ * Runs every {@code .tcir} file under {@code src/test/lit}. When {@code nvcc} is available, CUDA tests
+ * also compile the emitted CUDA to PTX for sm_89; when {@code utils/clbuild/clbuild} is built, OpenCL
+ * tests are built with clBuildProgram on the GPUs; when {@code utils/metalc/metalc} is built (on a Mac),
+ * Metal tests are compiled by the Metal framework on the GPU. A RUN line naming one of these tools is
+ * skipped on a machine without it.
  */
 @RunWith(Parameterized.class)
 public class LitTest {
@@ -73,7 +75,15 @@ public class LitTest {
             features.add("mslcheck");
             tools.put("mslcheck", ExternalTool.of(".metal", List.of("env", "CLANG=" + clang.get(), mslcheck.toAbsolutePath().toString(), "%in")));
         }
-        LIT = new Lit(tools, features);
+        // utils/metalc (see metalc.m for the build line): newLibraryWithSource on the Mac's GPU, as the driver compiles.
+        var metalc = Path.of("..", "utils", "metalc", "metalc");
+        if (java.nio.file.Files.isExecutable(metalc)) {
+            features.add("metal");
+            tools.put("metalc", ExternalTool.of(".metal", List.of(metalc.toAbsolutePath().toString(), "%in")));
+        }
+        var absent = new HashSet<>(List.of("nvcc-ptx", "clbuild", "mslcheck", "metalc"));
+        absent.removeAll(tools.keySet());
+        LIT = new Lit(tools, features, absent);
     }
 
     @Parameters(name = "{0}")

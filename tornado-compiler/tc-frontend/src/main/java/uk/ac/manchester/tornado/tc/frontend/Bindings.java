@@ -316,6 +316,16 @@ final class Bindings {
         }
         METHODS.put(KERNEL_CONTEXT + ".mma([" + half + "[" + half + "[FLuk/ac/manchester/tornado/api/enums/MMAShape;)[F", new Intrinsic("tornado.mma.m16n8k16", vecC));
         METHODS.put(KERNEL_CONTEXT + ".mmaStore([FL" + ARRAYS + "FloatArray;III)V", new Intrinsic("tornado.mma.store", Type.VOID));
+        // Apple simdgroup matrices: a fragment is an opaque value (MSL simdgroup_float8x8) held by the
+        // whole SIMD group. matrixMultiply8x8 is Java over these primitives.
+        var matrix8x8 = "Luk/ac/manchester/tornado/api/types/matrix/Matrix8x8Float;";
+        var fragment8x8 = ApiTypes.MATRIX_8X8_FLOAT;
+        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixZero()" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.zero", fragment8x8));
+        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixLoad(L" + ARRAYS + "FloatArray;II)" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.load", fragment8x8));
+        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixLoad([FII)" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.load_local", fragment8x8));
+        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixMultiplyAccumulate(" + matrix8x8 + matrix8x8 + matrix8x8 + ")" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.mma", fragment8x8));
+        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixStore(" + matrix8x8 + "L" + ARRAYS + "FloatArray;II)V", new Intrinsic("tornado.simdgroup_matrix.store", Type.VOID));
+        METHODS.put(KERNEL_CONTEXT + ".matrixMultiply8x8(L" + ARRAYS + "FloatArray;IIL" + ARRAYS + "FloatArray;IIL" + ARRAYS + "FloatArray;III)V", new InlineJava());
         var vecI = new Type.VectorType(Type.I32, 4);
         METHODS.put(KERNEL_CONTEXT + ".mmaFragmentInt(I)[I", new Intrinsic("tornado.mma.fragment_int", vecI));
         METHODS.put(KERNEL_CONTEXT + ".mmaLoadAInt8([II)[B", new Intrinsic("tornado.mma.load_a_s8", vecI));

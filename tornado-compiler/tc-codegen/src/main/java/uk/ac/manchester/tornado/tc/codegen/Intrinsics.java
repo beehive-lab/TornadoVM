@@ -30,7 +30,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
 
 /**
  * The intrinsic registry: one row per TC intrinsic, with a source template per dialect and, where
- * the spelling depends on it, per result type. Templates use {@code $0}, {@code $1}, … for operands.
+ * the spelling depends on it, per result type. Templates use {@code $0}, {@code $1}, ... for operands.
  * Spellings come from the vendor specifications (CUDA C++ Programming Guide, OpenCL C 3.0, Metal
  * Shading Language Specification), never from another compiler's tables. A template may name a
  * Java-semantics helper from {@link Helpers}; the emitter then adds that helper to the preamble.
@@ -116,7 +116,8 @@ public final class Intrinsics {
         cudaTyped("tornado.atomic.min", "i32", "atomicMin($&0, $1)");
         cudaTyped("tornado.atomic.max", "i32", "atomicMax($&0, $1)");
         // cp.async (sm_80+) of a 4- or 16-byte slot into a shared int[]; the source index counts elements of elem_bytes each.
-        TABLE.put(new Key("tornado.async_copy", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_{bytes}((int *) $0 + $1, (const char *) $2 + (long long) $3 * {elem_bytes})", "tc_cp_async_{bytes}"));
+        TABLE.put(new Key("tornado.async_copy", Dialect.CUDA, ""),
+                Spelling.withHelper("tc_cp_async_{bytes}((int *) $0 + $1, (const char *) $2 + (long long) $3 * {elem_bytes})", "tc_cp_async_{bytes}"));
         TABLE.put(new Key("tornado.async_copy.commit", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_commit()", "tc_cp_async_commit"));
         TABLE.put(new Key("tornado.async_copy.wait", Dialect.CUDA, ""), Spelling.withHelper("tc_cp_async_wait($0)", "tc_cp_async_wait"));
         // DP4A (sm_61+): operands are the int8 data pointers (+ byte offsets) or packed words.
@@ -246,6 +247,16 @@ public final class Intrinsics {
             TABLE.put(new Key("tornado.atomic." + op, Dialect.METAL, "i32"), Spelling.withHelper("tc_atomic_" + op + "($&0, $1" + (op.equals("cas") ? ", $2" : "") + ")", "tc_atomic_" + op + "_i32"));
         }
         TABLE.put(new Key("tornado.atomic.add", Dialect.METAL, "f32"), Spelling.withHelper("tc_atomic_add($&0, $1)", "tc_atomic_add_f32"));
+        TABLE.put(new Key("tornado.atomic.add", Dialect.METAL, "i64"), Spelling.withHelper("tc_atomic_add($&0, $1)", "tc_atomic_add_i64"));
+        // QuantizationUtils.dp4a: MSL has no dp4a instruction; four int8 products in a helper.
+        TABLE.put(new Key("tornado.dp4a", Dialect.METAL, ""), Spelling.withHelper("tc_dp4a($0, $1, $2, $3, $4)", "tc_dp4a"));
+        TABLE.put(new Key("tornado.dp4a.packed", Dialect.METAL, ""), Spelling.withHelper("tc_dp4a_packed($0, $1, $2)", "tc_dp4a_packed"));
+        // simdgroup_float8x8 fragments (Matrix8x8Float values).
+        metal("tornado.simdgroup_matrix.zero", "make_filled_simdgroup_matrix<float, 8, 8>(0.0f)");
+        TABLE.put(new Key("tornado.simdgroup_matrix.load", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load((device const float *) ($0), $1, $2)", "tc_simdgroup_matrix"));
+        TABLE.put(new Key("tornado.simdgroup_matrix.load_local", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load($0, $1, $2)", "tc_simdgroup_matrix"));
+        TABLE.put(new Key("tornado.simdgroup_matrix.mma", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_mma($0, $1, $2)", "tc_simdgroup_matrix"));
+        TABLE.put(new Key("tornado.simdgroup_matrix.store", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_store($0, (device float *) ($1), $2, $3)", "tc_simdgroup_matrix"));
         metal("tornado.barrier.local", "threadgroup_barrier(mem_flags::mem_threadgroup)");
         metal("tornado.barrier.global", "threadgroup_barrier(mem_flags::mem_device)");
         // SIMD-group (warp) functions.

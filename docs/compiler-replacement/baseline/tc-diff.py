@@ -10,7 +10,7 @@ pass/fail status, and per task the launch configuration (dims, global and local 
   tc-diff.py diff --out DIR          # compare existing logs only
 Generated text is not compared: the two compilers print different code by design.
 """
-import argparse, collections, json, os, re, subprocess, sys, time
+import argparse, collections, json, os, re, signal, subprocess, sys, time
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 HOME = os.path.expanduser("~")
@@ -58,8 +58,15 @@ def run_class(bindir, cls, params, methods, compiler, device, out):
     with open(log, "w") as f:
         for t in targets:
             f.write(f'tornado-test --params "{t}"\n'); f.flush()
-            cmd = ["bash", "-c", f'cd {REPO} && source setvars.sh >/dev/null && timeout 1800 tornado-test --verbose -J"{" ".join(jvm)}" {t}']
-            subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+            cmd = ["bash", "-c", f'cd {REPO} && source setvars.sh >/dev/null && tornado-test --verbose -J"{" ".join(jvm)}" {t}']
+            # A 30-minute limit, kept here rather than with coreutils timeout (absent on macOS).
+            p = subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, start_new_session=True)
+            try:
+                p.wait(timeout=1800)
+            except subprocess.TimeoutExpired:
+                os.killpg(p.pid, signal.SIGKILL)
+                p.wait()
+                f.write("tc-diff: timed out after 1800 s\n")
     return log
 
 

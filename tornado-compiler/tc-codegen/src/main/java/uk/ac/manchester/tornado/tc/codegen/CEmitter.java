@@ -53,6 +53,13 @@ import uk.ac.manchester.tornado.tc.lower.S;
  * loop whose body is a single test-and-exit becomes {@code while}. All locals are declared at the top
  * of the function, so a {@code goto} never skips an initialisation (required by CUDA C++).</p>
  *
+ * <p>A dialect without {@code goto} (MSL) gets the same jumps through a flag: the jump sets
+ * a flag ({@code tc_jump_}) to its number and breaks out of the innermost loop or switch, and after that
+ * statement {@code if (tc_jump_ == k)} repeats the jump from there, until it is a plain {@code break}
+ * or {@code continue} (which clears the flag). A labelled block that must be left from inside it
+ * becomes {@code do { ... } while (false)}; the kernel is then emitted again with that block
+ * wrapped.</p>
+ *
  * <p>Java semantics: shift counts are masked, {@code >>>} shifts an unsigned value, float-to-integer
  * conversions saturate (the dialect names the conversion), and {@code Math.min/max} on floating
  * point use preamble helpers. Integer {@code + - *} are printed as C operators, as on the Graal path
@@ -155,11 +162,26 @@ public final class CEmitter {
     private sealed interface Frame {
     }
 
-    /** {@code continueTargets}: labelled blocks that end just before the loop's latch, so leaving them is {@code continue}. */
-    private record LoopFrame(String label, Set<String> breakTargets, Set<String> continueTargets) implements Frame {
+    /**
+     * {@code continueTargets}: labelled blocks that end just before the loop's latch, so leaving them is {@code continue}.
+     * {@code flagged}: jumps (without goto) that leave the loop through the jump flag.
+     */
+    private record LoopFrame(String label, Set<String> breakTargets, Set<String> continueTargets, List<FlagJump> flagged) implements Frame {
     }
 
-    private record SwitchFrame(Set<String> breakTargets) implements Frame {
+    private record SwitchFrame(Set<String> breakTargets, List<FlagJump> flagged) implements Frame {
+    }
+
+    /** A labelled block printed as {@code do { ... } while (false)} so that a jump can leave it (no goto). */
+    private record BlockFrame(Set<String> breakTargets, List<FlagJump> flagged) implements Frame {
+    }
+
+    /** A labelled block without a C statement of its own; the place a jump to {@code label} lands. */
+    private record LabelFrame(String label) implements Frame {
+    }
+
+    /** A jump on its way out through the jump flag, numbered {@code id}. */
+    private record FlagJump(int id, String label, boolean isBreak) {
     }
 
     private final TargetCaps target;
@@ -177,12 +199,19 @@ public final class CEmitter {
     private final CDialect dialect;
     private final Set<CDialect.Feature> features = java.util.EnumSet.noneOf(CDialect.Feature.class);
     private final String task;
+    /** Labelled blocks to print as {@code do { ... } while (false)} (dialects without goto). */
+    private final Set<String> wrapped;
+    /** Labelled blocks found to need wrapping; non-empty means emit again. */
+    private final Set<String> toWrap = new HashSet<>();
+    private String jumpFlag;
+    private int flagJumps;
 
-    private CEmitter(TargetCaps target, boolean lineComments, String task) {
+    private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped) {
         this.dialect = CDialect.of(target.dialect());
         this.target = target;
         this.lineComments = lineComments;
         this.task = task;
+        this.wrapped = wrapped;
     }
 
     public static Result emit(S.Kernel kernel, TargetCaps target) {
@@ -195,7 +224,14 @@ public final class CEmitter {
 
     /** {@code task}: the runtime's task id, printed by device-launch reports. */
     public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task) {
-        return new CEmitter(target, lineComments, task).kernel(kernel);
+        var wrapped = new HashSet<String>();
+        while (true) {
+            var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped));
+            var result = emitter.kernel(kernel);
+            if (emitter.toWrap.isEmpty() || !wrapped.addAll(emitter.toWrap)) {
+                return result;
+            }
+        }
     }
 
     /** The entry-point name for a TC function name (dots and dollars become underscores). */
@@ -211,6 +247,7 @@ public final class CEmitter {
         k.params().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.locals().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.allocas().forEach(a -> allocaNames.put(a, cIdentifier(a.name(), used)));
+        jumpFlag = cIdentifier("tc_jump", used);
 
         var f = k.source();
         var entry = entryName(f);
@@ -264,7 +301,13 @@ public final class CEmitter {
         if (f.returnType() instanceof Type.VoidType && !body.isEmpty() && body.get(body.size() - 1) instanceof S.Return(var value) && value.isEmpty()) {
             body = body.subList(0, body.size() - 1); // a void function ends anyway
         }
+        int declarations = out.length();
+        int declarationLines = origins.size();
         statements(body, Set.of(), 1);
+        if (flagJumps > 0) {
+            out.insert(declarations, "  int " + jumpFlag + " = 0;\n");
+            origins.add(declarationLines, null);
+        }
         out.append("}\n");
 
         var emitted = out.toString();
@@ -328,10 +371,23 @@ public final class CEmitter {
             }
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
             case S.If(var c, var t, var e) -> ifStatement(c, t, e, fallthrough, depth);
+            case S.Labelled(var label, var b) when wrapped.contains(label) -> {
+                var inner = new HashSet<>(fallthrough);
+                inner.add(label);
+                var frame = new BlockFrame(inner, new ArrayList<>());
+                frames.push(frame);
+                line(depth, "do {");
+                statements(b, inner, depth + 1);
+                line(depth, "} while (false);");
+                frames.pop();
+                repeatFlagged(frame.flagged(), depth);
+            }
             case S.Labelled(var label, var b) -> {
                 var inner = new HashSet<>(fallthrough);
                 inner.add(label);
+                frames.push(new LabelFrame(label));
                 statements(b, inner, depth);
+                frames.pop();
                 if (neededLabels.contains(label)) {
                     line(depth, label + ": ;");
                 }
@@ -340,7 +396,8 @@ public final class CEmitter {
             case S.Break(var label) -> line(depth, jump(label, true));
             case S.Continue(var label) -> line(depth, jump(label, false));
             case S.Switch(var sel, var cases, var d) -> {
-                frames.push(new SwitchFrame(fallthrough));
+                var frame = new SwitchFrame(fallthrough, new ArrayList<>());
+                frames.push(frame);
                 line(depth, "switch (" + expr(sel).text + ") {");
                 for (var c : cases) {
                     line(depth, "case " + c.key() + ":");
@@ -350,6 +407,7 @@ public final class CEmitter {
                 caseBody(d, depth + 1);
                 line(depth, "}");
                 frames.pop();
+                repeatFlagged(frame.flagged(), depth);
             }
             case S.Return(var value) -> line(depth, value.map(v -> "return " + expr(v).text + ";").orElse("return;"));
             case S.Unreachable _u -> line(depth, dialect.unreachable());
@@ -411,10 +469,12 @@ public final class CEmitter {
             inner = e;
         }
         var latch = latch(label, inner);
+        LoopFrame frame;
         if (latch != null) {
             // `{ block L { ... break L; ... } i = i + step; }` is `for (; c; i = i + step) { ... continue; ... }`.
             var block = (S.Labelled) inner.get(inner.size() - latch.size() - 1);
-            frames.push(new LoopFrame(label, fallthrough, Set.of(block.label())));
+            frame = new LoopFrame(label, fallthrough, Set.of(block.label()), new ArrayList<>());
+            frames.push(frame);
             var text = new ArrayList<String>();
             for (var a : latch) {
                 text.add(assignment((S.Assign) a));
@@ -422,7 +482,8 @@ public final class CEmitter {
             line(depth, "for (; " + (condition == null ? "" : condition) + "; " + String.join(", ", text) + ") {");
             statements(inner.subList(0, inner.size() - latch.size()), Set.of(), depth + 1);
         } else {
-            frames.push(new LoopFrame(label, fallthrough, Set.of()));
+            frame = new LoopFrame(label, fallthrough, Set.of(), new ArrayList<>());
+            frames.push(frame);
             line(depth, condition == null ? "for (;;) {" : "while (" + condition + ") {");
             statements(inner, Set.of(), depth + 1);
         }
@@ -431,6 +492,7 @@ public final class CEmitter {
         if (neededLabels.contains(label)) {
             out.insert(start, "  ".repeat(depth) + label + ":\n");
         }
+        repeatFlagged(frame.flagged(), depth);
     }
 
     /**
@@ -496,43 +558,120 @@ public final class CEmitter {
     }
 
     private String jump(String label, boolean isBreak) {
+        var structured = structuredJump(label, isBreak);
+        if (structured != null) {
+            return structured;
+        }
+        if (dialect.gotos()) {
+            neededLabels.add(label);
+            return "goto " + label + ";";
+        }
+        var flagged = new FlagJump(++flagJumps, label, isBreak);
+        return flagBreak(flagged) ? jumpFlag + " = " + flagged.id() + "; break;" : "/* wrapped on the next emission */";
+    }
+
+    /** The jump as a plain {@code break;} or {@code continue;}, or null. */
+    private String structuredJump(String label, boolean isBreak) {
         if (isBreak) {
             for (var frame : frames) {
                 switch (frame) {
-                    case LoopFrame(var l, var targets, var latch) -> {
+                    case LoopFrame(var l, var targets, var latch, var f) -> {
                         if (targets.contains(label)) {
                             return "break;";
                         }
                     }
-                    case SwitchFrame(var targets) -> {
+                    case SwitchFrame(var targets, var f) -> {
                         if (targets.contains(label)) {
                             return "break;";
                         }
+                    }
+                    case BlockFrame(var targets, var f) -> {
+                        if (targets.contains(label)) {
+                            return "break;";
+                        }
+                    }
+                    case LabelFrame l -> {
+                        continue;
                     }
                 }
                 break; // only the innermost loop or switch can be left with a plain break
             }
             // Leaving a block that ends just before the latch of a `for` is `continue` (a switch does not catch it).
             for (var frame : frames) {
-                if (frame instanceof LoopFrame(var l, var targets, var latch)) {
+                if (frame instanceof LoopFrame(var l, var targets, var latch, var f)) {
                     if (latch.contains(label)) {
                         return "continue;";
                     }
                     break;
                 }
+                if (frame instanceof BlockFrame) {
+                    break;
+                }
             }
         } else {
             for (var frame : frames) {
-                if (frame instanceof LoopFrame(var l, var targets, var latch)) {
+                if (frame instanceof LoopFrame(var l, var targets, var latch, var f)) {
                     if (l.equals(label) && latch.isEmpty()) {
                         return "continue;";
                     }
                     break;
                 }
+                if (frame instanceof BlockFrame) {
+                    break;
+                }
             }
         }
-        neededLabels.add(label);
-        return "goto " + label + ";";
+        return null;
+    }
+
+    /**
+     * Registers {@code jump} with the innermost loop, switch or wrapped block, which it leaves with
+     * {@code break}. False when the jump's target lies inside that statement (or there is none): the
+     * labelled block is then wrapped on the next emission.
+     */
+    private boolean flagBreak(FlagJump jump) {
+        for (var frame : frames) {
+            switch (frame) {
+                case LabelFrame(var l) -> {
+                    if (l.equals(jump.label())) {
+                        toWrap.add(l);
+                        return false;
+                    }
+                }
+                case LoopFrame(var l, var t, var c, var flagged) -> {
+                    flagged.add(jump);
+                    return true;
+                }
+                case SwitchFrame(var t, var flagged) -> {
+                    flagged.add(jump);
+                    return true;
+                }
+                case BlockFrame(var t, var flagged) -> {
+                    flagged.add(jump);
+                    return true;
+                }
+            }
+        }
+        toWrap.add(jump.label());
+        return false;
+    }
+
+    /** After a statement that flagged jumps left: each one continues from here. */
+    private void repeatFlagged(List<FlagJump> flagged, int depth) {
+        for (var jump : flagged) {
+            var test = "if (" + jumpFlag + " == " + jump.id() + ") {";
+            var structured = structuredJump(jump.label(), jump.isBreak());
+            if (structured != null) {
+                line(depth, test);
+                line(depth + 1, jumpFlag + " = 0;");
+                line(depth + 1, structured);
+                line(depth, "}");
+            } else if (flagBreak(jump)) {
+                line(depth, test);
+                line(depth + 1, "break;");
+                line(depth, "}");
+            }
+        }
     }
 
     /** Places a label before each loop that a goto restarts; removes the other markers. */
@@ -698,6 +837,12 @@ public final class CEmitter {
     private R fcmp(FloatPredicate p, S.Expr a, S.Expr b) {
         var x = wrap(expr(a), REL + 1);
         var y = wrap(expr(b), REL + 1);
+        if (dialect.fastMath()) {
+            var fast = fastMathFcmp(p, x, y, expr(a).text, expr(b).text);
+            if (fast != null) {
+                return fast;
+            }
+        }
         return switch (p) {
             case OEQ -> new R(x + " == " + y, EQ);
             case UNE -> new R(x + " != " + y, EQ);
@@ -713,6 +858,25 @@ public final class CEmitter {
             case UGE -> new R("!(" + x + " < " + y + ")", UNARY);
             case ORD -> new R(x + " == " + x + " && " + y + " == " + y, LAND);
             case UNO -> new R(x + " != " + x + " || " + y + " != " + y, LOR);
+        };
+    }
+
+    /**
+     * The NaN-sensitive predicates under fast math, with {@code isnan} (which fast math keeps): a
+     * value compared with itself, ordered/unordered tests, and the unordered forms. Null: print as usual.
+     */
+    private static R fastMathFcmp(FloatPredicate p, String x, String y, String a, String b) {
+        var nanX = "isnan(" + a + ")";
+        var nanEither = a.equals(b) ? nanX : nanX + " || isnan(" + b + ")";
+        return switch (p) {
+            case OEQ, OLE, OGE -> a.equals(b) ? new R("!" + nanX, UNARY) : null;
+            case UNE, ULT, UGT -> a.equals(b) ? new R(nanX, ATOM) : new R(nanEither + " || " + x + (p == FloatPredicate.UNE ? " != " : p == FloatPredicate.ULT ? " < " : " > ") + y, LOR);
+            case ORD -> new R("!(" + nanEither + ")", UNARY);
+            case UNO -> new R(nanEither, a.equals(b) ? ATOM : LOR);
+            case ULE -> new R(nanEither + " || " + x + " <= " + y, LOR);
+            case UGE -> new R(nanEither + " || " + x + " >= " + y, LOR);
+            case UEQ -> new R(nanEither + " || " + x + " == " + y, LOR);
+            default -> null;
         };
     }
 

@@ -17,7 +17,8 @@ import java.util.stream.Stream;
  */
 public final class SourceRules {
 
-    private static final Pattern FORBIDDEN_IMPORT = Pattern.compile("^\\s*import\\s+(static\\s+)?(tornado\\.graal|jdk\\.vm\\.ci|org\\.graalvm|jdk\\.graal|org\\.objectweb\\.asm)\\b.*$", Pattern.MULTILINE);
+    private static final Pattern FORBIDDEN_IMPORT = Pattern.compile("^\\s*import\\s+(static\\s+)?"
+            + "(tornado\\.graal|jdk\\.vm\\.ci|org\\.graalvm|jdk\\.graal|org\\.objectweb\\.asm)\\b.*$", Pattern.MULTILINE);
     private static final Pattern IMPORT = Pattern.compile("^import\\s+(?:static\\s+)?[\\w.]+\\.(\\w+);$", Pattern.MULTILINE);
     private static final String LICENCE_MARKER = "GNU General Public License version 2 only";
 

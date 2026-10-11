@@ -69,6 +69,7 @@ public final class Lit {
 
     private final Map<String, Tool> tools = new HashMap<>();
     private final java.util.Set<String> features;
+    private final java.util.Set<String> absentTools;
 
     public Lit(Map<String, Tool> tools) {
         this(tools, java.util.Set.of());
@@ -76,9 +77,19 @@ public final class Lit {
 
     /** {@code features}: names a test can demand with {@code REQUIRES:} (for example {@code nvcc}). */
     public Lit(Map<String, Tool> tools, java.util.Set<String> features) {
+        this(tools, features, java.util.Set.of());
+    }
+
+    /**
+     * {@code absentTools}: tools a RUN line may name but this machine lacks (a CUDA compiler on a Mac,
+     * Apple's Metal compiler on Linux). A RUN line using one is skipped and logged; the file's other
+     * RUN lines still run.
+     */
+    public Lit(Map<String, Tool> tools, java.util.Set<String> features, java.util.Set<String> absentTools) {
         this.tools.putAll(tools);
         this.tools.put("FileCheck", Lit::fileCheck);
         this.features = java.util.Set.copyOf(features);
+        this.absentTools = java.util.Set.copyOf(absentTools);
     }
 
     /**
@@ -133,6 +144,12 @@ public final class Lit {
             for (var command : commands) {
                 var expanded = command.replace("%s", testFile.toString()).replace("%S", testFile.getParent().toString()).replace("%t", temp.toString());
                 log.append("RUN: ").append(expanded).append('\n');
+                var absent = splitPipeline(expanded).stream().map(Lit::tokenize).filter(a -> !a.isEmpty()).map(a -> a.get(0).equals("not") && a.size() > 1 ? a.get(1) : a.get(0))
+                        .filter(absentTools::contains).findFirst();
+                if (absent.isPresent()) {
+                    log.append("  skipped: '").append(absent.get()).append("' is not available here\n");
+                    continue;
+                }
                 if (!runPipeline(expanded, log)) {
                     return new Outcome(false, log.toString());
                 }

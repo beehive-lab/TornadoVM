@@ -105,6 +105,19 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
         return true;
     }
 
+    /**
+     * Whether the target compiles with fast math, which assumes no NaN: {@code x != x} folds to false
+     * and an unordered comparison to its ordered inverse. NaN tests are then spelled with {@code isnan}.
+     */
+    default boolean fastMath() {
+        return false;
+    }
+
+    /** Whether the language has {@code goto}; without it the emitter leaves loops through a jump flag. */
+    default boolean gotos() {
+        return true;
+    }
+
     /** The same regions as arguments, passed on by a device launch. */
     String abiArguments();
 

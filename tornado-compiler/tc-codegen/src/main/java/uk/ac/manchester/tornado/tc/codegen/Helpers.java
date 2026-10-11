@@ -362,6 +362,51 @@ final class Helpers {
                       return expected;
                     }
                     """),
+            // No 64-bit add in MSL: add the low words, then the high word plus the carry. The sum is
+            // exact; the previous value returned pairs the two words' old values, each read atomically.
+            Map.entry("tc_atomic_add_i64", atomicAdd64("device") + atomicAdd64("threadgroup")),
+            // Signed int8 dot products: (a + ao) and (b + bo) are byte addresses in any address space.
+            Map.entry("tc_dp4a", """
+                    template <typename P, typename Q>
+                    static inline int tc_dp4a(P a, long ao, Q b, long bo, int c) {
+                      return c + (int) (char) a[ao] * (int) (char) b[bo] + (int) (char) a[ao + 1] * (int) (char) b[bo + 1]
+                          + (int) (char) a[ao + 2] * (int) (char) b[bo + 2] + (int) (char) a[ao + 3] * (int) (char) b[bo + 3];
+                    }
+                    """),
+            Map.entry("tc_dp4a_packed", """
+                    static inline int tc_dp4a_packed(int a, int b, int c) {
+                      char4 x = as_type<char4>(a), y = as_type<char4>(b);
+                      return c + (int) x.x * (int) y.x + (int) x.y * (int) y.y + (int) x.z * (int) y.z + (int) x.w * (int) y.w;
+                    }
+                    """),
+            // Matrix8x8Float values are simdgroup_float8x8. A float[] (local array) arrives as a byte
+            // pointer in its own address space, device or threadgroup.
+            Map.entry("tc_simdgroup_matrix", """
+                    static inline simdgroup_float8x8 tc_simdgroup_load(device const float *p, int base, int stride) {
+                      simdgroup_float8x8 m;
+                      simdgroup_load(m, p + base, (ulong) stride);
+                      return m;
+                    }
+                    static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const float *p, int base, int stride) {
+                      simdgroup_float8x8 m;
+                      simdgroup_load(m, p + base, (ulong) stride);
+                      return m;
+                    }
+                    static inline simdgroup_float8x8 tc_simdgroup_load(device const unsigned char *p, int base, int stride) {
+                      return tc_simdgroup_load((device const float *) p, base, stride);
+                    }
+                    static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const unsigned char *p, int base, int stride) {
+                      return tc_simdgroup_load((threadgroup const float *) p, base, stride);
+                    }
+                    static inline simdgroup_float8x8 tc_simdgroup_mma(simdgroup_float8x8 a, simdgroup_float8x8 b, simdgroup_float8x8 c) {
+                      simdgroup_float8x8 d;
+                      simdgroup_multiply_accumulate(d, a, b, c);
+                      return d;
+                    }
+                    static inline void tc_simdgroup_store(simdgroup_float8x8 m, device float *p, int base, int stride) {
+                      simdgroup_store(m, p + base, (ulong) stride);
+                    }
+                    """),
             Map.entry("tc_atomic_add_f32", """
                     static inline float tc_atomic_add(device float *p, float v) {
                       device atomic_uint *a = (device atomic_uint *) p;
@@ -378,6 +423,19 @@ final class Helpers {
                       return as_type<float>(old);
                     }
                     """));
+
+    private static String atomicAdd64(String space) {
+        return """
+                static inline long tc_atomic_add(SPACE long *p, long v) {
+                  SPACE atomic_uint *w = (SPACE atomic_uint *) p;
+                  uint lo = (uint) v;
+                  uint oldLo = atomic_fetch_add_explicit(&w[0], lo, memory_order_relaxed);
+                  uint hi = (uint) (v >> 32) + (oldLo + lo < oldLo ? 1u : 0u);
+                  uint oldHi = hi != 0u ? atomic_fetch_add_explicit(&w[1], hi, memory_order_relaxed) : atomic_load_explicit(&w[1], memory_order_relaxed);
+                  return (long) (((ulong) oldHi << 32) | oldLo);
+                }
+                """.replace("SPACE", space);
+    }
 
     /** One read-modify-write atomic for device and threadgroup addresses ({@code a}: the atomic object). */
     private static String atomicOverloads(String type, String op, String params, String body) {

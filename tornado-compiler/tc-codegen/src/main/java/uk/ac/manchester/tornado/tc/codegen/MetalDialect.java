@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
+import uk.ac.manchester.tornado.tc.ir.ApiTypes;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
@@ -115,6 +116,18 @@ final class MetalDialect implements CDialect {
         return false;
     }
 
+    /** The driver compiles MSL with Metal's default options: fast math on. */
+    @Override
+    public boolean fastMath() {
+        return true;
+    }
+
+    /** MSL rejects {@code goto} and labelled statements. */
+    @Override
+    public boolean gotos() {
+        return false;
+    }
+
     @Override
     public String functionPrefix() {
         return "static inline ";
@@ -139,6 +152,7 @@ final class MetalDialect implements CDialect {
     public Optional<String> typeName(Type type, Set<Feature> features) {
         return switch (type) {
             case Type.FloatType f when f.kind() == Type.FloatType.Kind.F16 -> Optional.of("half");
+            case Type.ObjectType o when o.equals(ApiTypes.MATRIX_8X8_FLOAT) -> Optional.of("simdgroup_float8x8");
             case Type.VectorType(var element, var length) when length > 4 -> throw new CEmitter.EmitException("TC-E4001",
                     "Metal vectors have at most 4 lanes (" + type.text() + ")");
             case Type.VectorType(var element, var length) when element instanceof Type.IntType(var bits) && bits > 1 -> Optional.of(integerName(bits) + length);

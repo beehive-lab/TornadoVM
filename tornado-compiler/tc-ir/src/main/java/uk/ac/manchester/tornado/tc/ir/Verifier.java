@@ -437,7 +437,7 @@ public final class Verifier {
     }
 
     private void checkPostAbiType(Type type, String where, Loc loc) {
-        if (type instanceof ArrayType || type instanceof ObjectType) {
+        if (type instanceof ArrayType || (type instanceof ObjectType && !ApiTypes.isDeviceValue(type))) {
             report("TC-E2112", "Java-level type " + type.text() + " after ABI lowering", where, loc);
         }
     }
