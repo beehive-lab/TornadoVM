@@ -27,16 +27,18 @@ import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
+import uk.ac.manchester.tornado.tc.ir.Type;
 
 /**
- * Recomputes a float multiply at each of its uses when every use is a float add or subtract, so the
- * device compiler can fuse each pair into one multiply-add. A product that is shared stays a separate
- * multiply instruction (the driver cannot fuse a value it still needs), so sharing it costs one
- * instruction per use instead of saving one: in a Julia-set loop, {@code zx*zx} feeds both
- * {@code zx*zx + zy*zy} and {@code zx*zx - zy*zy}.
+ * Fused multiply-adds for a target whose compiler contracts {@code a*b+c} by default (NVRTC), under
+ * math optimisations. A product shared by several adds and subtracts stays a separate multiply in the
+ * device code, because the driver's own CSE merges the copies before it contracts: in a Julia-set
+ * loop, {@code zx*zx} feeds both {@code zx*zx + zy*zy} and {@code zx*zx - zy*zy}, and NVRTC then keeps
+ * one multiply and two plain adds. So the pass recomputes such a product at each use, and turns each
+ * {@code a*b + c} into an explicit {@code fma(a, b, c)}, which the driver cannot merge with anything;
+ * the remaining {@code a*b - c} have a product of their own and are contracted by the driver.
  *
- * <p>Run it last, after GVN (which would merge the copies again), and only where the target contracts
- * {@code a*b+c} into one rounded operation by default (NVRTC) and math optimisations are on.</p>
+ * <p>Run it last, after GVN, which would merge the copies again.</p>
  */
 public final class FmaRematerialization implements Pass {
 
@@ -47,7 +49,8 @@ public final class FmaRematerialization implements Pass {
 
     /** Whether {@code function} has a product this pass would recompute. */
     public static boolean applies(Function function) {
-        return function.blocks().stream().flatMap(b -> b.insts().stream()).anyMatch(FmaRematerialization::isShared);
+        return function.blocks().stream().flatMap(b -> b.insts().stream())
+                .anyMatch(i -> isShared(i) || i.opcode() instanceof Opcode.Binary(var op) && op == Opcode.BinaryOp.FMUL && i.users().stream().anyMatch(u -> u.opcode() instanceof Opcode.Binary(var a) && a == Opcode.BinaryOp.FADD));
     }
 
     @Override
@@ -72,6 +75,25 @@ public final class FmaRematerialization implements Pass {
                         }
                     }
                     changed = true;
+                }
+            }
+        }
+        for (var block : function.blocks()) {
+            for (var inst : List.copyOf(block.insts())) {
+                if (!(inst.opcode() instanceof Opcode.Binary(var op)) || op != Opcode.BinaryOp.FADD) {
+                    continue;
+                }
+                for (int k = 0; k < 2; k++) {
+                    if (inst.operand(k) instanceof Inst product && product.opcode() instanceof Opcode.Binary(var mul) && mul == Opcode.BinaryOp.FMUL
+                            && product.users().size() == 1 && product.type().equals(inst.type()) && (inst.type().equals(Type.F32) || inst.type().equals(Type.F64))) {
+                        var fma = IrBuilder.insertingBefore(inst).at(inst.loc()).intrinsic("math.fma", inst.type(), List.of(product.operand(0), product.operand(1), inst.operand(1 - k)));
+                        fma.setName(inst.name());
+                        inst.replaceAllUsesWith(fma);
+                        inst.erase();
+                        product.erase();
+                        changed = true;
+                        break;
+                    }
                 }
             }
         }

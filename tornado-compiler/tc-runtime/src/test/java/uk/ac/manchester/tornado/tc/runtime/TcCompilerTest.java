@@ -136,7 +136,8 @@ public class TcCompilerTest {
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "vectorValue", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
         assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertTrue(c.source(), c.source().contains("*((float *) v) * 2.0f + 0.0f + *((float *) v2) * 2.0f") && !c.source().contains("float4"));
+        // With math optimisations (the default) the products fuse into fmaf on CUDA.
+        assertTrue(c.source(), c.source().contains("fmaf(*((float *) v2), 2.0f, fmaf(*((float *) v), 2.0f, 0.0f))") && !c.source().contains("float4"));
         assertTrue(c.source(), c.source().contains("unsigned char *v"));
     }
 

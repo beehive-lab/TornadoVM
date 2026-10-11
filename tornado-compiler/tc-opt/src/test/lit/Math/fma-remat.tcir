@@ -6,9 +6,8 @@
 ; CHECK-LABEL: device @julia(%zx: f32, %zy: f32) -> f32 {
 ; CHECK-NEXT:  ^entry:
 ; CHECK-NEXT:    %c = const -0.7 : f32
-; CHECK-NEXT:    %xx = fmul %zx, %zx : f32
 ; CHECK-NEXT:    %yy = fmul %zy, %zy : f32
-; CHECK-NEXT:    %r2 = fadd %xx, %yy : f32
+; CHECK-NEXT:    %r2 = math.fma(%zx, %zx, %yy) : f32
 ; CHECK-NEXT:    %0 = fmul %zx, %zx : f32
 ; CHECK-NEXT:    %1 = fmul %zy, %zy : f32
 ; CHECK-NEXT:    %d = fsub %0, %1 : f32
