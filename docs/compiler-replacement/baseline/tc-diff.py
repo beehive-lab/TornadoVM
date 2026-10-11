@@ -97,6 +97,13 @@ RUN_DEPENDENT_LAUNCHES = {
     "multithreaded.TestMultiThreadedExecutionPlans": "two threads share one WorkerGrid whose local size the runtime fills in (1024 once in run 12, 512 in 8 reruns under both compilers)",
 }
 
+# Tests whose result depends on the order work-groups run (a data race in the test itself): their
+# status differences are listed, but counted as neither TC better nor TC worse.
+RACY_TESTS = {
+    "compute.TransformerKernelsTest#testReductionOneBlockWithLayer": "thread 0 of group 0 sums the other groups' partial results with no global "
+    "synchronisation (CUDA: Graal FAILED / TC PASS; UHD 770: Graal PASS / TC FAILED, 3 of 3 runs each)",
+}
+
 
 def compare(out):
     result = {"classes": {}, "summary": collections.Counter()}
@@ -106,7 +113,7 @@ def compare(out):
             continue
         gt, gl, _ = parse(os.path.join(gdir, name))
         tt, tl, ts = parse(os.path.join(tdir, name))
-        diffs = [{"test": k, "graal": gt.get(k), "tc": tt.get(k)} for k in sorted(set(gt) | set(tt)) if gt.get(k) != tt.get(k)]
+        diffs = [{"test": k, "graal": gt.get(k), "tc": tt.get(k), **({"racy": True} if k in RACY_TESTS else {})} for k in sorted(set(gt) | set(tt)) if gt.get(k) != tt.get(k)]
         launch, counts = [], []
         norm = lambda conf: (conf[0], conf[1], "[1, 1, 1]" if conf[0] == "0" and conf[2] == "null" else conf[2])  # 1-thread launch, local size unset
         for k in sorted(set(gl) & set(tl)):
@@ -129,8 +136,8 @@ def compare(out):
         s = result["summary"]
         s["tests"] += len(tt); s["tcPass"] += sum(v == "PASS" for v in tt.values()); s["graalPass"] += sum(v == "PASS" for v in gt.values())
         s["diffs"] += len(diffs); s["launchDiffs"] += len(launch); s["tcKernels"] += ts.get("tc", 0)
-        s["tcBetter"] += sum(d["tc"] == "PASS" and d["graal"] != "PASS" for d in diffs)
-        s["tcWorse"] += sum(d["graal"] == "PASS" and d["tc"] != "PASS" for d in diffs)
+        s["tcBetter"] += sum(d["tc"] == "PASS" and d["graal"] != "PASS" and not d.get("racy") for d in diffs)
+        s["tcWorse"] += sum(d["graal"] == "PASS" and d["tc"] != "PASS" and not d.get("racy") for d in diffs)
         for code, n in ts.items():
             if code.startswith("TC-E"):
                 result.setdefault("refusals", collections.Counter())[code] += n
@@ -151,7 +158,7 @@ def write_md(r, out):
     lines += ["| Class | Tests | Graal PASS | TC PASS | Differences |", "|---|---:|---:|---:|---|"]
     for c, v in r["classes"].items():
         if v["diffs"] or v["launchDiffs"]:
-            d = "; ".join(f"`{x['test'].split('#')[1]}` {x['graal']}→{x['tc']}" for x in v["diffs"][:6]) + (" …" if len(v["diffs"]) > 6 else "")
+            d = "; ".join(f"`{x['test'].split('#')[1]}` {x['graal']}→{x['tc']}" + (" (racy test)" if x.get("racy") else "") for x in v["diffs"][:6]) + (" …" if len(v["diffs"]) > 6 else "")
             if v["launchDiffs"]:
                 d += ("; " if d else "") + f"{len(v['launchDiffs'])} launch config(s) differ"
             lines.append(f"| {c.replace('uk.ac.manchester.tornado.unittests.', '')} | {v['tests']} | {v['graalPass']} | {v['pass']} | {d} |")

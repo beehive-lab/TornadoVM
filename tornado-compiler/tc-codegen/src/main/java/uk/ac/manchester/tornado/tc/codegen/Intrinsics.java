@@ -140,6 +140,10 @@ public final class Intrinsics {
         for (var fn : new String[] { "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh", "atanh", "cbrt", "log10" }) {
             unaryMath("math." + fn, fn + "f", fn);
         }
+        unaryMath("math.sinpi", "sinpif", "sinpi");
+        unaryMath("math.cospi", "cospif", "cospi");
+        cudaTyped("math.toRadians", "f32", "($0 * 0.017453292519943295f)");
+        cudaTyped("math.toRadians", "f64", "($0 * 0.017453292519943295)");
         cudaTyped("math.atan2", "f32", "atan2f($0, $1)");
         cudaTyped("math.atan2", "f64", "atan2($0, $1)");
         cudaTyped("math.pow", "f32", "powf($0, $1)");
@@ -192,6 +196,11 @@ public final class Intrinsics {
                 "atanh", "cbrt", "log10" }) {
             openclTyped("math." + fn, "f32", fn + "($0)");
             openclTyped("math." + fn, "f64", fn + "($0)");
+        }
+        for (var t : List.of("f32", "f64")) {
+            openclTyped("math.sinpi", t, "sinpi($0)");
+            openclTyped("math.cospi", t, "cospi($0)");
+            openclTyped("math.toRadians", t, "radians($0)");
         }
         openclTyped("math.abs", "f32", "fabs($0)");
         openclTyped("math.abs", "f64", "fabs($0)");

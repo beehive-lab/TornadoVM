@@ -252,19 +252,35 @@ final class Bindings {
         METHODS.put(quant + ".dp4a(" + int8 + "J[BJI)I", new Intrinsic("tornado.dp4a", Type.I32));
         METHODS.put(quant + ".dp4a_packed(III)I", new Intrinsic("tornado.dp4a.packed", Type.I32));
         registerTiles();
-        // Half2: two f16 lanes (CUDA half2); its arithmetic is Java code over getX/getY and the constructor.
-        var half2 = new Type.VectorType(Type.F16, 2);
-        VECTORS.put("Half2", half2);
-        var halfOwner = VECTOR_PACKAGE + "Half2";
+        // HalfN: f16 lanes (CUDA half2; OpenCL halfN); their arithmetic is Java code over the lane
+        // accessors and the constructors.
         var h = "L" + HALF_FLOAT + ";";
-        METHODS.put(halfOwner + ".<init>()V", new VectorInit(half2));
-        METHODS.put(halfOwner + ".<init>(" + h + h + ")V", new VectorInit(half2));
-        METHODS.put(halfOwner + ".getX()" + h, new VectorGet(0));
-        METHODS.put(halfOwner + ".getY()" + h, new VectorGet(1));
-        METHODS.put(halfOwner + ".setX(" + h + ")V", new VectorSet(0));
-        METHODS.put(halfOwner + ".setY(" + h + ")V", new VectorSet(1));
-        METHODS.put(halfOwner + ".get(I)" + h, new VectorGet(-1));
-        METHODS.put(halfOwner + ".set(I" + h + ")V", new VectorSet(-1));
+        for (int lanes : new int[] { 2, 3, 4, 8, 16 }) {
+            var vec = new Type.VectorType(Type.F16, lanes);
+            var name = "Half" + lanes;
+            VECTORS.put(name, vec);
+            var owner = VECTOR_PACKAGE + name;
+            METHODS.put(owner + ".<init>()V", new VectorInit(vec));
+            METHODS.put(owner + ".<init>(" + h.repeat(lanes) + ")V", new VectorInit(vec));
+            var lanesNames = List.of("X", "Y", "Z", "W");
+            for (int l = 0; lanes <= 4 && l < lanes; l++) {
+                METHODS.put(owner + ".get" + lanesNames.get(l) + "()" + h, new VectorGet(l));
+                METHODS.put(owner + ".set" + lanesNames.get(l) + "(" + h + ")V", new VectorSet(l));
+            }
+            METHODS.put(owner + ".get(I)" + h, new VectorGet(-1));
+            METHODS.put(owner + ".set(I" + h + ")V", new VectorSet(-1));
+            METHODS.put(owner + ".set(L" + owner + ";)V", new VectorWhole("set"));
+            if (lanes > 2) {
+                for (int l = 0; l < lanes; l++) {
+                    METHODS.put(owner + ".getS" + l + "()" + h, new VectorGet(l));
+                    METHODS.put(owner + ".setS" + l + "(" + h + ")V", new VectorSet(l));
+                }
+                METHODS.put(owner + ".size()I", new VectorWhole("size"));
+            }
+            if (lanes < 16) {
+                METHODS.put(owner + ".duplicate()L" + owner + ";", new Identity());
+            }
+        }
         // java.util.concurrent.atomic.AtomicInteger: counters in the kernel's atomics region; the JDK's
         // own implementation (Unsafe) is never translated.
         METHODS.put(ATOMIC_INTEGER + ".<init>(I)V", new AtomicNew());
@@ -391,6 +407,12 @@ final class Bindings {
         METHODS.put(TORNADO_MATH + ".atan2(DD)D", new Intrinsic("math.atan2", Type.F64));
         METHODS.put(TORNADO_MATH + ".atan2(FF)F", new Intrinsic("math.atan2", Type.F32));
         METHODS.put(TORNADO_MATH + ".pow(FF)F", new Intrinsic("math.pow", Type.F32));
+        // Their Java bodies compute in double (Math.sin(x * Math.PI)): device built-ins keep a float
+        // kernel in single precision, so it also runs on devices without fp64.
+        for (var fn : List.of("sinpi", "cospi", "toRadians")) {
+            METHODS.put(TORNADO_MATH + "." + fn + "(F)F", new Intrinsic("math." + fn, Type.F32));
+            METHODS.put(TORNADO_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
+        }
         METHODS.put(JAVA_MATH + ".fma(FFF)F", new Intrinsic("math.fma", Type.F32));
         METHODS.put(JAVA_MATH + ".fma(DDD)D", new Intrinsic("math.fma", Type.F64));
     }
