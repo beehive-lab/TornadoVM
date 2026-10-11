@@ -258,7 +258,8 @@ public final class Intrinsics {
             var t = ", " + transposed + ")";
             TABLE.put(new Key("tornado.simdgroup_matrix.load" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load((device const float *) ($0), $1, $2" + t, "tc_simdgroup_matrix"));
             TABLE.put(new Key("tornado.simdgroup_matrix.load_local" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load($0, $1, $2" + t, "tc_simdgroup_matrix"));
-            TABLE.put(new Key("tornado.simdgroup_matrix.load_half" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load_half((device const half *) ($0), $1, $2" + t, "tc_simdgroup_matrix"));
+            TABLE.put(new Key("tornado.simdgroup_matrix.load_half" + suffix, Dialect.METAL, ""),
+                    Spelling.withHelper("tc_simdgroup_load_half((device const half *) ($0), $1, $2" + t, "tc_simdgroup_matrix"));
             TABLE.put(new Key("tornado.simdgroup_matrix.load_half_local" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load_half($0, $1, $2" + t, "tc_simdgroup_matrix"));
         }
         TABLE.put(new Key("tornado.simdgroup_matrix.mma", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_mma($0, $1, $2)", "tc_simdgroup_matrix"));
