@@ -343,6 +343,8 @@ Meet the [team](https://www.tornadovm.org/about-us).
 
 ## Fast start-up: Project Leyden and GraalVM native image
 
+Exact commands, JDK requirements and measurements for each option: [LEYDEN_GRAALVM_NATIVE_IMAGE.md](LEYDEN_GRAALVM_NATIVE_IMAGE.md).
+
 TornadoVM has no JVMCI or Graal dependency. Its kernel compiler is TC
 ([`tornado-compiler/`](tornado-compiler/README.md)), plain Java, so a TornadoVM application can start
 from a **Leyden AOT cache** or be built into a **GraalVM native image**. Both need a JDK 22+ SDK
