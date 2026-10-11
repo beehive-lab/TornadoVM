@@ -2,7 +2,8 @@
 
 > **Next on the Mac (2026-10-11): validate after the Graal removal.** Graal and JVMCI are gone, TC
 > is the only compiler, and upstream `develop` has been merged in (Metal batched dispatch #1216,
-> Objective-C send handles #1217, SIMD-group half/transposed matrices #1223, vector loads #1224).
+> Objective-C send handles #1217, SIMD-group half/transposed matrices #1223, vector loads #1224,
+> ByteArray word access #1198).
 > None of this has run on Apple silicon yet. Steps:
 > [Validate after the Graal removal](#validate-after-the-graal-removal).
 
@@ -211,6 +212,8 @@ On the Mac, in order:
    - `arrays.TestNativeArrayVectorLoads`: `getFloat4`/`getHalf4` become `float4`/`half4` loads.
      MSL has both types; check the 16- and 8-byte alignment.
    - `arrays.TestHalfFloatShortBits`: `as_type<half>(ushort)`.
+   - `arrays.TestByteArrayWordAccess` (#1198): `ByteArray.getInt/getLong/setInt/setLong`, one 32- or
+     64-bit access at a byte offset.
    - `kernelcontext.api.TestDependentLaunches`, `api.TestConsumeNamedAndUnnamed`,
      `loops.TestLoopTransformations`: runtime-side, and they exercise #1216 (batched command
      buffers).

@@ -363,6 +363,11 @@ final class Bindings {
         for (var index : new String[] { "I", "J" }) {
             METHODS.put(ARRAYS + "ByteArray.getHalfFloat(" + index + ")L" + HALF_FLOAT + ";", new ByteView(Type.F16, false));
             METHODS.put(ARRAYS + "ByteArray.setHalfFloat(" + index + "L" + HALF_FLOAT + ";)V", new ByteView(Type.F16, true));
+            // 32- and 64-bit words at a byte offset, read or written whole (the caller aligns the offset).
+            METHODS.put(ARRAYS + "ByteArray.getInt(" + index + ")I", new ByteView(Type.I32, false));
+            METHODS.put(ARRAYS + "ByteArray.setInt(" + index + "I)V", new ByteView(Type.I32, true));
+            METHODS.put(ARRAYS + "ByteArray.getLong(" + index + ")J", new ByteView(Type.I64, false));
+            METHODS.put(ARRAYS + "ByteArray.setLong(" + index + "J)V", new ByteView(Type.I64, true));
             // Packed half pairs: one 32-bit access at element index (even, so 4-byte aligned).
             METHODS.put(ARRAYS + "HalfFloatArray.getHalf2(" + index + ")L" + VECTOR_PACKAGE + "Half2;", new ByteView(new Type.VectorType(Type.F16, 2), false));
             METHODS.put(ARRAYS + "HalfFloatArray.setHalf2(" + index + "L" + VECTOR_PACKAGE + "Half2;)V", new ByteView(new Type.VectorType(Type.F16, 2), true));
