@@ -6,7 +6,6 @@ open module tornado.runtime {
     requires jdk.unsupported;
 
     requires transitive tornado.api;
-    requires commons.math3;
     requires java.management;
     requires jdk.management;
 
