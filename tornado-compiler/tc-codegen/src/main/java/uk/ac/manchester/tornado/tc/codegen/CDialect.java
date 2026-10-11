@@ -50,7 +50,9 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
         /** CUDA Tile C++. */
         TILES,
         /** Reinterpreting half bits where the dialect has no built-in for it (OpenCL without full cl_khr_fp16). */
-        HALF_BITS
+        HALF_BITS,
+        /** Four-lane half vectors where the dialect has no built-in type (CUDA: a struct). */
+        HALF4
     }
 
     /** One device launch ({@code KernelContext.launch}), its operands already printed. */

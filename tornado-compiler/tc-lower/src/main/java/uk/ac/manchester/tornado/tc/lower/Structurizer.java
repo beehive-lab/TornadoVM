@@ -520,6 +520,10 @@ public final class Structurizer {
     }
 
     static int sizeOf(Type type) {
+        if (type instanceof Type.VectorType(var element, var length)) {
+            // A vector access is not an element access of its lane type: vec<4 x f32> is 16 bytes.
+            return sizeOf(element) * length;
+        }
         return switch (type.text()) {
             case "i8", "i1" -> 1;
             case "i16", "f16", "bf16" -> 2;

@@ -111,6 +111,12 @@ final class CudaDialect implements CDialect {
                 features.add(Feature.HALF);
                 yield Optional.of("half2");
             }
+            // CUDA has no half4: an 8-byte-aligned struct of four halves, lanes x..w (see preamble).
+            case Type.VectorType(var element, var length) when element.equals(Type.F16) && length == 4 -> {
+                features.add(Feature.HALF);
+                features.add(Feature.HALF4);
+                yield Optional.of("half4");
+            }
             // Register vectors (tensor-core fragments): the CUDA built-in vector types; charN lanes are signed char.
             case Type.VectorType(var element, var length) when length >= 2 && length <= 4 && element instanceof Type.IntType(var bits) && bits > 1 ->
                 Optional.of((bits == 8 ? "char" : bits == 16 ? "short" : bits == 32 ? "int" : "longlong") + length);
@@ -216,6 +222,10 @@ final class CudaDialect implements CDialect {
         // cuda_fp8.h builds on cuda_fp16.h.
         if (features.contains(Feature.HALF) || features.contains(Feature.FP8)) {
             lines.add("#include <cuda_fp16.h>");
+        }
+        if (features.contains(Feature.HALF4)) {
+            lines.add("struct __align__(8) half4 { half x, y, z, w; };");
+            lines.add("static __device__ __forceinline__ half4 make_half4(half x, half y, half z, half w) { half4 v; v.x = x; v.y = y; v.z = z; v.w = w; return v; }");
         }
         if (features.contains(Feature.BFLOAT16)) {
             lines.add("#include <cuda_bf16.h>");

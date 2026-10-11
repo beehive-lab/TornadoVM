@@ -367,6 +367,9 @@ final class Bindings {
             METHODS.put(ARRAYS + "HalfFloatArray.getHalf2(" + index + ")L" + VECTOR_PACKAGE + "Half2;", new ByteView(new Type.VectorType(Type.F16, 2), false));
             METHODS.put(ARRAYS + "HalfFloatArray.setHalf2(" + index + "L" + VECTOR_PACKAGE + "Half2;)V", new ByteView(new Type.VectorType(Type.F16, 2), true));
         }
+        // Vector-width loads at an element index (a multiple of 4, so the access is aligned).
+        METHODS.put(ARRAYS + "FloatArray.getFloat4(I)L" + VECTOR_PACKAGE + "Float4;", new ByteView(new Type.VectorType(Type.F32, 4), false));
+        METHODS.put(ARRAYS + "HalfFloatArray.getHalf4(I)L" + VECTOR_PACKAGE + "Half4;", new ByteView(new Type.VectorType(Type.F16, 4), false));
         METHODS.put(HALF_FLOAT + ".<init>(F)V", new ValueInit(Type.F32, ConvertOp.FTRUNC, Type.F16));
         METHODS.put(HALF_FLOAT + ".<init>(S)V", new ValueInit(Type.I16, ConvertOp.BITCAST, Type.F16));
         METHODS.put(HALF_FLOAT + ".getFloat32()F", new Convert(ConvertOp.FEXT, Type.F32));
