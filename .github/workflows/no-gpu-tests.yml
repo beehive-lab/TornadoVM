@@ -1,8 +1,10 @@
-name: No-GPU Unit Tests [JDK 21, 22-27]
+name: No-GPU Tests (TC + runtime) [JDK 21, 22-27]
 
-# Pure-JVM unit tests of tornado-api and tornado-runtime. These need no GPU, so they run on standard
-# GitHub-hosted runners. The full build comes first so the modular dependencies are on the module
-# path; the tests themselves touch no device.
+# The unit tests that need no GPU, on standard GitHub-hosted runners: TC's (the compiler's lit file
+# tests, its API tests and the clean-room source rules) and tornado-api/tornado-runtime's. TC reads
+# class files itself, so running its tests on every host JDK checks it against each JDK's javac and
+# class-file version; the GPU workflows build on one host JDK only. The full build comes first so the
+# modular dependencies are on the module path; the tests themselves touch no device.
 #
 # build-test.yml proves one ARTIFACT runs on every JDK; this proves the jdk22plus profile BUILDS on
 # every JDK. The matrix axis is therefore the host JDK, not the profile.
@@ -23,7 +25,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  reflection-unit-tests:
+  no-gpu-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     strategy:
@@ -73,5 +75,5 @@ jobs:
       - name: Show the SDK's declared JDK contract
         run: cat "$(ls -d dist/*/*/)etc/tornado.jdk"
 
-      - name: Run unit tests (${{ matrix.profile }})
-        run: make test-reflection JDK=${{ matrix.profile }}
+      - name: Run the no-GPU tests (${{ matrix.profile }})
+        run: make test-nogpu JDK=${{ matrix.profile }}

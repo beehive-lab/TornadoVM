@@ -4,8 +4,8 @@ all: build
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
-# JDK profile used by the `sdk` and `test-reflection` targets { jdk21, jdk22plus }.
-# Default is `jdk21` to preserve historical bare `nmake sdk`/`nmake test-reflection` behavior.
+# JDK profile used by the `sdk` and `test-nogpu` targets { jdk21, jdk22plus }.
+# Default is `jdk21` to preserve historical bare `nmake sdk`/`nmake test-nogpu` behavior.
 # nmake sdk JDK=<jdk21|jdk22plus> BACKEND=<comma_separated_backend_list>
 # Prefer the sdk-jdkNN targets below over `nmake sdk JDK=...` when building a specific JDK's SDK.
 JDK = jdk21
@@ -57,15 +57,17 @@ sdk-jdk22plus:
 checkstyle:
 	.\mvnw checkstyle:check
 
-# Pure-JVM (no-GPU) unit tests for the runtime's reflection layer. Every JDK profile skips surefire,
-# so force it on here. `clean` + `-am` rebuilds tornado-api and tornado-runtime together in the
-# same reactor so stale class files from a previously-used JDK profile (source/target release
-# differs per profile, e.g. jdk21 compiles at 21, jdk22plus at 22) never leak into the test
-# classpath — this target is then safe to run right after a different JDK profile's build, with
-# no manual `mvn clean` in between. Override the profile with JDK=jdk22plus to run under
-# another JDK (JDK is declared once, near BACKEND, at the top of this file).
-test-reflection:
-	.\mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
+# The unit tests that need no GPU: TC's (the compiler's lit file tests and API tests; every build
+# runs them too) and tornado-api/tornado-runtime's. The JDK profiles skip surefire elsewhere, so force
+# it on here. `clean` + `-am` rebuilds the modules in one reactor so stale class files from another
+# JDK profile (jdk21 compiles at 21, jdk22plus at 22) never reach the test classpath; the target is
+# safe to run right after a different profile's build. Override the profile with JDK=jdk22plus
+# (JDK is declared once, near BACKEND, at the top of this file). `test-reflection` is the old name.
+TC_MODULES = tornado-compiler/tc-check,tornado-compiler/tc-ir,tornado-compiler/tc-frontend,tornado-compiler/tc-opt,tornado-compiler/tc-lower,tornado-compiler/tc-codegen,tornado-compiler/tc-tornado,tornado-compiler/tc-runtime,tornado-compiler/tc-debug,tornado-compiler/tc-gpu
+test-nogpu:
+	.\mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime,$(TC_MODULES) -am clean test -DskipTests=false
+
+test-reflection: test-nogpu
 
 clean:
 	.\mvnw -Popencl-backend,cuda-backend clean
