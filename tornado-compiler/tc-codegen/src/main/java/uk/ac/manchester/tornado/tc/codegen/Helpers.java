@@ -379,32 +379,26 @@ final class Helpers {
                       return c + (int) x.x * (int) y.x + (int) x.y * (int) y.y + (int) x.z * (int) y.z + (int) x.w * (int) y.w;
                     }
                     """),
-            // Matrix8x8Float values are simdgroup_float8x8. A float[] (local array) arrives as a byte
-            // pointer in its own address space, device or threadgroup.
-            Map.entry("tc_simdgroup_matrix", """
-                    static inline simdgroup_float8x8 tc_simdgroup_load(device const float *p, int base, int stride) {
-                      simdgroup_float8x8 m;
-                      simdgroup_load(m, p + base, (ulong) stride);
-                      return m;
-                    }
-                    static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const float *p, int base, int stride) {
-                      simdgroup_float8x8 m;
-                      simdgroup_load(m, p + base, (ulong) stride);
-                      return m;
-                    }
-                    static inline simdgroup_float8x8 tc_simdgroup_load(device const unsigned char *p, int base, int stride) {
-                      return tc_simdgroup_load((device const float *) p, base, stride);
-                    }
-                    static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const unsigned char *p, int base, int stride) {
-                      return tc_simdgroup_load((threadgroup const float *) p, base, stride);
-                    }
-                    static inline simdgroup_float8x8 tc_simdgroup_mma(simdgroup_float8x8 a, simdgroup_float8x8 b, simdgroup_float8x8 c) {
+            // Matrix8x8Float/Matrix8x8Half values are simdgroup_float8x8/simdgroup_half8x8. A local array
+            // (float[] or HalfFloat[]) arrives as a byte pointer in its own address space.
+            Map.entry("tc_simdgroup_matrix", simdgroupLoads("float", "tc_simdgroup_load") + simdgroupLoads("half", "tc_simdgroup_load_half") + """
+                    template <typename A, typename B>
+                    static inline simdgroup_float8x8 tc_simdgroup_mma(A a, B b, simdgroup_float8x8 c) {
                       simdgroup_float8x8 d;
                       simdgroup_multiply_accumulate(d, a, b, c);
                       return d;
                     }
                     static inline void tc_simdgroup_store(simdgroup_float8x8 m, device float *p, int base, int stride) {
                       simdgroup_store(m, p + base, (ulong) stride);
+                    }
+                    static inline void tc_simdgroup_store(simdgroup_float8x8 m, threadgroup float *p, int base, int stride) {
+                      simdgroup_store(m, p + base, (ulong) stride);
+                    }
+                    static inline void tc_simdgroup_store(simdgroup_float8x8 m, device unsigned char *p, int base, int stride) {
+                      tc_simdgroup_store(m, (device float *) p, base, stride);
+                    }
+                    static inline void tc_simdgroup_store(simdgroup_float8x8 m, threadgroup unsigned char *p, int base, int stride) {
+                      tc_simdgroup_store(m, (threadgroup float *) p, base, stride);
                     }
                     """),
             Map.entry("tc_atomic_add_f32", """
@@ -423,6 +417,24 @@ final class Helpers {
                       return as_type<float>(old);
                     }
                     """));
+
+    /** {@code name}: loads of a simdgroup matrix of {@code element} from device or threadgroup memory, optionally transposed. */
+    private static String simdgroupLoads(String element, String name) {
+        var sb = new StringBuilder();
+        for (var space : List.of("device", "threadgroup")) {
+            sb.append("static inline simdgroup_").append(element).append("8x8 ").append(name).append('(').append(space).append(" const ").append(element)
+                    .append(" *p, int base, int stride, bool transpose) {\n");
+            sb.append("  simdgroup_").append(element).append("8x8 m;\n");
+            sb.append("  simdgroup_load(m, p + base, (ulong) stride, ulong2(0, 0), transpose);\n");
+            sb.append("  return m;\n}\n");
+        }
+        for (var space : List.of("device", "threadgroup")) {
+            sb.append("static inline simdgroup_").append(element).append("8x8 ").append(name).append('(').append(space)
+                    .append(" const unsigned char *p, int base, int stride, bool transpose) {\n");
+            sb.append("  return ").append(name).append("((").append(space).append(" const ").append(element).append(" *) p, base, stride, transpose);\n}\n");
+        }
+        return sb.toString();
+    }
 
     private static String atomicAdd64(String space) {
         return """

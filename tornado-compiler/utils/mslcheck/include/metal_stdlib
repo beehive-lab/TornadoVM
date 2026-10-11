@@ -115,10 +115,10 @@ inline bool simd_all(bool v) { return v; }
 template <typename T, int Cols, int Rows> struct simdgroup_matrix { T storage[Cols * Rows]; };
 typedef simdgroup_matrix<float, 8, 8> simdgroup_float8x8;
 template <typename T, int Cols, int Rows> simdgroup_matrix<T, Cols, Rows> make_filled_simdgroup_matrix(T) { return {}; }
-template <typename T, int C, int R> void simdgroup_load(thread simdgroup_matrix<T, C, R> &, const device T *, ulong) {}
-template <typename T, int C, int R> void simdgroup_load(thread simdgroup_matrix<T, C, R> &, const threadgroup T *, ulong) {}
+typedef simdgroup_matrix<half, 8, 8> simdgroup_half8x8;
+template <typename T, int C, int R> void simdgroup_load(thread simdgroup_matrix<T, C, R> &, const device T *, ulong = C, ulong2 = ulong2(), bool = false) {}
+template <typename T, int C, int R> void simdgroup_load(thread simdgroup_matrix<T, C, R> &, const threadgroup T *, ulong = C, ulong2 = ulong2(), bool = false) {}
 template <typename T, int C, int R> void simdgroup_store(simdgroup_matrix<T, C, R>, device T *, ulong) {}
 template <typename T, int C, int R> void simdgroup_store(simdgroup_matrix<T, C, R>, threadgroup T *, ulong) {}
-template <typename T, int C, int R> void simdgroup_multiply_accumulate(thread simdgroup_matrix<T, C, R> &, simdgroup_matrix<T, C, R>, simdgroup_matrix<T, C, R>,
-                                                                       simdgroup_matrix<T, C, R>) {}
+template <typename D, typename A, typename B, typename C> void simdgroup_multiply_accumulate(thread D &, A, B, C) {}
 }  // namespace metal

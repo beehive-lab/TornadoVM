@@ -251,12 +251,19 @@ public final class Intrinsics {
         // QuantizationUtils.dp4a: MSL has no dp4a instruction; four int8 products in a helper.
         TABLE.put(new Key("tornado.dp4a", Dialect.METAL, ""), Spelling.withHelper("tc_dp4a($0, $1, $2, $3, $4)", "tc_dp4a"));
         TABLE.put(new Key("tornado.dp4a.packed", Dialect.METAL, ""), Spelling.withHelper("tc_dp4a_packed($0, $1, $2)", "tc_dp4a_packed"));
-        // simdgroup_float8x8 fragments (Matrix8x8Float values).
+        // simdgroup_float8x8 / simdgroup_half8x8 fragments (Matrix8x8Float / Matrix8x8Half values).
         metal("tornado.simdgroup_matrix.zero", "make_filled_simdgroup_matrix<float, 8, 8>(0.0f)");
-        TABLE.put(new Key("tornado.simdgroup_matrix.load", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load((device const float *) ($0), $1, $2)", "tc_simdgroup_matrix"));
-        TABLE.put(new Key("tornado.simdgroup_matrix.load_local", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load($0, $1, $2)", "tc_simdgroup_matrix"));
+        for (var transposed : new boolean[] { false, true }) {
+            var suffix = transposed ? "_transposed" : "";
+            var t = ", " + transposed + ")";
+            TABLE.put(new Key("tornado.simdgroup_matrix.load" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load((device const float *) ($0), $1, $2" + t, "tc_simdgroup_matrix"));
+            TABLE.put(new Key("tornado.simdgroup_matrix.load_local" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load($0, $1, $2" + t, "tc_simdgroup_matrix"));
+            TABLE.put(new Key("tornado.simdgroup_matrix.load_half" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load_half((device const half *) ($0), $1, $2" + t, "tc_simdgroup_matrix"));
+            TABLE.put(new Key("tornado.simdgroup_matrix.load_half_local" + suffix, Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_load_half($0, $1, $2" + t, "tc_simdgroup_matrix"));
+        }
         TABLE.put(new Key("tornado.simdgroup_matrix.mma", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_mma($0, $1, $2)", "tc_simdgroup_matrix"));
         TABLE.put(new Key("tornado.simdgroup_matrix.store", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_store($0, (device float *) ($1), $2, $3)", "tc_simdgroup_matrix"));
+        TABLE.put(new Key("tornado.simdgroup_matrix.store_local", Dialect.METAL, ""), Spelling.withHelper("tc_simdgroup_store($0, $1, $2, $3)", "tc_simdgroup_matrix"));
         metal("tornado.barrier.local", "threadgroup_barrier(mem_flags::mem_threadgroup)");
         metal("tornado.barrier.global", "threadgroup_barrier(mem_flags::mem_device)");
         // SIMD-group (warp) functions.

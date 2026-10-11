@@ -320,11 +320,24 @@ final class Bindings {
         // whole SIMD group. matrixMultiply8x8 is Java over these primitives.
         var matrix8x8 = "Luk/ac/manchester/tornado/api/types/matrix/Matrix8x8Float;";
         var fragment8x8 = ApiTypes.MATRIX_8X8_FLOAT;
+        var half8x8 = "Luk/ac/manchester/tornado/api/types/matrix/Matrix8x8Half;";
+        var halfFragment8x8 = ApiTypes.MATRIX_8X8_HALF;
         METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixZero()" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.zero", fragment8x8));
-        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixLoad(L" + ARRAYS + "FloatArray;II)" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.load", fragment8x8));
-        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixLoad([FII)" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.load_local", fragment8x8));
-        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixMultiplyAccumulate(" + matrix8x8 + matrix8x8 + matrix8x8 + ")" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.mma", fragment8x8));
+        // Loads: float or half, from a device array or a local (threadgroup) array, plain or transposed.
+        for (var transposed : new boolean[] { false, true }) {
+            var name = transposed ? ".simdgroupMatrixLoadTransposed(" : ".simdgroupMatrixLoad(";
+            var suffix = transposed ? "_transposed" : "";
+            METHODS.put(KERNEL_CONTEXT + name + "L" + ARRAYS + "FloatArray;II)" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.load" + suffix, fragment8x8));
+            METHODS.put(KERNEL_CONTEXT + name + "[FII)" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.load_local" + suffix, fragment8x8));
+            METHODS.put(KERNEL_CONTEXT + name + "L" + ARRAYS + "HalfFloatArray;II)" + half8x8, new Intrinsic("tornado.simdgroup_matrix.load_half" + suffix, halfFragment8x8));
+            METHODS.put(KERNEL_CONTEXT + name + "[L" + HALF_FLOAT + ";II)" + half8x8, new Intrinsic("tornado.simdgroup_matrix.load_half_local" + suffix, halfFragment8x8));
+        }
+        // Multiply-accumulate into a float fragment; half and mixed half/float inputs too.
+        for (var ab : new String[][] { { matrix8x8, matrix8x8 }, { half8x8, half8x8 }, { matrix8x8, half8x8 }, { half8x8, matrix8x8 } }) {
+            METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixMultiplyAccumulate(" + ab[0] + ab[1] + matrix8x8 + ")" + matrix8x8, new Intrinsic("tornado.simdgroup_matrix.mma", fragment8x8));
+        }
         METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixStore(" + matrix8x8 + "L" + ARRAYS + "FloatArray;II)V", new Intrinsic("tornado.simdgroup_matrix.store", Type.VOID));
+        METHODS.put(KERNEL_CONTEXT + ".simdgroupMatrixStore(" + matrix8x8 + "[FII)V", new Intrinsic("tornado.simdgroup_matrix.store_local", Type.VOID));
         METHODS.put(KERNEL_CONTEXT + ".matrixMultiply8x8(L" + ARRAYS + "FloatArray;IIL" + ARRAYS + "FloatArray;IIL" + ARRAYS + "FloatArray;III)V", new InlineJava());
         var vecI = new Type.VectorType(Type.I32, 4);
         METHODS.put(KERNEL_CONTEXT + ".mmaFragmentInt(I)[I", new Intrinsic("tornado.mma.fragment_int", vecI));

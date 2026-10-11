@@ -39,9 +39,11 @@ public final class ApiTypes {
     public static final Type.ObjectType PARTITION_VIEW = new Type.ObjectType(API + "tile.PartitionView");
     /** An Apple simdgroup matrix fragment: a value of the dialect's own type (MSL simdgroup_float8x8). */
     public static final Type.ObjectType MATRIX_8X8_FLOAT = new Type.ObjectType(API + "types.matrix.Matrix8x8Float");
+    /** The half-precision fragment (MSL simdgroup_half8x8). */
+    public static final Type.ObjectType MATRIX_8X8_HALF = new Type.ObjectType(API + "types.matrix.Matrix8x8Half");
     /** Object types that stay values on the device (the dialect names their type), not Java objects. */
     public static boolean isDeviceValue(Type type) {
-        return type.equals(MATRIX_8X8_FLOAT);
+        return type.equals(MATRIX_8X8_FLOAT) || type.equals(MATRIX_8X8_HALF);
     }
 
     public static final Type.ObjectType DEVICE_KERNEL = new Type.ObjectType(API + "DeviceKernel");

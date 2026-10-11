@@ -153,6 +153,7 @@ final class MetalDialect implements CDialect {
         return switch (type) {
             case Type.FloatType f when f.kind() == Type.FloatType.Kind.F16 -> Optional.of("half");
             case Type.ObjectType o when o.equals(ApiTypes.MATRIX_8X8_FLOAT) -> Optional.of("simdgroup_float8x8");
+            case Type.ObjectType o when o.equals(ApiTypes.MATRIX_8X8_HALF) -> Optional.of("simdgroup_half8x8");
             case Type.VectorType(var element, var length) when length > 4 -> throw new CEmitter.EmitException("TC-E4001",
                     "Metal vectors have at most 4 lanes (" + type.text() + ")");
             case Type.VectorType(var element, var length) when element instanceof Type.IntType(var bits) && bits > 1 -> Optional.of(integerName(bits) + length);

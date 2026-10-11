@@ -1,5 +1,6 @@
 ; Apple simdgroup matrices (KernelContext.simdgroupMatrix*): a Matrix8x8Float value is an MSL
-; simdgroup_float8x8; loads read device or threadgroup memory, stores write device memory.
+; simdgroup_float8x8; loads read device or threadgroup memory, stores write device memory. Half,
+; transposed and mixed fragments: simdgroup-matrix-half.tcir.
 ; RUN: tc-emit --target=metal --no-line-comments %s | FileCheck %s
 ; RUN: tc-emit --target=metal %s | mslcheck
 ; RUN: tc-emit --target=metal %s | metalc
@@ -13,23 +14,40 @@
 ; CHECK-NEXT:  static inline long tc_f2l(float x) { return isnan(x) ? 0 : x >= 9223372036854775807.0f ? 9223372036854775807L : x <= -9223372036854775808.0f ? (-9223372036854775807L - 1) : (long) x; }
 ; CHECK-NEXT:  static inline long tc_f2l(half x) { return tc_f2l((float) x); }
 ; CHECK-NEXT:  #endif
-; CHECK-LABEL: static inline simdgroup_float8x8 tc_simdgroup_load(device const float *p, int base, int stride) {
+; CHECK-LABEL: static inline simdgroup_float8x8 tc_simdgroup_load(device const float *p, int base, int stride, bool transpose) {
 ; CHECK-NEXT:    simdgroup_float8x8 m;
-; CHECK-NEXT:    simdgroup_load(m, p + base, (ulong) stride);
+; CHECK-NEXT:    simdgroup_load(m, p + base, (ulong) stride, ulong2(0, 0), transpose);
 ; CHECK-NEXT:    return m;
 ; CHECK-NEXT:  }
-; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const float *p, int base, int stride) {
+; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const float *p, int base, int stride, bool transpose) {
 ; CHECK-NEXT:    simdgroup_float8x8 m;
-; CHECK-NEXT:    simdgroup_load(m, p + base, (ulong) stride);
+; CHECK-NEXT:    simdgroup_load(m, p + base, (ulong) stride, ulong2(0, 0), transpose);
 ; CHECK-NEXT:    return m;
 ; CHECK-NEXT:  }
-; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_load(device const unsigned char *p, int base, int stride) {
-; CHECK-NEXT:    return tc_simdgroup_load((device const float *) p, base, stride);
+; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_load(device const unsigned char *p, int base, int stride, bool transpose) {
+; CHECK-NEXT:    return tc_simdgroup_load((device const float *) p, base, stride, transpose);
 ; CHECK-NEXT:  }
-; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const unsigned char *p, int base, int stride) {
-; CHECK-NEXT:    return tc_simdgroup_load((threadgroup const float *) p, base, stride);
+; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_load(threadgroup const unsigned char *p, int base, int stride, bool transpose) {
+; CHECK-NEXT:    return tc_simdgroup_load((threadgroup const float *) p, base, stride, transpose);
 ; CHECK-NEXT:  }
-; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_mma(simdgroup_float8x8 a, simdgroup_float8x8 b, simdgroup_float8x8 c) {
+; CHECK-NEXT:  static inline simdgroup_half8x8 tc_simdgroup_load_half(device const half *p, int base, int stride, bool transpose) {
+; CHECK-NEXT:    simdgroup_half8x8 m;
+; CHECK-NEXT:    simdgroup_load(m, p + base, (ulong) stride, ulong2(0, 0), transpose);
+; CHECK-NEXT:    return m;
+; CHECK-NEXT:  }
+; CHECK-NEXT:  static inline simdgroup_half8x8 tc_simdgroup_load_half(threadgroup const half *p, int base, int stride, bool transpose) {
+; CHECK-NEXT:    simdgroup_half8x8 m;
+; CHECK-NEXT:    simdgroup_load(m, p + base, (ulong) stride, ulong2(0, 0), transpose);
+; CHECK-NEXT:    return m;
+; CHECK-NEXT:  }
+; CHECK-NEXT:  static inline simdgroup_half8x8 tc_simdgroup_load_half(device const unsigned char *p, int base, int stride, bool transpose) {
+; CHECK-NEXT:    return tc_simdgroup_load_half((device const half *) p, base, stride, transpose);
+; CHECK-NEXT:  }
+; CHECK-NEXT:  static inline simdgroup_half8x8 tc_simdgroup_load_half(threadgroup const unsigned char *p, int base, int stride, bool transpose) {
+; CHECK-NEXT:    return tc_simdgroup_load_half((threadgroup const half *) p, base, stride, transpose);
+; CHECK-NEXT:  }
+; CHECK-NEXT:  template <typename A, typename B>
+; CHECK-NEXT:  static inline simdgroup_float8x8 tc_simdgroup_mma(A a, B b, simdgroup_float8x8 c) {
 ; CHECK-NEXT:    simdgroup_float8x8 d;
 ; CHECK-NEXT:    simdgroup_multiply_accumulate(d, a, b, c);
 ; CHECK-NEXT:    return d;
@@ -37,12 +55,21 @@
 ; CHECK-NEXT:  static inline void tc_simdgroup_store(simdgroup_float8x8 m, device float *p, int base, int stride) {
 ; CHECK-NEXT:    simdgroup_store(m, p + base, (ulong) stride);
 ; CHECK-NEXT:  }
+; CHECK-NEXT:  static inline void tc_simdgroup_store(simdgroup_float8x8 m, threadgroup float *p, int base, int stride) {
+; CHECK-NEXT:    simdgroup_store(m, p + base, (ulong) stride);
+; CHECK-NEXT:  }
+; CHECK-NEXT:  static inline void tc_simdgroup_store(simdgroup_float8x8 m, device unsigned char *p, int base, int stride) {
+; CHECK-NEXT:    tc_simdgroup_store(m, (device float *) p, base, stride);
+; CHECK-NEXT:  }
+; CHECK-NEXT:  static inline void tc_simdgroup_store(simdgroup_float8x8 m, threadgroup unsigned char *p, int base, int stride) {
+; CHECK-NEXT:    tc_simdgroup_store(m, (threadgroup float *) p, base, stride);
+; CHECK-NEXT:  }
 ; CHECK-LABEL: static inline void tile(device unsigned char *a, threadgroup unsigned char *s, device unsigned char *c, int base, int ld)
 ; CHECK-NEXT:  {
 ; CHECK-NEXT:    simdgroup_float8x8 acc, fa, fb, d;
 ; CHECK-NEXT:    acc = make_filled_simdgroup_matrix<float, 8, 8>(0.0f);
-; CHECK-NEXT:    fa = tc_simdgroup_load((device const float *) (a), base, ld);
-; CHECK-NEXT:    fb = tc_simdgroup_load(s, base, ld);
+; CHECK-NEXT:    fa = tc_simdgroup_load((device const float *) (a), base, ld, false);
+; CHECK-NEXT:    fb = tc_simdgroup_load(s, base, ld, false);
 ; CHECK-NEXT:    d = tc_simdgroup_mma(fa, fb, acc);
 ; CHECK-NEXT:    tc_simdgroup_store(d, (device float *) (c), base, ld);
 ; CHECK-NEXT:  }
@@ -56,3 +83,4 @@ device @tile(%a: ptr<global>, %s: ptr<shared>, %c: ptr<global>, %base: i32, %ld:
   tornado.simdgroup_matrix.store(%d, %c, %base, %ld)
   ret
 }
+
