@@ -64,8 +64,22 @@ public final class FuzzMain {
         int phase = Integer.parseInt(opts.getOrDefault("phase", "1"));
         Path outDir = Path.of(opts.getOrDefault("outDir", "/tmp/fuzz"));
 
-        TornadoDevice device = DeviceSelector.cudaDevice();
-        System.out.println("CUDA device: " + device.getDeviceName());
+        String backend = opts.getOrDefault("backend", "cuda");
+        TornadoDevice device = DeviceSelector.device(backend, Integer.parseInt(opts.getOrDefault("device", "0")));
+        System.out.println(backend + " device: " + device.getDeviceName());
+
+        if (opts.containsKey("replay")) {
+            // replay=<finding dir>: rerun a phase-3 finding's (possibly edited) Kernel.java on its saved inputs.
+            String fp64Opt = opts.getOrDefault("fp64", "auto");
+            boolean fp64 = fp64Opt.equals("auto") ? hasFp64(device) : Boolean.parseBoolean(fp64Opt);
+            var fuzzer = new uk.ac.manchester.tornado.fuzz.gen.Phase3Fuzzer(new InProcessCompiler(), device, fp64, outDir);
+            System.out.println(fuzzer.replay(Path.of(opts.get("replay"))));
+            return;
+        }
+        if (phase == 3) {
+            runPhase3(opts, device, startSeed, count, outDir);
+            return;
+        }
 
         // Optional template filter (phase 1), e.g. only=localmem-reduce,atomic-add — used to
         // target race/shared-memory-prone kernels for the compute-sanitizer pass.
@@ -139,6 +153,55 @@ public final class FuzzMain {
         System.out.println("Done. cases=" + count + " pass=" + passes + " findings=" + findings + " buckets=" + buckets.size() + coverageNote + " outDir=" + outDir);
         writeBucketSummary(outDir, buckets);
         buckets.forEach((k, n) -> System.out.println("  bucket " + n + "x  " + k));
+    }
+
+    /**
+     * Phase 3: typed programs (see {@link uk.ac.manchester.tornado.fuzz.gen.ProgramGen}), each as a
+     * KernelContext and an @Parallel kernel. Doubles are used when the device has fp64
+     * ({@code fp64=auto|true|false}).
+     */
+    private static void runPhase3(Map<String, String> opts, TornadoDevice device, long startSeed, int count, Path outDir) throws Exception {
+        String fp64Opt = opts.getOrDefault("fp64", "auto");
+        boolean fp64 = fp64Opt.equals("auto") ? hasFp64(device) : Boolean.parseBoolean(fp64Opt);
+        System.out.println("Phase 3: typed programs, fp64=" + fp64);
+        var fuzzer = new uk.ac.manchester.tornado.fuzz.gen.Phase3Fuzzer(new InProcessCompiler(), device, fp64, outDir);
+        long start = System.nanoTime();
+        for (long i = 0; i < count; i++) {
+            long seed = startSeed + i;
+            String outcome = fuzzer.run(seed);
+            if (!outcome.equals("pass")) {
+                System.out.println("CASE seed=" + seed + " -> " + outcome);
+            }
+            if ((i + 1) % 50 == 0) {
+                System.out.printf("... %d cases, %.0f s%n", i + 1, (System.nanoTime() - start) / 1e9);
+                fuzzer.writeSummary();
+            }
+        }
+        fuzzer.writeSummary();
+        System.out.println("Done. cases=" + count + " outDir=" + outDir.resolve("phase3"));
+        fuzzer.outcomes().forEach((k, n) -> System.out.println("  " + n + "x  " + k));
+    }
+
+    /** Whether the device runs a double kernel (devices without fp64 throw TornadoDeviceFP64NotSupported). */
+    private static boolean hasFp64(TornadoDevice device) {
+        var in = new uk.ac.manchester.tornado.api.types.arrays.DoubleArray(4);
+        var out = new uk.ac.manchester.tornado.api.types.arrays.DoubleArray(4);
+        var tg = new uk.ac.manchester.tornado.api.TaskGraph("fp64probe") //
+                .transferToDevice(uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION, in) //
+                .task("t", FuzzMain::doubleProbe, in, out) //
+                .transferToHost(uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION, out);
+        try (var plan = new uk.ac.manchester.tornado.api.TornadoExecutionPlan(tg.snapshot())) {
+            plan.withDevice(device).execute();
+            return true;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    private static void doubleProbe(uk.ac.manchester.tornado.api.types.arrays.DoubleArray in, uk.ac.manchester.tornado.api.types.arrays.DoubleArray out) {
+        for (@uk.ac.manchester.tornado.api.annotations.Parallel int i = 0; i < in.getSize(); i++) {
+            out.set(i, in.get(i) * 2.0);
+        }
     }
 
     /** Restrict the active phase-1 templates to a comma-separated list of ids, or all when null. */

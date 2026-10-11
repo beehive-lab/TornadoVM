@@ -51,11 +51,9 @@ public final class InProcessCompiler {
     private final boolean useSystemLoader;
 
     public InProcessCompiler() throws IOException {
-        // If a gen directory is supplied AND it is on the launch -cp, the generated
-        // class can be loaded by the system classloader, which is the only loader
-        // TornadoVM's ASMClassVisitor consults (via getSystemClassLoader().getResourceAsStream).
-        // Otherwise fall back to an isolated URLClassLoader (TC can read it, but the
-        // annotation visitor cannot locate the .class resource).
+        // With a gen directory that is also on the launch -cp, generated classes load through the
+        // system class loader; otherwise each loads through its own URLClassLoader. TC reads a
+        // kernel's class file through the kernel class's own loader, so both work.
         String genDir = System.getProperty("tornado.fuzz.genDir");
         if (genDir != null) {
             this.workDir = Files.createDirectories(Path.of(genDir));
@@ -88,12 +86,13 @@ public final class InProcessCompiler {
             List<String> options = new ArrayList<>();
             options.add("-classpath");
             options.add(classpath);
-            options.add("-source");
-            options.add("21");
-            options.add("-target");
-            options.add("21");
-            // TornadoVM's array types are compiled with JDK 21 preview features enabled.
-            options.add("--enable-preview");
+            // The running JDK's class-file version; preview only for a jdk21 SDK, whose API classes
+            // are compiled with JDK 21 preview features (a jdk22plus SDK uses none).
+            options.add("--release");
+            options.add(Integer.toString(Runtime.version().feature()));
+            if (sdkUsesPreview()) {
+                options.add("--enable-preview");
+            }
             options.add("-proc:none");
             // TornadoVM's code generator reads the LocalVariableTable, which javac only
             // emits with debug info. Without -g the sketch compilation NPEs.
@@ -119,6 +118,18 @@ public final class InProcessCompiler {
     }
 
     /** True when generated classes load via the system classloader (required for CUDA JIT). */
+    private static boolean sdkUsesPreview() {
+        String home = System.getenv("TORNADOVM_HOME");
+        if (home == null) {
+            return false;
+        }
+        try {
+            return Files.readString(Path.of(home, "etc", "tornado.jdk")).contains("tornado.jdk.preview=true");
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public boolean usesSystemLoader() {
         return useSystemLoader;
     }
