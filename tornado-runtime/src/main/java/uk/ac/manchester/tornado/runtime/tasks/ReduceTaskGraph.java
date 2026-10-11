@@ -239,6 +239,22 @@ class ReduceTaskGraph {
         };
     }
 
+    /**
+     * Where a task's kernel arguments start in {@link TaskPackage#getTaskParameters()}: after the lambda
+     * for a lambda task, at 0 for a method task ({@code TaskGraph.task(id, Method, args)}).
+     */
+    private static int argOffset(TaskPackage taskPackage) {
+        return taskPackage.isMethodTask() ? 0 : 1;
+    }
+
+    private static int argCount(TaskPackage taskPackage) {
+        return taskPackage.getTaskParameters().length - argOffset(taskPackage);
+    }
+
+    private static Method kernelOf(TaskPackage taskPackage) {
+        return taskPackage.isMethodTask() ? taskPackage.getMethod() : TaskUtils.resolveMethodHandle(taskPackage.getTaskParameters()[0]);
+    }
+
     private static int nextPowerOfTwo(int value) {
         return value <= 1 ? 1 : Integer.highestOneBit(value - 1) << 1;
     }
@@ -396,7 +412,7 @@ class ReduceTaskGraph {
                 int inputSize = 0;
                 for (Integer paramIndex : listOfReduceIndexParameters) {
 
-                    Object originalReduceArray = taskPackage.getTaskParameters()[paramIndex + 1];
+                    Object originalReduceArray = taskPackage.getTaskParameters()[paramIndex + argOffset(taskPackage)];
 
                     // If the array has been already created, we don't have to create another one,
                     // just obtain the already created reference from the cache-table.
@@ -474,12 +490,12 @@ class ReduceTaskGraph {
 
             // Update the reference for the new tasks if there is a data
             // dependency with the new variables created by the TornadoVM
-            int taskType = taskPackages.get(taskNumber).getTaskType();
-            for (int i = 0; i < taskType; i++) {
-                Object key = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
+            int offset = argOffset(taskPackage);
+            for (int i = 0; i < argCount(taskPackage); i++) {
+                Object key = taskPackage.getTaskParameters()[i + offset];
                 if (originalReduceVariables.containsKey(key)) {
                     Object value = originalReduceVariables.get(key);
-                    taskPackages.get(taskNumber).getTaskParameters()[i + 1] = value;
+                    taskPackage.getTaskParameters()[i + offset] = value;
                 }
             }
 
@@ -488,8 +504,8 @@ class ReduceTaskGraph {
             // reduce parallel tasks
             if (tableReduce.containsKey(taskNumber)) {
                 // We only analyze for parallel tasks
-                for (int i = 0; i < taskPackages.get(taskNumber).getTaskParameters().length - 1; i++) {
-                    Object parameterToMethod = taskPackages.get(taskNumber).getTaskParameters()[i + 1];
+                for (int i = 0; i < argCount(taskPackage); i++) {
+                    Object parameterToMethod = taskPackage.getTaskParameters()[i + offset];
                     if (reduceOperandTable.containsKey(parameterToMethod) && (reduceOperandTable.get(parameterToMethod).size() > 1)) {
                         rewrittenTaskGraph.transferToDevice(DataTransferMode.FIRST_EXECUTION, parameterToMethod);
                     }
@@ -571,9 +587,8 @@ class ReduceTaskGraph {
     private boolean checkAllArgumentsPerTask() {
         for (TaskPackage task : taskPackages) {
             Object[] taskParameters = task.getTaskParameters();
-            // Note: the first element in the object list is a lambda expression
-            // (computation)
-            for (int i = 1; i < (taskParameters.length - 1); i++) {
+            // A lambda task's first element is the lambda (the computation); a method task has none.
+            for (int i = argOffset(task); i < (taskParameters.length - 1); i++) {
                 Object parameter = taskParameters[i];
                 // TileContext is host-side only for the same reason KernelContext is: it exists
                 // to be intrinsified and is never transferred. This check is separate from the
@@ -811,10 +826,10 @@ class ReduceTaskGraph {
         private void runHostTailReduction(TaskPackage taskPackage, Map<Object, Object> hostHybridVariables) {
             try {
                 // 1. Set arguments to the reduction method.
-                int numArgs = taskPackage.getTaskParameters().length - 1;
+                int numArgs = argCount(taskPackage);
                 Object[] args = new Object[numArgs];
                 for (int i = 0; i < numArgs; i++) {
-                    Object argument = taskPackage.getTaskParameters()[i + 1];
+                    Object argument = taskPackage.getTaskParameters()[i + argOffset(taskPackage)];
                     args[i] = hostHybridVariables.getOrDefault(argument, argument);
                 }
 
@@ -845,7 +860,7 @@ class ReduceTaskGraph {
                     }
                 }
             }
-            Method method = TaskUtils.resolveMethodHandle(taskPackage.getTaskParameters()[0]);
+            Method method = kernelOf(taskPackage);
             method.setAccessible(true);
             method.invoke(null, hostArgs);
         }

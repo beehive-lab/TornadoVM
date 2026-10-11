@@ -1771,8 +1771,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         for (TaskPackage task : taskPackages) {
             Object[] taskParameters = task.getTaskParameters();
-            // Note: the first element in the object list is a lambda expression (computation)
-            for (int i = 1; i < (taskParameters.length - 1); i++) {
+            // A lambda task's first element is the lambda (the computation); a method task has none.
+            for (int i = task.isMethodTask() ? 0 : 1; i < (taskParameters.length - 1); i++) {
                 Object parameter = taskParameters[i];
                 if (isArgumentIgnorable(parameter)) {
                     continue;
