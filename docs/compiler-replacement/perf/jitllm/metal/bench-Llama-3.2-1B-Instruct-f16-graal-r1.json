@@ -1,0 +1,5 @@
+[
+  {"model": "Llama-3.2-1B-Instruct-f16", "quant": "F16", "size_gib": 2.309, "params_b": 1.236, "backend": "TornadoVM METAL", "arch": "llama", "mode": "STANDARD", "selection": "llama / F16 / STANDARD", "test": "pp128", "avg_ts": 14.84, "stddev_ts": 1.17, "median_ts": 14.63, "samples_ts": [16.73, 14.71, 14.63, 13.53, 14.58]},
+  {"model": "Llama-3.2-1B-Instruct-f16", "quant": "F16", "size_gib": 2.309, "params_b": 1.236, "backend": "TornadoVM METAL", "arch": "llama", "mode": "STANDARD", "selection": "llama / F16 / STANDARD", "test": "pp512", "avg_ts": 12.55, "stddev_ts": 0.29, "median_ts": 12.71, "samples_ts": [12.26, 12.22, 12.83, 12.71, 12.73]},
+  {"model": "Llama-3.2-1B-Instruct-f16", "quant": "F16", "size_gib": 2.309, "params_b": 1.236, "backend": "TornadoVM METAL", "arch": "llama", "mode": "STANDARD", "selection": "llama / F16 / STANDARD", "test": "tg64", "avg_ts": 16.13, "stddev_ts": 0.76, "median_ts": 16.31, "samples_ts": [15.25, 15.42, 16.31, 16.98, 16.68]}
+]

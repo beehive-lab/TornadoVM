@@ -147,7 +147,7 @@ Apple M3 Pro, macOS 26.6, JDK 21.0.2, `make BACKEND=metal`, device 0:0.
    one test, two accepted differences). Fixes in between: goto-free control flow, fp64 refusals as
    `TornadoDeviceFP64NotSupported`, simdgroup matrices, dp4a, 64-bit atomic add, NaN tests under
    fast math. Details in parity-matrix.md.
-4. **jitLLM**: Greedy output token-identical to Graal on Metal for Llama-3.2-1B-Instruct F16 (181 kernels by TC) and Qwen3-1.7B F16 (313 kernels), fallback off, `--fp32-kv-cache` (jitLLM has no FP16 key/value path on Metal). Bench (`jitllm bench --pp 128,512 --tg 64`) in progress; to be recorded here.
+4. **jitLLM**: Greedy output token-identical to Graal on Metal for Llama-3.2-1B-Instruct F16 (181 kernels by TC) and Qwen3-1.7B F16 (313 kernels), fallback off, `--fp32-kv-cache` (jitLLM has no FP16 key/value path on Metal). Bench (`jitllm bench --pp 128,512 --tg 64 --repetitions 5`, two rounds in alternating order, [perf/jitllm/metal](docs/compiler-replacement/perf/jitllm/metal)), TC/Graal mean of the two rounds' medians: Llama 1.04 / 1.01 / 1.08 (pp128/pp512/tg64), Qwen3 0.99 / 0.99 / 0.98. Round-to-round spread on this laptop is up to 15% (Qwen3 tg64: 1.08 then 0.89), so the two compilers are level within noise.
 
 Answers to the open questions:
 
