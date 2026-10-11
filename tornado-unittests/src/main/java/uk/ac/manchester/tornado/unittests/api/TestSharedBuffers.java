@@ -761,4 +761,50 @@ public class TestSharedBuffers extends TornadoTestBase {
             }
         }
     }
+
+    public static void addOne(KernelContext context, IntArray a) {
+        int i = context.globalIdx;
+        if (i < a.getSize()) {
+            a.set(i, a.get(i) + 1);
+        }
+    }
+
+    /**
+     * A plan of three graphs chained with consumeFromDevice without a producer name, run with
+     * {@code execute()} on the whole plan rather than graph by graph: each graph must see the
+     * previous graph's result.
+     */
+    @Test
+    public void testWholePlanExecuteChainsEmptyConsume() throws TornadoExecutionPlanException {
+        IntArray a = new IntArray(numElements);
+        a.init(0);
+
+        TaskGraph g0 = new TaskGraph("g0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t", TestSharedBuffers::addOne, new KernelContext(), a) //
+                .persistOnDevice(a);
+        TaskGraph g1 = new TaskGraph("g1") //
+                .consumeFromDevice(a) //
+                .task("t", TestSharedBuffers::addOne, new KernelContext(), a) //
+                .persistOnDevice(a);
+        TaskGraph g2 = new TaskGraph("g2") //
+                .consumeFromDevice(a) //
+                .task("t", TestSharedBuffers::addOne, new KernelContext(), a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        WorkerGrid worker = new WorkerGrid1D(numElements);
+        worker.setLocalWork(numElements, 1, 1);
+        GridScheduler scheduler = new GridScheduler();
+        scheduler.addWorkerGrid("g0.t", worker);
+        scheduler.addWorkerGrid("g1.t", worker);
+        scheduler.addWorkerGrid("g2.t", worker);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(g0.snapshot(), g1.snapshot(), g2.snapshot())) {
+            executionPlan.withGridScheduler(scheduler).execute();
+
+            for (int i = 0; i < a.getSize(); i++) {
+                assertEquals(3, a.get(i));
+            }
+        }
+    }
 }

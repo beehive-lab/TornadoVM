@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Half;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -542,6 +543,149 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Stores an 8x8 row-major fragment to a local (threadgroup) array starting at
+     * element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_store} to {@code threadgroup} memory.
+     */
+    public void simdgroupMatrixStore(Matrix8x8Float m, float[] c, int base, int stride) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                c[base + i * stride + j] = m.values[i * 8 + j];
+            }
+        }
+    }
+
+    /**
+     * Loads an 8x8 row-major half-precision fragment from device memory starting at
+     * element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load} into a {@code simdgroup_half8x8}.
+     */
+    public Matrix8x8Half simdgroupMatrixLoad(HalfFloatArray a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + i * stride + j).getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Loads an 8x8 row-major half-precision fragment from a local (threadgroup) array
+     * starting at element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load} from {@code threadgroup half} memory.
+     */
+    public Matrix8x8Half simdgroupMatrixLoad(HalfFloat[] a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + i * stride + j].getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Loads the transpose of the 8x8 block at element {@code base} (rows {@code stride}
+     * elements apart) from device memory: element {@code (i, j)} of the fragment is
+     * {@code a[base + j * stride + i]}. Use it to multiply by a matrix stored with the
+     * contraction dimension contiguous, such as weight rows.
+     * <p>Metal equivalent: {@code simdgroup_load} with {@code transpose = true}.
+     */
+    public Matrix8x8Float simdgroupMatrixLoadTransposed(FloatArray a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + j * stride + i);
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Transposed load of an 8x8 block from a local (threadgroup) array; see
+     * {@link #simdgroupMatrixLoadTransposed(FloatArray, int, int)}.
+     */
+    public Matrix8x8Float simdgroupMatrixLoadTransposed(float[] a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + j * stride + i];
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Transposed load of an 8x8 half-precision block from device memory; see
+     * {@link #simdgroupMatrixLoadTransposed(FloatArray, int, int)}.
+     */
+    public Matrix8x8Half simdgroupMatrixLoadTransposed(HalfFloatArray a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + j * stride + i).getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Transposed load of an 8x8 half-precision block from a local (threadgroup) array;
+     * see {@link #simdgroupMatrixLoadTransposed(FloatArray, int, int)}.
+     */
+    public Matrix8x8Half simdgroupMatrixLoadTransposed(HalfFloat[] a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + j * stride + i].getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Returns {@code a * b + c} for half-precision {@code a} and {@code b}, accumulating
+     * in single precision.
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Half a, Matrix8x8Half b, Matrix8x8Float c) {
+        return multiplyAccumulate8x8(a.values, b.values, c);
+    }
+
+    /**
+     * Returns {@code a * b + c} for a single-precision {@code a} and a half-precision
+     * {@code b}, accumulating in single precision.
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Float a, Matrix8x8Half b, Matrix8x8Float c) {
+        return multiplyAccumulate8x8(a.values, b.values, c);
+    }
+
+    /**
+     * Returns {@code a * b + c} for a half-precision {@code a} and a single-precision
+     * {@code b}, accumulating in single precision.
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Half a, Matrix8x8Float b, Matrix8x8Float c) {
+        return multiplyAccumulate8x8(a.values, b.values, c);
+    }
+
+    private static Matrix8x8Float multiplyAccumulate8x8(float[] a, float[] b, Matrix8x8Float c) {
+        Matrix8x8Float d = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                float acc = c.values[i * 8 + j];
+                for (int p = 0; p < 8; p++) {
+                    acc += a[i * 8 + p] * b[p * 8 + j];
+                }
+                d.values[i * 8 + j] = acc;
+            }
+        }
+        return d;
+    }
+
+    /**
      * Method used to read a memory address by using the array and the index,
      * then add the value of val to it, and write the result back to the same address.
      * <p>
@@ -848,6 +992,62 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Loads the m16n8k16 A fragment straight from a row-major matrix in global memory,
+     * without staging the tile through shared memory.
+     *
+     * <p>The fragment covers the 16x16 sub-matrix whose top-left element is
+     * {@code a[row * ld + col]}. Each lane reads its own four pairs of adjacent half
+     * values as 32-bit loads, in the fixed PTX m16n8k16 A layout: for lane {@code L},
+     * register {@code i} holds row {@code L / 4 + 8 * (i % 2)}, columns
+     * {@code (L % 4) * 2 + 8 * (i / 2)} and the next one. No barrier is needed, so a
+     * warp can load, multiply and store its own tile without synchronising with the
+     * rest of the work-group.
+     *
+     * <p>The call is warp-collective. {@code col} and {@code ld} must be even, so that each
+     * half pair is 4-byte aligned.
+     *
+     * PTX equivalent: ld.global.b32 ra0..ra3 (one per lane and register)
+     *
+     * @param a   the row-major source matrix
+     * @param row the first row of the 16x16 sub-matrix
+     * @param col the first column of the 16x16 sub-matrix (the first k index)
+     * @param ld  the number of elements between two consecutive rows of {@code a}
+     * @return the lane's A fragment, to pass to {@link #mma(HalfFloat[], HalfFloat[], float[], MMAShape)}
+     */
+    public HalfFloat[] mmaLoadA(HalfFloatArray a, int row, int col, int ld) {
+        // CPU fallback: return an 8-element fragment.
+        // On GPU this is replaced by a CUDAMMALoadGlobalNode by the plugin.
+        return new HalfFloat[8];
+    }
+
+    /**
+     * Loads the m16n8k16 B fragment straight from a row-major matrix in global memory,
+     * without staging the tile through shared memory.
+     *
+     * <p>The fragment covers the 16x8 (k x n) sub-matrix whose top-left element is
+     * {@code b[row * ld + col]}. mma.sync takes B column-major, so each lane reads a pair
+     * of adjacent half values along n with a 32-bit load and the warp transposes the two
+     * 8x8 halves in registers ({@code movmatrix}). For lane {@code L}, register {@code i}
+     * then holds column {@code L / 4}, rows {@code (L % 4) * 2 + 8 * i} and the next one.
+     *
+     * <p>The call is warp-collective. {@code col} and {@code ld} must be even, so that each
+     * half pair is 4-byte aligned.
+     *
+     * PTX equivalent: ld.global.b32 + movmatrix.sync.aligned.m8n8.trans.b16 (x2 per lane)
+     *
+     * @param b   the row-major source matrix
+     * @param row the first row of the 16x8 sub-matrix (the first k index)
+     * @param col the first column of the 16x8 sub-matrix
+     * @param ld  the number of elements between two consecutive rows of {@code b}
+     * @return the lane's B fragment, to pass to {@link #mma(HalfFloat[], HalfFloat[], float[], MMAShape)}
+     */
+    public HalfFloat[] mmaLoadB(HalfFloatArray b, int row, int col, int ld) {
+        // CPU fallback: return a 4-element fragment.
+        // On GPU this is replaced by a CUDAMMALoadGlobalNode by the plugin.
+        return new HalfFloat[4];
+    }
+
+    /**
      * Loads the B fragment for mma.sync from a swizzled shared-memory tile
      * populated using {@link #swizzleStoreFp16Stride32(HalfFloat[], int, int, int, HalfFloat)}.
      *
@@ -1094,6 +1294,32 @@ public class KernelContext implements ExecutionContext {
         int b2 = src.get(srcIndex + 2) & 0xFF;
         int b3 = src.get(srcIndex + 3) & 0xFF;
         dstTile[dstIndex] = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
+    }
+
+    /**
+     * Asynchronous 16-byte global-to-shared copy of eight adjacent FP16 elements into the four
+     * packed b32 tile slots {@code dstTile[dstIndex .. dstIndex + 3]} (CUDA {@code cp.async.cg}).
+     * {@code dstIndex} must be a multiple of four and the source 16-byte aligned: {@code srcIndex}
+     * a multiple of eight. Same synchronization contract as
+     * {@link #asyncCopyToLocal(int[], int, HalfFloatArray, int)}; one copy instead of four moves
+     * the same bytes in a quarter of the instructions and memory requests.
+     */
+    public void asyncCopyToLocal16(int[] dstTile, int dstIndex, HalfFloatArray src, int srcIndex) {
+        for (int i = 0; i < 4; i++) {
+            asyncCopyToLocal(dstTile, dstIndex + i, src, srcIndex + 2 * i);
+        }
+    }
+
+    /**
+     * Asynchronous 16-byte global-to-shared copy of sixteen adjacent bytes into the four packed
+     * b32 tile slots {@code dstTile[dstIndex .. dstIndex + 3]} (CUDA {@code cp.async.cg}).
+     * {@code dstIndex} must be a multiple of four and the source 16-byte aligned: {@code srcIndex}
+     * a multiple of sixteen. See {@link #asyncCopyToLocal16(int[], int, HalfFloatArray, int)}.
+     */
+    public void asyncCopyToLocal16(int[] dstTile, int dstIndex, ByteArray src, int srcIndex) {
+        for (int i = 0; i < 4; i++) {
+            asyncCopyToLocal(dstTile, dstIndex + i, src, srcIndex + 4 * i);
+        }
     }
 
     /**

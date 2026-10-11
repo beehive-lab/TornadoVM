@@ -58,10 +58,6 @@ public abstract class BenchmarkRunner {
         return TornadoRuntimeProvider.isProfilerEnabled();
     }
 
-    private static boolean isPowerMonitoringEnabled() {
-        return TornadoRuntimeProvider.isPowerMonitoringEnabled();
-    }
-
     public void run() {
         final String id = getIdString();
 
@@ -73,15 +69,8 @@ public abstract class BenchmarkRunner {
             StringBuilder stringBuilder = new StringBuilder();
             // Run the Java Reference
             final BenchmarkDriver referenceTest = getJavaDriver();
-            if (isPowerMonitoringEnabled()) {
-                referenceTest.benchmarkWithEnergy(id, null, false);
-            } else {
-                referenceTest.benchmark(null, false);
-            }
+            referenceTest.benchmark(null, false);
             stringBuilder.append("Performance: bm=" + id + ", " + "id=" + "java-reference" + ", " + referenceTest.getPreciseSummary() + "\n");
-            if (isPowerMonitoringEnabled()) {
-                stringBuilder.append("Energy: bm=" + id + ", " + "id=" + "java-reference" + ", " + referenceTest.getEnergySummary() + "\n");
-            }
 
             refElapsed = referenceTest.getAverage();
             refElapsedMedian = referenceTest.getMedian();
@@ -89,15 +78,8 @@ public abstract class BenchmarkRunner {
 
             final BenchmarkDriver streamsTest = getStreamsDriver();
             if (streamsTest != null && !SKIP_STREAMS) {
-                if (isPowerMonitoringEnabled()) {
-                    streamsTest.benchmarkWithEnergy(id, null, false);
-                } else {
-                    streamsTest.benchmark(null, false);
-                }
+                streamsTest.benchmark(null, false);
                 stringBuilder.append("Performance: bm=" + id + ", " + "id=" + "java-streams" + ", " + streamsTest.getPreciseSummary() + "\n");
-                if (isPowerMonitoringEnabled()) {
-                    stringBuilder.append("Energy: bm=" + id + ", " + "id=" + "java-streams" + ", " + streamsTest.getEnergySummary() + "\n");
-                }
             }
             if (STORE_OUTPUT_TO_FILE.isEmpty()) {
                 System.out.printf(stringBuilder.toString());
@@ -155,11 +137,7 @@ public abstract class BenchmarkRunner {
                 TornadoRuntimeProvider.setProperty("benchmark.device", driverIndex + ":" + deviceIndex);
                 final BenchmarkDriver benchmarkDriver = getTornadoDriver();
                 try {
-                    if (isPowerMonitoringEnabled()) {
-                        benchmarkDriver.benchmarkWithEnergy(id, tornadoDevice, isProfilerEnabled());
-                    } else {
-                        benchmarkDriver.benchmark(tornadoDevice, isProfilerEnabled());
-                    }
+                    benchmarkDriver.benchmark(tornadoDevice, isProfilerEnabled());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -183,9 +161,6 @@ public abstract class BenchmarkRunner {
                             + ", copyOutAvg=" + benchmarkDriver.getAverageCopyOutTime() //
                             + ", deviceName=" + driver.getDevice(deviceIndex) + "\n");
                 }
-                if (isPowerMonitoringEnabled()) {
-                    stringBuilder.append("Energy: bm=" + id + ", " + "id=" + driverIndex + ":" + deviceIndex + ", " + benchmarkDriver.getEnergySummary() + "\n");
-                }
                 if (STORE_OUTPUT_TO_FILE.isEmpty()) {
                     System.out.printf(stringBuilder.toString());
                 } else {
@@ -206,11 +181,7 @@ public abstract class BenchmarkRunner {
             final BenchmarkDriver deviceTest = getTornadoDriver();
             final TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(driverIndex);
             final TornadoDevice tornadoDevice = driver.getDevice(deviceIndex);
-            if (isPowerMonitoringEnabled()) {
-                deviceTest.benchmarkWithEnergy(id, tornadoDevice, isProfilerEnabled());
-            } else {
-                deviceTest.benchmark(tornadoDevice, isProfilerEnabled());
-            }
+            deviceTest.benchmark(tornadoDevice, isProfilerEnabled());
             stringBuilder.append("Performance: bm=" + id //
                     + ", " + "device=" + driverIndex + ":" + deviceIndex //
                     + ", " + deviceTest.getPreciseSummary() //

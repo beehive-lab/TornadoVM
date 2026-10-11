@@ -7,6 +7,22 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 7.2.0
+---------------
+07/10/26
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1183 <https://github.com/beehive-lab/TornadoVM/pull/1183>`_: Chain consumeFromDevice between graphs when a whole multi-graph plan executes
+- `#1163 <https://github.com/beehive-lab/TornadoVM/pull/1163>`_: [api] Support native arrays with more than Integer.MAX_VALUE elements
+- `#1195 <https://github.com/beehive-lab/TornadoVM/pull/1195>`_: Add KernelContext mmaLoadA/mmaLoadB fragment loads from global HalfFloatArray (CUDA)
+- `#1194 <https://github.com/beehive-lab/TornadoVM/pull/1194>`_: [cuda] Keep CUDA Tile k-loops rolled instead of fully unrolling them
+- `#1191 <https://github.com/beehive-lab/TornadoVM/pull/1191>`_: Remove the SNMP UPS power reader and the snmp4j dependency
+- `#1173 <https://github.com/beehive-lab/TornadoVM/pull/1173>`_: Fix device index for tasks on identical GPUs
+- `#1182 <https://github.com/beehive-lab/TornadoVM/pull/1182>`_: Fix --ea: disable assertions for the relocated tornado.graal package
+
+
 TornadoVM 7.1.0
 ---------------
 04/10/26

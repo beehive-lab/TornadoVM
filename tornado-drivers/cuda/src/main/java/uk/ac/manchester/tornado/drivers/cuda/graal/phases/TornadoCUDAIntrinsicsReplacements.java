@@ -70,6 +70,7 @@ import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadAInt8Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBInt8Node;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadBSwizzledNode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMALoadGlobalNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreBSwizzledNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAMMAStoreNode;
 import uk.ac.manchester.tornado.drivers.cuda.graal.nodes.CUDAShuffleDownNode;
@@ -380,10 +381,17 @@ public class TornadoCUDAIntrinsicsReplacements extends BasePhase<TornadoHighTier
     /**
      * Rewrite a surviving {@code KernelContext.mmaLoad*} invoke into the matching MMA load node. Argument 0 is the
      * receiver, 1 the tile, 2 the wmmaK; an optional argument 3 is the per-lane byte offset (the offset-carrying
-     * plugin overload).
+     * plugin overload). The four-argument mmaLoadA/mmaLoadB overload loads from a global HalfFloatArray instead.
      */
     private void lowerMMALoad(StructuredGraph graph, InvokeNode invoke, MMALoadKind kind) {
         NodeInputList<ValueNode> args = invoke.callTarget().arguments();
+        if ((kind == MMALoadKind.A || kind == MMALoadKind.B) && args.size() == 5) {
+            // mmaLoadA/mmaLoadB(HalfFloatArray, row, col, ld): the global-memory overload.
+            CUDAMMALoadGlobalNode node = new CUDAMMALoadGlobalNode(args.get(1), args.get(2), args.get(3), args.get(4), kind == MMALoadKind.B,
+                    (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
+            graph.replaceFixed(invoke, graph.add(node));
+            return;
+        }
         ValueNode tile = args.get(1);
         ValueNode wmmaK = args.get(2);
         ValueNode byteOffset = args.size() > 3 ? args.get(3) : null;

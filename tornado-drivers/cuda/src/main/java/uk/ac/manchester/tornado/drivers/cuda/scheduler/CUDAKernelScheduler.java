@@ -27,7 +27,6 @@ import java.util.Arrays;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.runtime.common.UpsMeterReader;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAGridInfo;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAKernel;
@@ -68,14 +67,6 @@ public abstract class CUDAKernelScheduler {
         if (TornadoOptions.isProfilerEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
             // Metrics captured before blocking
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
-            if (TornadoOptions.isUpsReaderEnabled()) {
-                meta.getProfiler().setSystemPowerConsumption(ProfilerType.SYSTEM_POWER_CONSUMPTION_W, meta.getId(), (UpsMeterReader.getOutputPowerMetric() != null)
-                        ? Long.parseLong(UpsMeterReader.getOutputPowerMetric())
-                        : -1);
-                meta.getProfiler().setSystemVoltage(ProfilerType.SYSTEM_VOLTAGE_V, meta.getId(), (UpsMeterReader.getOutputVoltageMetric() != null)
-                        ? Long.parseLong(UpsMeterReader.getOutputVoltageMetric())
-                        : -1);
-            }
 
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
             tornadoKernelEvent.waitForEvents(executionPlanId);

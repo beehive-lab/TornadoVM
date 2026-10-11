@@ -24,7 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.LongBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of longs stored in native memory. The long data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
@@ -34,7 +34,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 public final class LongArray extends TornadoNativeArray {
     private static final int LONG_BYTES = 8;
     private TornadoMemorySegment segment;
-    private int numberOfElements;
+    private long numberOfElements;
     private int arrayHeaderSize;
 
     private int baseIndex;
@@ -48,7 +48,18 @@ public final class LongArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public LongArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link LongArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public LongArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / LONG_BYTES;
 
@@ -69,13 +80,12 @@ public final class LongArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, LONG_BYTES);
-        this.numberOfElements = (int) (dataSize / LONG_BYTES);
+        this.numberOfElements = toNumElements(dataSize, LONG_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -134,8 +144,7 @@ public final class LongArray extends TornadoNativeArray {
      */
     public static LongArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / LONG_BYTES);
-        ensureMultipleOfElementSize(byteSize, LONG_BYTES);
+        long numElements = toNumElements(byteSize, LONG_BYTES);
         LongArray longArray = new LongArray(numElements);
         MemorySegment.copy(segment, 0, longArray.segment.getSegment(), (long) longArray.baseIndex * LONG_BYTES, byteSize);
         return longArray;
@@ -188,7 +197,7 @@ public final class LongArray extends TornadoNativeArray {
      * @return A new {@link LongArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static LongArray concat(LongArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(LongArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(LongArray::getSizeLong).sum());
         LongArray concatArray = new LongArray(newSize);
         long currentPositionBytes = 0;
         for (LongArray array : arrays) {
@@ -224,6 +233,18 @@ public final class LongArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the long value at a specified index of the {@link LongArray} instance.
+     *
+     * @param index
+     *         The index at which to set the long value.
+     * @param value
+     *         The long value to store at the specified index.
+     */
+    public void set(long index, long value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
      * Gets the long value stored at the specified index of the {@link LongArray} instance.
      *
      * @param index
@@ -231,6 +252,17 @@ public final class LongArray extends TornadoNativeArray {
      * @return
      */
     public long get(int index) {
+        return segment.getLongAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets the long value stored at the specified index of the {@link LongArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the long value.
+     * @return
+     */
+    public long get(long index) {
         return segment.getLongAtIndex(index, baseIndex);
     }
 
@@ -254,7 +286,7 @@ public final class LongArray extends TornadoNativeArray {
      *         The long value to initialize the {@link LongArray} instance with.
      */
     public void init(long value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value, baseIndex);
         }
     }
@@ -266,6 +298,11 @@ public final class LongArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -321,7 +358,14 @@ public final class LongArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public LongArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public LongArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 

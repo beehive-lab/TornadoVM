@@ -32,14 +32,12 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
@@ -131,26 +129,28 @@ public final class MetalObjects {
     /**
      * A host-side timing record. When {@link #commandBuffer} is non-zero this is a kernel event and
      * execution times are read back from the buffer's GPU timestamps; otherwise it is a CPU-side
-     * transfer whose times were taken on the host clock. A batched dispatch has no command buffer of
-     * its own but names its {@link #queue}: waiting on it drains that queue.
+     * transfer whose times were taken on the host clock.
      */
     private static final class TimingEvent {
         final long queuedNs;
         final long startNs;
         final long endNs;
         final long commandBuffer;
+        /** The queue a kernel was encoded on and the shared-event value its command buffer signals; 0 for transfers. */
         final long queue;
+        final long value;
 
         TimingEvent(long queuedNs, long startNs, long endNs, long commandBuffer) {
-            this(queuedNs, startNs, endNs, commandBuffer, 0);
+            this(queuedNs, startNs, endNs, commandBuffer, 0, 0);
         }
 
-        TimingEvent(long queuedNs, long startNs, long endNs, long commandBuffer, long queue) {
+        TimingEvent(long queuedNs, long startNs, long endNs, long commandBuffer, long queue, long value) {
             this.queuedNs = queuedNs;
             this.startNs = startNs;
             this.endNs = endNs;
             this.commandBuffer = commandBuffer;
             this.queue = queue;
+            this.value = value;
         }
     }
 
@@ -249,6 +249,10 @@ public final class MetalObjects {
         return MetalAPI.deviceRecommendedMaxWorkingSetSize(device);
     }
 
+    public static long deviceMaxBufferLength(long device) {
+        return MetalAPI.deviceMaxBufferLength(device);
+    }
+
     public static long deviceLocalMemorySize(long device) {
         return MetalAPI.deviceMaxThreadgroupMemoryLength(device);
     }
@@ -282,11 +286,18 @@ public final class MetalObjects {
     }
 
     public static void releaseCommandQueue(long queue) {
-        drain(queue);
-        BATCHES.remove(queue);
+        finish(queue);
         QueueEvent queueEvent = QUEUE_EVENTS.remove(queue);
-        if (queueEvent != null && queueEvent.event != 0) {
-            ObjCRuntime.release(queueEvent.event);
+        if (queueEvent != null) {
+            synchronized (queueEvent) {
+                if (queueEvent.lastCommitted != 0) {
+                    ObjCRuntime.release(queueEvent.lastCommitted);
+                    queueEvent.lastCommitted = 0;
+                }
+            }
+            if (queueEvent.event != 0) {
+                ObjCRuntime.release(queueEvent.event);
+            }
         }
         ObjCRuntime.release(queue);
     }
@@ -316,7 +327,8 @@ public final class MetalObjects {
     }
 
     public static void releaseMemObject(long buffer) {
-        drainFor(buffer);
+        // A command buffer still in flight keeps its own reference to the buffer.
+        BUFFER_USES.remove(buffer);
         ObjCRuntime.release(buffer);
     }
 
@@ -403,8 +415,15 @@ public final class MetalObjects {
 
     // ------------------------------------------------------------------ kernels
 
-    /** Creates a compute pipeline for {@code name} and captures its argument reflection. */
-    public static long createKernel(long program, String name) {
+    /**
+     * Creates a compute pipeline for {@code name} and captures its argument reflection.
+     *
+     * @throws MetalException
+     *     if the library has no function of that name or Metal refuses to build its pipeline, for
+     *     example because the kernel needs more threadgroup memory than the device has. The message
+     *     carries Metal's own reason.
+     */
+    public static long createKernel(long program, String name) throws MetalException {
         ProgramState state = PROGRAMS.get(program);
         if (state == null || state.library() == 0 || name == null) {
             return 0;
@@ -414,7 +433,7 @@ public final class MetalObjects {
             long function = MetalAPI.newFunctionWithName(state.library(), nameString);
             ObjCRuntime.release(nameString);
             if (function == 0) {
-                return 0;
+                throw new MetalException("Metal library has no function named " + name);
             }
             long device = state.device() != 0 ? state.device() : MetalAPI.createSystemDefaultDevice();
             MemorySegment reflectionSlot = FFMSupport.allocatePointer(arena);
@@ -422,7 +441,9 @@ public final class MetalObjects {
             long pipeline = MetalAPI.newComputePipelineStateWithFunctionReflection(device, function, MetalAPI.MTL_PIPELINE_OPTION_ARGUMENT_INFO, reflectionSlot, errorSlot);
             ObjCRuntime.release(function);
             if (pipeline == 0) {
-                return 0;
+                long error = errorSlot.get(C_POINTER, 0).address();
+                String reason = error == 0 ? "no reason given" : MetalAPI.errorDescription(error);
+                throw new MetalException("Unable to create the Metal compute pipeline for " + name + ": " + reason);
             }
             String[] argInfo = readArgumentInfo(reflectionSlot.get(C_POINTER, 0).address());
             long key = KERNEL_IDS.incrementAndGet();
@@ -465,7 +486,6 @@ public final class MetalObjects {
     }
 
     public static void releaseKernel(long kernel) {
-        drainAll();
         KernelState state = KERNELS.remove(kernel);
         if (state != null && state.pipeline != 0) {
             ObjCRuntime.release(state.pipeline);
@@ -539,9 +559,55 @@ public final class MetalObjects {
     // ------------------------------------------------------------------ dispatch
 
     /**
-     * Encodes one compute dispatch. With batching on (the default, see {@link #BATCH}) it is appended
-     * to the queue's open command buffer and the returned event names the queue; otherwise it runs
-     * synchronously and the event holds the retained command buffer for its GPU timestamps.
+     * Kernels are encoded into one open command buffer per queue and committed in batches of
+     * {@link #BATCH_SIZE} without waiting, instead of one command buffer per kernel that the CPU
+     * commits and waits for. Commands in a compute encoder and command buffers on a queue run in the
+     * order they were encoded, so the kernels of a task graph still run one after another. The CPU
+     * waits only where it needs a result: a host read or write of a buffer that a pending command
+     * buffer binds (see {@link #awaitBuffer}), a wait on an event, {@link #finish} and blits. Set
+     * {@code -Dtornado.metal.dispatch.batch=False} to commit and wait for every kernel.
+     */
+    private static final boolean BATCH = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.batch", "True"));
+
+    /**
+     * Kernels per command buffer before it is committed. Small batches keep the GPU working while the
+     * CPU encodes the next kernels; large ones leave it idle until a whole batch is encoded. Measured
+     * on an M4 Pro, Qwen3-0.6B decode (tg64, tok/s, F16 / Q8_0) at batch sizes 1, 2, 4, 8 and 32:
+     * 58 / 60, 64 / 64, 57 / 58, 50 / 48 and 41 / 43, against 19 / 18 committing and waiting for
+     * every kernel ({@code -Dtornado.metal.dispatch.batchSize=N} to change it).
+     */
+    private static final int BATCH_SIZE = Math.max(1, Integer.getInteger("tornado.metal.dispatch.batchSize", 2));
+
+    /** Whether kernels are batched into shared command buffers rather than waited for one by one. */
+    public static boolean batchesDispatches() {
+        return BATCH;
+    }
+
+    /** An open command buffer and its compute encoder, both retained until the buffer is committed. */
+    private static final class Batch {
+        final long commandBuffer;
+        final long encoder;
+        /** The shared-event value the command buffer signals when its work is done. */
+        final long value;
+        int dispatches;
+
+        Batch(long commandBuffer, long encoder, long value) {
+            this.commandBuffer = commandBuffer;
+            this.encoder = encoder;
+            this.value = value;
+        }
+    }
+
+    /** The queue and shared-event value of the last command buffer that bound a buffer. */
+    private record BufferUse(long queue, long value) {
+    }
+
+    private static final Map<Long, BufferUse> BUFFER_USES = new ConcurrentHashMap<>();
+
+    /**
+     * Encodes one compute dispatch on {@code queue}, returning a timing event that holds the retained
+     * command buffer for its GPU timestamps. With batching the dispatch joins the queue's open
+     * command buffer and the call returns without waiting; otherwise it runs synchronously.
      */
     public static long enqueueNDRangeKernel(long queue, long kernel, long[] globalWorkSize, long[] localWorkSize) {
         KernelState state = KERNELS.get(kernel);
@@ -570,231 +636,124 @@ public final class MetalObjects {
             lz = 1;
         }
 
-        if (batching()) {
-            if (LAZY_SYNC) {
-                drainOtherQueuesUsing(queue, state);
+        QueueEvent queueEvent = queueEvent(queue);
+        boolean batched = BATCH && queueEvent.event != 0;
+        // Command buffers on one queue run in order; across queues they do not. A buffer that work
+        // pending on another queue binds is waited for here, before this queue's lock is taken.
+        for (Arg arg : state.args) {
+            if (arg != null && arg.kind == 0 && arg.buffer != 0) {
+                BufferUse use = BUFFER_USES.get(arg.buffer);
+                if (use != null && use.queue() != queue) {
+                    awaitBuffer(arg.buffer);
+                }
             }
-            QueueBatch batch = BATCHES.computeIfAbsent(queue, q -> new QueueBatch());
-            synchronized (batch) {
-                try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
-                    if (batch.commandBuffer == 0) {
-                        batch.commandBuffer = ObjCRuntime.retain(MetalAPI.commandBuffer(queue));
-                        batch.encoder = ObjCRuntime.retain(MetalAPI.computeCommandEncoder(batch.commandBuffer));
+        }
+        long retainedCommandBuffer;
+        long value;
+        // Encoding into a queue's open command buffer must not interleave with another thread's.
+        synchronized (queueEvent) {
+            try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
+                Batch batch = batched ? openBatch(queueEvent, queue) : null;
+                long commandBuffer = batch != null ? batch.commandBuffer : MetalAPI.commandBuffer(queue);
+                long encoder = batch != null ? batch.encoder : MetalAPI.computeCommandEncoder(commandBuffer);
+                value = batch != null ? batch.value : ++queueEvent.value;
+                MetalAPI.setComputePipelineState(encoder, state.pipeline);
+
+                for (int i = 0; i < state.args.size(); i++) {
+                    Arg arg = state.args.get(i);
+                    if (arg == null) {
+                        continue;
                     }
-                    encodeDispatch(batch.encoder, state, arena, gx, gy, gz, lx, ly, lz);
-                    for (Arg arg : state.args) {
-                        if (arg != null && arg.kind == 0 && arg.buffer != 0) {
-                            batch.buffers.add(arg.buffer);
+                    switch (arg.kind) {
+                        case 0 -> {
+                            if (arg.buffer != 0) {
+                                MetalAPI.setBuffer(encoder, arg.buffer, 0, i);
+                                BUFFER_USES.put(arg.buffer, new BufferUse(queue, value));
+                            }
+                        }
+                        case 1 -> {
+                            if (arg.bytes != null && arg.size > 0) {
+                                MemorySegment segment = arena.allocate(arg.bytes.length);
+                                MemorySegment.copy(arg.bytes, 0, segment, FFMSupport.C_CHAR, 0, arg.bytes.length);
+                                MetalAPI.setBytes(encoder, segment, arg.size, i);
+                            }
+                        }
+                        case 2 -> MetalAPI.setThreadgroupMemoryLength(encoder, arg.size, i);
+                        default -> {
                         }
                     }
-                    if (++batch.dispatches >= BATCH_COMMIT_INTERVAL) {
-                        commitOpen(queue, batch);
+                }
+
+                // The three global sizes, bound past the user arguments, fill the _global_sizes parameter
+                // the generated MSL reads. setBytes copies them into the command buffer, which is cheaper
+                // than creating (and mapping for the GPU) a new buffer on every launch.
+                int sizesIndex = state.args.size();
+                MemorySegment sizes = arena.allocate(3 * Integer.BYTES);
+                sizes.set(C_INT, 0, (int) gx);
+                sizes.set(C_INT, 4, (int) gy);
+                sizes.set(C_INT, 8, (int) gz);
+                MetalAPI.setBytes(encoder, sizes, 3L * Integer.BYTES, sizesIndex);
+
+                MemorySegment grid = mtlSize(arena, gx, gy, gz);
+                MemorySegment group = mtlSize(arena, lx, ly, lz);
+                MetalAPI.dispatchThreads(encoder, grid, group);
+                // Retain across the pool so GPUStartTime/GPUEndTime can be read when the profiler asks.
+                retainedCommandBuffer = ObjCRuntime.retain(commandBuffer);
+                if (batch != null) {
+                    if (++batch.dispatches >= BATCH_SIZE) {
+                        commitOpenBatch(queueEvent);
                     }
-                }
-            }
-            return registerEvent(new TimingEvent(queuedNs, queuedNs, System.nanoTime(), 0, queue));
-        }
-
-        // Synchronous: anything batched before (e.g. before the profiler was switched on) runs first.
-        drain(queue);
-        long retainedCommandBuffer;
-        try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
-            long commandBuffer = MetalAPI.commandBuffer(queue);
-            long encoder = MetalAPI.computeCommandEncoder(commandBuffer);
-            encodeDispatch(encoder, state, arena, gx, gy, gz, lx, ly, lz);
-            MetalAPI.endEncoding(encoder);
-            commitAndWait(queue, commandBuffer);
-            // Retain across the pool so GPUStartTime/GPUEndTime can be read when the profiler asks.
-            retainedCommandBuffer = ObjCRuntime.retain(commandBuffer);
-        }
-        return registerEvent(new TimingEvent(queuedNs, 0, 0, retainedCommandBuffer));
-    }
-
-    /** Binds the kernel's recorded arguments and the global sizes, then encodes the dispatch. */
-    private static void encodeDispatch(long encoder, KernelState state, Arena arena, long gx, long gy, long gz, long lx, long ly, long lz) {
-        MetalAPI.setComputePipelineState(encoder, state.pipeline);
-
-        for (int i = 0; i < state.args.size(); i++) {
-            Arg arg = state.args.get(i);
-            if (arg == null) {
-                continue;
-            }
-            switch (arg.kind) {
-                case 0 -> {
-                    if (arg.buffer != 0) {
-                        MetalAPI.setBuffer(encoder, arg.buffer, 0, i);
-                    }
-                }
-                case 1 -> {
-                    if (arg.bytes != null && arg.size > 0) {
-                        MemorySegment segment = arena.allocate(arg.bytes.length);
-                        MemorySegment.copy(arg.bytes, 0, segment, FFMSupport.C_CHAR, 0, arg.bytes.length);
-                        MetalAPI.setBytes(encoder, segment, arg.size, i);
-                    }
-                }
-                case 2 -> MetalAPI.setThreadgroupMemoryLength(encoder, arg.size, i);
-                default -> {
+                } else {
+                    MetalAPI.endEncoding(encoder);
+                    commitSignalled(queueEvent, commandBuffer, value);
                 }
             }
         }
-
-        // The three global sizes, bound past the user arguments, fill the _global_sizes parameter
-        // the generated MSL reads. setBytes copies them into the command buffer, which is cheaper
-        // than creating (and mapping for the GPU) a new buffer on every launch.
-        int sizesIndex = state.args.size();
-        MemorySegment sizes = arena.allocate(3 * Integer.BYTES);
-        sizes.set(C_INT, 0, (int) gx);
-        sizes.set(C_INT, 4, (int) gy);
-        sizes.set(C_INT, 8, (int) gz);
-        MetalAPI.setBytes(encoder, sizes, 3L * Integer.BYTES, sizesIndex);
-
-        MemorySegment grid = mtlSize(arena, gx, gy, gz);
-        MemorySegment group = mtlSize(arena, lx, ly, lz);
-        MetalAPI.dispatchThreads(encoder, grid, group);
-    }
-
-    // ------------------------------------------------------------------ batched dispatch
-
-    /**
-     * Whether kernel launches are batched: appended to one open command buffer per queue instead of
-     * each being committed and waited for on its own. A synchronous launch leaves the GPU idle while
-     * the CPU waits and encodes the next one, which costs the round trip on every kernel and keeps
-     * the GPU clock low. Dispatches in a batch share one serial compute encoder, so each runs after
-     * the previous one finished and sees its writes; command buffers on a queue run in commit order.
-     * The batch is drained (committed and waited for) before anything that touches device memory
-     * from outside it: host reads and writes, blits, event waits, {@link #finish}, a library task
-     * taking the queue or a buffer address, and releases. The profiler needs per-kernel GPU
-     * timestamps, so it keeps synchronous launches. {@code -Dtornado.metal.dispatch.batch=False}
-     * switches batching off.
-     */
-    private static final boolean BATCH = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.batch", "True"));
-
-    /**
-     * Dispatches per command buffer before it is committed (without waiting), so the GPU starts on a
-     * long batch while the CPU encodes the rest of it. {@code -Dtornado.metal.dispatch.batchSize}.
-     */
-    private static final int BATCH_COMMIT_INTERVAL = Math.max(1, Integer.getInteger("tornado.metal.dispatch.batchSize", 16));
-
-    /**
-     * Whether {@link #finish} commits the batch without waiting for it, so that {@code execute()} of
-     * a task graph returns once its work is queued rather than done. Nothing on the host can observe
-     * the difference: every host read or write of a buffer a pending dispatch uses, every event wait,
-     * library call and release drains first, and a dispatch on another queue that binds such a buffer
-     * drains that queue first. What moves is the wall-clock time of the wait, to the next of those.
-     * Off by default; {@code -Dtornado.metal.dispatch.lazySync=True}.
-     */
-    private static final boolean LAZY_SYNC = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.lazySync", "False"));
-
-    /** Drains every other queue with a pending dispatch bound to one of {@code state}'s buffers. */
-    private static void drainOtherQueuesUsing(long queue, KernelState state) {
-        if (BATCHES.size() < 2) {
-            return;
+        if (!batched) {
+            waitForValue(queueEvent, value);
         }
-        for (Map.Entry<Long, QueueBatch> entry : BATCHES.entrySet()) {
-            if (entry.getKey() == queue) {
-                continue;
-            }
-            QueueBatch other = entry.getValue();
-            boolean pending = false;
-            synchronized (other) {
-                for (Arg arg : state.args) {
-                    if (arg != null && arg.kind == 0 && other.buffers.contains(arg.buffer)) {
-                        pending = true;
-                        break;
-                    }
-                }
-            }
-            if (pending) {
-                drain(entry.getKey());
-            }
+        return registerEvent(new TimingEvent(queuedNs, 0, 0, retainedCommandBuffer, queue, value));
+    }
+
+    /** The queue's open command buffer, started if there is none. Caller holds the queue event's lock. */
+    private static Batch openBatch(QueueEvent queueEvent, long queue) {
+        if (queueEvent.open == null) {
+            long commandBuffer = ObjCRuntime.retain(MetalAPI.commandBuffer(queue));
+            long encoder = ObjCRuntime.retain(MetalAPI.computeCommandEncoder(commandBuffer));
+            queueEvent.open = new Batch(commandBuffer, encoder, ++queueEvent.value);
         }
+        return queueEvent.open;
     }
 
-    /** The open command buffer of a queue and the last one committed from it. */
-    private static final class QueueBatch {
-        /** Retained, open; 0 when nothing is being encoded. */
-        long commandBuffer;
-        /** Retained compute encoder of {@link #commandBuffer}. */
-        long encoder;
-        int dispatches;
-        /** Retained, committed and not yet waited for; 0 when none. */
-        long lastCommitted;
-        /** The shared-event value {@link #lastCommitted} signals, or 0 when it signals none. */
-        long lastValue;
-        /** Buffers bound by the dispatches not yet waited for: a host access to one has to drain. */
-        final Set<Long> buffers = new HashSet<>();
-    }
-
-    private static final Map<Long, QueueBatch> BATCHES = new ConcurrentHashMap<>();
-
-
-    private static boolean batching() {
-        return BATCH && !TornadoOptions.isProfilerEnabled();
-    }
-
-    /** Whether launches are batched now; the launch path then binds the kernel frame by value. */
-    public static boolean isBatching() {
-        return batching();
-    }
-
-    /** Ends and commits the open command buffer of {@code batch} without waiting for it. Holds the batch lock. */
-    private static void commitOpen(long queue, QueueBatch batch) {
-        if (batch.commandBuffer == 0) {
-            return;
-        }
-        MetalAPI.endEncoding(batch.encoder);
-        ObjCRuntime.release(batch.encoder);
-        long value = signalAndCommit(queue, batch.commandBuffer);
-        if (batch.lastCommitted != 0) {
-            ObjCRuntime.release(batch.lastCommitted);
-        }
-        batch.lastCommitted = batch.commandBuffer;
-        batch.lastValue = value;
-        batch.commandBuffer = 0;
-        batch.encoder = 0;
-        batch.dispatches = 0;
-    }
-
-    /** Commits whatever is batched on {@code queue} and returns once the GPU has finished all of it. */
-    public static void drain(long queue) {
-        QueueBatch batch = BATCHES.get(queue);
+    /** Ends and commits the queue's open command buffer, if there is one. Caller holds the queue event's lock. */
+    private static void commitOpenBatch(QueueEvent queueEvent) {
+        Batch batch = queueEvent.open;
         if (batch == null) {
             return;
         }
-        synchronized (batch) {
-            commitOpen(queue, batch);
-            if (batch.lastCommitted != 0) {
-                awaitCommitted(queue, batch.lastCommitted, batch.lastValue);
-                ObjCRuntime.release(batch.lastCommitted);
-                batch.lastCommitted = 0;
-                batch.lastValue = 0;
-            }
-            batch.buffers.clear();
-        }
-    }
-
-    /** {@link #drain} for every queue: for an access that may touch any buffer. */
-    public static void drainAll() {
-        for (Long queue : BATCHES.keySet()) {
-            drain(queue);
-        }
+        queueEvent.open = null;
+        MetalAPI.endEncoding(batch.encoder);
+        ObjCRuntime.release(batch.encoder);
+        commitSignalled(queueEvent, batch.commandBuffer, batch.value);
+        // The kernels' timing events hold their own references to the command buffer.
+        ObjCRuntime.release(batch.commandBuffer);
     }
 
     /**
-     * {@link #drain} for every queue with a pending dispatch bound to {@code buffer}: for a host
-     * read or write of it. A buffer no pending dispatch uses -- the next kernel's stack frame, an
-     * input of the next graph -- is accessed without waiting.
+     * Commits {@code commandBuffer} so that it sets the queue's shared event to {@code value} when its
+     * work is done. Values are taken and committed under the queue event's lock, so command buffers are
+     * committed in the order of their values and a waiter for a lower value cannot return before its
+     * own buffer has finished. Caller holds the lock.
      */
-    private static void drainFor(long buffer) {
-        for (Map.Entry<Long, QueueBatch> entry : BATCHES.entrySet()) {
-            QueueBatch batch = entry.getValue();
-            boolean pending;
-            synchronized (batch) {
-                pending = batch.buffers.contains(buffer);
-            }
-            if (pending) {
-                drain(entry.getKey());
-            }
+    private static void commitSignalled(QueueEvent queueEvent, long commandBuffer, long value) {
+        if (queueEvent.event != 0) {
+            MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
+        }
+        MetalAPI.commit(commandBuffer);
+        long previous = queueEvent.lastCommitted;
+        queueEvent.lastCommitted = ObjCRuntime.retain(commandBuffer);
+        if (previous != 0) {
+            ObjCRuntime.release(previous);
         }
     }
 
@@ -802,8 +761,8 @@ public final class MetalObjects {
      * Wait for a committed command buffer by polling an {@code MTLSharedEvent} it signals, rather
      * than with {@code waitUntilCompleted}. The event is set as soon as the GPU finishes the encoded
      * work, while completion of the command buffer reaches the CPU some 60-90 us later on Apple
-     * silicon, so this takes that delay off every synchronous launch. A queue whose last wait took
-     * longer than {@link #SPIN_BUDGET_NS} blocks right away on the next one (see {@link QueueEvent#block}). Set
+     * silicon, so this takes that delay off every wait. A queue whose last wait took longer than
+     * {@link #SPIN_BUDGET_NS} blocks right away on the next one (see {@link QueueEvent#block}). Set
      * {@code -Dtornado.metal.dispatch.spinWait=False} to wait with {@code waitUntilCompleted}.
      */
     private static final boolean SPIN_WAIT = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.spinWait", "True"));
@@ -818,10 +777,14 @@ public final class MetalObjects {
      */
     private static final long SPIN_BUDGET_NS = 1_000_000;
 
-    /** One shared event per command queue, with the last value it was asked to signal. */
+    /** Per command queue: a shared event, the last value it was asked to signal, and the open command buffer. */
     private static final class QueueEvent {
         final long event;
         long value;
+        /** The command buffer kernels are being encoded into, or null. Guarded by this object's lock. */
+        Batch open;
+        /** The last committed command buffer, retained, for blocking waits. Guarded by this object's lock. */
+        long lastCommitted;
         /**
          * Whether the last wait on this queue took longer than {@link #SPIN_BUDGET_NS}. The next wait
          * then blocks right away: for long kernels, polling cannot save a meaningful share of the time,
@@ -836,60 +799,85 @@ public final class MetalObjects {
 
     private static final Map<Long, QueueEvent> QUEUE_EVENTS = new ConcurrentHashMap<>();
 
-    /** Commits {@code commandBuffer} on {@code queue} and returns once the GPU has finished its work. */
+    private static QueueEvent queueEvent(long queue) {
+        return QUEUE_EVENTS.computeIfAbsent(queue, q -> new QueueEvent(MetalAPI.newSharedEvent(MetalAPI.queueDevice(q))));
+    }
+
+    /** Commits {@code commandBuffer} on {@code queue}, after anything still open there, and returns once the GPU has finished it. */
     private static void commitAndWait(long queue, long commandBuffer) {
-        awaitCommitted(queue, commandBuffer, signalAndCommit(queue, commandBuffer));
+        QueueEvent queueEvent = queueEvent(queue);
+        long value;
+        synchronized (queueEvent) {
+            commitOpenBatch(queueEvent);
+            value = ++queueEvent.value;
+            commitSignalled(queueEvent, commandBuffer, value);
+        }
+        waitForValue(queueEvent, value);
+    }
+
+    /** Returns once the command buffer that signals {@code value} on the queue has finished, committing it first if it is still open. */
+    private static void waitForValue(QueueEvent queueEvent, long value) {
+        long commandBuffer;
+        synchronized (queueEvent) {
+            if (queueEvent.open != null && queueEvent.open.value <= value) {
+                commitOpenBatch(queueEvent);
+            }
+            if (queueEvent.event != 0 && MetalAPI.sharedEventSignaledValue(queueEvent.event) >= value) {
+                return;
+            }
+            if (queueEvent.lastCommitted == 0) {
+                return;
+            }
+            // Command buffers on a queue finish in order, so the last committed one finishing
+            // implies the one that signals value has finished.
+            commandBuffer = ObjCRuntime.retain(queueEvent.lastCommitted);
+        }
+        try {
+            if (!SPIN_WAIT || queueEvent.event == 0) {
+                MetalAPI.waitUntilCompleted(commandBuffer);
+                return;
+            }
+            long start = System.nanoTime();
+            if (queueEvent.block) {
+                MetalAPI.waitUntilCompleted(commandBuffer);
+                queueEvent.block = System.nanoTime() - start > SPIN_BUDGET_NS;
+                return;
+            }
+            int polls = 0;
+            while (MetalAPI.sharedEventSignaledValue(queueEvent.event) < value) {
+                if (++polls % STATUS_POLL_INTERVAL == 0) {
+                    if (System.nanoTime() - start > SPIN_BUDGET_NS) {
+                        MetalAPI.waitUntilCompleted(commandBuffer);
+                        queueEvent.block = true;
+                        return;
+                    }
+                    if (MetalAPI.commandBufferStatus(commandBuffer) >= MetalAPI.MTL_COMMAND_BUFFER_STATUS_COMPLETED) {
+                        // Finished without signalling: the buffer failed, and its status says so.
+                        return;
+                    }
+                }
+                Thread.yield();
+            }
+        } finally {
+            ObjCRuntime.release(commandBuffer);
+        }
     }
 
     /**
-     * Commits {@code commandBuffer}, first encoding a signal of the queue's shared event when spin
-     * waiting is on. Returns the value it will signal, or 0 when it signals none.
+     * Returns once no command buffer that binds {@code buffer} is pending, so the host can read or
+     * write its contents. Buffers the pending work does not bind -- the common case for a task's
+     * inputs -- need no wait.
      */
-    private static long signalAndCommit(long queue, long commandBuffer) {
-        QueueEvent queueEvent = SPIN_WAIT ? QUEUE_EVENTS.computeIfAbsent(queue, q -> new QueueEvent(MetalAPI.newSharedEvent(MetalAPI.queueDevice(q)))) : null;
-        if (queueEvent == null || queueEvent.event == 0) {
-            MetalAPI.commit(commandBuffer);
-            return 0;
-        }
-        // Take the value and commit under one lock, so that command buffers are committed in the order
-        // of their values. Otherwise a thread sharing the queue could commit a higher value first, and a
-        // waiter for a lower value would return before its own buffer had finished.
-        synchronized (queueEvent) {
-            long value = ++queueEvent.value;
-            MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
-            MetalAPI.commit(commandBuffer);
-            return value;
-        }
-    }
-
-    /** Returns once committed {@code commandBuffer}, which signals {@code value} (0: none), has finished. */
-    private static void awaitCommitted(long queue, long commandBuffer, long value) {
-        QueueEvent queueEvent = value == 0 ? null : QUEUE_EVENTS.get(queue);
-        if (queueEvent == null) {
-            MetalAPI.waitUntilCompleted(commandBuffer);
+    public static void awaitBuffer(long buffer) {
+        BufferUse use = BUFFER_USES.get(buffer);
+        if (use == null) {
             return;
         }
-        long start = System.nanoTime();
-        if (queueEvent.block) {
-            MetalAPI.waitUntilCompleted(commandBuffer);
-            queueEvent.block = System.nanoTime() - start > SPIN_BUDGET_NS;
+        QueueEvent queueEvent = QUEUE_EVENTS.get(use.queue());
+        if (queueEvent == null || (queueEvent.event != 0 && MetalAPI.sharedEventSignaledValue(queueEvent.event) >= use.value())) {
             return;
         }
-        int polls = 0;
-        while (MetalAPI.sharedEventSignaledValue(queueEvent.event) < value) {
-            if (++polls % STATUS_POLL_INTERVAL == 0) {
-                if (System.nanoTime() - start > SPIN_BUDGET_NS) {
-                    MetalAPI.waitUntilCompleted(commandBuffer);
-                    queueEvent.block = true;
-                    return;
-                }
-                if (MetalAPI.commandBufferStatus(commandBuffer) >= MetalAPI.MTL_COMMAND_BUFFER_STATUS_COMPLETED) {
-                    // Finished without signalling: the buffer failed, and its status says so.
-                    return;
-                }
-            }
-            Thread.yield();
-        }
+        waitForValue(queueEvent, use.value());
     }
 
     private static MemorySegment mtlSize(Arena arena, long width, long height, long depth) {
@@ -904,7 +892,7 @@ public final class MetalObjects {
 
     /** Host-to-device copy from a Java array into the shared buffer's CPU-visible memory. */
     public static long writeArray(long buffer, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes) {
-        drainFor(buffer);
+        awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0) {
@@ -919,7 +907,7 @@ public final class MetalObjects {
 
     /** Device-to-host copy out of the shared buffer's CPU-visible memory into a Java array. */
     public static long readArray(long buffer, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes) {
-        drainFor(buffer);
+        awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0) {
@@ -933,7 +921,7 @@ public final class MetalObjects {
     }
 
     public static long writeSegment(long buffer, long hostPointer, long hostOffset, long offset, long bytes) {
-        drainFor(buffer);
+        awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0 || hostPointer == 0) {
@@ -948,7 +936,7 @@ public final class MetalObjects {
     }
 
     public static long readSegment(long buffer, long hostPointer, long hostOffset, long offset, long bytes) {
-        drainFor(buffer);
+        awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
         long contents = MetalAPI.bufferContents(buffer);
         if (contents == 0 || hostPointer == 0) {
@@ -964,50 +952,41 @@ public final class MetalObjects {
 
     // ------------------------------------------------------------------ queue lifecycle
 
+    /** Commits the queue's open command buffer without waiting for it. */
     public static void flush(long queue) {
-        // Metal has no flush distinct from committing a command buffer; nothing to do.
+        QueueEvent queueEvent = QUEUE_EVENTS.get(queue);
+        if (queueEvent != null) {
+            synchronized (queueEvent) {
+                commitOpenBatch(queueEvent);
+            }
+        }
     }
 
+    /** Returns once everything encoded on the queue has finished, committing its open command buffer first. */
     public static void finish(long queue) {
         if (queue == 0) {
             return;
         }
-        if (LAZY_SYNC && batching()) {
-            QueueBatch batch = BATCHES.get(queue);
-            if (batch != null) {
-                synchronized (batch) {
-                    commitOpen(queue, batch);
+        QueueEvent queueEvent = QUEUE_EVENTS.get(queue);
+        if (queueEvent == null) {
+            // Nothing was committed on this queue here; an empty command buffer waits for anything else on it.
+            try (ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
+                long commandBuffer = MetalAPI.commandBuffer(queue);
+                if (commandBuffer != 0) {
+                    MetalAPI.commit(commandBuffer);
+                    MetalAPI.waitUntilCompleted(commandBuffer);
                 }
             }
             return;
         }
-        drain(queue);
-        QueueEvent queueEvent = QUEUE_EVENTS.get(queue);
-        if (queueEvent != null && workFinished(queueEvent)) {
-            // Every command buffer on this queue signals the event when its work is done, and the
-            // event has reached the last value asked for, so there is nothing left to wait for. A
-            // committed empty buffer would instead wait for the completion notices of the earlier
-            // buffers, the delay that polling the event avoided.
-            return;
-        }
-        try (ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
-            long commandBuffer = MetalAPI.commandBuffer(queue);
-            if (commandBuffer != 0) {
-                MetalAPI.commit(commandBuffer);
-                MetalAPI.waitUntilCompleted(commandBuffer);
-            }
-        }
-    }
-
-    private static boolean workFinished(QueueEvent queueEvent) {
         long value;
         synchronized (queueEvent) {
             value = queueEvent.value;
         }
-        return MetalAPI.sharedEventSignaledValue(queueEvent.event) >= value;
+        waitForValue(queueEvent, value);
     }
 
-    /** Barriers and markers reduce to waiting on the listed events, all of which already completed. */
+    /** Barriers and markers reduce to waiting on the listed events. */
     public static void waitForEventList(long[] events) {
         if (events == null) {
             return;
@@ -1022,9 +1001,13 @@ public final class MetalObjects {
             return;
         }
         TimingEvent state = EVENTS.get(event);
-        if (state != null && state.queue != 0) {
-            drain(state.queue);
-        } else if (state != null && state.commandBuffer != 0) {
+        if (state == null) {
+            return;
+        }
+        QueueEvent queueEvent = state.queue != 0 ? QUEUE_EVENTS.get(state.queue) : null;
+        if (queueEvent != null) {
+            waitForValue(queueEvent, state.value);
+        } else if (state.commandBuffer != 0) {
             MetalAPI.waitUntilCompleted(state.commandBuffer);
         }
     }
@@ -1042,7 +1025,8 @@ public final class MetalObjects {
 
     public static void eventInfo(long event, int param, byte[] buffer) {
         java.util.Arrays.fill(buffer, (byte) 0);
-        // CL_COMPLETE == 0 as a little-endian int; every event here has already run to completion.
+        // CL_COMPLETE == 0 as a little-endian int. Kernels may still be pending, but every wait on an
+        // event commits and waits for its command buffer, so callers never act on a stale status.
         writeInt(buffer, 0);
     }
 
@@ -1052,12 +1036,12 @@ public final class MetalObjects {
         if (state == null || buffer.length < 8) {
             return;
         }
-        if (state.queue != 0) {
-            drain(state.queue);
-        }
         long time;
         if (state.commandBuffer != 0) {
-            // The GPU timestamps are set when the buffer completes, which can trail the wait by tens of us.
+            // Commits the kernel's command buffer if it is still open. The GPU timestamps are set
+            // when the buffer completes, which can trail the wait by tens of us. They cover every
+            // kernel of a batch; the profiler waits after each kernel, so its buffers hold one.
+            waitOne(event);
             MetalAPI.waitUntilCompleted(state.commandBuffer);
             if (param == METAL_PROFILING_COMMAND_QUEUED || param == METAL_PROFILING_COMMAND_SUBMIT) {
                 time = state.queuedNs;
@@ -1106,7 +1090,6 @@ public final class MetalObjects {
         if (copySize == 0) {
             return destination;
         }
-        drain(queue);
         try (ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
             long commandBuffer = MetalAPI.commandBuffer(queue);
             long blit = MetalAPI.blitCommandEncoder(commandBuffer);

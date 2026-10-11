@@ -69,6 +69,14 @@ public class CUDATileMmaNode extends FixedWithNextNode implements LIRLowerable, 
         this.accumulatorShape = accumulatorShape;
     }
 
+    public ValueNode getTileA() {
+        return tileA;
+    }
+
+    public int[] getAccumulatorShape() {
+        return accumulatorShape;
+    }
+
     public DType getOperandType() {
         return operandType;
     }

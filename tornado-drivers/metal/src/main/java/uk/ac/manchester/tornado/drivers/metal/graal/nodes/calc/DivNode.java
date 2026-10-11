@@ -66,6 +66,17 @@ public class DivNode extends BinaryArithmeticNode<ArithmeticOpTable.BinaryOp.Div
         return table.getDiv();
     }
 
+    /**
+     * Division is not associative. The integer {@code Div} operation in Graal's op table says it is,
+     * which Graal never acts on for its own {@code SignedDivNode} (not a binary arithmetic node),
+     * but this node is one: loop reassociation would pick up a loop-variant division of a division,
+     * {@code (i / a) / b}, and fail with "unhandled node in reassociation".
+     */
+    @Override
+    public boolean isAssociative() {
+        return false;
+    }
+
     @Override
     public void generate(NodeLIRBuilderTool builder) {
         generate(builder, builder.getLIRGeneratorTool().getArithmetic());

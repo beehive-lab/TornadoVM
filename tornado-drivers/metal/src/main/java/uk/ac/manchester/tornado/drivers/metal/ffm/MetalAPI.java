@@ -138,6 +138,11 @@ public final class MetalAPI {
         return ObjCRuntime.send(device, "recommendedMaxWorkingSetSize");
     }
 
+    /** {@code -[MTLDevice maxBufferLength]}, the largest buffer the device can allocate. */
+    public static long deviceMaxBufferLength(long device) {
+        return ObjCRuntime.send(device, "maxBufferLength");
+    }
+
     /** {@code -[MTLDevice maxThreadgroupMemoryLength]}, the threadgroup (local) memory budget. */
     public static long deviceMaxThreadgroupMemoryLength(long device) {
         return ObjCRuntime.send(device, "maxThreadgroupMemoryLength");
@@ -159,7 +164,7 @@ public final class MetalAPI {
      */
     public static MemorySegment deviceMaxThreadsPerThreadgroup(Arena arena, long device) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSendStret(FunctionDescriptor.of(ObjCRuntime.MTL_SIZE, C_LONG, C_LONG));
+            MethodHandle handle = Handles.SIZE_LONG_LONG_STRET;
             return (MemorySegment) handle.invoke(arena, device, ObjCRuntime.sel("maxThreadsPerThreadgroup"));
         } catch (Throwable t) {
             throw rethrow(t);
@@ -189,7 +194,7 @@ public final class MetalAPI {
      */
     public static long newBufferWithBytes(long device, MemorySegment bytes, long length, long options) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG));
+            MethodHandle handle = Handles.LONG_LONG_LONG_POINTER_LONG_LONG;
             return (long) handle.invokeExact(device, ObjCRuntime.sel("newBufferWithBytes:length:options:"), bytes, length, options);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -222,7 +227,7 @@ public final class MetalAPI {
      */
     public static long newLibraryWithSource(long device, long sourceNSString, long options, MemorySegment error) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER));
+            MethodHandle handle = Handles.LONG_LONG_LONG_LONG_LONG_POINTER;
             return (long) handle.invokeExact(device, ObjCRuntime.sel("newLibraryWithSource:options:error:"), sourceNSString, options, error);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -236,7 +241,7 @@ public final class MetalAPI {
      */
     public static long newLibraryWithData(long device, long data, MemorySegment error) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER));
+            MethodHandle handle = Handles.LONG_LONG_LONG_LONG_POINTER;
             return (long) handle.invokeExact(device, ObjCRuntime.sel("newLibraryWithData:error:"), data, error);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -251,7 +256,7 @@ public final class MetalAPI {
     /** {@code -[MTLDevice newComputePipelineStateWithFunction:error:]}. Owned by the caller. */
     public static long newComputePipelineStateWithFunction(long device, long function, MemorySegment error) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER));
+            MethodHandle handle = Handles.LONG_LONG_LONG_LONG_POINTER;
             return (long) handle.invokeExact(device, ObjCRuntime.sel("newComputePipelineStateWithFunction:error:"), function, error);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -266,7 +271,7 @@ public final class MetalAPI {
      */
     public static long newComputePipelineStateWithFunctionReflection(long device, long function, long options, MemorySegment reflection, MemorySegment error) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER, C_POINTER));
+            MethodHandle handle = Handles.LONG_LONG_LONG_LONG_LONG_POINTER_POINTER;
             return (long) handle.invokeExact(device, ObjCRuntime.sel("newComputePipelineStateWithFunction:options:reflection:error:"), function, options, reflection, error);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -350,7 +355,7 @@ public final class MetalAPI {
     /** {@code -[MTLComputeCommandEncoder setBuffer:offset:atIndex:]}. */
     public static void setBuffer(long encoder, long buffer, long offset, long index) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
+            MethodHandle handle = Handles.VOID_LONG_LONG_LONG_LONG_LONG;
             handle.invokeExact(encoder, ObjCRuntime.sel("setBuffer:offset:atIndex:"), buffer, offset, index);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -360,7 +365,7 @@ public final class MetalAPI {
     /** {@code -[MTLComputeCommandEncoder setBytes:length:atIndex:]}, for small by-value arguments. */
     public static void setBytes(long encoder, MemorySegment bytes, long length, long index) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG));
+            MethodHandle handle = Handles.VOID_LONG_LONG_POINTER_LONG_LONG;
             handle.invokeExact(encoder, ObjCRuntime.sel("setBytes:length:atIndex:"), bytes, length, index);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -370,7 +375,7 @@ public final class MetalAPI {
     /** {@code -[MTLComputeCommandEncoder setThreadgroupMemoryLength:atIndex:]}. */
     public static void setThreadgroupMemoryLength(long encoder, long length, long index) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG, C_LONG));
+            MethodHandle handle = Handles.VOID_LONG_LONG_LONG_LONG;
             handle.invokeExact(encoder, ObjCRuntime.sel("setThreadgroupMemoryLength:atIndex:"), length, index);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -388,7 +393,7 @@ public final class MetalAPI {
      */
     public static void dispatchThreadgroups(long encoder, MemorySegment threadgroupsPerGrid, MemorySegment threadsPerThreadgroup) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, ObjCRuntime.MTL_SIZE, ObjCRuntime.MTL_SIZE));
+            MethodHandle handle = Handles.VOID_LONG_LONG_SIZE_SIZE;
             handle.invokeExact(encoder, ObjCRuntime.sel("dispatchThreadgroups:threadsPerThreadgroup:"), threadgroupsPerGrid, threadsPerThreadgroup);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -404,7 +409,7 @@ public final class MetalAPI {
      */
     public static void dispatchThreads(long encoder, MemorySegment threadsPerGrid, MemorySegment threadsPerThreadgroup) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, ObjCRuntime.MTL_SIZE, ObjCRuntime.MTL_SIZE));
+            MethodHandle handle = Handles.VOID_LONG_LONG_SIZE_SIZE;
             handle.invokeExact(encoder, ObjCRuntime.sel("dispatchThreads:threadsPerThreadgroup:"), threadsPerGrid, threadsPerThreadgroup);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -414,7 +419,7 @@ public final class MetalAPI {
     /** {@code -[MTLBlitCommandEncoder copyFromBuffer:sourceOffset:toBuffer:destinationOffset:size:]}. */
     public static void blitCopy(long encoder, long source, long sourceOffset, long destination, long destinationOffset, long size) {
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
+            MethodHandle handle = Handles.VOID_LONG_LONG_LONG_LONG_LONG_LONG_LONG;
             handle.invokeExact(encoder, ObjCRuntime.sel("copyFromBuffer:sourceOffset:toBuffer:destinationOffset:size:"), source, sourceOffset, destination, destinationOffset, size);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -496,10 +501,30 @@ public final class MetalAPI {
             return 0.0d;
         }
         try {
-            MethodHandle handle = ObjCRuntime.msgSend(FunctionDescriptor.of(FFMSupport.C_DOUBLE, C_LONG, C_LONG));
+            MethodHandle handle = Handles.DOUBLE_LONG_LONG;
             return (double) handle.invokeExact(receiver, ObjCRuntime.sel(selector));
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    /**
+     * The downcall handles of the message sends in this file, one per signature, resolved when one
+     * of them is first used. Looking a handle up by a freshly built {@code FunctionDescriptor} on
+     * every send hashes the descriptor's layouts each time, which dominated the CPU time of
+     * dispatching small kernels.
+     */
+    private static final class Handles {
+        static final MethodHandle DOUBLE_LONG_LONG = ObjCRuntime.msgSend(FunctionDescriptor.of(FFMSupport.C_DOUBLE, C_LONG, C_LONG));
+        static final MethodHandle LONG_LONG_LONG_LONG_LONG_POINTER = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER));
+        static final MethodHandle LONG_LONG_LONG_LONG_LONG_POINTER_POINTER = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER, C_POINTER));
+        static final MethodHandle LONG_LONG_LONG_LONG_POINTER = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_POINTER));
+        static final MethodHandle LONG_LONG_LONG_POINTER_LONG_LONG = ObjCRuntime.msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG));
+        static final MethodHandle SIZE_LONG_LONG_STRET = ObjCRuntime.msgSendStret(FunctionDescriptor.of(ObjCRuntime.MTL_SIZE, C_LONG, C_LONG));
+        static final MethodHandle VOID_LONG_LONG_LONG_LONG = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG, C_LONG));
+        static final MethodHandle VOID_LONG_LONG_LONG_LONG_LONG = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
+        static final MethodHandle VOID_LONG_LONG_LONG_LONG_LONG_LONG_LONG = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
+        static final MethodHandle VOID_LONG_LONG_POINTER_LONG_LONG = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG));
+        static final MethodHandle VOID_LONG_LONG_SIZE_SIZE = ObjCRuntime.msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, ObjCRuntime.MTL_SIZE, ObjCRuntime.MTL_SIZE));
     }
 }

@@ -178,6 +178,12 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {
         TornadoAcceleratorBackend backend = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
         int totalNumDevices = backend.getNumDevices();
+        // Identical GPUs share platform and device names: match the device itself first.
+        for (int deviceIndex = 0; deviceIndex < totalNumDevices; deviceIndex++) {
+            if (backend.getDevice(deviceIndex).equals(device)) {
+                return deviceIndex;
+            }
+        }
         for (int deviceIndex = 0; deviceIndex < totalNumDevices; deviceIndex++) {
             if (hasSamePlatformName(backend, device, deviceIndex) && hasSameDeviceName(backend, device, deviceIndex)) {
                 return deviceIndex;

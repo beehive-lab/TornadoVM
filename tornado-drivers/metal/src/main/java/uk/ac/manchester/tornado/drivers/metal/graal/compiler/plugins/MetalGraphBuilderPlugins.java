@@ -58,6 +58,7 @@ import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
 import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.calc.MulNode;
+import tornado.graal.compiler.nodes.calc.NarrowNode;
 import tornado.graal.compiler.nodes.calc.SignExtendNode;
 import tornado.graal.compiler.nodes.extended.BoxNode;
 import tornado.graal.compiler.nodes.extended.JavaReadNode;
@@ -90,6 +91,7 @@ import uk.ac.manchester.tornado.api.enums.MMAShape;
 import uk.ac.manchester.tornado.api.exceptions.Debug;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -97,6 +99,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Half;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -454,6 +457,23 @@ public class MetalGraphBuilderPlugins {
                 return true;
             }
         });
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoad", HalfFloatArray.class, MetalKind.SIMDGROUP_HALF8X8, false);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoad", HalfFloat[].class, MetalKind.SIMDGROUP_HALF8X8, false);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", FloatArray.class, MetalKind.SIMDGROUP_FLOAT8X8, true);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", float[].class, MetalKind.SIMDGROUP_FLOAT8X8, true);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", HalfFloatArray.class, MetalKind.SIMDGROUP_HALF8X8, true);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", HalfFloat[].class, MetalKind.SIMDGROUP_HALF8X8, true);
+        // Mixed precision: half (or half and float) inputs accumulate into a float fragment.
+        registerSimdgroupMatrixMma(r, Matrix8x8Half.class, Matrix8x8Half.class);
+        registerSimdgroupMatrixMma(r, Matrix8x8Float.class, Matrix8x8Half.class);
+        registerSimdgroupMatrixMma(r, Matrix8x8Half.class, Matrix8x8Float.class);
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                b.add(new MetalSimdgroupMatrixStoreNode(matrix, array, base, stride));
+                return true;
+            }
+        });
         r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
@@ -465,6 +485,26 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
                 b.add(new MetalSimdgroupMatrixStoreNode(matrix, array, base, stride));
+                return true;
+            }
+        });
+    }
+
+    private static void registerSimdgroupMatrixLoad(Registration r, String name, Class<?> arrayType, MetalKind fragmentKind, boolean transpose) {
+        r.register(new InvocationPlugin(name, Receiver.class, arrayType, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride, fragmentKind, transpose));
+                return true;
+            }
+        });
+    }
+
+    private static void registerSimdgroupMatrixMma(Registration r, Class<?> aType, Class<?> bType) {
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, aType, bType, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixMmaNode(a, bMat, c));
                 return true;
             }
         });
@@ -563,6 +603,28 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
                                  Receiver receiver, ValueNode tile, ValueNode wmmaK) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadA(HalfFloatArray, int row, int col, int ld) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadA",
+                InvocationPlugin.Receiver.class, HalfFloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode array, ValueNode row, ValueNode col, ValueNode ld) {
+                unimplemented("MMA instructions only supported for the CUDA backend.");
+                return false;
+            }
+        });
+
+        // --- mmaLoadB(HalfFloatArray, int row, int col, int ld) -> HalfFloat[] ---
+        r.register(new InvocationPlugin("mmaLoadB",
+                InvocationPlugin.Receiver.class, HalfFloatArray.class, int.class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod,
+                                 Receiver receiver, ValueNode array, ValueNode row, ValueNode col, ValueNode ld) {
                 unimplemented("MMA instructions only supported for the CUDA backend.");
                 return false;
             }
@@ -889,34 +951,36 @@ public class MetalGraphBuilderPlugins {
         Registration r = new Registration(plugins, TornadoMemorySegment.class);
         for (JavaKind kind : JavaKind.values()) {
             if (kind != JavaKind.Object && kind != JavaKind.Void && kind != JavaKind.Illegal && kind != JavaKind.Boolean) {
-                r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, int.class, int.class) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
-                        ValueNode receiverNode = receiver.get(true);
-                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
-                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
-                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
-                        JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                        b.addPush(kind, readNode);
-                        return true;
-                    }
-                });
-                r.register(new InvocationPlugin("setAtIndex", Receiver.class, int.class, kind.toJavaClass(), int.class) {
-                    @Override
-                    public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
-                        ValueNode receiverNode = receiver.get(true);
-                        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
-                        ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
-                        AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
-                        MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
-                        AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
-                        JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                        b.add(writeNode);
-                        return true;
-                    }
-                });
+                for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+                    r.register(new InvocationPlugin("get" + kind.name() + "AtIndex", Receiver.class, indexType, int.class) {
+                        @Override
+                        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode baseIndex) {
+                            ValueNode receiverNode = receiver.get(true);
+                            ValueNode longIndex = widenIndex(b, index);
+                            ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                            AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                            MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                            AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
+                            JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                            b.addPush(kind, readNode);
+                            return true;
+                        }
+                    });
+                    r.register(new InvocationPlugin("setAtIndex", Receiver.class, indexType, kind.toJavaClass(), int.class) {
+                        @Override
+                        public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value, ValueNode baseIndex) {
+                            ValueNode receiverNode = receiver.get(true);
+                            ValueNode longIndex = widenIndex(b, index);
+                            ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndex, 64, NodeView.DEFAULT));
+                            AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
+                            MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));
+                            AddressNode addressNode = b.append(new OffsetAddressNode(receiverNode, mulNode));
+                            JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                            b.add(writeNode);
+                            return true;
+                        }
+                    });
+                }
             }
         }
 
@@ -996,6 +1060,35 @@ public class MetalGraphBuilderPlugins {
         registerNativeArrayGetSet(plugins, CharArray.class, JavaKind.Char);
         registerHalfFloatArrayGetSet(plugins);
         registerByteArrayHalfFloatAccess(plugins);
+        registerNativeArraySize(plugins, IntArray.class, FloatArray.class, DoubleArray.class, LongArray.class, ShortArray.class, ByteArray.class, Int8Array.class, CharArray.class,
+                HalfFloatArray.class, BFloat16Array.class, FP8Array.class);
+    }
+
+    /**
+     * Intrinsify {@code getSize()} of the native array types as the {@code numberOfElements} field narrowed to an {@code int}. On the host,
+     * {@code getSize()} throws when the array has more than {@link Integer#MAX_VALUE} elements; kernels cannot throw, so the field load is emitted
+     * directly and specialised to a constant like any other array size.
+     */
+    private static void registerNativeArraySize(InvocationPlugins plugins, Class<?>... arrayClasses) {
+        for (Class<?> arrayClass : arrayClasses) {
+            final Field numberOfElementsField;
+            try {
+                numberOfElementsField = arrayClass.getDeclaredField("numberOfElements");
+            } catch (NoSuchFieldException e) {
+                throw new TornadoRuntimeException("Native array type " + arrayClass.getName() + " is missing expected fields for intrinsification: " + e);
+            }
+            Registration r = new Registration(plugins, arrayClass);
+            r.register(new InvocationPlugin("getSize", Receiver.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver) {
+                    ValueNode arrayNode = receiver.get(true);
+                    ResolvedJavaField numberOfElements = b.getMetaAccess().lookupJavaField(numberOfElementsField);
+                    ValueNode size = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, numberOfElements));
+                    b.push(JavaKind.Int, b.append(NarrowNode.create(size, 32, NodeView.DEFAULT)));
+                    return true;
+                }
+            });
+        }
     }
 
     /**
@@ -1005,6 +1098,27 @@ public class MetalGraphBuilderPlugins {
      * {@code get -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract, bodiless on JDK 22+)
      * is never reached on the reflection path. Mirrors the OpenCL and CUDA backends.
      */
+    private static void registerByteArrayWordAccess(Registration r, String getter, String setter, JavaKind kind, Class<?> indexType, Field segmentField, Field baseIndexField) {
+        r.register(new InvocationPlugin(getter, Receiver.class, indexType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin(setter, Receiver.class, indexType, kind.toJavaClass()) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
     private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
         final Field segmentField;
         final Field baseIndexField;
@@ -1015,24 +1129,26 @@ public class MetalGraphBuilderPlugins {
             throw new TornadoRuntimeException("HalfFloatArray is missing expected fields for intrinsification: " + e);
         }
         Registration r = new Registration(plugins, HalfFloatArray.class);
-        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
-                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
-                b.push(JavaKind.Object, readNode);
-                return true;
-            }
-        });
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, HalfFloat.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
-                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            r.register(new InvocationPlugin("get", Receiver.class, indexType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                    ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                    b.push(JavaKind.Object, readNode);
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("set", Receiver.class, indexType, HalfFloat.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, JavaKind.Short, segmentField, baseIndexField);
+                    WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
     }
 
     /**
@@ -1053,24 +1169,32 @@ public class MetalGraphBuilderPlugins {
             throw new TornadoRuntimeException("ByteArray is missing expected fields for intrinsification: " + e);
         }
         Registration r = new Registration(plugins, ByteArray.class);
-        r.register(new InvocationPlugin("getHalfFloat", Receiver.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
-                ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
-                b.push(JavaKind.Object, readNode);
-                return true;
-            }
-        });
-        r.register(new InvocationPlugin("setHalfFloat", Receiver.class, int.class, HalfFloat.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
-                WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            r.register(new InvocationPlugin("getHalfFloat", Receiver.class, indexType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                    ReadHalfFloatNode readNode = b.append(new ReadHalfFloatNode(addressNode));
+                    b.push(JavaKind.Object, readNode);
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("setHalfFloat", Receiver.class, indexType, HalfFloat.class) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                    WriteHalfFloatNode writeNode = new WriteHalfFloatNode(addressNode, value);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
+        // A 32- or 64-bit word at a raw byte offset, read or written whole: one wide access instead of
+        // a byte or half per element, for byte buffers holding packed data. The caller aligns the offset.
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            registerByteArrayWordAccess(r, "getInt", "setInt", JavaKind.Int, indexType, segmentField, baseIndexField);
+            registerByteArrayWordAccess(r, "getLong", "setLong", JavaKind.Long, indexType, segmentField, baseIndexField);
+        }
     }
 
     private static void registerNativeArrayGetSet(InvocationPlugins plugins, Class<?> arrayClass, JavaKind kind) {
@@ -1083,24 +1207,42 @@ public class MetalGraphBuilderPlugins {
             throw new TornadoRuntimeException("Native array type " + arrayClass.getName() + " is missing expected fields for intrinsification: " + e);
         }
         Registration r = new Registration(plugins, arrayClass);
-        r.register(new InvocationPlugin("get", Receiver.class, int.class) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
-                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
-                b.addPush(kind, readNode);
-                return true;
-            }
-        });
-        r.register(new InvocationPlugin("set", Receiver.class, int.class, kind.toJavaClass()) {
-            @Override
-            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
-                AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
-                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
-                b.add(writeNode);
-                return true;
-            }
-        });
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            r.register(new InvocationPlugin("get", Receiver.class, indexType) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                    JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                    b.addPush(kind, readNode);
+                    return true;
+                }
+            });
+            r.register(new InvocationPlugin("set", Receiver.class, indexType, kind.toJavaClass()) {
+                @Override
+                public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index, ValueNode value) {
+                    AddressNode addressNode = arrayElementAddress(b, receiver, index, kind, segmentField, baseIndexField);
+                    JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                    b.add(writeNode);
+                    return true;
+                }
+            });
+        }
+    }
+
+    /**
+     * Index types of the native array accessors: the {@code int} originals and their {@code long} overloads, used for arrays with more than
+     * {@link Integer#MAX_VALUE} elements.
+     */
+    private static final Class<?>[] ARRAY_INDEX_TYPES = { int.class, long.class };
+
+    /**
+     * Widens an array index to 64 bits for the address arithmetic. A {@code long} index is used as it is.
+     */
+    private static ValueNode widenIndex(GraphBuilderContext b, ValueNode index) {
+        if (index.getStackKind() == JavaKind.Long) {
+            return index;
+        }
+        return b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
     }
 
     /**
@@ -1114,7 +1256,7 @@ public class MetalGraphBuilderPlugins {
         ResolvedJavaField baseIndex = b.getMetaAccess().lookupJavaField(baseIndexField);
         ValueNode segmentNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, segment));
         ValueNode baseIndexNode = b.append(LoadFieldNode.create(b.getGraph().getAssumptions(), arrayNode, baseIndex));
-        ValueNode longIndex = b.append(SignExtendNode.create(index, 64, NodeView.DEFAULT));
+        ValueNode longIndex = widenIndex(b, index);
         ValueNode longBaseIndex = b.append(SignExtendNode.create(baseIndexNode, 64, NodeView.DEFAULT));
         AddNode absoluteIndexNode = b.append(new AddNode(longIndex, longBaseIndex));
         MulNode mulNode = b.append(new MulNode(absoluteIndexNode, ConstantNode.forLong(kind.getByteCount())));

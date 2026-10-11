@@ -29,9 +29,12 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import tornado.graal.compiler.core.common.type.ObjectStamp;
 import tornado.graal.compiler.core.common.type.StampFactory;
 import tornado.graal.compiler.core.common.type.StampPair;
+import tornado.graal.compiler.nodes.ConstantNode;
+import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.ParameterNode;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.ValueNode;
+import tornado.graal.compiler.nodes.calc.AddNode;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderConfiguration.Plugins;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import tornado.graal.compiler.nodes.graphbuilderconf.GraphBuilderTool;
@@ -221,6 +224,26 @@ public final class CUDAVectorPlugins {
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
                 LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(CUDAKind.HALF2, receiver.get(true), index, JavaKind.Short);
                 b.push(JavaKind.Object, b.append(indexedLoad));
+                return true;
+            }
+        });
+
+        // cuda_fp16.h has no half4 type, so getHalf4 is two packed __half2 loads (index % 4 == 0 keeps both
+        // 32-bit aligned). The lanes are gathered into a HALF4 vector that TornadoHalfFloatReplacement folds
+        // away when only its lanes are read.
+        arrayRegistration.register(new InvocationPlugin("getHalf4", Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                ValueNode array = receiver.get(true);
+                ValueNode low = b.append(new LoadIndexedVectorNode(CUDAKind.HALF2, array, index, JavaKind.Short));
+                ValueNode highIndex = b.add(AddNode.create(index, ConstantNode.forInt(2), NodeView.DEFAULT));
+                ValueNode high = b.append(new LoadIndexedVectorNode(CUDAKind.HALF2, array, highIndex, JavaKind.Short));
+                VectorValueNode vector = new VectorValueNode(CUDAKind.HALF4);
+                for (int lane = 0; lane < 4; lane++) {
+                    ValueNode pair = lane < 2 ? low : high;
+                    vector.setElement(lane, b.add(new VectorLoadElementNode(CUDAKind.HALF, pair, ConstantNode.forInt(lane % 2))));
+                }
+                b.push(JavaKind.Object, b.append(vector));
                 return true;
             }
         });

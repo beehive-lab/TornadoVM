@@ -160,6 +160,8 @@ public final class MetalVectorPlugins {
         registerVectorPlugins(ps, plugins, MetalKind.DOUBLE8, DoubleArray.class, double.class);
         registerVectorPlugins(ps, plugins, MetalKind.DOUBLE16, DoubleArray.class, double.class);
 
+        registerNativeArrayVectorLoads(plugins);
+
         registerVectorCollectionsPlugins(plugins, MetalKind.VECTORFLOAT2, FloatArray.class, Float2.class);
         registerVectorCollectionsPlugins(plugins, MetalKind.VECTORFLOAT3, FloatArray.class, Float3.class);
         registerVectorCollectionsPlugins(plugins, MetalKind.VECTORFLOAT4, FloatArray.class, Float4.class);
@@ -248,6 +250,30 @@ public final class MetalVectorPlugins {
             return JavaKind.Short;
         }
         return elementKind.asJavaKind();
+    }
+
+    /**
+     * Vector-width loads from native arrays ({@link FloatArray#getFloat4}, {@link HalfFloatArray#getHalf2},
+     * {@link HalfFloatArray#getHalf4}): one {@code float4} / {@code half2} / {@code half4} load instead of one
+     * load per element. The callers guarantee the vector alignment (an index that is a multiple of the width; the
+     * 16-byte array header keeps the base aligned).
+     */
+    private static void registerNativeArrayVectorLoads(final InvocationPlugins plugins) {
+        registerNativeArrayVectorLoad(plugins, FloatArray.class, "getFloat4", MetalKind.FLOAT4, JavaKind.Float);
+        registerNativeArrayVectorLoad(plugins, HalfFloatArray.class, "getHalf2", MetalKind.HALF2, JavaKind.Short);
+        registerNativeArrayVectorLoad(plugins, HalfFloatArray.class, "getHalf4", MetalKind.HALF4, JavaKind.Short);
+    }
+
+    private static void registerNativeArrayVectorLoad(final InvocationPlugins plugins, Class<?> arrayClass, String name, MetalKind vectorKind, JavaKind elementKind) {
+        final Registration r = new Registration(plugins, arrayClass);
+        r.register(new InvocationPlugin(name, Receiver.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode index) {
+                LoadIndexedVectorNode indexedLoad = new LoadIndexedVectorNode(vectorKind, receiver.get(true), index, elementKind);
+                b.push(JavaKind.Object, b.append(indexedLoad));
+                return true;
+            }
+        });
     }
 
     private static void registerVectorCollectionsPlugins(final InvocationPlugins plugins, final MetalKind vectorKind, final Class<?> storageType, final Class<?> vectorClass) {

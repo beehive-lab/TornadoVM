@@ -150,4 +150,12 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
         throw new UnsupportedOperationException("Native context interop is not supported on this device context");
     }
 
+    /** Warms up the device's transfer path before its first execution; no-op without a native context. */
+    default void warmUp() {
+    }
+
+    /** Makes this device's context current on the calling thread; no-op without a native context. */
+    default void makeCurrent() {
+    }
+
 }

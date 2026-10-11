@@ -35,6 +35,7 @@ import tornado.graal.compiler.nodes.ConstantNode;
 import tornado.graal.compiler.nodes.FixedGuardNode;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.GraphState;
+import tornado.graal.compiler.nodes.NodeView;
 import tornado.graal.compiler.nodes.PiNode;
 import tornado.graal.compiler.nodes.StructuredGraph;
 import tornado.graal.compiler.nodes.ValueNode;
@@ -71,6 +72,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.nodes.vector.VectorMultHalfN
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.vector.VectorSubHalfNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.nodes.vector.VectorValueNode;
 import uk.ac.manchester.tornado.drivers.metal.graal.HalfFloatStamp;
+import uk.ac.manchester.tornado.drivers.metal.graal.MetalStamp;
 import uk.ac.manchester.tornado.runtime.graal.nodes.AddHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.DivHalfFloatNode;
 import uk.ac.manchester.tornado.runtime.graal.nodes.HalfFloatPlaceholder;
@@ -250,7 +252,8 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         // add after the loadindexedvector nodes the marker node to fix the offset of its read
 
         for (LoadIndexedVectorNode loadIndexedVectorNode : graph.getNodes().filter(LoadIndexedVectorNode.class)) {
-            if (loadIndexedVectorNode.getMetalKind().isHalf()) {
+            // A load already strided by Short addresses its halves correctly and needs no offset fix-up.
+            if (loadIndexedVectorNode.getMetalKind().isHalf() && loadIndexedVectorNode.elementKind() != JavaKind.Short) {
                 VectorHalfRead vectorHalfRead;
                 if (loadIndexedVectorNode.index() instanceof ConstantNode) {
                     ConstantNode offset = (ConstantNode) loadIndexedVectorNode.index();
@@ -318,6 +321,12 @@ public class TornadoHalfFloatReplacement extends BasePhase<TornadoHighTierContex
         if (input instanceof LoadIndexedNode loadIndexed //
                 && loadIndexed.array() instanceof LocalArrayNode localArray //
                 && localArray.getMetalKind() == MetalKind.HALF) {
+            return input;
+        }
+        // A lane of a half vector (e.g. HalfFloatArray.getHalf4(i).getX()) is a half value too.
+        if (input instanceof VectorLoadElementNode laneLoad //
+                && laneLoad.getVector().stamp(NodeView.DEFAULT) instanceof MetalStamp vectorStamp //
+                && vectorStamp.getMetalKind().isHalf()) {
             return input;
         }
         if (input instanceof PiNode || input instanceof IsNullNode) {

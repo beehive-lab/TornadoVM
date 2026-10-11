@@ -20,16 +20,25 @@ package uk.ac.manchester.tornado.unittests.tasks;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
+import uk.ac.manchester.tornado.api.TornadoExecutionResult;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -84,12 +93,32 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         }
     }
 
+    public static void kernelInitialization(KernelContext context, IntArray a) {
+        int i = context.globalIdx;
+        if (i < a.getSize()) {
+            a.set(i, i);
+        }
+    }
+
+    public static void kernelScale(KernelContext context, IntArray a, int alpha) {
+        int i = context.globalIdx;
+        if (i < a.getSize()) {
+            a.set(i, alpha * a.get(i));
+        }
+    }
+
     @BeforeClass
     public static void setUpBeforeClass() {
         assertAvailableDevices();
         setDefaultDevices();
         System.setProperty("tornado.concurrent.devices", "True");
+    }
 
+    /**
+     * Tests update the arrays in place: start each test from fresh data.
+     */
+    @Before
+    public void initData() {
         a = new IntArray(NUM_ELEMENTS);
         b = new IntArray(NUM_ELEMENTS);
         c = new IntArray(NUM_ELEMENTS);
@@ -102,7 +131,6 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
             c.set(i, 120 + i);
             e.set(i, i);
         });
-
     }
 
     private static void assertAvailableDevices() {
@@ -185,6 +213,57 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         for (int i = 0; i < a.getSize(); i++) {
             assertEquals((b.get(i) * i), a.get(i));
             assertEquals(12L * c.get(i) + b.get(i), d.get(i));
+        }
+    }
+
+    private static String profiledDeviceId(String profileLog, String taskName) {
+        Matcher matcher = Pattern.compile("\"" + Pattern.quote(taskName) + "\": \\{[^}]*?\"(?:DEVICE_ID|Device-ID)\": \"([^\"]+)\"").matcher(profileLog);
+        return matcher.find() ? matcher.group(1) : null;
+    }
+
+    /**
+     * Devices of the same model share their platform and device names. A task
+     * placed on the second one must still be compiled and launched as that device,
+     * not as the first device with the same name.
+     */
+    @Test
+    public void testKernelContextTasksOnTwoDevices() throws TornadoExecutionPlanException {
+        int backendIndex = Integer.parseInt(System.getProperty("tornado.unittests.device", "0:0").split(":")[0]);
+        TornadoBackend backend = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex);
+
+        IntArray x = new IntArray(NUM_ELEMENTS);
+        IntArray y = new IntArray(NUM_ELEMENTS);
+        y.init(3);
+
+        KernelContext context = new KernelContext();
+        TaskGraph taskGraph = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, y) //
+                .task("t0", TestMultipleTasksMultipleDevices::kernelInitialization, context, x) //
+                .task("t1", TestMultipleTasksMultipleDevices::kernelScale, context, y, 5) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, x, y);
+
+        WorkerGrid1D worker = new WorkerGrid1D(NUM_ELEMENTS);
+        worker.setLocalWork(128, 1, 1);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.addWorkerGrid("s1.t0", worker);
+        gridScheduler.addWorkerGrid("s1.t1", worker);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            TornadoExecutionResult result = executionPlan.withGridScheduler(gridScheduler) //
+                    .withDevice("s1.t0", backend.getDevice(0)) //
+                    .withDevice("s1.t1", backend.getDevice(1)) //
+                    .withConcurrentDevices() //
+                    .withProfiler(ProfilerMode.SILENT) //
+                    .execute();
+
+            String profileLog = result.getProfilerResult().getProfileLog();
+            assertEquals(backendIndex + ":0", profiledDeviceId(profileLog, "s1.t0"));
+            assertEquals(backendIndex + ":1", profiledDeviceId(profileLog, "s1.t1"));
+        }
+
+        for (int i = 0; i < NUM_ELEMENTS; i++) {
+            assertEquals(i, x.get(i));
+            assertEquals(15, y.get(i));
         }
     }
 

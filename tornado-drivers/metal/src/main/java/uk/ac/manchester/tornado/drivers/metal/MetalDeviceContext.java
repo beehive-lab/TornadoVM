@@ -139,6 +139,14 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public void sync(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
+        if (MetalObjects.batchesDispatches()) {
+            // The host sees results only by reading a buffer back, and every read waits for the
+            // command buffers that bind that buffer, so committing the open one is enough. Waiting
+            // here would drain the GPU at the end of every task graph, which is where a plan of
+            // many small graphs spends most of its time.
+            commandQueue.flush();
+            return;
+        }
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
@@ -660,7 +668,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         long queue = getCommandQueue(executionPlanId).getCommandQueuePtr();
         // A library encodes its own command buffers on this queue (or reads buffers on the CPU), so
         // the kernels batched before it are committed and finished first.
-        MetalObjects.drain(queue);
+        MetalObjects.finish(queue);
         return queue;
     }
 

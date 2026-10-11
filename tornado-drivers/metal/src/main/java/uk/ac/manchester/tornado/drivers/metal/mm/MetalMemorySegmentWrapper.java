@@ -98,8 +98,8 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
      */
     @Override
     public long libraryAddress() {
-        // A library may read this address on the CPU: batched kernels writing it must finish first.
-        MetalObjects.drainAll();
+        // A library may read this address on the CPU: pending kernels that bind the buffer must finish first.
+        MetalObjects.awaitBuffer(toBuffer());
         return MetalAPI.bufferContents(toBuffer()) + libraryOffset();
     }
 
