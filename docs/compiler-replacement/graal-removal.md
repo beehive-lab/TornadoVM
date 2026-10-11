@@ -40,6 +40,40 @@ differential check against the Graal path while both still exist.
 | P9 | **Virtual devices** (`drivers/*/virtual`) | `ResolvedJavaMethod` only | Covered by P3 | `virtual.*` |
 | P10 | **TC fallback** | `-Dtornado.compiler.fallback` defaults to Graal | Remove the option; a TC diagnostic becomes a bailout to the host Java code, as Graal's failures are today | `fails.*` |
 
+### The metric: Graal classes loaded under TC
+
+`baseline/graal-probe.sh` runs an application under TC with class-load logging and counts what
+still comes from Graal or JVMCI. Graal goes **completely** only when this is 0 on every backend.
+That proves that no runtime path needs Graal, so the deletion in §3 is mechanical.
+
+Baseline (2026-10-11, one saxpy kernel, RTX 4090, CUDA and OpenCL drivers loaded): 5790 classes, of
+which:
+
+| Origin | Classes |
+|---|---:|
+| `tornado.graal.*` (the vendored compiler) | 1024 |
+| TornadoVM's own `*.graal.*` packages | 716 |
+| `jdk.vm.ci.*` (JVMCI) | 65 |
+| `org.graalvm.*` | 28 |
+| TC, for comparison | 406 |
+
+`tornado --devices` alone, with no kernel compiled, loads 712 `tornado.graal`, 694 TornadoVM `graal`
+and 47 JVMCI classes: about 70% of the total comes from startup. Most of the 716 come from there: every driver eagerly builds a Graal backend
+per device (providers, lowering, phase suites), for example 232 classes in `drivers.cuda.graal.compiler`
+and 162 in `drivers.opencl.graal.compiler`. The first load is `RuntimeUtilities` → `LoopsData`.
+
+The per-device object (`OCLBackend`, `CUDABackend`, `MetalBackend`) *is* a Graal backend subclass
+holding the device context, and the runtime reaches devices through it. So the decoupling is:
+- a plain per-device backend owns the device context and memory;
+- the Graal compiler is built lazily, only if Graal compiles (never under TC), and is then deleted.
+
+Work in the order that drives the probe to 0:
+1. P1/P2: no sketch, no Graal analysis.
+2. Driver startup: lazy Graal backends.
+3. P3: method identity.
+4. P4/P6: field layouts and `JavaKind`.
+5. The remaining stragglers the probe names.
+
 ## 3. Delete outright, once P1–P10 are done
 
 **Java.**
