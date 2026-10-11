@@ -24,6 +24,26 @@ def sdk_bin():
     return out
 
 
+def list_body(entry, key):
+    """The text inside {key}=[...] of a TestEntry, brackets matched (items may index os.environ)."""
+    start = entry.find(key + "=[")
+    if start < 0:
+        return None
+    i = start + len(key) + 2
+    depth = 1
+    for j in range(i, len(entry)):
+        depth += {"[": 1, "]": -1}.get(entry[j], 0)
+        if depth == 0:
+            return entry[i:j]
+    return None
+
+
+def list_literal(items, bindir):
+    """The strings of a tornado-test list; virtual-device parameters are built from TORNADOVM_HOME."""
+    sdk = os.path.dirname(bindir)
+    return eval("[" + items + "]", {"__builtins__": {}}, {"os": type("os", (), {"environ": {"TORNADOVM_HOME": sdk}})})
+
+
 def suite_entries(bindir):
     """Class -> (jvm parameters, methods) from tornado-test's TestEntry list, in suite order."""
     text = open(os.path.join(bindir, "tornado-test")).read()
@@ -41,9 +61,7 @@ def suite_entries(bindir):
         name = re.search(r'testName="([^"]+)"', e) or re.search(r'TestEntry\(\s*"([^"]+)"', e)
         if not name:
             continue
-        lists = {k: re.findall(r'"([^"]+)"', m.group(1)) for k in ("testParameters", "testMethods") if (m := re.search(k + r"=\[(.*?)\]", e, re.S))}
-        if "TORNADOVM_HOME" in e:
-            continue  # virtual-device tests (OpenCL only): parameters built from the environment
+        lists = {k: list_literal(items, bindir) for k in ("testParameters", "testMethods") if (items := list_body(e, k)) is not None}
         entries.append((name.group(1), lists.get("testParameters", []), lists.get("testMethods", [])))
         if "__TORNADO_TESTS_WHITE_LIST__" in body[:i]:
             break
@@ -115,8 +133,21 @@ RACY_TESTS = {
 }
 
 
+def whitelist():
+    """The tests tornado-test lets fail (its __TORNADO_TESTS_WHITE_LIST__), without the package prefix."""
+    try:
+        text = open(os.path.join(sdk_bin(), "tornado-test")).read()
+    except OSError:
+        return set()
+    body = text[text.index("__TORNADO_TESTS_WHITE_LIST__ = ["):]
+    body = body[:body.index("\n]")]
+    return {t.removeprefix("uk.ac.manchester.tornado.unittests.") for t in re.findall(r"""^\s*["']([^"']+)["']""", body, re.M)}
+
+
 def compare(out, against):
     result = {"classes": {}, "summary": collections.Counter(), "against": against}
+    allowed = whitelist()
+    failing = []
     tdir = os.path.join(out, "tc")
     rdir = os.path.join(against, "tc") if against else None
     for name in sorted(os.listdir(tdir)):
@@ -142,9 +173,13 @@ def compare(out, against):
         s["diffs"] += len(diffs); s["launchDiffs"] += len(launch); s["tcKernels"] += ts.get("tc", 0)
         s["better"] += sum(d["now"] == "PASS" and d["before"] != "PASS" and not d.get("racy") for d in diffs)
         s["worse"] += sum(d["before"] == "PASS" and d["now"] != "PASS" and not d.get("racy") for d in diffs)
+        # A test that fails in both runs is no difference, but CI fails on it unless it is whitelisted.
+        failing += [k for k, v in tt.items() if v == "FAILED" and k not in allowed and k not in RACY_TESTS]
         for code, n in ts.items():
             if code.startswith("TC-E"):
                 result.setdefault("refusals", collections.Counter())[code] += n
+    result["failingNotWhitelisted"] = sorted(failing)
+    result["summary"]["failingNotWhitelisted"] = len(failing)
     json.dump(result, open(os.path.join(out, "diff.json"), "w"), indent=1, default=dict)
     write_md(result, out)
     return result
@@ -157,6 +192,9 @@ def write_md(r, out):
              f"Run `{os.path.basename(out)}`: {s['tests']} tests in {len(r['classes'])} classes. PASS: {s['pass']} (against {ref}: {s['passBefore']}). "
              f"Status differences: {s['diffs']} (worse {s['worse']}, better {s['better']}). "
              f"Launch-configuration differences: {s['launchDiffs']}. Kernels compiled: {s['tcKernels']}.", ""]
+    if r.get("failingNotWhitelisted"):
+        lines.append(f"Failing and not whitelisted (CI fails on these, whatever the reference run): " + ", ".join(f"`{t}`" for t in r["failingNotWhitelisted"]) + ".")
+        lines.append("")
     if r.get("refusals"):
         lines.append("TC refusals (each fails its test): " + ", ".join(f"{k} {v}" for k, v in sorted(r["refusals"].items(), key=lambda x: -x[1])) + ".")
         lines.append("")
