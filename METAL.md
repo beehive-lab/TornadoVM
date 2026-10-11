@@ -1,5 +1,11 @@
 # TC on Metal: hand-over for the Mac
 
+> **Next on the Mac (2026-10-11): validate after the Graal removal.** Graal and JVMCI are gone, TC
+> is the only compiler, and upstream `develop` has been merged in (Metal batched dispatch #1216,
+> Objective-C send handles #1217, SIMD-group half/transposed matrices #1223, vector loads #1224).
+> None of this has run on Apple silicon yet. Steps:
+> [Validate after the Graal removal](#validate-after-the-graal-removal).
+
 **Status (2026-10-11, Apple M3 Pro): done.** TC on Metal passes every test Graal on Metal passes,
 with fallback off, except two accepted differences; jitLLM output is token-identical. See
 [Results on the Mac](#results-on-the-mac) and the Metal section of
@@ -169,3 +175,53 @@ Notes for whoever continues:
   mock header only (Apple's compiler accepts them).
 - `tc-diff.py` launch-configuration differences in the reduction classes come from JUnit's method
   order, not from the compilers.
+
+## Validate after the Graal removal
+
+State of `compiler/main` (also PR beehive-lab/TornadoVM#1228, branch `feat/tc-compiler`):
+
+- TC is the only compiler. `-Dtornado.compiler` and the fallback are gone, and there is no Graal to
+  compare against. The reference is the TC half of the last Mac run, `~/tc-diff/metal3/tc`.
+- Merged from upstream `develop`. #1216 and #1217 change `MetalObjects`, `ObjCRuntime`,
+  `MetalAPI`, `MetalKernelStackFrame` and `MetalInstalledCode` (now in the driver's root package);
+  git merged them without conflicts.
+- Linux results with TC only: CUDA 1539, OpenCL (RTX 4090) 1057, UHD 770 934 PASS, with no
+  regression. New upstream tests: `TestHalfFloatShortBits` now runs on every backend (TC
+  reinterprets the bits everywhere), and `TestNativeArrayVectorLoads`, `TestLoopTransformations`,
+  `TestConsumeNamedAndUnnamed` and `TestDependentLaunches` pass on CUDA and OpenCL.
+
+On the Mac, in order:
+
+1. **Build.** `git pull` on `compiler/main`, then `make BACKEND=metal` (JDK 21). To try JDK 22+,
+   use `make jdk22plus BACKEND=metal` with `JAVA_HOME` set to a JDK 25 first. There are no
+   `graalJars` any more: delete a stale `graalJars/` directory if one is left.
+2. **Apple's compiler on the corpus.** Run `utils/metalc` over the EmitSweep output, and `LitTest`
+   (`lit/Metal/*.tcir`), as before.
+3. **The suite against the last Mac run:**
+   ```bash
+   python3 docs/compiler-replacement/baseline/tc-diff.py run --device 0:0 --out ~/tc-diff/metal4 --against ~/tc-diff/metal3
+   ```
+   Goal: `worse 0` against the 941 TC PASS of `metal3`.
+4. **New upstream tests on Metal:**
+   - `kernelcontext.matrices.TestSimdgroupMatrixHalf` (#1223): half and transposed SIMD-group
+     matrices, plus mixed half/float multiply-accumulate. TC so far has `Matrix8x8Float` only. If it
+     refuses (TC-E4001), add `simdgroup_half8x8`, `simdgroup_load(..., transpose)` and the mixed
+     `simdgroup_multiply_accumulate` to `MetalDialect`/`Intrinsics.metal()`, plus a `lit/Metal`
+     golden test.
+   - `arrays.TestNativeArrayVectorLoads`: `getFloat4`/`getHalf4` become `float4`/`half4` loads.
+     MSL has both types; check the 16- and 8-byte alignment.
+   - `arrays.TestHalfFloatShortBits`: `as_type<half>(ushort)`.
+   - `kernelcontext.api.TestDependentLaunches`, `api.TestConsumeNamedAndUnnamed`,
+     `loops.TestLoopTransformations`: runtime-side, and they exercise #1216 (batched command
+     buffers).
+5. **Runtime changes from upstream.** #1216 encodes kernels into shared command buffers, and the
+   kernel stack frame is no longer written before every launch. Check `TestDependentLaunches` and
+   the `api.*` families, which already run in step 3.
+6. **jitLLM.** Rerun the greedy token-identity check against the recorded Graal outputs in
+   `perf/jitllm/metal`, and the bench.
+7. **Fast start-up on macOS (new):** `tornado --aotCache app.aot` (JDK 25) and
+   `tornado-native-image` (GraalVM for JDK 25, aarch64). The Metal driver makes Objective-C calls
+   through FFM, so the native-image agent must record `objc_msgSend` downcalls. See README, "Fast
+   start-up".
+8. **Record** the results here and in the Metal section of `parity-matrix.md`, then commit and push
+   to `compiler/main`.
