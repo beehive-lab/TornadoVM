@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
 /** Kernels for the design-review findings that compiled wrong or failed (design-review.md). */
@@ -64,6 +65,20 @@ public final class ReviewKernels {
         Float4 v = new Float4(1f, 2f, 3f, 4f);
         bump(v);
         out.set(0, v.getX());
+    }
+    // A matrix the kernel only writes is never observed: dropped with its writes.
+    public static void writeOnlyMatrix(FloatArray out) {
+        Matrix2DFloat f = new Matrix2DFloat(4, 4);
+        for (@Parallel int i = 0; i < 4; i++) {
+            f.set(i, i, 10);
+            out.set(i, i);
+        }
+    }
+    // ... but one it reads is refused.
+    public static void readMatrix(FloatArray out) {
+        Matrix2DFloat f = new Matrix2DFloat(4, 4);
+        f.set(0, 0, 10);
+        out.set(0, f.get(0, 0));
     }
     // TP-5: a length read through a ternary
     public static void lengthThroughMerge(FloatArray a, FloatArray b, IntArray out, int pick) {

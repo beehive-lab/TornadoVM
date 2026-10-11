@@ -290,6 +290,17 @@ public class TcCompilerTest {
         assertEquals("TC-E3204", c.diagnostics().get(0).code());
     }
 
+    /** A matrix allocated and only written in the kernel is dropped (Graal's escape analysis does the same); a read is refused. */
+    @Test
+    public void writeOnlyAllocationsAreDropped() {
+        var c = review("writeOnlyMatrix", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(4)));
+        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertFalse(c.source(), c.source().contains("10"));
+        var read = review("readMatrix", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1)));
+        assertFalse(read.succeeded());
+        assertEquals("TC-E1011", read.diagnostics().get(0).code());
+    }
+
     /** Design review FE-4: a helper that changes its vector argument is refused (the change was lost). */
     @Test
     public void helperChangingAVectorArgumentIsRefused() {

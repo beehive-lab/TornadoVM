@@ -239,6 +239,7 @@ final class Translator {
         }
         removeUnreachable();
         ssa.removeTrivialArguments();
+        removeWriteOnlyObjects();
         removeCompileTimeOperands();
         checkVectorParamsUnchanged();
         var problems = LocalArrays.resolveLengths(function);
@@ -588,6 +589,9 @@ final class Translator {
             case GETFIELD, GETSTATIC -> {
                 var ref = classFile.constants().member(insn.index());
                 Value receiver = op == GETFIELD ? pop() : null;
+                if (isWriteOnly(receiver)) {
+                    throw error("TC-E1011", "allocating an object (" + receiver.type().text() + ") is not supported in kernels: only its constructor and setters may use it", insn.bci());
+                }
                 if (receiver != null && receiver.type() instanceof Type.ObjectType && Bindings.field(ref.owner(), ref.name()).isEmpty()) {
                     // A field of an object argument: read from its device copy (laid out like the JVM object).
                     var memory = Bindings.elementType(ref.descriptor());
@@ -719,6 +723,10 @@ final class Translator {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), ApiTypes.ATOMIC_INTEGER));
                 } else if (op == NEW && Bindings.type("L" + classFile.constants().className(insn.index()) + ";") instanceof Type.VectorType vec) {
                     push(new Inst(new Opcode.Intrinsic("tc.uninitialised"), vec)); // a vector value, made by its constructor
+                } else if (op == NEW && classFile.constants().className(insn.index()).startsWith(WRITE_ONLY_PACKAGE)) {
+                    // An API matrix made in the kernel: only its constructor and setters may use it
+                    // (see writeOnly), so it is never observed and is dropped with them.
+                    push(b.intrinsic(WRITE_ONLY, new Type.ObjectType(classFile.constants().className(insn.index())), List.of()));
                 } else if (op == NEW) {
                     throw error("TC-E1011", "allocating an object (" + classFile.constants().className(insn.index()).replace('/', '.') + ") is not supported in kernels", insn.bci());
                 } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && !stack.isEmpty()) {
@@ -1146,6 +1154,54 @@ final class Translator {
         var zero = b.constInt(Type.I32, 0);
         var one = b.constInt(Type.I32, 1);
         return b.select(lt, minusOne, b.select(eq, zero, one));
+    }
+
+    private static final String WRITE_ONLY_PACKAGE = "uk/ac/manchester/tornado/api/types/matrix/";
+    private static final String WRITE_ONLY = "tc.write_only_object";
+
+    private static boolean isWriteOnly(Value value) {
+        return value instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(WRITE_ONLY);
+    }
+
+    /**
+     * A matrix the kernel allocates and only passes to its constructor and to void methods taking
+     * primitives (set, fill, clear) changes nothing anyone reads: the allocation and those calls are
+     * dropped (dead-allocation elimination, as escape analysis would do). Any other use observes it.
+     */
+    private void removeWriteOnlyObjects() {
+        boolean removed = false;
+        for (var block : function.blocks()) {
+            for (var object : List.copyOf(block.insts())) {
+                if (!isWriteOnly(object)) {
+                    continue;
+                }
+                for (var user : object.users()) {
+                    boolean mutator = user.opcode() instanceof Opcode.Call(var callee) && user.type().equals(Type.VOID) && user.operand(0) == object
+                            && user.operands().stream().skip(1).allMatch(v -> v != object && (v.type().isInteger() || v.type().isFloat()))
+                            && java.util.regex.Pattern.matches(".*\\.(_init_|set\\w*|fill|clear)_[^.]*", callee);
+                    if (!mutator) {
+                        throw error("TC-E1011", "allocating an object (" + object.type().text() + ") is not supported in kernels: only its constructor and setters may use it", user.loc().bci());
+                    }
+                }
+                for (var user : List.copyOf(object.users())) {
+                    user.erase();
+                }
+                object.erase();
+                removed = true;
+            }
+        }
+        if (removed) {
+            // The dropped calls' bodies are no longer needed by the inliner.
+            var called = new java.util.HashSet<String>();
+            for (var block : function.blocks()) {
+                for (var inst : block.insts()) {
+                    if (inst.opcode() instanceof Opcode.Call(var callee)) {
+                        called.add(callee);
+                    }
+                }
+            }
+            callees.keySet().retainAll(called);
+        }
     }
 
     private void invoke(Insn insn) {
