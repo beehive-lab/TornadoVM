@@ -338,8 +338,11 @@ public final class TcCompiler {
                 return List.of();
             }, Verifier.Stage.POST_ABI),
             // Last: GVN would merge the copies again. Only where FMA is allowed (tornado.enable.fma, and
-            // not a strict-floating-point plan) and on CUDA, whose compiler contracts a*b+c by default.
-            new Step("fma-remat", c -> c.options.fuseMultiplyAdd() && c.target.dialect() == TargetCaps.Dialect.CUDA && FmaRematerialization.applies(c.function), c -> {
+            // not a strict-floating-point plan): on CUDA, whose compiler contracts a*b+c by default, and on
+            // OpenCL, built with -cl-mad-enable by default, where Intel's compiler fuses fewer than Graal's
+            // explicit fma() did (juliaset on the UHD 770: 1.37x Graal's time without it).
+            new Step("fma-remat", c -> c.options.fuseMultiplyAdd() && (c.target.dialect() == TargetCaps.Dialect.CUDA || c.target.dialect() == TargetCaps.Dialect.OPENCL)
+                    && FmaRematerialization.applies(c.function), c -> {
                 new FmaRematerialization().run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI));
