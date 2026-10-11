@@ -71,7 +71,7 @@ public final class TcKernels {
         TornadoProfiler profiler = executable.getProfiler();
         profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
         var kernel = TcHook.compile(method, executable.getArguments(), target, executable.getBatchThreads(), taskMeta.getNumThreads(),
-                (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId()).orElseThrow();
+                (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint()).orElseThrow();
         profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
         profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
 

@@ -30,8 +30,8 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Type;
 
 /**
- * Fused multiply-adds for a target whose compiler contracts {@code a*b+c} by default (NVRTC), under
- * math optimisations. A product shared by several adds and subtracts stays a separate multiply in the
+ * Fused multiply-adds for a target whose compiler contracts {@code a*b+c} by default (NVRTC), where
+ * fusion is allowed ({@code tornado.enable.fma}, and not a strict-floating-point plan). A product shared by several adds and subtracts stays a separate multiply in the
  * device code, because the driver's own CSE merges the copies before it contracts: in a Julia-set
  * loop, {@code zx*zx} feeds both {@code zx*zx + zy*zy} and {@code zx*zx - zy*zy}, and NVRTC then keeps
  * one multiply and two plain adds. So the pass recomputes such a product at each use, and turns each

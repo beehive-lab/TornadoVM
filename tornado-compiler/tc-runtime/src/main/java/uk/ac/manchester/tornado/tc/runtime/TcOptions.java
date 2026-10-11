@@ -35,9 +35,17 @@ import java.util.Set;
  * {@code end} only before emission.</li>
  * <li>{@code tornado.tc.only}: compile-and-dump only functions whose name contains this text.</li>
  * <li>{@code tornado.tc.report}: {@code html} writes a self-contained HTML report per compilation.</li>
+ * <li>{@code tornado.enable.fma} (the runtime's switch, default on): fused multiply-adds; a plan
+ * with {@code withStrictFloatingPoint()} turns them off for its tasks.</li>
  * </ul>
  */
-public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task) {
+public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
+        boolean fuseMultiplyAdd) {
+
+    /** Fused multiply-adds on. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, true);
+    }
 
     /** Math optimisations (rsqrt) on, as on the Graal path by default; no task id. */
     public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport) {
@@ -56,7 +64,8 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
         return new TcOptions(stages, Path.of(System.getProperty("tornado.tc.dumpDir", "tc-dumps")), !"end".equals(System.getProperty("tornado.tc.verify", "each")),
                 Optional.ofNullable(System.getProperty("tornado.tc.only")), "html".equals(System.getProperty("tornado.tc.report")),
                 // The runtime's own switch for math optimisations (default on), honoured by TC too.
-                Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")), "?");
+                Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")), "?",
+                Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true")));
     }
 
     public boolean dumps(String stage) {
@@ -68,11 +77,16 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd);
     }
 
     /** The task being compiled, as the runtime names it (device-launch reports print it, as on the Graal path). */
     public TcOptions withTask(String id) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd);
+    }
+
+    /** A plan with strict floating point: the multiply and the add round separately, as on the host. */
+    public TcOptions withStrictFloatingPoint(boolean strict) {
+        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false) : this;
     }
 }

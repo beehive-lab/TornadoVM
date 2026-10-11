@@ -332,9 +332,9 @@ public final class TcCompiler {
                         .observe((run, fn) -> TcTrace.current().ir("optimize.post-abi", run.pass(), run.changed(), run.nanos(), fn)).run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI),
-            // Last: GVN would merge the copies again. NVRTC contracts a*b+c by default; the other
-            // dialects keep the shared product.
-            new Step("fma-remat", c -> c.options.mathOptimizations() && c.target.dialect() == TargetCaps.Dialect.CUDA && FmaRematerialization.applies(c.function), c -> {
+            // Last: GVN would merge the copies again. Only where FMA is allowed (tornado.enable.fma, and
+            // not a strict-floating-point plan) and on CUDA, whose compiler contracts a*b+c by default.
+            new Step("fma-remat", c -> c.options.fuseMultiplyAdd() && c.target.dialect() == TargetCaps.Dialect.CUDA && FmaRematerialization.applies(c.function), c -> {
                 new FmaRematerialization().run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI));

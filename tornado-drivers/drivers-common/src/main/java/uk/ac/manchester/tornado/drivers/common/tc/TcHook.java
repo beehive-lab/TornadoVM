@@ -97,13 +97,19 @@ public final class TcHook {
 
     /** As above, for task {@code taskId} (named in device-launch reports). */
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId) {
+        return compile(method, arguments, target, batchThreads, numThreads, batchIndexOffset, taskId, false);
+    }
+
+    /** As above, for a task of a plan with {@code withStrictFloatingPoint()} when {@code strictFloatingPoint}. */
+    public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId,
+            boolean strictFloatingPoint) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         var facts = TcArguments.facts(method, arguments, batchThreads, batchIndexOffset);
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         TcCompiler.Compilation c;
-        var options = TcOptions.fromSystemProperties().withTask(taskId);
+        var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
         try {
             c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, options, facts);
         } catch (RuntimeException | StackOverflowError e) {
