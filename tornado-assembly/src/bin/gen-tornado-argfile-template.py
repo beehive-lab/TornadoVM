@@ -143,7 +143,27 @@ def strip_comments(file_path):
         return []
 
 
-def generate_argfile(backends, output_dir=None):
+# Kernel compiler baked into the argfile: graal (default) or tc, the Graal-free compiler
+# (docs/compiler-replacement). Also taken from $TORNADOVM_COMPILER, so `make` can pass it through.
+COMPILERS = ("graal", "tc")
+
+
+def compiler_lines(compiler):
+    """The argfile section selecting the kernel compiler (empty for the default, Graal)."""
+    if compiler == "tc":
+        return [
+            "# --- kernel compiler: TC (Graal-free); falls back to Graal on a TC diagnostic ---",
+            "-Dtornado.compiler=tc",
+            "",
+        ]
+    return [
+        "# --- kernel compiler: Graal (default). For TC add: -Dtornado.compiler=tc",
+        "#     (and -Dtornado.compiler.fallback=false to fail instead of falling back to Graal) ---",
+        "",
+    ]
+
+
+def generate_argfile(backends, output_dir=None, compiler="graal"):
     """
     Generate tornado-argfile.template as a FAITHFUL reproduction of the exact JVM flags the
     tornado launcher runs (``tornado --printJavaFlags``), so ``java @<file> -m <module>/<Main>``
@@ -220,21 +240,29 @@ def generate_argfile(backends, output_dir=None):
             output_lines.append(templatize(token))
             i += 1
 
+    output_lines.extend(compiler_lines(compiler))
+
     with open(output_file, "w") as f:
         f.write("\n".join(output_lines) + "\n")
 
-    print(f"[INFO] Wrote {output_file} ({backends})")
+    print(f"[INFO] Wrote {output_file} ({backends}, compiler {compiler})")
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: gen-tornado-argfile-template.py <backends> [output_dir]")
+    args = [a for a in sys.argv[1:] if not a.startswith("--compiler")]
+    compiler = os.environ.get("TORNADOVM_COMPILER", "graal")
+    for a in sys.argv[1:]:
+        if a.startswith("--compiler="):
+            compiler = a.split("=", 1)[1]
+    if len(args) < 1 or compiler not in COMPILERS:
+        print("Usage: gen-tornado-argfile-template.py <backends> [output_dir] [--compiler=graal|tc]")
         print("Example: gen-tornado-argfile-template.py opencl,cuda")
         print("Example: gen-tornado-argfile-template.py opencl /path/to/output/dir")
+        print("Example: gen-tornado-argfile-template.py opencl,cuda --compiler=tc   (or TORNADOVM_COMPILER=tc)")
         sys.exit(1)
 
-    backends = sys.argv[1]
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else None
-    generate_argfile(backends, output_dir)
+    backends = args[0]
+    output_dir = args[1] if len(args) > 1 else None
+    generate_argfile(backends, output_dir, compiler)
 
 
 if __name__ == "__main__":

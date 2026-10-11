@@ -456,6 +456,8 @@ def post_installation_actions(backend_profiles, mvn_build_result, args, graal_ja
         generate_argfile_template(args.backend)
         if not args.sdk:
             expand_argfile_template()
+            # The SDK directory is rebuilt from scratch: put the TC IR visualiser back (tornado --tcirviz).
+            install_tcirviz()
 
         # On Windows, create executables before packaging
         if os.name == 'nt':
@@ -560,6 +562,23 @@ def generate_argfile_template(backend):
             sys.exit(-1)
         finally:
             os.chdir(current)
+
+
+def install_tcirviz():
+    """
+    Builds and installs tcirviz, the TC IR visualiser (``tornado --tcirviz``), from $TCIRVIZ_HOME or a
+    sibling checkout ``../tornadovm-tcirviz``, into ``$TORNADOVM_HOME/share/java/tcirviz``. Optional:
+    nothing happens when there is no checkout, and a failure only prints a warning.
+    """
+    home = os.environ.get("TCIRVIZ_HOME") or os.path.join(os.path.dirname(os.getcwd()), "tornadovm-tcirviz")
+    installer = os.path.join(home, "install.sh")
+    if os.name == "nt" or not os.path.isfile(installer):
+        return
+    result = subprocess.run(["bash", installer], capture_output=True, text=True)
+    if result.returncode == 0:
+        print(f"\033[36m[INFO]\033[0m tcirviz installed from {home}: tornado --tcirviz")
+    else:
+        print(f"\033[33m[WARNING]\033[0m tcirviz not installed ({installer} failed): {result.stderr.strip()[-300:]}")
 
 
 def expand_argfile_template():
