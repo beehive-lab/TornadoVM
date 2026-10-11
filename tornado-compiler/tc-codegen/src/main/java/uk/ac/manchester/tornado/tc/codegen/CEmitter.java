@@ -811,6 +811,14 @@ public final class CEmitter {
         if (!wide || b instanceof S.Const(var c) && c.opcode() instanceof Opcode.ConstInt(var v) && v != -1) {
             return infix(a, op, b, MUL);
         }
+        if (features.contains(CDialect.Feature.TILES)) {
+            // A CUDA Tile kernel cannot call __device__ functions: the same expression, inline
+            // (operands are side-effect free, so repeating them is safe).
+            var x = wrap(expr(a), UNARY);
+            var y = wrap(expr(b), UNARY);
+            var zero = op.equals("%") ? "0" : "(" + typeName(type) + ") ((" + unsignedName(type) + ") 0 - (" + unsignedName(type) + ") " + x + ")";
+            return new R("(" + y + " == -1 ? " + zero + " : " + x + " " + op + " " + y + ")", ATOM);
+        }
         helpers.add(helper);
         return new R(helper + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
     }
