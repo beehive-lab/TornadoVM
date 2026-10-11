@@ -42,6 +42,28 @@ final class Helpers {
     }
 
     private static final Map<String, String> CUDA = Map.ofEntries(
+            // Java integer division (JLS 15.17.2): MIN_VALUE / -1 is MIN_VALUE and MIN_VALUE % -1 is 0;
+            // C leaves both undefined, and some devices trap or return another value.
+            Map.entry("java_idiv", """
+                    __device__ static inline int java_idiv(int a, int b) {
+                      return b == -1 ? (int) ((unsigned int) 0 - (unsigned int) a) : a / b;
+                    }
+                    """),
+            Map.entry("java_irem", """
+                    __device__ static inline int java_irem(int a, int b) {
+                      return b == -1 ? 0 : a % b;
+                    }
+                    """),
+            Map.entry("java_ldiv", """
+                    __device__ static inline long long java_ldiv(long long a, long long b) {
+                      return b == -1 ? (long long) ((unsigned long long) 0 - (unsigned long long) a) : a / b;
+                    }
+                    """),
+            Map.entry("java_lrem", """
+                    __device__ static inline long long java_lrem(long long a, long long b) {
+                      return b == -1 ? 0 : a % b;
+                    }
+                    """),
             Map.entry("java_fminf", """
                     __device__ static inline float java_fminf(float a, float b) {
                       if (a != a || b != b) return __int_as_float(0x7fc00000);
@@ -279,6 +301,28 @@ final class Helpers {
      * compare-and-swap loop on the bits (global memory).
      */
     private static final Map<String, String> OPENCL = Map.ofEntries(
+            // Java integer division (JLS 15.17.2): MIN_VALUE / -1 is MIN_VALUE and MIN_VALUE % -1 is 0;
+            // C leaves both undefined, and some devices trap or return another value.
+            Map.entry("java_idiv", """
+                    static inline int java_idiv(int a, int b) {
+                      return b == -1 ? (int) ((uint) 0 - (uint) a) : a / b;
+                    }
+                    """),
+            Map.entry("java_irem", """
+                    static inline int java_irem(int a, int b) {
+                      return b == -1 ? 0 : a % b;
+                    }
+                    """),
+            Map.entry("java_ldiv", """
+                    static inline long java_ldiv(long a, long b) {
+                      return b == -1 ? (long) ((ulong) 0 - (ulong) a) : a / b;
+                    }
+                    """),
+            Map.entry("java_lrem", """
+                    static inline long java_lrem(long a, long b) {
+                      return b == -1 ? 0 : a % b;
+                    }
+                    """),
             Map.entry("java_fminf", """
                     static inline float java_fminf(float a, float b) {
                       if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
@@ -334,6 +378,28 @@ final class Helpers {
      * compare-and-swap loop on the bits, as on OpenCL.
      */
     private static final Map<String, String> METAL = Map.ofEntries(
+            // Java integer division (JLS 15.17.2): MIN_VALUE / -1 is MIN_VALUE and MIN_VALUE % -1 is 0;
+            // C leaves both undefined, and some devices trap or return another value.
+            Map.entry("java_idiv", """
+                    static inline int java_idiv(int a, int b) {
+                      return b == -1 ? (int) ((uint) 0 - (uint) a) : a / b;
+                    }
+                    """),
+            Map.entry("java_irem", """
+                    static inline int java_irem(int a, int b) {
+                      return b == -1 ? 0 : a % b;
+                    }
+                    """),
+            Map.entry("java_ldiv", """
+                    static inline long java_ldiv(long a, long b) {
+                      return b == -1 ? (long) ((ulong) 0 - (ulong) a) : a / b;
+                    }
+                    """),
+            Map.entry("java_lrem", """
+                    static inline long java_lrem(long a, long b) {
+                      return b == -1 ? 0 : a % b;
+                    }
+                    """),
             Map.entry("java_fminf", """
                     static inline float java_fminf(float a, float b) {
                       if (isnan(a) || isnan(b)) return as_type<float>(0x7fc00000);

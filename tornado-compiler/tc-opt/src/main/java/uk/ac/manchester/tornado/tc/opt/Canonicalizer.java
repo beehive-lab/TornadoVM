@@ -101,7 +101,10 @@ public final class Canonicalizer implements Pass {
                 if (ca.isPresent() && cb.isPresent()) {
                     yield Optional.of(make(inst, Type.I1, compare(p, ca.get().longValue(), cb.get().longValue(), ops.get(0).type()) ? 1L : 0L));
                 }
-                yield ops.get(0) == ops.get(1) ? Optional.of(make(inst, Type.I1, reflexive(p) ? 1L : 0L)) : Optional.empty();
+                if (ops.get(0) == ops.get(1)) {
+                    yield Optional.of(make(inst, Type.I1, reflexive(p) ? 1L : 0L));
+                }
+                yield signFlippedCompare(inst, p, ops.get(0), ops.get(1));
             }
             case Opcode.FCmp(var p) -> {
                 var ca = Constants.number(ops.get(0));
@@ -338,6 +341,60 @@ public final class Canonicalizer implements Pass {
             case UGT -> Long.compareUnsigned(ua, ub) > 0;
             case UGE -> Long.compareUnsigned(ua, ub) >= 0;
         };
+    }
+
+    /**
+     * {@code (x + MIN) <s (y + MIN)} is {@code x <u y}, and the other way round: adding (or
+     * subtracting) the sign bit to both sides turns a signed comparison into the unsigned one. This
+     * is how the JDK implements {@code Integer.compareUnsigned} and {@code Long.compareUnsigned}.
+     * Comparing the operands directly also matters for correctness on the device: C and OpenCL C
+     * treat signed overflow as undefined, so driver compilers fold {@code x + c < y + c} to
+     * {@code x < y}, which is wrong when the additions wrap. A constant side is flipped in place.
+     */
+    private static Optional<Value> signFlippedCompare(Inst cmp, IntPredicate p, Value a, Value b) {
+        var type = a.type();
+        if (!type.equals(Type.I32) && !type.equals(Type.I64)) {
+            return Optional.empty();
+        }
+        long min = type.equals(Type.I32) ? Integer.MIN_VALUE : Long.MIN_VALUE;
+        var x = signFlipped(a, min);
+        var y = signFlipped(b, min);
+        var ca = Constants.integer(a);
+        var cb = Constants.integer(b);
+        if (x.isEmpty() && y.isEmpty() || x.isEmpty() && ca.isEmpty() || y.isEmpty() && cb.isEmpty()) {
+            return Optional.empty();
+        }
+        var builder = IrBuilder.insertingBefore(cmp);
+        Value lhs = x.isPresent() ? x.get() : builder.constInt(type, wrap(ca.getAsLong() ^ min, type));
+        Value rhs = y.isPresent() ? y.get() : builder.constInt(type, wrap(cb.getAsLong() ^ min, type));
+        var flipped = switch (p) {
+            case EQ, NE -> p;
+            case SLT -> IntPredicate.ULT;
+            case SLE -> IntPredicate.ULE;
+            case SGT -> IntPredicate.UGT;
+            case SGE -> IntPredicate.UGE;
+            case ULT -> IntPredicate.SLT;
+            case ULE -> IntPredicate.SLE;
+            case UGT -> IntPredicate.SGT;
+            case UGE -> IntPredicate.SGE;
+        };
+        var result = builder.icmp(flipped, lhs, rhs);
+        result.setName(cmp.name());
+        return Optional.of(result);
+    }
+
+    /** {@code x} when {@code v} is {@code x + MIN} or {@code x - MIN} (the same value). */
+    private static Optional<Value> signFlipped(Value v, long min) {
+        if (v instanceof Inst inst && inst.opcode() instanceof Opcode.Binary(var op) && (op == BinaryOp.ADD || op == BinaryOp.SUB)) {
+            var c = Constants.integer(inst.operand(1));
+            if (c.isPresent() && c.getAsLong() == min) {
+                return Optional.of(inst.operand(0));
+            }
+            if (op == BinaryOp.ADD && Constants.integer(inst.operand(0)).isPresent() && Constants.integer(inst.operand(0)).getAsLong() == min) {
+                return Optional.of(inst.operand(1));
+            }
+        }
+        return Optional.empty();
     }
 
     private static boolean reflexive(IntPredicate p) {

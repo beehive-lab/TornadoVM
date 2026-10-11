@@ -781,8 +781,9 @@ public final class CEmitter {
             case ADD, FADD -> infix(a, "+", b, ADD);
             case SUB, FSUB -> infix(a, "-", b, ADD);
             case MUL, FMUL -> infix(a, "*", b, MUL);
-            case DIV, FDIV -> infix(a, "/", b, MUL);
-            case REM -> infix(a, "%", b, MUL);
+            case DIV -> javaDivision(type, a, "/", b, type.equals(Type.I64) ? "java_ldiv" : "java_idiv");
+            case REM -> javaDivision(type, a, "%", b, type.equals(Type.I64) ? "java_lrem" : "java_irem");
+            case FDIV -> infix(a, "/", b, MUL);
             case FREM -> new R((type.equals(Type.F32) ? "fmodf(" : "fmod(") + expr(a).text + ", " + expr(b).text + ")", ATOM);
             case AND -> infix(a, "&", b, BAND);
             case OR -> infix(a, "|", b, BOR);
@@ -798,6 +799,20 @@ public final class CEmitter {
                 yield new R("(" + typeName(type) + ") ((" + unsigned + ") " + wrap(expr(a), UNARY) + " >> " + shiftCount(b, type) + ")", UNARY);
             }
         };
+    }
+
+    /**
+     * {@code /} or {@code %} with Java's result for {@code MIN_VALUE} and {@code -1}, which C leaves
+     * undefined: plain when the divisor is a constant other than -1, else through a helper. Narrower
+     * types are promoted to {@code int} in C, where their minimum divided by -1 is defined.
+     */
+    private R javaDivision(Type type, S.Expr a, String op, S.Expr b, String helper) {
+        boolean wide = type.equals(Type.I32) || type.equals(Type.I64);
+        if (!wide || b instanceof S.Const(var c) && c.opcode() instanceof Opcode.ConstInt(var v) && v != -1) {
+            return infix(a, op, b, MUL);
+        }
+        helpers.add(helper);
+        return new R(helper + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
     }
 
     /** Java masks the shift count to the operand width. */
