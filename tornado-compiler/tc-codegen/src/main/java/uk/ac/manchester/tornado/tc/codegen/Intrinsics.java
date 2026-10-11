@@ -156,6 +156,70 @@ public final class Intrinsics {
         cudaTyped("math.max", "i64", "llmax($0, $1)");
         cudaTyped("math.abs", "i32", "abs($0)");
         cudaTyped("math.abs", "i64", "llabs($0)");
+        openCl();
+    }
+
+    /** OpenCL C 1.2 spellings (OpenCL C specification, built-in functions). */
+    private static void openCl() {
+        opencl("tornado.thread_id.global", "(int) get_global_id({dim})");
+        opencl("tornado.thread_id.local", "(int) get_local_id({dim})");
+        opencl("tornado.group_id", "(int) get_group_id({dim})");
+        opencl("tornado.group_size.local", "(int) get_local_size({dim})");
+        opencl("tornado.group_count", "(int) get_num_groups({dim})");
+        opencl("tornado.global_size", "(int) get_global_size({dim})");
+        // Vector lanes by number (.s0 to .sf works for every width; .x/.y/.z/.w only up to four).
+        opencl("tornado.vector.lane", "$0.s{lane|0123456789abcdef}");
+        // AtomicInteger counters in the atomics region.
+        opencl("tornado.atomic_int.add_get", "atomic_add(&_atomics[$0], $1) + $1");
+        opencl("tornado.atomic_int.get_add", "atomic_add(&_atomics[$0], $1)");
+        opencl("tornado.atomic_int.sub_get", "atomic_sub(&_atomics[$0], $1) - $1");
+        opencl("tornado.atomic_int.get_sub", "atomic_sub(&_atomics[$0], $1)");
+        opencl("tornado.atomic_int.get", "((volatile __global int *) _atomics)[$0]");
+        opencl("tornado.atomic_int.set", "atomic_xchg(&_atomics[$0], $1)");
+        // Atomics on array elements ($&0: the element's address, global or local).
+        openclTyped("tornado.atomic.add", "i32", "atomic_add($&0, $1)");
+        openclTyped("tornado.atomic.add", "i64", "atom_add($&0, $1)"); // cl_khr_int64_base_atomics
+        TABLE.put(new Key("tornado.atomic.add", Dialect.OPENCL, "f32"), Spelling.withHelper("tc_atomic_add_f32($&0, $1)", "tc_atomic_add_f32"));
+        TABLE.put(new Key("tornado.atomic.add", Dialect.OPENCL, "f64"), Spelling.withHelper("tc_atomic_add_f64($&0, $1)", "tc_atomic_add_f64"));
+        openclTyped("tornado.atomic.cas", "i32", "atomic_cmpxchg($&0, $1, $2)");
+        openclTyped("tornado.atomic.exchange", "i32", "atomic_xchg($&0, $1)");
+        openclTyped("tornado.atomic.min", "i32", "atomic_min($&0, $1)");
+        openclTyped("tornado.atomic.max", "i32", "atomic_max($&0, $1)");
+        opencl("tornado.barrier.local", "barrier(CLK_LOCAL_MEM_FENCE)");
+        opencl("tornado.barrier.global", "barrier(CLK_GLOBAL_MEM_FENCE)");
+        // Math: OpenCL C built-ins are overloaded for float and double.
+        for (var fn : new String[] { "sqrt", "rsqrt", "exp", "log", "sin", "cos", "tan", "tanh", "floor", "ceil", "atan", "asin", "acos", "sinh", "cosh", "asinh", "acosh",
+                "atanh", "cbrt", "log10" }) {
+            openclTyped("math." + fn, "f32", fn + "($0)");
+            openclTyped("math." + fn, "f64", fn + "($0)");
+        }
+        openclTyped("math.abs", "f32", "fabs($0)");
+        openclTyped("math.abs", "f64", "fabs($0)");
+        for (var t : List.of("f32", "f64")) {
+            openclTyped("math.atan2", t, "atan2($0, $1)");
+            openclTyped("math.pow", t, "pow($0, $1)");
+            openclTyped("math.fma", t, "fma($0, $1, $2)");
+        }
+        // Java Math.min/max on floats: NaN and signed zeros (fmin/fmax differ), so helpers.
+        TABLE.put(new Key("math.min", Dialect.OPENCL, "f32"), Spelling.withHelper("java_fminf($0, $1)", "java_fminf"));
+        TABLE.put(new Key("math.max", Dialect.OPENCL, "f32"), Spelling.withHelper("java_fmaxf($0, $1)", "java_fmaxf"));
+        TABLE.put(new Key("math.min", Dialect.OPENCL, "f64"), Spelling.withHelper("java_fmin($0, $1)", "java_fmin"));
+        TABLE.put(new Key("math.max", Dialect.OPENCL, "f64"), Spelling.withHelper("java_fmax($0, $1)", "java_fmax"));
+        for (var t : List.of("i32", "i64")) {
+            openclTyped("math.min", t, "min($0, $1)");
+            openclTyped("math.max", t, "max($0, $1)");
+        }
+        // abs returns the unsigned type in OpenCL C; Java keeps MIN_VALUE, which the cast back restores.
+        openclTyped("math.abs", "i32", "(int) abs($0)");
+        openclTyped("math.abs", "i64", "(long) abs($0)");
+    }
+
+    private static void opencl(String name, String template) {
+        TABLE.put(new Key(name, Dialect.OPENCL, ""), Spelling.of(template));
+    }
+
+    private static void openclTyped(String name, String type, String template) {
+        TABLE.put(new Key(name, Dialect.OPENCL, type), Spelling.of(template));
     }
 
     private Intrinsics() {

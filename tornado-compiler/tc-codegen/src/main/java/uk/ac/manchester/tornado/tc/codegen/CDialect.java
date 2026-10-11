@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
  * <p>Methods that spell a type or a conversion record the {@link Feature}s it needs, so the preamble
  * comes from what was used, never from scanning the emitted text.</p>
  */
-sealed interface CDialect permits CudaDialect {
+sealed interface CDialect permits CudaDialect, OpenClDialect {
 
     /** Something the preamble must provide. */
     enum Feature {
@@ -58,11 +58,21 @@ sealed interface CDialect permits CudaDialect {
     static CDialect of(Dialect dialect) {
         return switch (dialect) {
             case CUDA -> new CudaDialect();
+            case OPENCL -> new OpenClDialect();
             default -> throw new CEmitter.EmitException("TC-E4001", "dialect " + dialect + " is not implemented yet (CUDA first, then OpenCL and Metal)");
         };
     }
 
     Dialect id();
+
+    /** The integer type of {@code bits} (1 = boolean): {@code long long} in CUDA, {@code long} in OpenCL C. */
+    String integerName(int bits);
+
+    /** The unsigned integer type of {@code bits}. */
+    String unsignedName(int bits);
+
+    /** The suffix of a 64-bit integer literal: {@code LL} in CUDA, {@code L} in OpenCL C. */
+    String longSuffix();
 
     /** The kernel's qualifiers up to its name: {@code extern "C" __global__ void }. */
     String kernelPrefix(boolean tiles);

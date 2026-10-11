@@ -40,6 +40,32 @@ final class CudaDialect implements CDialect {
     }
 
     @Override
+    public String integerName(int bits) {
+        return switch (bits) {
+            case 1 -> "bool";
+            case 8 -> "signed char"; // Java byte; plain char's signedness is implementation-defined
+            case 16 -> "short";
+            case 32 -> "int";
+            default -> "long long";
+        };
+    }
+
+    @Override
+    public String unsignedName(int bits) {
+        return switch (bits) {
+            case 8 -> "unsigned char";
+            case 16 -> "unsigned short";
+            case 64 -> "unsigned long long";
+            default -> "unsigned int";
+        };
+    }
+
+    @Override
+    public String longSuffix() {
+        return "LL";
+    }
+
+    @Override
     public String kernelPrefix(boolean tiles) {
         // A TileContext kernel is CUDA Tile C++, compiled by nvcc (the runtime looks for __tile_global__).
         return tiles ? "extern \"C\" __tile_global__ void " : "extern \"C\" __global__ void ";

@@ -45,6 +45,13 @@ public record TargetCaps(Dialect dialect, int computeCapability, boolean fp64, b
     /** NVIDIA GeForce RTX 4090 through NVRTC: the first parity target. */
     public static final TargetCaps CUDA_SM89 = new TargetCaps(Dialect.CUDA, 89, true, true, 16, 1024, 48 * 1024, 32, true);
 
+    /**
+     * OpenCL C 1.2 with doubles and halves, for headless use (tests, tc-emit); the OpenCL driver
+     * builds the real values from its device queries. No warp width is assumed (sub-groups vary by
+     * vendor) and kernels cannot launch kernels.
+     */
+    public static final TargetCaps OPENCL_GENERIC = new TargetCaps(Dialect.OPENCL, 0, true, true, 16, 1024, 48 * 1024, 0, false);
+
     public TargetCaps withArrayHeaderBytes(int bytes) {
         return new TargetCaps(dialect, computeCapability, fp64, fp16, bytes, maxWorkGroupSize, localMemoryBytes, warpSize, deviceLaunch);
     }

@@ -40,7 +40,8 @@ import uk.ac.manchester.tornado.tc.codegen.tools.EmitTool;
 
 /**
  * Runs every {@code .tcir} file under {@code src/test/lit}. When {@code nvcc} is available, tests
- * marked {@code REQUIRES: nvcc} also compile the emitted CUDA to PTX for sm_89.
+ * marked {@code REQUIRES: nvcc} also compile the emitted CUDA to PTX for sm_89; when
+ * {@code utils/clbuild/clbuild} is built, OpenCL tests are built with clBuildProgram on the GPUs.
  */
 @RunWith(Parameterized.class)
 public class LitTest {
@@ -59,6 +60,12 @@ public class LitTest {
             features.add("nvcc");
             tools.put("nvcc-ptx", ExternalTool.of(".cu", List.of(nvcc.toString(), "--ptx", "-arch=sm_89", "-o", "/dev/null", "%in")));
         });
+        // utils/clbuild (gcc -O2 -o clbuild clbuild.c -lOpenCL): clBuildProgram on the machine's GPUs.
+        var clbuild = Path.of("..", "utils", "clbuild", "clbuild");
+        if (java.nio.file.Files.isExecutable(clbuild)) {
+            features.add("opencl");
+            tools.put("clbuild", ExternalTool.of(".cl", List.of(clbuild.toAbsolutePath().toString(), "%in")));
+        }
         LIT = new Lit(tools, features);
     }
 

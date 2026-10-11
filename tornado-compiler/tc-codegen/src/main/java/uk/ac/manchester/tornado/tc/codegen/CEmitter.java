@@ -554,12 +554,12 @@ public final class CEmitter {
             case XOR -> infix(a, "^", b, BXOR);
             // Java shifts the bits of a negative value; C++ leaves that undefined, so shift it unsigned.
             case SHL -> {
-                var unsigned = type.equals(Type.I64) ? "unsigned long long" : "unsigned int";
+                var unsigned = unsignedName(type);
                 yield new R("(" + typeName(type) + ") ((" + unsigned + ") " + wrap(expr(a), UNARY) + " << " + shiftCount(b, type) + ")", UNARY);
             }
             case SHR -> new R(wrap(expr(a), SHIFT) + " >> " + shiftCount(b, type), SHIFT);
             case USHR -> {
-                var unsigned = type.equals(Type.I64) ? "unsigned long long" : "unsigned int";
+                var unsigned = unsignedName(type);
                 yield new R("(" + typeName(type) + ") ((" + unsigned + ") " + wrap(expr(a), UNARY) + " >> " + shiftCount(b, type) + ")", UNARY);
             }
         };
@@ -593,7 +593,7 @@ public final class CEmitter {
             default -> false;
         };
         if (unsigned) {
-            var u = a.type().equals(Type.I64) ? "(unsigned long long) " : "(unsigned int) ";
+            var u = "(" + unsignedName(a.type().equals(Type.I64) ? Type.I64 : Type.I32) + ") ";
             return new R(u + wrap(expr(a), UNARY) + " " + symbol + " " + u + wrap(expr(b), UNARY), prec);
         }
         return new R(wrap(expr(a), prec) + " " + symbol + " " + wrap(expr(b), prec + 1), prec);
@@ -647,7 +647,8 @@ public final class CEmitter {
                     yield new R(value != 0 ? "true" : "false", ATOM);
                 }
                 if (type.equals(Type.I64)) {
-                    yield value == Long.MIN_VALUE ? new R("(-9223372036854775807LL - 1)", ATOM) : new R(value + "LL", value < 0 ? UNARY : ATOM);
+                    var ll = dialect.longSuffix();
+                    yield value == Long.MIN_VALUE ? new R("(-9223372036854775807" + ll + " - 1)", ATOM) : new R(value + ll, value < 0 ? UNARY : ATOM);
                 }
                 if (value == Integer.MIN_VALUE && type.equals(Type.I32)) {
                     yield new R("(-2147483647 - 1)", ATOM);
@@ -664,7 +665,7 @@ public final class CEmitter {
         if (Double.isNaN(value) || Double.isInfinite(value)) {
             // NaN and infinities from their bits (C has no portable literal for them).
             var bits = single ? (Double.isNaN(value) ? "0x7fc00000" : value > 0 ? "0x7f800000" : "0xff800000")
-                    : (Double.isNaN(value) ? "0x7ff8000000000000LL" : value > 0 ? "0x7ff0000000000000LL" : "0xfff0000000000000LL");
+                    : (Double.isNaN(value) ? "0x7ff8000000000000" : value > 0 ? "0x7ff0000000000000" : "0xfff0000000000000") + dialect.longSuffix();
             var fn = single ? dialect.bitcast(Type.I32, Type.F32, features) : dialect.bitcast(Type.I64, Type.F64, features);
             return new R(fn + "(" + bits + ")", ATOM);
         }
@@ -680,6 +681,18 @@ public final class CEmitter {
         if (name.equals("tornado.vector.make")) {
             // A vector value from its lanes (CUDA: make_float4(x, y, z, w)).
             return new R(dialect.vector(typeName(inst.type()), ops.stream().map(o -> expr(o).text).toList()), ATOM);
+        }
+        if (name.equals("tornado.vector.insert") && Intrinsics.lookup(name, target.dialect(), inst.type()).isEmpty()
+                && inst.type() instanceof Type.VectorType(var element, var length)) {
+            // No insert spelling (OpenCL C has no overloaded helper): the vector rebuilt from its lanes.
+            int replaced = inst.immediates().requireInt("lane");
+            var laneTemplate = Intrinsics.lookup("tornado.vector.lane", target.dialect(), element).orElseThrow().template();
+            var base = wrap(expr(ops.get(0)), ATOM);
+            var lanes = new ArrayList<String>();
+            for (int i = 0; i < length; i++) {
+                lanes.add(i == replaced ? expr(ops.get(1)).text : Intrinsics.fillImmediates(laneTemplate, uk.ac.manchester.tornado.tc.ir.Immediates.of("lane", i)).replace("$0", base));
+            }
+            return new R(dialect.vector(typeName(inst.type()), lanes), ATOM);
         }
         // A void intrinsic (an atomic update) is typed by its value operand, the last one.
         var type = inst.producesValue() ? inst.type() : (ops.isEmpty() ? Type.VOID : ops.get(ops.size() - 1).type());
@@ -798,13 +811,7 @@ public final class CEmitter {
     /** The C core's own types; the dialect spells the rest (pointers, half, bfloat16, vectors). */
     private String typeName(Type type) {
         return switch (type) {
-            case IntType(var bits) -> switch (bits) {
-                case 1 -> "bool";
-                case 8 -> "signed char"; // Java byte; plain char's signedness is implementation-defined
-                case 16 -> "short";
-                case 32 -> "int";
-                default -> "long long";
-            };
+            case IntType(var bits) -> dialect.integerName(bits);
             case FloatType f when f.kind() == FloatType.Kind.F32 -> "float";
             case FloatType f when f.kind() == FloatType.Kind.F64 -> "double";
             case Type.PointerType(var space) -> pointer(space, "unsigned char");
@@ -868,13 +875,8 @@ public final class CEmitter {
         });
     }
 
-    private static String unsignedName(Type type) {
-        return switch (type.text()) {
-            case "i8" -> "unsigned char";
-            case "i16" -> "unsigned short";
-            case "i64" -> "unsigned long long";
-            default -> "unsigned int";
-        };
+    private String unsignedName(Type type) {
+        return dialect.unsignedName(type instanceof IntType(var bits) ? bits : 32);
     }
 
     private String cIdentifier(String name, Set<String> used) {

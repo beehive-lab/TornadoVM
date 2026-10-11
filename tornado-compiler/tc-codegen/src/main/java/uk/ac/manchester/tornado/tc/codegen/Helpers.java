@@ -273,10 +273,65 @@ final class Helpers {
                     }
                     """));
 
+    /**
+     * OpenCL C helpers, from the JLS like the CUDA ones. OpenCL 1.2 has no float atomics: they are a
+     * compare-and-swap loop on the bits (global memory).
+     */
+    private static final Map<String, String> OPENCL = Map.ofEntries(
+            Map.entry("java_fminf", """
+                    static inline float java_fminf(float a, float b) {
+                      if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
+                      if (a == 0.0f && b == 0.0f) return as_float(as_int(a) | as_int(b));
+                      return a < b ? a : b;
+                    }
+                    """),
+            Map.entry("java_fmaxf", """
+                    static inline float java_fmaxf(float a, float b) {
+                      if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
+                      if (a == 0.0f && b == 0.0f) return as_float(as_int(a) & as_int(b));
+                      return a > b ? a : b;
+                    }
+                    """),
+            Map.entry("java_fmin", """
+                    static inline double java_fmin(double a, double b) {
+                      if (isnan(a) || isnan(b)) return as_double(0x7ff8000000000000L);
+                      if (a == 0.0 && b == 0.0) return as_double(as_long(a) | as_long(b));
+                      return a < b ? a : b;
+                    }
+                    """),
+            Map.entry("java_fmax", """
+                    static inline double java_fmax(double a, double b) {
+                      if (isnan(a) || isnan(b)) return as_double(0x7ff8000000000000L);
+                      if (a == 0.0 && b == 0.0) return as_double(as_long(a) & as_long(b));
+                      return a > b ? a : b;
+                    }
+                    """),
+            Map.entry("tc_atomic_add_f32", """
+                    static inline float tc_atomic_add_f32(volatile __global float *p, float v) {
+                      uint old = as_uint(*p), seen;
+                      do {
+                        seen = old;
+                        old = atomic_cmpxchg((volatile __global uint *) p, seen, as_uint(as_float(seen) + v));
+                      } while (old != seen);
+                      return as_float(old);
+                    }
+                    """),
+            Map.entry("tc_atomic_add_f64", """
+                    static inline double tc_atomic_add_f64(volatile __global double *p, double v) {
+                      ulong old = as_ulong(*p), seen;
+                      do {
+                        seen = old;
+                        old = atom_cmpxchg((volatile __global ulong *) p, seen, as_ulong(as_double(seen) + v));
+                      } while (old != seen);
+                      return as_double(old);
+                    }
+                    """));
+
     static String source(String helper, Dialect dialect) {
         var text = switch (dialect) {
             case CUDA -> CUDA.get(helper);
-            case OPENCL, METAL -> null;
+            case OPENCL -> OPENCL.get(helper);
+            case METAL -> null;
         };
         if (text == null) {
             throw new IllegalArgumentException("no " + dialect + " definition for helper " + helper);
