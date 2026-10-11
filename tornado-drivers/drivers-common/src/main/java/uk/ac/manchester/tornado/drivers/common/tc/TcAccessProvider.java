@@ -36,6 +36,12 @@ import uk.ac.manchester.tornado.tc.tornado.AccessAnalysis;
 public final class TcAccessProvider implements KernelAccess.Provider {
 
     private static final Map<Method, Optional<Access[]>> CACHE = new ConcurrentHashMap<>();
+    /**
+     * The runtime asks before every launch of a kernel ({@code TornadoVMInterpreter}), so the answer
+     * is computed once per method: uncached, each launch re-read the class file and re-ran the
+     * frontend (jitLLM decode on Metal, Llama-3.2-1B: 18 to 5 tokens/s).
+     */
+    private static final Map<Method, Optional<Boolean>> WRITES_LOOP_INDEX = new ConcurrentHashMap<>();
 
     @Override
     public Optional<Access[]> access(Method method) {
@@ -44,6 +50,10 @@ public final class TcAccessProvider implements KernelAccess.Provider {
 
     @Override
     public Optional<Boolean> writesLoopIndex(Method method) {
+        return WRITES_LOOP_INDEX.computeIfAbsent(method, TcAccessProvider::computeWritesLoopIndex);
+    }
+
+    private static Optional<Boolean> computeWritesLoopIndex(Method method) {
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();

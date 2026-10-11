@@ -1,11 +1,11 @@
 # TC on Metal: hand-over for the Mac
 
-> **Next on the Mac (2026-10-11): validate after the Graal removal.** Graal and JVMCI are gone, TC
-> is the only compiler, and upstream `develop` has been merged in (Metal batched dispatch #1216,
-> Objective-C send handles #1217, SIMD-group half/transposed matrices #1223, vector loads #1224,
-> ByteArray word access #1198).
-> None of this has run on Apple silicon yet. Steps:
-> [Validate after the Graal removal](#validate-after-the-graal-removal).
+> **Validated after the Graal removal (2026-10-11, Apple M3 Pro).** TC only, upstream `develop`
+> merged: 966 PASS against 941 in the last run with Graal present (`metal3`), no regression;
+> `TestSimdgroupMatrixHalf` 6/6 after adding half/transposed/mixed SIMD-group matrices; jitLLM
+> token-identical and, after caching a per-launch TC query, 2.6-3.3x faster than before; AOT cache
+> and native image work on macOS. See
+> [Results after the Graal removal](#results-after-the-graal-removal).
 
 **Status (2026-10-11, Apple M3 Pro): done.** TC on Metal passes every test Graal on Metal passes,
 with fallback off, except two accepted differences; jitLLM output is token-identical. See
@@ -228,3 +228,30 @@ On the Mac, in order:
    start-up".
 8. **Record** the results here and in the Metal section of `parity-matrix.md`, then commit and push
    to `compiler/main`.
+
+### Results after the Graal removal
+
+Apple M3 Pro, `compiler/main` at `d86d063ac` plus the SIMD-group half work.
+
+1. **Build**: `make BACKEND=metal` (JDK 21) and `make jdk22plus BACKEND=metal` (JDK 25.0.2) both
+   build; `tornado --devices` shows the M3 Pro at 0:0.
+2. **Apple's compiler**: 795/795 EmitSweep kernels with `utils/metalc`; `LitTest` 33/33 (FileCheck,
+   `mslcheck` and `metalc` on every `lit/Metal` file).
+3. **Suite against `metal3`**: `metal4` (as pulled) 960 PASS, `metal5` (with the fix below) **966**,
+   `metal6` (with the `writesLoopIndex` cache, step 6) 965, against 941; `metal6`'s extra row is
+   `TestWarmUp#test01`, a wall-clock test that misses its 8 ms window on macOS (see parity-matrix.md). Worse: only the two removed `*RejectedOnNonCuda` tests (now
+   `testAtomicCasOnLocalArray`/`testAtomicMaxOnLocalArray`, PASS). Launch differences: JUnit method
+   order.
+4. **New upstream tests**: `TestHalfFloatShortBits` 6/6, `TestByteArrayWordAccess` 4/4,
+   `TestNativeArrayVectorLoads` 3/3, `TestDependentLaunches` 2/2, `TestConsumeNamedAndUnnamed` 2/2,
+   `TestLoopTransformations` 4/4. `TestSimdgroupMatrixHalf` was 0/6 (TC-E1003) and is **6/6** with
+   `Matrix8x8Half` = `simdgroup_half8x8`, transposed loads from device and threadgroup memory,
+   mixed half/float multiply-accumulate and threadgroup stores (`Bindings`, `Intrinsics.metal()`,
+   the `tc_simdgroup_matrix` helper; golden test `lit/Metal/simdgroup-matrix-half.tcir`).
+5. **Runtime changes (#1216/#1217)**: covered by step 3; `TestDependentLaunches` and the `api`
+   families pass.
+6. **jitLLM**: greedy output token-identical to the recorded Graal output (Llama-3.2-1B F16,
+   Qwen3-1.7B F16; `docs/compiler-replacement/perf/jitllm/metal/greedy-*.txt`). Bench, TC only (`docs/compiler-replacement/perf/jitllm/metal/bench-tconly.sh`, tok/s medians): Llama-3.2-1B 43.3 / 33.1 / 45.7 (pp128 / pp512 / tg64; before the Graal removal 15.5 / 12.8 / 17.5), Qwen3-1.7B 28.6 / 19.5 / 31.1 (8.8 / 7.6 / 9.6). As pulled, decode had dropped to 4.8-4.9 (Llama) and 2.0 (Qwen3): since `78c431498` the runtime asks TC before every launch whether the kernel writes its loop index (`KernelAccess.writesLoopIndex`, `TornadoVMInterpreter`), and `TcAccessProvider` answered uncached, re-reading the class file and re-running the frontend each time; the Graal sketch had cached it. Found by bisecting (`de219e121` 18.0 tok/s, `78c431498` 4.9, and 18.4 with `-Dtornado.tc.checkAccess=true`, which built the sketch). Fixed by caching the answer per method; the rest of the gain over the old numbers is upstream's batched Metal dispatch (#1216). This affects every backend, not only Metal.
+7. **Fast start-up** (JDK 25 SDK, saxpy on 2^20 floats, result checked): JVM 0.42 s, Leyden AOT
+   cache 0.26 s (25 MB cache), GraalVM 25.0.1 native image 0.14 s (25 MB executable, 42 s build,
+   no changes needed for the Objective-C downcalls). `tc emit --target metal` works.
