@@ -3,7 +3,7 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 static inline float java_fmaxf(float a, float b) {
-  if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
+  if ((as_uint(a) & 0x7fffffffu) > 0x7f800000u || (as_uint(b) & 0x7fffffffu) > 0x7f800000u) return as_float(0x7fc00000);
   if (a == 0.0f && b == 0.0f) return as_float(as_int(a) & as_int(b));
   return a > b ? a : b;
 }
@@ -22,7 +22,7 @@ __kernel void TestVirtualDeviceKernel_maxReduction(__global long *_kernel_contex
   stride = ((int) get_local_size(0)) >> 1;
   while (stride > 0) {
     if (lid_x < stride) {
-      reduce_scratch[lid_x] = java_fmaxf(reduce_scratch[lid_x], reduce_scratch[lid_x + stride]);  // TestVirtualDeviceKernel.java:57
+      reduce_scratch[lid_x] = java_fmaxf(reduce_scratch[lid_x], reduce_scratch[(int) ((uint) lid_x + (uint) stride)]);  // TestVirtualDeviceKernel.java:57
     }
     barrier(CLK_LOCAL_MEM_FENCE);  // TestVirtualDeviceKernel.java:57
     stride = stride >> 1;
@@ -30,7 +30,7 @@ __kernel void TestVirtualDeviceKernel_maxReduction(__global long *_kernel_contex
   partial = reduce_scratch[0];  // TestVirtualDeviceKernel.java:57
   if (lid_x == 0) {
     result_data = (__global float *) (result + 16L);  // TestVirtualDeviceKernel.java:57
-    result_data[((int) get_group_id(0)) + 1] = partial;  // TestVirtualDeviceKernel.java:57
+    result_data[(int) ((uint) ((int) get_group_id(0)) + (uint) 1)] = partial;  // TestVirtualDeviceKernel.java:57
   }
 }
 
@@ -39,7 +39,7 @@ __kernel void TestVirtualDeviceKernel_maxReduction(__global long *_kernel_contex
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 static inline float java_fmaxf(float a, float b) {
-  if (isnan(a) || isnan(b)) return as_float(0x7fc00000);
+  if ((as_uint(a) & 0x7fffffffu) > 0x7f800000u || (as_uint(b) & 0x7fffffffu) > 0x7f800000u) return as_float(0x7fc00000);
   if (a == 0.0f && b == 0.0f) return as_float(as_int(a) & as_int(b));
   return a > b ? a : b;
 }
