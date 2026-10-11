@@ -242,6 +242,11 @@ public class TornadoOptions {
     /**
      * Option to log the IP of the current machine on the profiler logs.
      */
+    /**
+     * Option to enable profiler-feature extractions: the static code features of each compiled kernel,
+     * as JSON, to {@code tornado.features.dump.dir} (or standard output).
+     */
+    public static final boolean FEATURE_EXTRACTION = getBooleanValue("tornado.feature.extraction", FALSE);
     public static final boolean LOG_IP = getBooleanValue("tornado.enable.ip.logging", FALSE);
     /**
      * Option to send the feature extractions and/or profiler logs to a specific

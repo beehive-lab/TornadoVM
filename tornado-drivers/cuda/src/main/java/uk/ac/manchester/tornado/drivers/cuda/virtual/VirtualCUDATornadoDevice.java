@@ -174,7 +174,7 @@ public class VirtualCUDATornadoDevice implements TornadoXPUDevice {
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         // A virtual device has nothing to install on: print the kernel when asked.
         final CompilableTask executable = (CompilableTask) task;
-        return TcKernels.compile(executable, TargetCaps.CUDA_SM89.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER), (entry, source) -> {
+        return TcKernels.compile(executable, TargetCaps.CUDA_SM89.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER), getDeviceContext(), (entry, source) -> {
             if (executable.meta().isPrintKernelEnabled()) {
                 RuntimeUtilities.dumpKernel(source);
             }

@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.tc.ir.IrPrinter;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Verifier;
+import uk.ac.manchester.tornado.tc.ir.analysis.KernelFeatures;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.opt.Canonicalizer;
 import uk.ac.manchester.tornado.tc.opt.CfgSimplify;
@@ -79,7 +80,7 @@ public final class TcCompiler {
 
     /** The result of compiling one function. */
     public record Compilation(String function, TargetCaps target, boolean succeeded, String source, String entryName, List<Stage> stages, List<Diagnostic> diagnostics, long nanos,
-            List<ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics) {
+            List<ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics, KernelFeatures features) {
     }
 
     private static final class Failed extends RuntimeException {
@@ -225,7 +226,7 @@ public final class TcCompiler {
                     // Each launched kernel is one entry point named after its method (CEmitter.deviceKernelName).
                     var p = parent.compilation();
                     var problem = new Diagnostic("TC-E3208", "two overloads of " + child + " are launched from the device", "", Loc.UNKNOWN);
-                    return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics());
+                    return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics(), p.features());
                 }
                 continue;
             }
@@ -237,21 +238,21 @@ public final class TcCompiler {
                 var problems = c.diagnostics().stream()
                         .map(d -> new Diagnostic(d.code(), "in " + child + ", launched from the device: " + d.message(), d.where(), d.loc(), d.line())).toList();
                 var p = parent.compilation();
-                return new Compilation(p.function(), p.target(), false, "", "", p.stages(), problems, p.nanos() + nanos, p.domain(), p.atomics());
+                return new Compilation(p.function(), p.target(), false, "", "", p.stages(), problems, p.nanos() + nanos, p.domain(), p.atomics(), p.features());
             }
             if (!c.atomics().initial().isEmpty()) {
                 // A child numbers its atomic slots from 0 like its parent and shares the parent's
                 // atomics region: refused until children get their own slot range (design review TP-1).
                 var p = parent.compilation();
                 var problem = new Diagnostic("TC-E3207", "kernel " + child + ", launched from the device, uses atomic counters", "", Loc.UNKNOWN);
-                return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics());
+                return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics(), p.features());
             }
             children.add(compiled.emitted());
             work.addAll(launchedKernels(compiled.function()));
         }
         var p = parent.compilation();
         var source1 = CEmitter.link(parent.emitted(), children, target);
-        return new Compilation(p.function(), p.target(), true, source1, p.entryName(), p.stages(), p.diagnostics(), p.nanos() + nanos, p.domain(), p.atomics());
+        return new Compilation(p.function(), p.target(), true, source1, p.entryName(), p.stages(), p.diagnostics(), p.nanos() + nanos, p.domain(), p.atomics(), p.features());
     }
 
     /** The kernels {@code function} launches from the device. */
@@ -281,7 +282,7 @@ public final class TcCompiler {
         var bytecode = new Stage("bytecode", Kind.BYTECODE, options.htmlReport() || options.dumps("bytecode") ? translated.bytecode() : "", 0, 0);
         if (kernel.isEmpty()) {
             var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
-            return new Compiled(new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of())), null, null);
+            return new Compiled(new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of()), KernelFeatures.NONE), null, null);
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
         compiler.facts = List.copyOf(facts);
@@ -291,7 +292,7 @@ public final class TcCompiler {
         var stages = new ArrayList<>(c.stages());
         var size = stages.size() > 1 ? stages.get(1).size() : 0;
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
-        return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics()),
+        return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics(), c.features()),
                 c.succeeded() ? compiler.function : null, c.succeeded() ? compiler.emitted : null);
     }
 
@@ -459,7 +460,8 @@ public final class TcCompiler {
             event.diagnostic = diagnostics.isEmpty() ? "" : diagnostics.get(0).code() + ": " + diagnostics.get(0).message();
             event.commit();
         }
-        return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos, ParallelLoopLowering.domain(function), AtomicSlots.info(function));
+        return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos, ParallelLoopLowering.domain(function), AtomicSlots.info(function),
+                ok ? KernelFeatures.of(function) : KernelFeatures.NONE);
     }
 
     private void check(String name, Verifier.Stage stage) {

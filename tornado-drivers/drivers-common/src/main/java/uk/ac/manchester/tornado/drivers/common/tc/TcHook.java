@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.ErrorCodes;
 import uk.ac.manchester.tornado.tc.ir.Loc;
+import uk.ac.manchester.tornado.tc.ir.analysis.KernelFeatures;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
@@ -72,7 +73,7 @@ public final class TcHook {
     }
 
     /** A kernel compiled by TC. */
-    public record Kernel(byte[] source, String entryName, Optional<DomainTree> domain, long nanos, AtomicSlots.Info atomics) {
+    public record Kernel(byte[] source, String entryName, Optional<DomainTree> domain, long nanos, AtomicSlots.Info atomics, KernelFeatures features) {
     }
 
     private TcHook() {
@@ -142,7 +143,7 @@ public final class TcHook {
             }
             domain = Optional.of(tree);
         }
-        return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos(), c.atomics()));
+        return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos(), c.atomics(), c.features()));
     }
 
     /** -Dtornado.tc.report=html: every stage of one compilation, refused ones included, in one page. */

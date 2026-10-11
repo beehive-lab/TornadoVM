@@ -26,12 +26,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
 
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
+import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.tc.ir.analysis.KernelFeatures;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
 /**
@@ -63,6 +68,15 @@ public final class TcKernels {
     }
 
     public static TornadoInstalledCode compile(CompilableTask executable, TargetCaps target, Installer installer) {
+        return compile(executable, target, null, installer);
+    }
+
+    /**
+     * Compiles a task for {@code target} and installs it with {@code installer}. With
+     * {@code -Dtornado.feature.extraction=true}, also reports the kernel's code features for
+     * {@code deviceContext}.
+     */
+    public static TornadoInstalledCode compile(CompilableTask executable, TargetCaps target, TornadoDeviceContext deviceContext, Installer installer) {
         final Method method = executable.getMethod();
         final var taskMeta = executable.meta();
         final Access[] access = KernelAccess.of(method, taskMeta.getArgumentsAccess().length);
@@ -73,6 +87,9 @@ public final class TcKernels {
         var kernel = TcHook.compile(method, executable.getArguments(), target, executable.getBatchThreads(), taskMeta.getNumThreads(),
                 (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint()).orElseThrow();
         profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+        if (TornadoOptions.FEATURE_EXTRACTION && deviceContext != null) {
+            emitFeatures(method, kernel.features(), deviceContext);
+        }
         profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
 
         profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -94,5 +111,13 @@ public final class TcKernels {
                     profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()), profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
         }
         return installed;
+    }
+
+    private static void emitFeatures(Method method, KernelFeatures features, TornadoDeviceContext deviceContext) {
+        var map = FeatureExtractionUtilities.initializeFeatureMap();
+        for (var feature : ProfilerCodeFeatures.values()) {
+            map.put(feature, features.get(KernelFeatures.Feature.valueOf(feature.name())));
+        }
+        FeatureExtractionUtilities.emitFeatureProfileJsonFile(map, method.getDeclaringClass().getSimpleName() + "." + method.getName(), deviceContext);
     }
 }
