@@ -83,7 +83,20 @@ public final class CEmitter {
      * {@link #link}: the {@code #include} lines, the helpers it uses (dependencies first), its
      * definition and its forward declaration.
      */
-    public record Result(String source, String entryName, List<String> includes, List<String> helpers, String definition, String declaration) {
+    /**
+     * {@code bodyOrigins}: for each line of {@code definition} after its header, the structured
+     * statement that printed it (null for declarations and closing braces), so tools can map the
+     * emitted source back to IR instructions.
+     */
+    public record Result(String source, String entryName, List<String> includes, List<String> helpers, String definition, String declaration, List<S.Stmt> bodyOrigins) {
+
+        /** The structured statement that printed line {@code line} (0-based) of {@code source}, if any. */
+        public java.util.Optional<S.Stmt> origin(int line) {
+            int start = (int) source.substring(0, source.length() - definition.length()).lines().count();
+            int body = start + (int) definition.substring(0, definition.indexOf("{\n") + 2).lines().count();
+            int k = line - body;
+            return k >= 0 && k < bodyOrigins.size() ? java.util.Optional.ofNullable(bodyOrigins.get(k)) : java.util.Optional.empty();
+        }
     }
 
     /** Prefix of a device-side kernel launch ({@code KernelContext.launch}): {@code <prefix><mode>.<Owner>.<method>}. */
@@ -151,6 +164,9 @@ public final class CEmitter {
     private final TargetCaps target;
     private final boolean lineComments;
     private final StringBuilder out = new StringBuilder();
+    /** The statement each line of {@code out} belongs to (see {@link Result#bodyOrigins}). */
+    private final List<S.Stmt> origins = new ArrayList<>();
+    private S.Stmt current;
     private final Deque<Frame> frames = new ArrayDeque<>();
     private final Set<String> neededLabels = new HashSet<>();
     private final Set<String> helpers = new LinkedHashSet<>();
@@ -262,7 +278,7 @@ public final class CEmitter {
         var definition = header + emitted;
         source.append(definition);
         var declaration = header.substring(0, header.length() - "\n{\n".length()) + ";\n";
-        return new Result(source.toString(), entry, List.copyOf(includes), List.copyOf(helpers), definition, declaration);
+        return new Result(source.toString(), entry, List.copyOf(includes), List.copyOf(helpers), definition, declaration, java.util.Collections.unmodifiableList(new ArrayList<>(origins)));
     }
 
     // ---------------------------------------------------------------- statements
@@ -275,6 +291,16 @@ public final class CEmitter {
     }
 
     private void statement(S.Stmt stmt, Set<String> fallthrough, int depth) {
+        var enclosing = current;
+        current = stmt;
+        try {
+            statementLines(stmt, fallthrough, depth);
+        } finally {
+            current = enclosing;
+        }
+    }
+
+    private void statementLines(S.Stmt stmt, Set<String> fallthrough, int depth) {
         switch (stmt) {
             case S.Assign(var target, var value, var loc) -> {
                 var element = elementTypes.get(target);
@@ -483,6 +509,7 @@ public final class CEmitter {
 
     private void line(int depth, String text) {
         out.append("  ".repeat(depth)).append(text).append('\n');
+        origins.add(current);
     }
 
     // ---------------------------------------------------------------- expressions

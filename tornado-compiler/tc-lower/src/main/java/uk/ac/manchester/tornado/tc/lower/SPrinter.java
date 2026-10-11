@@ -107,7 +107,8 @@ public final class SPrinter {
         }
     }
 
-    static String expr(S.Expr expr) {
+    /** The text of one structured expression (as the structured-IR dump prints it). */
+    public static String expr(S.Expr expr) {
         return switch (expr) {
             case S.VarRef(var v) -> v.name();
             case S.Const(var inst) -> switch (inst.opcode()) {

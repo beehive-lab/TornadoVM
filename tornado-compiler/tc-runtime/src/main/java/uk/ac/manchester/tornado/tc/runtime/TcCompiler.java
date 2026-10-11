@@ -267,7 +267,8 @@ public final class TcCompiler {
             new Step("legality", c -> true, c -> Legality.run(c.function, c.target), Verifier.Stage.PRE_ABI),
             new Step("abi", c -> true, c -> AbiLowering.run(c.function, c.target, c.layouts()), Verifier.Stage.POST_ABI),
             new Step("optimize.post-abi", c -> true, c -> {
-                PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(c.options.verifyEach()).run(c.function);
+                PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(c.options.verifyEach())
+                        .observe((run, fn) -> TcTrace.current().ir("optimize.post-abi", run.pass(), run.changed(), run.nanos(), fn)).run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI));
 
@@ -304,7 +305,7 @@ public final class TcCompiler {
         if (options.mathOptimizations()) {
             passes.add(new MathPeepholes()).add(new DeadCodeElimination());
         }
-        passes.run(function);
+        passes.observe((run, fn) -> TcTrace.current().ir("optimize", run.pass(), run.changed(), run.nanos(), fn)).run(function);
         return List.of();
     }
 
@@ -364,6 +365,7 @@ public final class TcCompiler {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }
             }, () -> SPrinter.print(structured[0]));
+            TcTrace.current().structured(function, structured[0]);
             var emitted = new CEmitter.Result[1];
             stage("emit", Kind.SOURCE, () -> {
                 try {
@@ -372,6 +374,7 @@ public final class TcCompiler {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }
             }, () -> emitted[0].source());
+            TcTrace.current().emitted(function, emitted[0]);
             source = emitted[0].source();
             entry = emitted[0].entryName();
             this.emitted = emitted[0];
@@ -419,6 +422,9 @@ public final class TcCompiler {
         var text = wanted ? render.get() : "";
         int size = function.blocks().stream().mapToInt(b -> b.insts().size()).sum();
         stages.add(new Stage(name, kind, text, nanos, size));
+        if (kind == Kind.IR) {
+            TcTrace.current().ir(name, null, true, nanos, function);
+        }
         if (event.shouldCommit()) {
             event.function = function.name();
             event.stage = name;

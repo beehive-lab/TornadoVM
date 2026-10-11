@@ -57,6 +57,12 @@ TC better: `vectortypes.TestHalfFloats` (Half3/4/8/16, 26/26 everywhere; Graal 3
 OpenCL, 8 on CUDA), the half-float local-memory reductions, and `TestComputePi`. The UHD 770 has no
 fp64: TC refuses double kernels with TC-E4012 where Graal fails them (`None→FAILED` rows).
 
+**jitLLM on OpenCL (RTX 4090, 2026-10-11):** every kernel by TC with fallback off (Llama-3.2-1B
+Q8_0: 148, Qwen3-0.6B F16: 284; all OpenCL C), greedy output token-identical to Graal on OpenCL.
+`jitllm bench --gpu --opencl --pp 128,512 --tg 64 --repetitions 5`, two rounds in alternating order
+([perf/jitllm/opencl](perf/jitllm/opencl)): TC/Graal 1.073 / 1.082 / 1.047 (Llama pp128/pp512/tg64),
+1.088 / 1.059 / 1.036 (Qwen3).
+
 What closed the gap, in order (OpenCL runs `ocl1`→`ocl8`, `igpu1`→`igpu3`):
 
 | Change | Tests |
