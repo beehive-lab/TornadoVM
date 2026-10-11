@@ -57,7 +57,7 @@ sdk-jdk22plus:
 checkstyle:
 	.\mvnw checkstyle:check
 
-# Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
+# Pure-JVM (no-GPU) unit tests for the runtime's reflection layer. Every JDK profile skips surefire,
 # so force it on here. `clean` + `-am` rebuilds tornado-api and tornado-runtime together in the
 # same reactor so stale class files from a previously-used JDK profile (source/target release
 # differs per profile, e.g. jdk21 compiles at 21, jdk22plus at 22) never leak into the test

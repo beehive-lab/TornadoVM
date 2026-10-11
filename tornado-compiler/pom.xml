@@ -9,7 +9,7 @@
         <version>${revision}</version>
     </parent>
 
-    <!-- TC: the Graal-free TornadoVM compiler (docs/compiler-replacement). Its modules are pure Java and
+    <!-- TC: the Graal-free TornadoVM compiler (tornado-compiler/README.md). Its modules are pure Java and
          headless, so their unit tests run on every build, unlike the GPU test suites. -->
     <artifactId>tornado-compiler</artifactId>
     <name>tornado-compiler</name>
@@ -41,7 +41,7 @@
                     <compilerArgs combine.children="append">
                         <!-- Cold start: string concatenation as plain StringBuilder code instead of an
                              invokedynamic site bootstrapped on first use (hundreds in the binding and
-                             spelling tables); see docs/compiler-replacement/cold-start.md. -->
+                             spelling tables); see cold-start.md in mikepapadim/tornado-compiler-spec. -->
                         <arg>-XDstringConcat=inline</arg>
                     </compilerArgs>
                 </configuration>

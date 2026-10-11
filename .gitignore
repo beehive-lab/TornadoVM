@@ -9,7 +9,6 @@ bin/sdk
 dist/
 docs/build/
 etc/dependencies/
-graal_dumps/
 level-zero/
 levelzero-jni/
 setvars.sh

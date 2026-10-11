@@ -143,7 +143,7 @@ On NVIDIA hardware, TornadoVM is an open-source on-ramp to the whole CUDA softwa
 
 | Capability | What it gives Java developers |
 |---|---|
-| **CUDA backend** | Java bytecode → Graal IR → **CUDA PTX → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
+| **CUDA backend** | Java bytecode → TC → **CUDA C++ → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
 | **cuBLAS / cuBLASLt** library tasks | SGEMV, SGEMM, strided-batched, TF32 and FP16 GemmEx on Tensor Cores, and cuBLASLt with plan caching and fused `BIAS` / `GELU_BIAS` epilogues — one library task replaces a GEMM plus a separate activation kernel. |
 | **cuFFT** library tasks | C2C, R2C / C2R, and Z2Z transforms (1D and 2D) with capture-safe plan caching; FFT-filter pipelines mix with JIT kernels in one graph. |
 | **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |

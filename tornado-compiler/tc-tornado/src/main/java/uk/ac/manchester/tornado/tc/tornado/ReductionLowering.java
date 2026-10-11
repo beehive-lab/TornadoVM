@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
  *
  * <p>Recognised: {@code out[k] = out[k] op v} for {@code +} and {@code *} (integer and float) and
  * {@code out[k] = max/min(out[k], v)}, in the body of the one {@code @Parallel} loop, which counts
- * by 1 and carries no other values. Anything else is TC-E3204 (the kernel goes to Graal).</p>
+ * by 1 and carries no other values. Anything else is TC-E3204 (the kernel is refused).</p>
  */
 public final class ReductionLowering {
 

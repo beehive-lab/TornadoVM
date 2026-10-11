@@ -1,4 +1,0 @@
-<think>
-Okay, the user wants me to explain GPU acceleration in two sentences. Let me start by recalling what GPU acceleration is. GPUs are designed for parallel processing, which makes them efficient for tasks that require a lot of simultaneous calculations, like rendering graphics or machine learning. 
-
-First sentence should mention the key point: GPUs are better for parallel tasks than CPUs. Second sentence needs to explain the application areas, like machine learning, scientific computing, and video rendering. I should make

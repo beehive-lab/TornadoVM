@@ -1,6 +1,6 @@
 ---
 name: tornadovm
-description: Build, test, and contribute to TornadoVM's OpenCL/CUDA/Metal backends — make BACKEND targets, tornado-test (quickPass/single-class), checkstyle-before-PR, one-line commits, the develop-branch PR flow, and the recurring graalJars/setvars build gotchas. Use when building the project, running or adding unit tests, or editing the OpenCL/CUDA/Metal code generators. PTX and SPIRV backends are intentionally out of scope.
+description: Build, test, and contribute to TornadoVM's OpenCL/CUDA/Metal backends — make BACKEND targets, tornado-test (quickPass/single-class), checkstyle-before-PR, one-line commits, the develop-branch PR flow, and the recurring setvars build gotchas. Use when building the project, running or adding unit tests, or editing the OpenCL/CUDA/Metal code generators. PTX and SPIRV backends are intentionally out of scope.
 ---
 
 # Working on TornadoVM
@@ -23,7 +23,7 @@ make BACKEND=opencl,cuda          # comma-separated list; values in scope: openc
 
 Convenience targets: `make cuda` (= `--backend cuda`), `make metal` (= `metal,opencl`). Default `BACKEND` is `opencl`.
 
-- **Incremental build ≈ 3 min.** Only a clean rebuild (Graal-jar pull + full recompile) is long — don't assume every build is slow.
+- **Incremental build ≈ 3 min.** Only a clean rebuild is long — don't assume every build is slow.
 - Under the hood `make` calls `bin/compile --jdk jdk21 --backend <list>`. Useful flags: `--rebuild` (rebuild deps), `--sdk`, `--mvn_single_threaded`.
 - The built SDK lands in `dist/tornadovm-<version>-jdk21-dev-<variant>-<os>-<arch>/...`; `TORNADOVM_HOME` and the `bin/tornado*` launchers point into it.
 
@@ -53,7 +53,7 @@ Useful flags: `-qp/--quickPass`, `-V/--verbose`, `--printExec` (execution times 
 make checkstyle          # = ./mvnw checkstyle:check
 ```
 
-Config: `tornado-assembly/src/etc/checkstyle.xml` (severity = error, extends GraalVM rules). Suppress a block with `// CHECKSTYLE.OFF: <Rule>` … `// CHECKSTYLE.ON: <Rule>`. Most common failure after edits: `UnusedImports` (remove imports orphaned by deleted code). A green checkstyle is required — CI enforces it.
+Config: `tornado-assembly/src/etc/checkstyle.xml` (severity = error, derived from GraalVM's rules). Suppress a block with `// CHECKSTYLE.OFF: <Rule>` … `// CHECKSTYLE.ON: <Rule>`. Most common failure after edits: `UnusedImports` (remove imports orphaned by deleted code). A green checkstyle is required — CI enforces it.
 
 ## Commit & PR conventions
 

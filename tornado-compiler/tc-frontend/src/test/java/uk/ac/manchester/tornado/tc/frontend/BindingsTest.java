@@ -35,8 +35,8 @@ import org.junit.Test;
 
 /**
  * Every binding names a method or field that exists in the TornadoVM API (or the JDK) with exactly
- * that descriptor: a binding whose signature drifted would never match, and its kernels would quietly
- * fall back to Graal.
+ * that descriptor: a binding whose signature drifted would never match, and its kernels would be
+ * refused.
  */
 public class BindingsTest {
 

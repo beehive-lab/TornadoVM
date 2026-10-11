@@ -42,7 +42,7 @@ import uk.ac.manchester.tornado.api.KernelContext;
  * Compiles a generated kernel class source in-process with {@code javax.tools}
  * and loads it through a classloader whose parent is the one that loaded
  * {@code tornado-api}, so the generated class resolves KernelContext / array
- * types and TornadoVM's Graal bytecode reader can read it back.
+ * types and TC's bytecode reader can read it back.
  */
 public final class InProcessCompiler {
 
@@ -54,7 +54,7 @@ public final class InProcessCompiler {
         // If a gen directory is supplied AND it is on the launch -cp, the generated
         // class can be loaded by the system classloader, which is the only loader
         // TornadoVM's ASMClassVisitor consults (via getSystemClassLoader().getResourceAsStream).
-        // Otherwise fall back to an isolated URLClassLoader (Graal can read it, but the
+        // Otherwise fall back to an isolated URLClassLoader (TC can read it, but the
         // annotation visitor cannot locate the .class resource).
         String genDir = System.getProperty("tornado.fuzz.genDir");
         if (genDir != null) {

@@ -7,8 +7,9 @@ bindings to LLVM, MLIR or NVVM. It runs headless: no GPU and no TornadoVM runtim
 compile.
 
 TC replaced the vendored Graal compiler. The design proposal is
-[beehive-lab/TornadoVM#1227](https://github.com/beehive-lab/TornadoVM/issues/1227). The full design
-and history are in [`docs/compiler-replacement/`](../docs/compiler-replacement/).
+[beehive-lab/TornadoVM#1227](https://github.com/beehive-lab/TornadoVM/issues/1227). The full design,
+the migration record and its measurements are in
+[mikepapadim/tornado-compiler-spec](https://github.com/mikepapadim/tornado-compiler-spec).
 
 ## Architecture
 
@@ -61,7 +62,7 @@ flowchart LR
   IR/verifier, `E3xxx` Tornado lowering, `E4xxx` target, `E9xxx` internal), the Java line and bci, and
   a hint. The runtime turns the code's category into the matching TornadoVM exception.
 - **Clean-room.** No code is taken from Graal, LLVM, MLIR or HAT. Algorithms are implemented from
-  their publications ([provenance](../docs/compiler-replacement/provenance.md)). Every module's
+  their publications ([provenance](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/provenance.md)). Every module's
   `SourceRulesTest` fails the build on a Graal, JVMCI, GraalVM SDK or ASM import.
 
 ### How the runtime uses it
@@ -93,14 +94,20 @@ source setvars.sh
 The profile follows `JAVA_HOME`: `-Pjdk21` on JDK 21, `-Pjdk22plus` on JDK 22 or newer. File
 tests live in `tc-*/src/test/lit/<Area>/*.tcir`, with `RUN:` lines and FileCheck `CHECK:` lines. `utils/update-checks.py <test>` regenerates a test's
 CHECK block; review the diff by hand. The layout and directives are described in
-[testing.md](../docs/compiler-replacement/testing.md).
+[testing.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/testing.md).
+
+The emitted source of the CUDA, OpenCL and Metal file tests is also compiled by the device's own
+compiler when it is installed: `nvcc` (PTX), `utils/clbuild` (the OpenCL driver), `utils/metalc`
+(Apple's Metal compiler, on a Mac: `clang -fobjc-arc -O2 -o metalc metalc.m -framework Metal
+-framework Foundation`) and `utils/mslcheck` (MSL against a mock `metal_stdlib`, anywhere). A `RUN:`
+line whose tool is missing is skipped.
 
 The GPU suites (`tornado-test`) cover TC through the runtime. The regression harness
-[`tc-diff.py`](../docs/compiler-replacement/baseline/tc-diff.py) runs them per device and compares
+[`tc-diff.py`](utils/tc-diff.py) runs them per device and compares
 each test and each launch configuration with an earlier run:
 
 ```bash
-python3 docs/compiler-replacement/baseline/tc-diff.py run --device 1:0 --out ~/tc-diff/new --against ~/tc-diff/old
+python3 tornado-compiler/utils/tc-diff.py run --device 1:0 --out ~/tc-diff/new --against ~/tc-diff/old
 ```
 
 ## Tools
@@ -136,9 +143,12 @@ plug in as a `Backend` service.
 
 ## Further reading
 
-- [architecture.md](../docs/compiler-replacement/architecture.md) and
-  [ir-specification.md](../docs/compiler-replacement/ir-specification.md): the IR in detail
-- [backend-contracts.md](../docs/compiler-replacement/backend-contracts.md): the kernel ABI per target
-- [optimizations.md](../docs/compiler-replacement/optimizations.md): the passes
-- [parity-matrix.md](../docs/compiler-replacement/parity-matrix.md): test parity with the Graal path, per device
-- [cold-start.md](../docs/compiler-replacement/cold-start.md): compile latency, Leyden and native image
+In [mikepapadim/tornado-compiler-spec](https://github.com/mikepapadim/tornado-compiler-spec):
+
+
+- [architecture.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/architecture.md) and
+  [ir-specification.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/ir-specification.md): the IR in detail
+- [backend-contracts.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/backend-contracts.md): the kernel ABI per target
+- [optimizations.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/optimizations.md): the passes
+- [parity-matrix.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/parity-matrix.md): test parity with the Graal path, per device
+- [cold-start.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/cold-start.md): compile latency, Leyden and native image

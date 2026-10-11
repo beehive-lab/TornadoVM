@@ -381,7 +381,7 @@ class TornadoVMRunnerTool():
 
         self.cmd = os.path.join(self.java_home, "bin", "java")
 
-        self.java_version, self.isGraalVM = self.getJavaVersion()
+        self.java_version = self.getJavaVersion()
         self.sdk_jdk_floor, self.sdk_jdk_preview = self.readSDKJDKContract()
         self.checkCompatibilityWithTornadoVM()
         self.platform = sys.platform
@@ -425,11 +425,6 @@ class TornadoVMRunnerTool():
 
         # Try to match version format: version "21.x.x" or version "1.8.x"
         matchJVMVersion = re.search(r'version\s+"?(\d+)(?:\.(\d+))?', str(stderr))
-        matchGraal = re.search(r"GraalVM", str(stderr))
-        graalEnabled = False
-        if (matchGraal != None):
-            graalEnabled = True
-
         if (matchJVMVersion != None):
             major_version = int(matchJVMVersion.group(1))
             # For older Java versions (1.8, 1.11), the real version is in the second group
@@ -437,7 +432,7 @@ class TornadoVMRunnerTool():
                 version = int(matchJVMVersion.group(2))
             else:
                 version = major_version
-            return version, graalEnabled
+            return version
         else:
             print("[ERROR] JDK Version not found")
             print(f"[DEBUG] Java version output was: {stderr.decode('utf-8', errors='ignore')}")

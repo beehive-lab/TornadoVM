@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Checks Metal Shading Language from TC without a Mac: parses and type-checks it with clang as C++17
 # against the mock include/metal_stdlib. Not a substitute for the Metal compiler (that runs on the
-# Mac, see METAL.md), but it catches syntax errors, wrong types, address-space mismatches and
+# Mac, see utils/metalc), but it catches syntax errors, wrong types, address-space mismatches and
 # missing helpers. Usage: mslcheck FILE.metal... (exit 1 on the first failing file with --fail-fast).
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"

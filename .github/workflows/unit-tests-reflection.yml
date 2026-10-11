@@ -9,7 +9,7 @@ name: No-GPU Unit Tests [JDK 21, 22-27]
 
 on:
   push:
-    branches: [master, develop, jdk27-jvmci-removal]
+    branches: [master, develop]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:

@@ -157,7 +157,7 @@ public class VirtualCUDATornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void ensureLoaded(long executionPlanId) {
-        // The device's memory, without building the Graal backend.
+        // Initialise the device (context, queues and memory).
         findDriver().getDeviceBackend(platformIndex, deviceIndex).init();
     }
 

@@ -13,7 +13,7 @@
     <artifactId>tornado-drivers-common</artifactId>
 
     <dependencies>
-        <!-- TC, the kernel compiler (docs/compiler-replacement). -->
+        <!-- TC, the kernel compiler (tornado-compiler). -->
         <dependency>
             <groupId>io.github.beehive-lab</groupId>
             <artifactId>tc-runtime</artifactId>

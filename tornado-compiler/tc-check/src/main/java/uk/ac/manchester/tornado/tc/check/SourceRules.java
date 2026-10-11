@@ -11,9 +11,9 @@ import java.util.stream.Stream;
 
 /**
  * Clean-room and hygiene rules that every TC module enforces on its own sources in a unit test
- * (see {@code docs/compiler-replacement/provenance.md}): no imports of Graal, JVMCI, GraalVM SDK or
- * ASM classes, the project licence header on every file, and no unused imports (dead code left
- * behind by a refactoring).
+ * (see {@code compiler-replacement/provenance.md} in mikepapadim/tornado-compiler-spec): no imports
+ * of Graal, JVMCI, GraalVM SDK or ASM classes, the project licence header on every file, and no
+ * unused imports (dead code left behind by a refactoring).
  */
 public final class SourceRules {
 

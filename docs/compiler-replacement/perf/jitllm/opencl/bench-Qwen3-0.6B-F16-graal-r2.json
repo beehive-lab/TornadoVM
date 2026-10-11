@@ -1,5 +1,0 @@
-[
-  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM OPENCL", "arch": "qwen3", "mode": "STANDARD", "selection": "qwen3 / F16 / STANDARD", "test": "pp128", "avg_ts": 129.97, "stddev_ts": 4.17, "median_ts": 129.78, "samples_ts": [129.74, 123.42, 129.78, 132.38, 134.53]},
-  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM OPENCL", "arch": "qwen3", "mode": "STANDARD", "selection": "qwen3 / F16 / STANDARD", "test": "pp512", "avg_ts": 134.51, "stddev_ts": 0.26, "median_ts": 134.57, "samples_ts": [134.07, 134.74, 134.57, 134.57, 134.62]},
-  {"model": "Qwen3-0.6B-F16", "quant": "F16", "size_gib": 1.116, "params_b": 0.596, "backend": "TornadoVM OPENCL", "arch": "qwen3", "mode": "STANDARD", "selection": "qwen3 / F16 / STANDARD", "test": "tg64", "avg_ts": 137.26, "stddev_ts": 0.19, "median_ts": 137.27, "samples_ts": [136.97, 137.27, 137.29, 137.51, 137.24]}
-]

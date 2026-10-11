@@ -1,4 +1,0 @@
-<think>
-Okay, the user wants me to explain why GPUs are fast at matrix multiplication in three sentences and give an example of a workload that benefits. Let me start by recalling what I know about GPUs and matrix operations.
-
-First, GPUs are designed for parallel processing, which is why they're fast at matrix multiplication. Matrix multiplication

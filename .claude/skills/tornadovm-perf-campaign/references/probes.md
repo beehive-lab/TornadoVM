@@ -17,7 +17,7 @@ tornado --jvm="-Dtornado.recover.bailout=False" -cp $PWD MyProbe
 
 Four gotchas, each of which costs a confusing hour:
 
-1. **`-g` is mandatory.** Without debug info the Graal front end dies with `NullPointerException: ... LocalVariableTable.getLocalsAt(int)`. It looks like a compiler bug; it is a missing `-g`.
+1. **Compile with `-g`.** TC names the kernel's C variables after the Java locals from the debug info, so `--printKernel` output can be matched to the source.
 2. **`--enable-preview --release 21`** — the API's native array classes are compiled with preview features on.
 3. **`-Dtornado.recover.bailout=False`** or a failed compilation silently runs sequential Java and you time the CPU.
 4. **`DataTransferMode.EVERY_EXECUTION` is an `int` constant**, not an enum: a helper parameter must be `int`. `new TornadoExecutionPlan(...)` throws `TornadoExecutionPlanException`, so `main` declares `throws Exception`.

@@ -21,7 +21,8 @@
 package uk.ac.manchester.tornado.tc.ir;
 
 /**
- * Types of TC-SSA values. See {@code docs/compiler-replacement/ir-specification.md} section 1.2.
+ * Types of TC-SSA values. See {@code compiler-replacement/ir-specification.md} (section 1.2) in
+ * mikepapadim/tornado-compiler-spec.
  *
  * <p>Scalar and vector types are target-independent. {@link ArrayType} and {@link ObjectType} are
  * Java-level types that exist only before TornadoVM ABI lowering; {@link PointerType} is the

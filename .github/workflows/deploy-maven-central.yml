@@ -158,7 +158,7 @@ jobs:
         if: ${{ inputs.draft_release_test == true }}
         run: |
           echo "Draft release (test): skipping the actual Maven Central deploy (mvn clean deploy -P${{ matrix.jdk }},release ...)."
-          echo "Everything up to this point (checkout, GraalVM jars, ephemeral versions:set, Maven settings, GPG import) ran for real."
+          echo "Everything up to this point (checkout, ephemeral versions:set, Maven settings, GPG import) ran for real."
 
   dispatch-sdkman:
     name: Dispatch SDKMAN publish

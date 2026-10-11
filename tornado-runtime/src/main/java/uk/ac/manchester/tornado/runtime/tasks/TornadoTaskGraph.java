@@ -1682,9 +1682,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoTaskGraphInterface reduceAnalysis() {
         TornadoTaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskGraph == null && !reduceAnalysis) {
-            // CodeAnalysis.buildHighLevelGraalGraph is JDK-neutral: on the JVMCI-absent path (JDK 27+) it uses
-            // the TornadoVM backend's reflection providers instead of HotSpotJVMCIRuntime, so @Reduce analysis
-            // works there too.
             analysisTaskGraph = ReduceCodeAnalysis.analyzeTaskGraph(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskGraph != null && analysisTaskGraph.isValid()) {
@@ -2185,7 +2182,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public long getTornadoCompilerTime() {
-        // Whichever compiler produced the kernels: Graal, TC, or both (TC refused some and Graal compiled them).
+        // TOTAL_GRAAL_COMPILE_TIME is kept for the profiler's output format; only TC records compile time now.
         return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + getProfilerValue(ProfilerType.TOTAL_TC_COMPILE_TIME);
     }
 

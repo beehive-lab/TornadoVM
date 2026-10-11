@@ -15,7 +15,7 @@ import argparse, collections, json, os, re, signal, subprocess, sys, time
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 HOME = os.path.expanduser("~")
-REPO = os.environ.get("TC_DIFF_REPO", os.path.join(HOME, "tornadovm-compiler"))  # the checkout whose SDK runs the tests
+REPO = os.environ.get("TC_DIFF_REPO", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))  # the checkout whose SDK runs the tests
 NO_THREAD_INFO = {"uk.ac.manchester.tornado.unittests.memory.leak.TestMemoryLeak"}  # launch loops: output would block the pipe
 
 
