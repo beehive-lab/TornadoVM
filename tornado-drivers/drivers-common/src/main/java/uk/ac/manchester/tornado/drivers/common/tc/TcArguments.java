@@ -59,6 +59,9 @@ final class TcArguments {
             if (reduced && argument instanceof TornadoNativeArray array) {
                 // The runtime has already swapped in the per-work-group partial-results array.
                 facts.add(new ValueSpecialisation.Fact.Reduce(array.getSizeLong()));
+            } else if (reduced && argument != null && argument.getClass().isArray() && argument.getClass().getComponentType().isPrimitive()) {
+                // The same for a Java array (float[], int[], ...).
+                facts.add(new ValueSpecialisation.Fact.Reduce(java.lang.reflect.Array.getLength(argument)));
             } else if (argument instanceof TornadoNativeArray array) {
                 // In a batch each device buffer holds one chunk of batchThreads elements (with its
                 // header): lengths and indices are per chunk.
