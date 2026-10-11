@@ -41,6 +41,9 @@ import uk.ac.manchester.tornado.tc.frontend.Bindings.ArraySet;
 import uk.ac.manchester.tornado.tc.frontend.Bindings.ArraySize;
 import uk.ac.manchester.tornado.tc.frontend.Bindings.Identity;
 import uk.ac.manchester.tornado.tc.frontend.Bindings.Intrinsic;
+import uk.ac.manchester.tornado.tc.frontend.SsaVariables.Local;
+import uk.ac.manchester.tornado.tc.frontend.SsaVariables.StackSlot;
+import uk.ac.manchester.tornado.tc.frontend.SsaVariables.VectorParam;
 import uk.ac.manchester.tornado.tc.frontend.Bindings.SharedArray;
 import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode;
 import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode.Insn;
@@ -110,31 +113,11 @@ final class Translator {
     private final Map<Block, Integer> startIndex = new IdentityHashMap<>();
     private final Map<Block, List<Block>> preds = new IdentityHashMap<>();
 
-    /**
-     * An SSA variable of the bytecode: a local slot (keyed by the JVM kind that stored it), an
-     * operand-stack slot live across a block boundary, or the current value of a vector parameter.
-     */
-    private sealed interface Var permits Local, StackSlot, VectorParam {
-    }
-
-    private record Local(int slot, char kind) implements Var {
-    }
-
-    private record StackSlot(int depth) implements Var {
-    }
-
-    private record VectorParam(int slot) implements Var {
-    }
-
-    // SSA construction state (Braun et al.).
-    private final Map<Block, Map<Var, Value>> currentDef = new IdentityHashMap<>();
-    private final Map<Block, LinkedHashMap<Var, BlockArg>> incomplete = new IdentityHashMap<>();
-    private final Set<Block> sealed = Collections.newSetFromMap(new IdentityHashMap<>());
-    private final Set<Block> filled = Collections.newSetFromMap(new IdentityHashMap<>());
+    // SSA construction (Braun et al.), over the bytecode CFG.
+    private final SsaVariables ssa;
     private final Map<Block, Integer> entryDepth = new IdentityHashMap<>();
     private final Map<Block, List<Type>> entryStackTypes = new IdentityHashMap<>();
 
-    private final Map<BlockArg, Var> argumentKeys = new IdentityHashMap<>();
     private final Map<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef> callees = new java.util.LinkedHashMap<>();
     private IrBuilder builder;
     private Deque<Value> stack;
@@ -166,6 +149,7 @@ final class Translator {
         var returnDescriptor = method.descriptor().substring(method.descriptor().indexOf(')') + 1);
         var functionName = name != null ? name : kind == Function.Kind.KERNEL ? simpleClass + "." + method.name() : calleeName(classFile.name(), method.name(), method.descriptor());
         this.function = new Function(functionName, kind, kind == Function.Kind.KERNEL ? Bindings.type(returnDescriptor) : typeOf(returnDescriptor));
+        this.ssa = new SsaVariables(function, preds, (key, block) -> error("TC-E1006", "read of " + SsaVariables.describe(key) + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci()));
     }
 
     static Function translate(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method) {
@@ -210,7 +194,7 @@ final class Translator {
         int slot = 0;
         if (!method.isStatic()) {
             var self = entry.addArg(typeOf("L" + classFile.name() + ";"), "this");
-            writeVariable(localKey(0, 'A'), entry, self);
+            ssa.write(localKey(0, 'A'), entry, self);
             slot = 1;
         }
         for (var descriptor : params) {
@@ -218,21 +202,21 @@ final class Translator {
             var type = function.kind() == Function.Kind.KERNEL ? Bindings.type(descriptor) : typeOf(descriptor);
             var name = code.localAt(slot, 0).map(ClassFile.LocalVariable::name).orElse("arg" + slot);
             var arg = entry.addArg(type, name);
-            writeVariable(localKey(slot, descriptorKind(descriptor)), entry, arg);
+            ssa.write(localKey(slot, descriptorKind(descriptor)), entry, arg);
             if (type instanceof Type.VectorType) {
                 // The object the caller passed: its value as setters change it. A kernel writes it back
                 // at return; a device function may not change it (checked after translation).
                 var key = new VectorParam(slot);
-                writeVariable(key, entry, arg);
+                ssa.write(key, entry, arg);
                 vectorParams.put(key, arg);
             }
             slot += descriptor.equals("J") || descriptor.equals("D") ? 2 : 1;
         }
-        sealed.add(entry);
+        ssa.seal(entry);
         builder = new IrBuilder(entry);
         var first = blockAt.get(0);
         builder.br(first, List.of());
-        filled.add(entry);
+        ssa.filled(entry);
         noteFilled(entry);
 
         var order = reversePostorder(first);
@@ -246,7 +230,7 @@ final class Translator {
             translateBlock(block);
         }
         removeUnreachable();
-        removeTrivialArguments();
+        ssa.removeTrivialArguments();
         removeCompileTimeOperands();
         checkVectorParamsUnchanged();
         var problems = LocalArrays.resolveLengths(function);
@@ -373,15 +357,15 @@ final class Translator {
     // ---------------------------------------------------------------- blocks
 
     private void translateBlock(Block block) {
-        if (preds.get(block).stream().allMatch(filled::contains)) {
-            seal(block);
+        if (preds.get(block).stream().allMatch(ssa::isFilled)) {
+            ssa.seal(block);
         }
         builder = new IrBuilder(block);
         stack = new ArrayDeque<>();
         int depth = entryDepth.getOrDefault(block, 0);
         var types = entryStackTypes.getOrDefault(block, List.of());
         for (int i = 0; i < depth; i++) {
-            stack.addLast(readVariable(new StackSlot(i), block, types.get(i), ""));
+            stack.addLast(ssa.read(new StackSlot(i), block, types.get(i), ""));
         }
         int last = lastIndex(block);
         for (int i = startIndex.get(block); i <= last; i++) {
@@ -395,7 +379,7 @@ final class Translator {
             leaveTo(block, List.of(next));
             builder.br(next, List.of());
         }
-        filled.add(block);
+        ssa.filled(block);
         noteFilled(block);
     }
 
@@ -404,7 +388,7 @@ final class Translator {
         int i = 0;
         var types = new ArrayList<Type>();
         for (var value : stack) {
-            writeVariable(new StackSlot(i++), block, value);
+            ssa.write(new StackSlot(i++), block, value);
             types.add(value.type());
         }
         for (var s : successors) {
@@ -415,150 +399,13 @@ final class Translator {
 
     private void noteFilled(Block block) {
         for (var s : block.successors()) {
-            if (!sealed.contains(s) && preds.get(s).stream().allMatch(filled::contains)) {
-                seal(s);
+            if (!ssa.isSealed(s) && preds.get(s).stream().allMatch(ssa::isFilled)) {
+                ssa.seal(s);
             }
         }
     }
 
     // ---------------------------------------------------------------- SSA variables (Braun et al.)
-
-    private void writeVariable(Var key, Block block, Value value) {
-        currentDef.computeIfAbsent(block, _k -> new HashMap<>()).put(key, value);
-    }
-
-    private Value readVariable(Var key, Block block, Type type, String name) {
-        var defs = currentDef.get(block);
-        if (defs != null && defs.containsKey(key)) {
-            return defs.get(key);
-        }
-        Value value;
-        var blockPreds = preds.getOrDefault(block, List.of());
-        if (!sealed.contains(block)) {
-            // A reference read in a loop header not sealed yet must know whether it is an array, a local
-            // array (pointer) or an object before its first use is translated.
-            var reaching = ApiTypes.UNRESOLVED.equals(type) ? reachingDefinition(key, block, true, Collections.newSetFromMap(new IdentityHashMap<>())) : null;
-            var known = reaching == null ? null : reaching.type();
-            var arg = block.addArg(known != null ? known : type, name);
-            argumentKeys.put(arg, key);
-            incomplete.computeIfAbsent(block, _k -> new LinkedHashMap<>()).put(key, arg);
-            value = arg;
-        } else if (blockPreds.size() == 1) {
-            value = readVariable(key, blockPreds.get(0), type, name);
-        } else if (blockPreds.isEmpty()) {
-            throw error("TC-E1006", "read of " + describe(key) + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci());
-        } else {
-            var arg = block.addArg(type, name);
-            argumentKeys.put(arg, key);
-            writeVariable(key, block, arg);
-            addArgumentOperands(key, block, arg);
-            value = arg;
-        }
-        writeVariable(key, block, value);
-        return value;
-    }
-
-    /** Passes the value of {@code key} on every incoming edge of {@code block} to {@code arg}. */
-    private void addArgumentOperands(Var key, Block block, BlockArg arg) {
-        for (var pred : distinctPreds(block)) {
-            var value = readVariable(key, pred, arg.type(), arg.name());
-            if (ApiTypes.UNRESOLVED.equals(arg.type())) {
-                arg.setType(value.type());
-            }
-            var term = pred.terminator().orElseThrow();
-            for (int i = 0; i < term.successors().size(); i++) {
-                if (term.successors().get(i).target() == block) {
-                    var args = new ArrayList<>(term.successors().get(i).args());
-                    args.add(value);
-                    term.setSuccessorArgs(i, args);
-                }
-            }
-        }
-    }
-
-    private void seal(Block block) {
-        if (!sealed.add(block)) {
-            return;
-        }
-        var pending = incomplete.remove(block);
-        if (pending != null) {
-            pending.forEach((key, arg) -> addArgumentOperands(key, block, arg));
-        }
-    }
-
-    private List<Block> distinctPreds(Block block) {
-        var seen = Collections.newSetFromMap(new IdentityHashMap<Block, Boolean>());
-        var result = new ArrayList<Block>();
-        for (var p : preds.get(block)) {
-            if (seen.add(p)) {
-                result.add(p);
-            }
-        }
-        return result;
-    }
-
-    /** Removes block arguments whose incoming values are all the same value (or the argument itself). */
-    private void removeTrivialArguments() {
-        boolean changed = true;
-        while (changed) {
-            changed = false;
-            for (var block : function.blocks()) {
-                if (block == function.entry()) {
-                    continue;
-                }
-                for (int index = block.args().size() - 1; index >= 0; index--) {
-                    var arg = block.args().get(index);
-                    Value same = null;
-                    boolean trivial = true;
-                    for (var incoming : incomingValues(block, index)) {
-                        if (incoming == arg || incoming == same) {
-                            continue;
-                        }
-                        if (same != null) {
-                            trivial = false;
-                            break;
-                        }
-                        same = incoming;
-                    }
-                    if (!trivial || same == null) {
-                        continue;
-                    }
-                    arg.replaceAllUsesWith(same);
-                    removeIncoming(block, index);
-                    block.removeArg(arg);
-                    changed = true;
-                }
-            }
-        }
-    }
-
-    private List<Value> incomingValues(Block block, int index) {
-        var values = new ArrayList<Value>();
-        for (var pred : function.blocks()) {
-            pred.terminator().ifPresent(term -> {
-                for (var s : term.successors()) {
-                    if (s.target() == block) {
-                        values.add(s.args().get(index));
-                    }
-                }
-            });
-        }
-        return values;
-    }
-
-    private void removeIncoming(Block block, int index) {
-        for (var pred : function.blocks()) {
-            pred.terminator().ifPresent(term -> {
-                for (int i = 0; i < term.successors().size(); i++) {
-                    if (term.successors().get(i).target() == block) {
-                        var args = new ArrayList<>(term.successors().get(i).args());
-                        args.remove(index);
-                        term.setSuccessorArgs(i, args);
-                    }
-                }
-            });
-        }
-    }
 
     private void removeUnreachable() {
         var reachable = Collections.newSetFromMap(new IdentityHashMap<Block, Boolean>());
@@ -598,7 +445,7 @@ final class Translator {
             }
             int bci = entry.getKey();
             for (int k = 0; k < header.args().size(); k++) {
-                if (!(argumentKeys.get(header.args().get(k)) instanceof Local(var slot, var kind))) {
+                if (!(ssa.keyOf(header.args().get(k)) instanceof Local(var slot, var kind))) {
                     continue;
                 }
                 if (parallel.stream().anyMatch(a -> a.slot() == slot && a.covers(bci))) {
@@ -629,10 +476,10 @@ final class Translator {
             });
             case IINC -> {
                 var key = localKey(insn.index(), 'I');
-                var current = readVariable(key, block, Type.I32, localName(insn.index(), insn.bci()));
+                var current = ssa.read(key, block, Type.I32, localName(insn.index(), insn.bci()));
                 var sum = b.add(current, b.constInt(Type.I32, insn.value()));
                 nameLocal(sum, insn.index(), insn.bci());
-                writeVariable(key, block, sum);
+                ssa.write(key, block, sum);
             }
             case POP -> stack.removeLast();
             case POP2 -> {
@@ -712,7 +559,7 @@ final class Translator {
             }
             case RETURN -> {
                 vectorParams.forEach((key, param) -> {
-                    var current = readVariable(key, block, param.type(), param.name());
+                    var current = ssa.read(key, block, param.type(), param.name());
                     if (current != param) {
                         // Kernel: write the new value back. Device function: a marker checked once the
                         // trivial block arguments are gone (the value may still collapse to the parameter).
@@ -882,14 +729,14 @@ final class Translator {
     private void load(Block block, int slot, int kindIndex, int bci) {
         char kind = "IJFDA".charAt(kindIndex);
         var name = localName(slot, bci);
-        push(readVariable(localKey(slot, kind), block, kind == 'A' ? ApiTypes.UNRESOLVED : primitive(kind), name));
+        push(ssa.read(localKey(slot, kind), block, kind == 'A' ? ApiTypes.UNRESOLVED : primitive(kind), name));
     }
 
     /** Slots are keyed by the bytecode's kind, as the JVM types them, whatever value TC made (a boxed Integer is an i32). */
     private void store(Block block, int slot, char kind, int bci, int nextBci) {
         var value = pop();
         nameLocal(value, slot, nextBci);
-        writeVariable(localKey(slot, kind), block, value);
+        ssa.write(localKey(slot, kind), block, value);
     }
 
     private void nameLocal(Value value, int slot, int bci) {
@@ -973,25 +820,16 @@ final class Translator {
         }
         var current = builder.block();
         for (var key : vectorParams.keySet()) {
-            if (readVariable(key, current, old.type(), "") == old) {
-                writeVariable(key, current, replacement);
+            if (ssa.read(key, current, old.type(), "") == old) {
+                ssa.write(key, current, replacement);
             }
         }
         for (int slot = 0; slot < code.maxLocals(); slot++) {
             var key = localKey(slot, 'A');
-            if (definedSomewhere(key) && readVariable(key, current, old.type(), "") == old) {
-                writeVariable(key, current, replacement);
+            if (ssa.definedSomewhere(key) && ssa.read(key, current, old.type(), "") == old) {
+                ssa.write(key, current, replacement);
             }
         }
-    }
-
-    private boolean definedSomewhere(Var key) {
-        for (var defs : currentDef.values()) {
-            if (defs.containsKey(key)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Value narrow(Value v, Type element) {
@@ -1022,7 +860,7 @@ final class Translator {
         var seen = Collections.newSetFromMap(new IdentityHashMap<Value, Boolean>());
         while (v instanceof BlockArg arg && seen.add(arg)) {
             Value same = null;
-            for (var incoming : incomingValues(arg.block(), arg.block().args().indexOf(arg))) {
+            for (var incoming : ssa.incomingValues(arg.block(), arg.block().args().indexOf(arg))) {
                 if (incoming != arg && incoming != same) {
                     if (same != null) {
                         return v;
@@ -1200,42 +1038,18 @@ final class Translator {
         if (v instanceof Inst inst) {
             return LocalArrays.element(inst).filter(e -> e.equals(Type.F16) || e instanceof Type.VectorType);
         }
-        var key = argumentKeys.get(v);
-        if (key == null || !(v instanceof BlockArg arg)) {
+        if (!(v instanceof BlockArg arg) || ssa.keyOf(arg) == null) {
             return Optional.empty();
         }
+        var key = ssa.keyOf(arg);
         for (var pred : preds.getOrDefault(arg.block(), List.of())) {
-            var reaching = reachingDefinition(key, pred, false, Collections.newSetFromMap(new IdentityHashMap<>()));
+            var reaching = ssa.reachingDefinition(key, pred, false, Collections.newSetFromMap(new IdentityHashMap<>()));
             var element = reaching == null ? Optional.<Type>empty() : localValueArrayElement(reaching, visited);
             if (element.isPresent()) {
                 return element;
             }
         }
         return Optional.empty();
-    }
-
-    /**
-     * The value of {@code key} at the end of {@code block}, if defined on a path into it, without
-     * creating block arguments; {@code filledOnly} follows only predecessors already translated.
-     */
-    private Value reachingDefinition(Var key, Block block, boolean filledOnly, Set<Block> seen) {
-        if (!seen.add(block)) {
-            return null;
-        }
-        var defs = currentDef.get(block);
-        if (defs != null && defs.containsKey(key)) {
-            return defs.get(key);
-        }
-        for (var pred : preds.getOrDefault(block, List.of())) {
-            if (filledOnly && !filled.contains(pred)) {
-                continue;
-            }
-            var v = reachingDefinition(key, pred, filledOnly, seen);
-            if (v != null) {
-                return v;
-            }
-        }
-        return null;
     }
 
     /** Local (shared or private) arrays are pointers without a header: element i is at i * size. */
@@ -1511,14 +1325,6 @@ final class Translator {
 
     private static Local localKey(int slot, char kind) {
         return new Local(slot, kind);
-    }
-
-    private static String describe(Var key) {
-        return switch (key) {
-            case Local(var slot, var kind) -> "local slot " + slot;
-            case StackSlot(var depth) -> "operand-stack slot " + depth;
-            case VectorParam(var slot) -> "vector parameter in slot " + slot;
-        };
     }
 
     private static char descriptorKind(String descriptor) {

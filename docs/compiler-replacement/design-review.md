@@ -199,3 +199,22 @@ Recorded per finding as fixed, not reproduced, or deferred (with the commit).
 | CG-11, CG-12 | **Fixed:** a left shift is emitted through the unsigned type (`(int) ((unsigned int) x << (k & 31))`, the same instruction), since C++ leaves shifting a negative value undefined and Java does not. A conversion to f16/bf16 is given its source type, so a double converts directly (`__double2half`) instead of rounding twice through float. Signed `+ - *` overflow is still printed as C operators, as on the Graal path (compatibility-contract.md §3): a known, shared risk. Run 21 matches run 20. |
 | FE-14, TP-16 | **Fixed:** `TcHook` keeps the entry point and fallback policy; the facts about host arguments and the reflective object layouts moved to `TcArguments`. A launch domain wider than the runtime's `int` domains is refused (TC-E3209) instead of wrapping when cast. Run 21 matches run 20. |
 | Batched prefill | **Measured:** jitLLM tensor-core batched prefill (`--with-prefill-decode --batch-prefill-size 32`), two rounds, alternating order. TC/Graal throughput: Llama-3.2-1B f16 pp128 1.046, pp512 1.039, tg64 1.078; Qwen3-0.6B f16 pp128 1.010, pp512 1.031, tg64 1.129; Llama-3.2-1B Q8_0 pp128 0.998, pp512 0.996, tg64 1.079. Greedy generations are byte-identical between the compilers for all three models. Data in `perf/jitllm/batch-prefill/`. |
+| FE-7 | **Partly fixed:** the SSA construction (Braun et al.: variables, sealing, block arguments, trivial-argument removal) is its own class, `SsaVariables`, behind typed `Var` keys; the Translator (1,407 lines, from 1,550) keeps the bytecode walk and the bindings. Splitting the remaining bytecode cases further is deferred: they are one `switch`, read top to bottom. Validated by run 22. |
+| TP-6 | **Fixed for dumps:** every IR stage dump of every test kernel (232 stages) parses back and prints byte-identically, pinned by `everyStageDumpRoundTrips`. Tile element types stay strings (`TileType.dtype`), as the CUDA Tile API names them; a typed enum is deferred until a second tile target exists. |
+
+## Deferred, with reasons
+
+| ID | Why it waits |
+|---|---|
+| IR-12 | Each pass keeps its own fixed-point loop. A shared worklist driver would change iteration order and therefore output; with the analysis cache in place the remaining cost is small. Revisit when a pass needs incremental updates. |
+| CG-14 | The structurizer's inline decision (`isInline`) is one method with ordered, commented rules. Splitting it into a rule list changes nothing a dialect sees; do it when OpenCL needs a different rule. |
+| TP-15 | Thread ids are `i32` (the runtime launches with `int` sizes) and induction variables may be `i64`; conversions are explicit in the IR. Widening is safe, and a domain wider than `int` is now refused (TC-E3209). |
+| FE-4 | A helper that changes a vector argument (`v.setX(..)`) is refused (TC-E1012) and the kernel goes to Graal: correct, never miscompiled. Supporting it needs callee results for out-parameters. |
+| CG-11 (arithmetic) | Signed `+ - *` overflow is printed as C operators, exactly as the Graal path does; making it defined would cost induction-variable optimisations in NVRTC. Kept as a shared, documented risk. |
+
+## Final CUDA validation (run 22)
+
+Every suite class, `TestMemoryLeak` included (its only run, as asked), fallback off, RTX 4090: TC
+passes exactly Graal's **1522 of 1522** tests (1516 plus TestMemoryLeak's 6; 88,753 kernels
+compiled by TC in its loops), 20 accepted differences unchanged, 0 launch differences, no class
+changed against run 21.

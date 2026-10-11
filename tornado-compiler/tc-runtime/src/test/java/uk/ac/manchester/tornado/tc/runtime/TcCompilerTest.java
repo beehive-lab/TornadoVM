@@ -207,6 +207,33 @@ public class TcCompilerTest {
         }
     }
 
+    /** Every IR stage dump of every test kernel parses back and prints identically (the text is the IR). */
+    @Test
+    public void everyStageDumpRoundTrips() throws Exception {
+        var classes = java.nio.file.Path.of("../tc-frontend/target/test-classes");
+        var urls = new java.net.URL[] { classes.toUri().toURL(), java.nio.file.Path.of("../../tornado-api/target/classes").toUri().toURL() };
+        try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader()); var files = Files.walk(classes.resolve("uk/ac/manchester/tornado/tc/frontend/kernels"))) {
+            var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
+            var options = TcOptions.DEFAULTS.withReport(true, Files.createTempDirectory("tc-roundtrip"));
+            int stages = 0;
+            for (var f : files.filter(p -> p.toString().endsWith(".class") && !p.toString().contains("$")).toList()) {
+                var cls = "uk.ac.manchester.tornado.tc.frontend.kernels." + f.getFileName().toString().replace(".class", "");
+                for (var m : Class.forName(cls, false, loader).getDeclaredMethods()) {
+                    if (!java.lang.reflect.Modifier.isStatic(m.getModifiers()) || !java.lang.reflect.Modifier.isPublic(m.getModifiers())) {
+                        continue;
+                    }
+                    for (var st : TcCompiler.compileJava(source, cls, m.getName(), TargetCaps.CUDA_SM89, options, java.util.List.of()).stages()) {
+                        if (st.kind() == TcCompiler.Kind.IR && !st.text().isEmpty()) {
+                            stages++;
+                            assertEquals(cls + "." + m.getName() + " @" + st.name(), st.text(), uk.ac.manchester.tornado.tc.ir.IrPrinter.print(IrParser.parseFunction(st.text())));
+                        }
+                    }
+                }
+            }
+            assertTrue("stages checked: " + stages, stages > 200);
+        }
+    }
+
     /** TileContext kernels become CUDA Tile C++: typed tiles, auto views, a loop-carried mma accumulator. */
     @Test
     public void tileKernelsAreCudaTile() throws Exception {
