@@ -22,6 +22,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -334,6 +335,114 @@ public final class ByteArray extends TornadoNativeArray {
         long shortIndex = (arrayHeaderSize + byteIndex) / 2;
         short halfFloatValue = segment.getShortAtIndex(shortIndex, 0); //Todo: might have issues
         return new HalfFloat(halfFloatValue);
+    }
+
+    /**
+     * Gets the 32-bit little-endian integer stored at the specified byte index within the {@link ByteArray} instance.
+     * On a GPU backend this is one 32-bit load rather than four byte loads.
+     *
+     * @param byteIndex
+     *         The byte index of the integer's first byte. Must be aligned to a 4-byte boundary.
+     * @return The integer stored at {@code byteIndex}.
+     * @throws IllegalArgumentException
+     *         If the {@code byteIndex} is not aligned to a 4-byte boundary.
+     */
+    public int getInt(int byteIndex) {
+        if (byteIndex % Integer.BYTES != 0) {
+            throw new IllegalArgumentException("Int must be aligned to a 4-byte boundary");
+        }
+        return segment.getSegment().get(ValueLayout.JAVA_INT_UNALIGNED, arrayHeaderSize + (long) byteIndex);
+    }
+
+    /**
+     * Sets the 32-bit little-endian integer at the specified byte index within the {@link ByteArray} instance.
+     *
+     * @param byteIndex
+     *         The byte index of the integer's first byte. Must be aligned to a 4-byte boundary.
+     * @param value
+     *         The integer to store.
+     * @throws IllegalArgumentException
+     *         If the {@code byteIndex} is not aligned to a 4-byte boundary.
+     */
+    public void setInt(int byteIndex, int value) {
+        if (byteIndex % Integer.BYTES != 0) {
+            throw new IllegalArgumentException("Int must be aligned to a 4-byte boundary");
+        }
+        segment.getSegment().set(ValueLayout.JAVA_INT_UNALIGNED, arrayHeaderSize + (long) byteIndex, value);
+    }
+
+    /**
+     * Gets the 64-bit little-endian long stored at the specified byte index within the {@link ByteArray} instance.
+     * On a GPU backend this is one 64-bit load rather than eight byte loads.
+     *
+     * @param byteIndex
+     *         The byte index of the long's first byte. Must be aligned to an 8-byte boundary.
+     * @return The long stored at {@code byteIndex}.
+     * @throws IllegalArgumentException
+     *         If the {@code byteIndex} is not aligned to an 8-byte boundary.
+     */
+    public long getLong(int byteIndex) {
+        if (byteIndex % Long.BYTES != 0) {
+            throw new IllegalArgumentException("Long must be aligned to an 8-byte boundary");
+        }
+        return segment.getSegment().get(ValueLayout.JAVA_LONG_UNALIGNED, arrayHeaderSize + (long) byteIndex);
+    }
+
+    /**
+     * Sets the 64-bit little-endian long at the specified byte index within the {@link ByteArray} instance.
+     *
+     * @param byteIndex
+     *         The byte index of the long's first byte. Must be aligned to an 8-byte boundary.
+     * @param value
+     *         The long to store.
+     * @throws IllegalArgumentException
+     *         If the {@code byteIndex} is not aligned to an 8-byte boundary.
+     */
+    public void setLong(int byteIndex, long value) {
+        if (byteIndex % Long.BYTES != 0) {
+            throw new IllegalArgumentException("Long must be aligned to an 8-byte boundary");
+        }
+        segment.getSegment().set(ValueLayout.JAVA_LONG_UNALIGNED, arrayHeaderSize + (long) byteIndex, value);
+    }
+
+    /**
+     * Gets the 32-bit integer at a {@code long} byte index. See {@link #getInt(int)}.
+     */
+    public int getInt(long byteIndex) {
+        if (byteIndex % Integer.BYTES != 0) {
+            throw new IllegalArgumentException("Int must be aligned to a 4-byte boundary");
+        }
+        return segment.getSegment().get(ValueLayout.JAVA_INT_UNALIGNED, arrayHeaderSize + byteIndex);
+    }
+
+    /**
+     * Sets the 32-bit integer at a {@code long} byte index. See {@link #setInt(int, int)}.
+     */
+    public void setInt(long byteIndex, int value) {
+        if (byteIndex % Integer.BYTES != 0) {
+            throw new IllegalArgumentException("Int must be aligned to a 4-byte boundary");
+        }
+        segment.getSegment().set(ValueLayout.JAVA_INT_UNALIGNED, arrayHeaderSize + byteIndex, value);
+    }
+
+    /**
+     * Gets the 64-bit long at a {@code long} byte index. See {@link #getLong(int)}.
+     */
+    public long getLong(long byteIndex) {
+        if (byteIndex % Long.BYTES != 0) {
+            throw new IllegalArgumentException("Long must be aligned to an 8-byte boundary");
+        }
+        return segment.getSegment().get(ValueLayout.JAVA_LONG_UNALIGNED, arrayHeaderSize + byteIndex);
+    }
+
+    /**
+     * Sets the 64-bit long at a {@code long} byte index. See {@link #setLong(int, long)}.
+     */
+    public void setLong(long byteIndex, long value) {
+        if (byteIndex % Long.BYTES != 0) {
+            throw new IllegalArgumentException("Long must be aligned to an 8-byte boundary");
+        }
+        segment.getSegment().set(ValueLayout.JAVA_LONG_UNALIGNED, arrayHeaderSize + byteIndex, value);
     }
 
     /**
