@@ -58,7 +58,8 @@ public class LitTest {
             return new Lit.ToolResult(result.exitCode(), result.stdout(), result.stderr());
         });
         var features = new HashSet<String>();
-        ExternalTool.find("nvcc", "/usr/local/cuda/bin").ifPresent(nvcc -> {
+        // An nvcc that cannot target sm_89 (older than CUDA 11.8) counts as absent, like no nvcc at all.
+        ExternalTool.find("nvcc", "/usr/local/cuda/bin").filter(LitTest::supportsSm89).ifPresent(nvcc -> {
             features.add("nvcc");
             tools.put("nvcc-ptx", ExternalTool.of(".cu", List.of(nvcc.toString(), "--ptx", "-arch=sm_89", "-o", "/dev/null", "%in")));
         });
@@ -84,6 +85,20 @@ public class LitTest {
         var absent = new HashSet<>(List.of("nvcc-ptx", "clbuild", "mslcheck", "metalc"));
         absent.removeAll(tools.keySet());
         LIT = new Lit(tools, features, absent);
+    }
+
+    /** Whether {@code nvcc} lists compute_89 among its GPU architectures. */
+    private static boolean supportsSm89(Path nvcc) {
+        try {
+            var process = new ProcessBuilder(nvcc.toString(), "--list-gpu-arch").redirectErrorStream(true).start();
+            var output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            return process.waitFor() == 0 && output.contains("compute_89");
+        } catch (java.io.IOException e) {
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     @Parameters(name = "{0}")
