@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.cuda.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;

@@ -39,6 +39,9 @@
                 <include>*.py</include>
                 <include>tornado</include>
                 <include>tornado-test</include>
+                <include>tc</include>
+                <include>build-tc-native</include>
+                <include>tornado-native-image</include>
                 <include>tornado-benchmarks.py</include>
                 <include>misc/*.py</include>
             </includes>

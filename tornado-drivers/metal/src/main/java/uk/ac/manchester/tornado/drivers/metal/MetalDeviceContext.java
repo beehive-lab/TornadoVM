@@ -42,7 +42,6 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
-import uk.ac.manchester.tornado.drivers.metal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
 import uk.ac.manchester.tornado.drivers.metal.power.MetalEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalBufferProvider;

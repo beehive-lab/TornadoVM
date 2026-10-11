@@ -25,19 +25,11 @@
 
 package uk.ac.manchester.tornado.runtime.profiler;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
-import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public final class FeatureExtractionUtilities {
 

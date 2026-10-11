@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Differential harness, Graal vs TC (Phase 6).
+"""Regression harness for TornadoVM's compiler (TC).
 
-Runs each tornado-test class twice on one device - Graal, then TC with fallback off - with the
-class's own suite parameters (testParameters / testMethods from tornado-test), and compares per test:
+Runs each tornado-test class once on one device, with the class's own suite parameters
+(testParameters / testMethods from tornado-test), and compares per test against an earlier run:
 pass/fail status, and per task the launch configuration (dims, global and local work size, from
--Dtornado.threadInfo). Writes <out>/diff.json and <out>/diff.md (a parity-matrix section).
+-Dtornado.threadInfo). Writes <out>/diff.json and <out>/diff.md.
 
-  tc-diff.py run  [--device 1:0] [--out DIR] [--classes FILE | --families a,b,..] [--compilers graal,tc]
-  tc-diff.py diff --out DIR          # compare existing logs only
-Generated text is not compared: the two compilers print different code by design.
+  tc-diff.py run  [--device 1:0] [--out DIR] [--classes FILE | --families a,b,..] [--against OLD]
+  tc-diff.py diff --out DIR --against OLD      # compare existing logs only
+A run keeps its logs in <out>/tc, so any earlier run, including the ones made while Graal was the
+reference, can be the reference.
 """
 import argparse, collections, json, os, re, signal, subprocess, sys, time
 
@@ -49,13 +50,13 @@ def suite_entries(bindir):
     return entries
 
 
-def run_class(bindir, cls, params, methods, compiler, device, out):
-    jvm = [f"-Dtornado.unittests.device={device}", f"-Dtornado.compiler={compiler}", "-Dtornado.compiler.fallback=false", "-Dtornado.tc.stats=true"] + params
-    jvm += os.environ.get("TC_DIFF_JVM", "").split()  # extra flags, e.g. -Dtornado.tc.checkAccess=true
+def run_class(bindir, cls, params, methods, device, out):
+    jvm = [f"-Dtornado.unittests.device={device}", "-Dtornado.tc.stats=true"] + params
+    jvm += os.environ.get("TC_DIFF_JVM", "").split()  # extra flags
     if cls not in NO_THREAD_INFO:
         jvm.append("-Dtornado.threadInfo=True")
     targets = [f"{cls}#{m}" for m in methods] or [cls]
-    log = os.path.join(out, compiler, cls + ".log")
+    log = os.path.join(out, "tc", cls + ".log")
     with open(log, "w") as f:
         for t in targets:
             f.write(f'tornado-test --params "{t}"\n'); f.flush()
@@ -80,7 +81,7 @@ def parse(log):
     for i, line in enumerate(lines):
         if m := re.search(r'--params "uk\.ac\.manchester\.tornado\.unittests\.([\w.$]+?)(?:#\w+)?"', line):
             cls = m.group(1)
-        elif m := re.search(r"Running test:\s+(\S+)\s+\.+\s+\[([A-Z :]+?)\]", line):
+        elif m := re.search(r"Running test:\s+(\S+)\s+\.+\s+\[([A-Z0-9 :]+?)\]", line):
             tests[f"{cls}#{m.group(1)}"] = m.group(2).split(":")[0].strip()
         elif m := re.match(r"Task info: (\S+)", line):
             info = {}
@@ -109,43 +110,37 @@ RUN_DEPENDENT_LAUNCHES = {
 # status differences are listed, but counted as neither TC better nor TC worse.
 RACY_TESTS = {
     "compute.TransformerKernelsTest#testReductionOneBlockWithLayer": "thread 0 of group 0 sums the other groups' partial results with no global "
-    "synchronisation (CUDA: Graal FAILED / TC PASS; UHD 770: Graal PASS / TC FAILED, 3 of 3 runs each)",
+    "synchronisation (CUDA: FAILED or PASS by run, 3 of 3 runs each)",
 }
 
 
-def compare(out):
-    result = {"classes": {}, "summary": collections.Counter()}
-    gdir, tdir = os.path.join(out, "graal"), os.path.join(out, "tc")
+def compare(out, against):
+    result = {"classes": {}, "summary": collections.Counter(), "against": against}
+    tdir = os.path.join(out, "tc")
+    rdir = os.path.join(against, "tc") if against else None
     for name in sorted(os.listdir(tdir)):
-        if not name.endswith(".log") or not os.path.exists(os.path.join(gdir, name)):
+        if not name.endswith(".log"):
             continue
-        gt, gl, _ = parse(os.path.join(gdir, name))
         tt, tl, ts = parse(os.path.join(tdir, name))
-        diffs = [{"test": k, "graal": gt.get(k), "tc": tt.get(k), **({"racy": True} if k in RACY_TESTS else {})} for k in sorted(set(gt) | set(tt)) if gt.get(k) != tt.get(k)]
-        launch, counts = [], []
+        rt, rl = ({}, {}) if not rdir or not os.path.exists(os.path.join(rdir, name)) else parse(os.path.join(rdir, name))[:2]
+        diffs = [{"test": k, "before": rt.get(k), "now": tt.get(k), **({"racy": True} if k in RACY_TESTS else {})}
+                 for k in sorted(set(rt) | set(tt)) if rt and rt.get(k) != tt.get(k)]
+        launch = []
         norm = lambda conf: (conf[0], conf[1], "[1, 1, 1]" if conf[0] == "0" and conf[2] == "null" else conf[2])  # 1-thread launch, local size unset
-        for k in sorted(set(gl) & set(tl)):
-            if len(gl[k]) != len(tl[k]):
-                counts.append({"task": k, "graal": len(gl[k]), "tc": len(tl[k])})  # a refused kernel launches fewer times
-                continue
+        for k in sorted(set(rl) & set(tl)):
             # Test methods may run in another order: only a different multiset of launches is a difference.
-            if collections.Counter(map(norm, gl[k])) == collections.Counter(map(norm, tl[k])):
-                continue
-            for n, (g, c) in enumerate(zip(gl[k], tl[k])):
-                if norm(g) != norm(c):
-                    launch.append({"task": k, "launch": n, "graal": g, "tc": c})
-                    break
+            if collections.Counter(map(norm, rl[k])) != collections.Counter(map(norm, tl[k])):
+                launch.append({"task": k, "before": len(rl[k]), "now": len(tl[k])})
         noise = RUN_DEPENDENT_LAUNCHES.get(name[:-4].removeprefix("uk.ac.manchester.tornado.unittests."))
         if noise:
-            launch, counts = [], []
-        result["classes"][name[:-4]] = {"tests": len(tt), "pass": sum(v == "PASS" for v in tt.values()), "graalPass": sum(v == "PASS" for v in gt.values()),
-                                       "diffs": diffs, "launchDiffs": launch, "launchCountDiffs": counts, "tcStats": dict(ts),
-                                       **({"launchesRunDependent": noise} if noise else {})}
+            launch = []
+        result["classes"][name[:-4]] = {"tests": len(tt), "pass": sum(v == "PASS" for v in tt.values()), "passBefore": sum(v == "PASS" for v in rt.values()),
+                                       "diffs": diffs, "launchDiffs": launch, "tcStats": dict(ts), **({"launchesRunDependent": noise} if noise else {})}
         s = result["summary"]
-        s["tests"] += len(tt); s["tcPass"] += sum(v == "PASS" for v in tt.values()); s["graalPass"] += sum(v == "PASS" for v in gt.values())
+        s["tests"] += len(tt); s["pass"] += sum(v == "PASS" for v in tt.values()); s["passBefore"] += sum(v == "PASS" for v in rt.values())
         s["diffs"] += len(diffs); s["launchDiffs"] += len(launch); s["tcKernels"] += ts.get("tc", 0)
-        s["tcBetter"] += sum(d["tc"] == "PASS" and d["graal"] != "PASS" and not d.get("racy") for d in diffs)
-        s["tcWorse"] += sum(d["graal"] == "PASS" and d["tc"] != "PASS" and not d.get("racy") for d in diffs)
+        s["better"] += sum(d["now"] == "PASS" and d["before"] != "PASS" and not d.get("racy") for d in diffs)
+        s["worse"] += sum(d["before"] == "PASS" and d["now"] != "PASS" and not d.get("racy") for d in diffs)
         for code, n in ts.items():
             if code.startswith("TC-E"):
                 result.setdefault("refusals", collections.Counter())[code] += n
@@ -156,20 +151,21 @@ def compare(out):
 
 def write_md(r, out):
     s = r["summary"]
+    ref = f"`{os.path.basename(r['against'])}`" if r.get("against") else "no reference run"
     lines = ["<!-- tc-diff: generated by baseline/tc-diff.py; do not edit by hand -->",
-             f"Run `{os.path.basename(out)}`: {s['tests']} tests in {len(r['classes'])} classes, TC with fallback **off**. "
-             f"PASS: Graal {s['graalPass']}, TC {s['tcPass']}. Status differences: {s['diffs']} (TC worse {s['tcWorse']}, TC better {s['tcBetter']}). "
-             f"Launch-configuration differences: {s['launchDiffs']}. Kernels compiled by TC: {s['tcKernels']}.", ""]
+             f"Run `{os.path.basename(out)}`: {s['tests']} tests in {len(r['classes'])} classes. PASS: {s['pass']} (against {ref}: {s['passBefore']}). "
+             f"Status differences: {s['diffs']} (worse {s['worse']}, better {s['better']}). "
+             f"Launch-configuration differences: {s['launchDiffs']}. Kernels compiled: {s['tcKernels']}.", ""]
     if r.get("refusals"):
-        lines.append("TC refusals (each fails its test with fallback off): " + ", ".join(f"{k} {v}" for k, v in sorted(r["refusals"].items(), key=lambda x: -x[1])) + ".")
+        lines.append("TC refusals (each fails its test): " + ", ".join(f"{k} {v}" for k, v in sorted(r["refusals"].items(), key=lambda x: -x[1])) + ".")
         lines.append("")
-    lines += ["| Class | Tests | Graal PASS | TC PASS | Differences |", "|---|---:|---:|---:|---|"]
+    lines += ["| Class | Tests | PASS before | PASS now | Differences |", "|---|---:|---:|---:|---|"]
     for c, v in r["classes"].items():
         if v["diffs"] or v["launchDiffs"]:
-            d = "; ".join(f"`{x['test'].split('#')[1]}` {x['graal']}→{x['tc']}" + (" (racy test)" if x.get("racy") else "") for x in v["diffs"][:6]) + (" …" if len(v["diffs"]) > 6 else "")
+            d = "; ".join(f"`{x['test'].split('#')[1]}` {x['before']}→{x['now']}" + (" (racy test)" if x.get("racy") else "") for x in v["diffs"][:6]) + (" …" if len(v["diffs"]) > 6 else "")
             if v["launchDiffs"]:
-                d += ("; " if d else "") + f"{len(v['launchDiffs'])} launch config(s) differ"
-            lines.append(f"| {c.replace('uk.ac.manchester.tornado.unittests.', '')} | {v['tests']} | {v['graalPass']} | {v['pass']} | {d} |")
+                d += ("; " if d else "") + f"{len(v['launchDiffs'])} task(s) launch differently"
+            lines.append(f"| {c.replace('uk.ac.manchester.tornado.unittests.', '')} | {v['tests']} | {v['passBefore']} | {v['pass']} | {d} |")
     lines.append("<!-- /tc-diff -->")
     open(os.path.join(out, "diff.md"), "w").write("\n".join(lines) + "\n")
 
@@ -179,12 +175,12 @@ def main():
     ap.add_argument("mode", choices=["run", "diff"])
     ap.add_argument("--device", default="1:0")
     ap.add_argument("--out", default=os.path.join(HOME, "tc-diff", time.strftime("%Y%m%d-%H%M")))
+    ap.add_argument("--against", help="an earlier run directory to compare with")
     ap.add_argument("--classes")
     ap.add_argument("--families")
-    ap.add_argument("--compilers", default="graal,tc")
     ap.add_argument("--exclude", default="", help="regex of class names to skip")
     ap.add_argument("--with-memory-leak", action="store_true",
-                    help="also run memory.leak.TestMemoryLeak (300 s loops): only for the final validation of the CUDA backend work")
+                    help="also run memory.leak.TestMemoryLeak (300 s loops): only for a final validation")
     a = ap.parse_args()
     if a.mode == "run":
         bindir = sdk_bin()
@@ -199,14 +195,12 @@ def main():
             entries = [e for e in entries if not re.search(a.exclude, e[0])]
         if not a.with_memory_leak:
             entries = [e for e in entries if e[0] not in NO_THREAD_INFO]
-        for c in a.compilers.split(","):
-            os.makedirs(os.path.join(a.out, c), exist_ok=True)
+        os.makedirs(os.path.join(a.out, "tc"), exist_ok=True)
         print(f"{len(entries)} classes -> {a.out}", flush=True)
         for name, params, methods in entries:
-            for c in a.compilers.split(","):
-                run_class(bindir, name, params, methods, c, a.device, a.out)
+            run_class(bindir, name, params, methods, a.device, a.out)
             print(f"{time.strftime('%T')} {name}", flush=True)
-    r = compare(a.out)
+    r = compare(a.out, a.against)
     print(json.dumps(r["summary"]))
 
 

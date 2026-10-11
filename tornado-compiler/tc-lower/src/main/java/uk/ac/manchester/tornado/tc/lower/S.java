@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.tc.ir.Type;
  * TC-S: the structured, non-SSA representation that source emitters print. Values live in mutable
  * variables, control flow is nested regions (blocks, loops, conditionals), and expressions are trees.
  * Operations are not re-encoded: an {@link Expr.Op} keeps the TC-SSA instruction, so emitters reuse
- * the opcode and type semantics of TC-SSA. See {@code ir-specification.md} §2.
+ * the opcode and type semantics of TC-SSA. See {@code ir-specification.md} section 2.
  */
 public final class S {
 

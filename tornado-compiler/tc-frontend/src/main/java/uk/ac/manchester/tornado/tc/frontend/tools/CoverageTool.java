@@ -89,7 +89,9 @@ public final class CoverageTool {
                     var where = internal.substring(internal.lastIndexOf('/') + 1) + "." + method.name();
                     if (result.function().isPresent()) {
                         var problems = Verifier.verify(result.function().get());
-                        var callees = result.function().get().blocks().stream().flatMap(b -> b.insts().stream()).filter(i -> i.opcode() instanceof uk.ac.manchester.tornado.tc.ir.Opcode.Call).map(i -> ((uk.ac.manchester.tornado.tc.ir.Opcode.Call) i.opcode()).callee()).toList();
+                        var callees = result.function().get().blocks().stream().flatMap(b -> b.insts().stream()) //
+                                .filter(i -> i.opcode() instanceof uk.ac.manchester.tornado.tc.ir.Opcode.Call) //
+                                .map(i -> ((uk.ac.manchester.tornado.tc.ir.Opcode.Call) i.opcode()).callee()).toList();
                         if (problems.isEmpty() && callees.isEmpty()) {
                             translated++;
                             if (method.code().get().typeAnnotations().length > 0) {

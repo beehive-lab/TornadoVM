@@ -23,7 +23,7 @@ package uk.ac.manchester.tornado.tc.ir.target;
 /**
  * What a target device and toolchain support. Immutable and part of every compilation-cache key;
  * built from the driver's device queries (TC never queries devices itself). See
- * {@code backend-contracts.md} §1.
+ * {@code backend-contracts.md} section 1.
  *
  * @param dialect             source language the emitter produces
  * @param computeCapability   CUDA compute capability as major*10+minor (89 for sm_89), 0 elsewhere

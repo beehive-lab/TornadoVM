@@ -36,9 +36,6 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
-import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
-import uk.ac.manchester.tornado.drivers.metal.MetalKernel;
-import uk.ac.manchester.tornado.drivers.metal.MetalProgram;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
@@ -257,7 +254,9 @@ public class MetalInstalledCode implements TornadoInstalledCode {
             // Use native reflection at the correct Metal argument index (not user-arg index)
             MetalKernel.KernelArgInfo argInfo = null;
             try {
-                if (kernel != null) argInfo = kernel.getArgInfoObject(nativeArgIndex);
+                if (kernel != null) {
+                    argInfo = kernel.getArgInfoObject(nativeArgIndex);
+                }
             } catch (Exception e) {
                 // ignore reflection errors per-argument
             }
@@ -282,7 +281,7 @@ public class MetalInstalledCode implements TornadoInstalledCode {
             // cannot distinguish them. Calling setArgRef on a scalar value crashes with
             // objc_retain on a garbage pointer.
             if (arg.isReferenceType()) {
-                // Device buffer — arg value is a Long containing the native MTLBuffer pointer.
+                // Device buffer: arg value is a Long containing the native MTLBuffer pointer.
                 kernel.setArgRef(nativeArgIndex, (Long) arg.getValue());
             } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 buffer.clear();

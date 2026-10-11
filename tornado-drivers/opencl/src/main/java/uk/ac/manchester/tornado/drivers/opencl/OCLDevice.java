@@ -124,7 +124,7 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceMaxWorkItemDimensions();
         getDeviceMaxWorkGroupSize_0();
         getDeviceMaxConstantBufferSize();
-        getDoubleFPConfig();
+        doubleFPConfig = getDoubleFPConfig();
         getDeviceSingleFPConfig();
         getDeviceMemoryBaseAlignment();
         getDeviceMaxWorkItemSizes();
@@ -383,7 +383,7 @@ public class OCLDevice implements OCLTargetDevice {
         return buffer.getLong();
     }
 
-    public boolean isDeviceDoubleFPSupported() {
+    public synchronized boolean isDeviceDoubleFPSupported() {
         if (doubleFPConfig != -1) {
             return doubleFPConfig != 0;
         }

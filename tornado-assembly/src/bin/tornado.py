@@ -1001,7 +1001,8 @@ class TornadoVMRunnerTool():
         if (self.java_version == 8):
             tornadoFlags = tornadoFlags + " -Djava.ext.dirs=" + self.sdk + "/share/java/tornado "
         else:
-            tornadoFlags = tornadoFlags + " --module-path ." + os.pathsep + self.sdk + "/share/java/tornado"
+            # An AOT cache (--aotCache) accepts no non-empty directory on its paths, so "." is left out.
+            tornadoFlags = tornadoFlags + " --module-path " + ("" if args.aot_cache != None else "." + os.pathsep) + self.sdk + "/share/java/tornado"
             # The caller's --module-path EXTENDS the module path built above, and it may carry
             # further JVM options packed into the same argument (the TornadoVM-Ray-Tracer launcher
             # passes its whole JFLAGS this way), so nothing may be glued onto its tail.
@@ -1180,6 +1181,19 @@ class TornadoVMRunnerTool():
             params += args.param15 + " "
         return params
 
+    def aotCacheFlags(self, args):
+        """Project Leyden (JDK 25+): the first run with --aotCache FILE trains and writes the cache,
+        later runs start from it (classes loaded and linked, profiles, compiled lambdas)."""
+        if (args.aot_cache == None):
+            return ""
+        if (self.java_version < 25):
+            print("[ERROR] --aotCache needs JDK 25 or newer (JEP 514/515); found JDK " + str(self.java_version))
+            sys.exit(1)
+        if (os.path.exists(args.aot_cache)):
+            return "-XX:AOTCache=" + args.aot_cache + " "
+        print("[INFO] Training the AOT cache " + args.aot_cache + ": the next runs start from it", file=sys.stderr)
+        return "-XX:AOTCacheOutput=" + args.aot_cache + " "
+
     def buildJavaCommand(self, args, raw=False):
         tornadoFlags = self.buildTornadoVMOptions(args)
         tornadoAddModules = __TORNADOVM_ADD_MODULES__
@@ -1191,6 +1205,7 @@ class TornadoVMRunnerTool():
         javaFlags = javaFlags + " " + __JAVA_BASE_OPTIONS__
         if (self.sdk_jdk_preview):
             javaFlags = javaFlags + __JAVA_PREVIEW_OPTION__
+        javaFlags = javaFlags + self.aotCacheFlags(args)
 
         javaFlags = javaFlags + tornadoFlags + __TORNADOVM_PROVIDERS__ + " "
 
@@ -1365,6 +1380,8 @@ def parseArguments():
                         help="Enable the profiler {silent|console}")
     parser.add_argument('--dumpProfiler', action="store", dest="dump_profiler", default=None,
                         help="Dump the profiler to a file")
+    parser.add_argument('--aotCache', action="store", type=str, dest="aot_cache", default=None,
+                        help="Project Leyden AOT cache (JDK 25+): writes FILE on the first run (training), starts from it afterwards")
     parser.add_argument('--printJavaFlags', action="store_true", dest="printFlags", default=False,
                         help="Print all the Java flags to enable the execution with TornadoVM")
     parser.add_argument('--tcirviz', action="store_true", dest="tcirviz", default=False,

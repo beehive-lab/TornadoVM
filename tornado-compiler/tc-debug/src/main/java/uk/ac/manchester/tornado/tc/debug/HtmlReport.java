@@ -40,7 +40,8 @@ public final class HtmlReport {
 
     public static String render(Compilation c) {
         var html = new StringBuilder();
-        html.append("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>TC: ").append(escape(c.function())).append("</title>\n<style>\n").append(CSS).append("</style></head><body>\n");
+        html.append("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>TC: ").append(escape(c.function())).append("</title>\n");
+        html.append("<style>\n").append(CSS).append("</style></head><body>\n");
         html.append("<header><h1>").append(escape(c.function())).append("</h1><p class=\"meta\">")
                 .append(escape(c.target().dialect() + " sm_" + c.target().computeCapability())).append(" &middot; ")
                 .append(c.succeeded() ? "<span class=\"ok\">compiled</span>" : "<span class=\"bad\">failed</span>")
@@ -142,7 +143,8 @@ public final class HtmlReport {
 
     private static final String CSS = """
             :root { --bg: #fbfbfa; --fg: #1d1d1f; --muted: #6b6b70; --line: #e3e3e0; --code: #f3f3f1; --add: #dff3e3; --bar: #4a7bd0; --ok: #1f7a3a; --bad: #b3261e; color-scheme: light; }
-            @media (prefers-color-scheme: dark) { :root { --bg: #17171a; --fg: #e8e8ea; --muted: #9a9aa2; --line: #2c2c31; --code: #1f1f23; --add: #1d3a26; --bar: #6f9be6; --ok: #6cc58a; --bad: #f08a80; color-scheme: dark; } }
+            @media (prefers-color-scheme: dark) { :root { --bg: #17171a; --fg: #e8e8ea; --muted: #9a9aa2; --line: #2c2c31; --code: #1f1f23;
+                --add: #1d3a26; --bar: #6f9be6; --ok: #6cc58a; --bad: #f08a80; color-scheme: dark; } }
             body { background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 24px clamp(16px, 4vw, 48px); }
             h1 { font-size: 20px; margin: 0 0 4px; } h2 { font-size: 15px; margin: 28px 0 8px; } small { color: var(--muted); font-weight: normal; }
             .meta { color: var(--muted); margin: 0; } .ok { color: var(--ok); } .bad { color: var(--bad); }

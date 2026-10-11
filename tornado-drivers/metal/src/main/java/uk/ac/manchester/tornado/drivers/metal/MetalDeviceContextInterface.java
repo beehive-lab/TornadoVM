@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.metal;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.metal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;

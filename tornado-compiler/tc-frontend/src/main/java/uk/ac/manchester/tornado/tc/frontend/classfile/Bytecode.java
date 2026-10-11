@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Decodes the instructions of a {@code Code} attribute (JVMS §6.5): opcode, operands and branch
+ * Decodes the instructions of a {@code Code} attribute (JVMS section 6.5): opcode, operands and branch
  * targets, with {@code wide}, {@code tableswitch} and {@code lookupswitch} handled.
  */
 public final class Bytecode {
@@ -45,7 +45,8 @@ public final class Bytecode {
         }
     }
 
-    // The opcodes the frontend refers to by name (JVMS §7).
+    // CHECKSTYLE.OFF
+    // The opcodes the frontend refers to by name (JVMS section 7).
     public static final int NOP = 0, ACONST_NULL = 1, ICONST_M1 = 2, ICONST_5 = 8, LCONST_0 = 9, LCONST_1 = 10, FCONST_0 = 11, FCONST_2 = 13, DCONST_0 = 14, DCONST_1 = 15,
             BIPUSH = 16, SIPUSH = 17, LDC = 18, LDC_W = 19, LDC2_W = 20, ILOAD = 21, LLOAD = 22, FLOAD = 23, DLOAD = 24, ALOAD = 25, ILOAD_0 = 26, ALOAD_3 = 45,
             IALOAD = 46, SALOAD = 53, ISTORE = 54, LSTORE = 55, FSTORE = 56, DSTORE = 57, ASTORE = 58, ISTORE_0 = 59, ASTORE_0 = 75, ASTORE_3 = 78, IASTORE = 79, SASTORE = 86,
@@ -56,6 +57,7 @@ public final class Bytecode {
             INVOKESPECIAL = 183, INVOKESTATIC = 184, INVOKEINTERFACE = 185, INVOKEDYNAMIC = 186, NEW = 187, NEWARRAY = 188, ANEWARRAY = 189,
             ARRAYLENGTH = 190, ATHROW = 191, CHECKCAST = 192, INSTANCEOF = 193, MONITORENTER = 194, MONITOREXIT = 195, WIDE = 196, MULTIANEWARRAY = 197,
             IFNULL = 198, IFNONNULL = 199, GOTO_W = 200, JSR_W = 201;
+    // CHECKSTYLE.ON
 
     private static final String[] NAMES = ("nop aconst_null iconst_m1 iconst_0 iconst_1 iconst_2 iconst_3 iconst_4 iconst_5 lconst_0 lconst_1 fconst_0 fconst_1 fconst_2 "
             + "dconst_0 dconst_1 bipush sipush ldc ldc_w ldc2_w iload lload fload dload aload iload_0 iload_1 iload_2 iload_3 lload_0 lload_1 lload_2 lload_3 "

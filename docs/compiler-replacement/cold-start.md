@@ -22,7 +22,7 @@ bootstrap on first use. `Bindings` initialises in 8 ms instead of 21.
 | saxpy | 114.3 | 101.0 |
 | sgemm | 125.5 | 112.8 |
 
-## Deployment options (spike, branch `compiler/spike-aot`)
+## Deployment options (spike; now in the SDK: `tornado --aotCache`, `tornado-native-image`, `tc` / `build-tc-native`)
 
 Process wall time for one cold `blackscholes` compile, JVM start included (median of 10):
 
@@ -37,4 +37,8 @@ Process wall time for one cold `blackscholes` compile, JVM start included (media
 
 TC compile time alone (inside the process): JDK 21 140.9 ms, AppCDS 105.7, JDK 25 128.6, JDK 25 + AOT
 cache 65.4, native image 18.5. The native image emits byte-identical CUDA to the JVM build on all four
-kernels. Code, scripts and raw data are on `compiler/spike-aot` (`docs/compiler-replacement/spikes/aot/`).
+kernels. Code, scripts and raw data: `docs/compiler-replacement/spikes/aot/`.
+
+With Graal and JVMCI removed, the same holds for whole applications, not just the headless
+compiler. Saxpy on an RTX 4090, process time: JVM (JDK 25) 0.69 s, with an AOT cache 0.54 s, native
+image 0.43 s (OpenCL and CUDA). TC's compile time inside the application: 42 ms, 18 ms and 1.5 ms.

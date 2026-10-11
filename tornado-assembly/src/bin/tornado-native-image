@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Builds a TornadoVM application as a GraalVM native image: the runtime, the drivers and TC, the
+# kernel compiler, in one executable that needs no JVM. Kernels are still compiled when the
+# application runs (TC reads the kernels' class files from the image) and run on the GPU as usual.
+#
+#   GRAALVM_HOME=<GraalVM for JDK 25+> tornado-native-image -cp <app class path> [-o <name>] [--no-trace] <MainClass> [args...]
+#
+# 1. Tracing: the application runs on the GraalVM JVM once per installed backend (-Dtornado.backend=N)
+#    with the native-image agent, which records the reflection, resources and FFM downcalls it uses
+#    into <name>.native-config/. [args...] are passed to these runs: give the application a workload
+#    that compiles and launches its kernels. --no-trace reuses an existing <name>.native-config/.
+# 2. native-image builds <name> with FFM support (-H:+ForeignAPISupport) from that metadata.
+# The class path must be jars or directories of the application; the SDK provides the rest.
+set -euo pipefail
+: "${TORNADOVM_HOME:?source setvars.sh first}"
+: "${GRAALVM_HOME:?set GRAALVM_HOME to a GraalVM installation with native-image}"
+
+cp=""; out=""; trace=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -cp|--classpath|--class-path) cp=$2; shift 2 ;;
+    -o) out=$2; shift 2 ;;
+    --no-trace) trace=0; shift ;;
+    -*) echo "unknown option $1" >&2; exit 2 ;;
+    *) break ;;
+  esac
+done
+[ $# -ge 1 ] && [ -n "$cp" ] || { sed -n '5p' "$0" | sed 's/^# //' >&2; exit 2; }
+main=$1; shift
+out=${out:-$(echo "$main" | sed 's/.*\.//' | tr 'A-Z' 'a-z')}
+if grep -q 'tornado.jdk.preview=true' "$TORNADOVM_HOME/etc/tornado.jdk" 2>/dev/null; then
+  echo "this SDK was built with --enable-preview for JDK 21; build a jdk22plus SDK for native images" >&2; exit 2
+fi
+
+jars=$TORNADOVM_HOME/share/java/tornado
+mods=tornado.runtime,tornado.drivers.common
+for d in opencl cuda metal; do
+  ls "$jars"/tornado-drivers-$d-*.jar >/dev/null 2>&1 && mods=$mods,tornado.drivers.$d
+done
+mods=$mods${TORNADOVM_EXTRA_MODULES:+,$TORNADOVM_EXTRA_MODULES}
+access=ALL-UNNAMED,$mods
+jvm=(--enable-native-access="$access" -p "$jars" --add-modules "jdk.unsupported,java.management,jdk.management,$mods"
+     --add-opens java.base/java.lang=tornado.runtime)
+config=$out.native-config
+
+if [ $trace = 1 ]; then
+  rm -rf "$config"
+  backends=$(echo "$mods" | tr ',' '\n' | grep -c '^tornado.drivers.\(opencl\|cuda\|metal\)$')
+  for ((b = 0; b < backends; b++)); do
+    echo "[native-image] tracing on backend $b"
+    "$GRAALVM_HOME/bin/java" -agentlib:native-image-agent=config-merge-dir="$config" "${jvm[@]}" \
+      -Djava.library.path="$TORNADOVM_HOME/lib" -Dtornado.backend=$b -cp "$cp" "$main" "$@" \
+      || echo "[native-image] the run on backend $b failed; its metadata is kept" >&2
+  done
+fi
+
+"$GRAALVM_HOME/bin/native-image" --no-fallback -H:+UnlockExperimentalVMOptions -H:+ForeignAPISupport -H:+SharedArenaSupport \
+  -H:ConfigurationFileDirectories="$config" "${jvm[@]}" -cp "$cp" -o "$out" "$main"
+echo "[native-image] built ./$out"

@@ -41,7 +41,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalBuildStatus;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
-import uk.ac.manchester.tornado.drivers.metal.MetalInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;

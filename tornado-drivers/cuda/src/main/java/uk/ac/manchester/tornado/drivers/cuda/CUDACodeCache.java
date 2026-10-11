@@ -48,7 +48,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceDynamicParallelismNo
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
-import uk.ac.manchester.tornado.drivers.cuda.CUDAInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;

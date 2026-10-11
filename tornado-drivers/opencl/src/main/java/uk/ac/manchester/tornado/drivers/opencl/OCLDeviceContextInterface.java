@@ -26,7 +26,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.opencl.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;

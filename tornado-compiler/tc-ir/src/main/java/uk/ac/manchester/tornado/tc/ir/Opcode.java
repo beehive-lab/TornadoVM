@@ -26,7 +26,7 @@ import java.util.List;
  * What an instruction does. Op kinds are immutable records; the mutable part of an instruction
  * (operands, successors, position) lives in {@link Inst}. Passes dispatch with exhaustive pattern
  * {@code switch}es over this sealed hierarchy. Semantics follow the Java Language Specification
- * unless stated; see {@code ir-specification.md} §1.3.
+ * unless stated; see {@code ir-specification.md} section 1.3.
  */
 public sealed interface Opcode {
 

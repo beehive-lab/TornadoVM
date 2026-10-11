@@ -45,7 +45,6 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
-import uk.ac.manchester.tornado.drivers.cuda.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.power.CUDAEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.cuda.power.CUDANvidiaPowerMetricHandler;

@@ -95,7 +95,8 @@ public final class DesignTest {
         var device = TornadoExecutionPlan.getDevice(backend, index);
         var out = Files.createDirectories(Path.of(System.getProperty("tc.dumpDir", "tc-c3-out")));
         var test = new DesignTest(device, quiet, out, fromJava);
-        System.out.println((fromJava ? "Java -> TC" : "TC-SSA -> TC") + " design test on " + device.getPhysicalDevice().getDeviceName() + " (" + backend + ":" + index + "), dumps in " + out.toAbsolutePath());
+        var what = fromJava ? "Java -> TC" : "TC-SSA -> TC";
+        System.out.println(what + " design test on " + device.getPhysicalDevice().getDeviceName() + " (" + backend + ":" + index + "), dumps in " + out.toAbsolutePath());
         test.vectorAdd();
         test.branchy();
         test.blockReduce();

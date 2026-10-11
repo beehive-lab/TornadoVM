@@ -232,7 +232,8 @@ public final class Frontend {
             var ref = entry.getValue();
             var bytes = source.classBytes(ref.owner());
             if (bytes.isEmpty()) {
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", "class " + ref.owner().replace('/', '.') + " of called method " + ref.name() + " not found", "", Loc.UNKNOWN)), kernel.bytecode());
+                var why = "class " + ref.owner().replace('/', '.') + " of called method " + ref.name() + " not found";
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", why, "", Loc.UNKNOWN)), kernel.bytecode());
             }
             var calleeClass = ClassFile.parse(bytes.get());
             var calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
@@ -246,7 +247,8 @@ public final class Frontend {
                 calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
             }
             if (calleeMethod.isEmpty() || calleeMethod.get().code().isEmpty()) {
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode", "", Loc.UNKNOWN)), kernel.bytecode());
+                var why = "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode";
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", why, "", Loc.UNKNOWN)), kernel.bytecode());
             }
             try {
                 var translated = Translator.translateDevice(source, calleeClass, calleeMethod.get(), entry.getKey());
@@ -256,7 +258,8 @@ public final class Frontend {
                 return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.bytecode());
             }
             if (seen.size() > 64) {
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", "more than 64 distinct callees: recursion or an unbounded call graph", "", Loc.UNKNOWN)), kernel.bytecode());
+                var why = "more than 64 distinct callees: recursion or an unbounded call graph";
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", why, "", Loc.UNKNOWN)), kernel.bytecode());
             }
         }
         return new ModuleResult(Optional.of(module), List.of(), kernel.bytecode());

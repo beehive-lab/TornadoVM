@@ -1,5 +1,16 @@
 # Graal removal: inventory and plan (Phase 8)
 
+> **Done (2026-10-11, branch `compiler/graal-nuke`).** Graal and JVMCI are gone from the build, the
+> runtime, the drivers and the launcher. The class-load probe on saxpy reported 0 Graal/JVMCI
+> classes (baseline 1024 / 716 / 65 / 28; 3707 classes loaded instead of 5790), after which the probe
+> and the Graal side of `tc-diff.py` were removed. The full suites, TC only, against the last runs
+> with Graal as the reference: CUDA RTX 4090, OpenCL RTX 4090 and OpenCL UHD 770 have no remaining
+> regression. Five classes that relied on rejections raised by the Graal sketch were fixed (TC
+> diagnostics, or TC compiles what Graal refused). One device-query race, hidden by Graal's eager
+> backends, was fixed. Objects use a TornadoVM-owned `FieldLayout` (no `Unsafe`, VarHandles). The
+> argfile has 12 flag lines. Leyden AOT caches and GraalVM native images of whole applications work
+> (README, "Fast start-up"). The plan below is kept as written.
+
 Prepared 2026-10-11 on `compiler/main` (efc5c396f), to execute **after Metal passes** (`METAL.md`).
 Everything that ties TornadoVM to the vendored Graal compiler or to JVMCI, and the order to remove it.
 Counts are from `grep` over the sources (no `target/`, no `dist/`).

@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * Decodes the {@code RuntimeVisibleTypeAnnotations} attribute of a {@code Code} attribute (JVMS
- * §4.7.20) and returns the annotations on local variables, which is where {@code @Parallel} and
+ * section 4.7.20) and returns the annotations on local variables, which is where {@code @Parallel} and
  * {@code @Reduce} on loop indices and accumulators live. Other targets are parsed and skipped.
  */
 public final class TypeAnnotations {

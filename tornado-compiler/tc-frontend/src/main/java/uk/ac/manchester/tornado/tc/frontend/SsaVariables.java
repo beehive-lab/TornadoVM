@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
 
 /**
- * The SSA variables of one method's translation, built on the fly as in Braun, Buchwald, Hack, Leißa,
+ * The SSA variables of one method's translation, built on the fly as in Braun, Buchwald, Hack, Leissa,
  * Mallon and Zwinkau, "Simple and Efficient Construction of Static Single Assignment Form" (CC 2013):
  * a block is sealed once all its predecessors are filled; block arguments play the role of phi
  * functions; trivial block arguments are removed at the end. The Translator walks the bytecode and
@@ -268,10 +268,12 @@ final class SsaVariables {
     }
 
     static String describe(Var key) {
+        // CHECKSTYLE.OFF: an arrow switch on record patterns, which checkstyle reads as falling through
         return switch (key) {
             case Local(var slot, var kind) -> "local slot " + slot;
             case StackSlot(var depth) -> "operand-stack slot " + depth;
             case VectorParam(var slot) -> "vector parameter in slot " + slot;
         };
+        // CHECKSTYLE.ON
     }
 }
