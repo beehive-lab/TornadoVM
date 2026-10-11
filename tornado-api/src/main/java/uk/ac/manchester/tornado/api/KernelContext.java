@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Half;
 import uk.ac.manchester.tornado.api.types.vectors.Half2;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -539,6 +540,149 @@ public class KernelContext implements ExecutionContext {
                 c.set(base + i * stride + j, m.values[i * 8 + j]);
             }
         }
+    }
+
+    /**
+     * Stores an 8x8 row-major fragment to a local (threadgroup) array starting at
+     * element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_store} to {@code threadgroup} memory.
+     */
+    public void simdgroupMatrixStore(Matrix8x8Float m, float[] c, int base, int stride) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                c[base + i * stride + j] = m.values[i * 8 + j];
+            }
+        }
+    }
+
+    /**
+     * Loads an 8x8 row-major half-precision fragment from device memory starting at
+     * element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load} into a {@code simdgroup_half8x8}.
+     */
+    public Matrix8x8Half simdgroupMatrixLoad(HalfFloatArray a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + i * stride + j).getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Loads an 8x8 row-major half-precision fragment from a local (threadgroup) array
+     * starting at element {@code base}, with {@code stride} elements between rows.
+     * <p>Metal equivalent: {@code simdgroup_load} from {@code threadgroup half} memory.
+     */
+    public Matrix8x8Half simdgroupMatrixLoad(HalfFloat[] a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + i * stride + j].getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Loads the transpose of the 8x8 block at element {@code base} (rows {@code stride}
+     * elements apart) from device memory: element {@code (i, j)} of the fragment is
+     * {@code a[base + j * stride + i]}. Use it to multiply by a matrix stored with the
+     * contraction dimension contiguous, such as weight rows.
+     * <p>Metal equivalent: {@code simdgroup_load} with {@code transpose = true}.
+     */
+    public Matrix8x8Float simdgroupMatrixLoadTransposed(FloatArray a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + j * stride + i);
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Transposed load of an 8x8 block from a local (threadgroup) array; see
+     * {@link #simdgroupMatrixLoadTransposed(FloatArray, int, int)}.
+     */
+    public Matrix8x8Float simdgroupMatrixLoadTransposed(float[] a, int base, int stride) {
+        Matrix8x8Float m = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + j * stride + i];
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Transposed load of an 8x8 half-precision block from device memory; see
+     * {@link #simdgroupMatrixLoadTransposed(FloatArray, int, int)}.
+     */
+    public Matrix8x8Half simdgroupMatrixLoadTransposed(HalfFloatArray a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a.get(base + j * stride + i).getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Transposed load of an 8x8 half-precision block from a local (threadgroup) array;
+     * see {@link #simdgroupMatrixLoadTransposed(FloatArray, int, int)}.
+     */
+    public Matrix8x8Half simdgroupMatrixLoadTransposed(HalfFloat[] a, int base, int stride) {
+        Matrix8x8Half m = new Matrix8x8Half();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                m.values[i * 8 + j] = a[base + j * stride + i].getFloat32();
+            }
+        }
+        return m;
+    }
+
+    /**
+     * Returns {@code a * b + c} for half-precision {@code a} and {@code b}, accumulating
+     * in single precision.
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Half a, Matrix8x8Half b, Matrix8x8Float c) {
+        return multiplyAccumulate8x8(a.values, b.values, c);
+    }
+
+    /**
+     * Returns {@code a * b + c} for a single-precision {@code a} and a half-precision
+     * {@code b}, accumulating in single precision.
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Float a, Matrix8x8Half b, Matrix8x8Float c) {
+        return multiplyAccumulate8x8(a.values, b.values, c);
+    }
+
+    /**
+     * Returns {@code a * b + c} for a half-precision {@code a} and a single-precision
+     * {@code b}, accumulating in single precision.
+     * <p>Metal equivalent: {@code simdgroup_multiply_accumulate}.
+     */
+    public Matrix8x8Float simdgroupMatrixMultiplyAccumulate(Matrix8x8Half a, Matrix8x8Float b, Matrix8x8Float c) {
+        return multiplyAccumulate8x8(a.values, b.values, c);
+    }
+
+    private static Matrix8x8Float multiplyAccumulate8x8(float[] a, float[] b, Matrix8x8Float c) {
+        Matrix8x8Float d = new Matrix8x8Float();
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                float acc = c.values[i * 8 + j];
+                for (int p = 0; p < 8; p++) {
+                    acc += a[i * 8 + p] * b[p * 8 + j];
+                }
+                d.values[i * 8 + j] = acc;
+            }
+        }
+        return d;
     }
 
     /**
