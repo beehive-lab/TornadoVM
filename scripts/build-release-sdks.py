@@ -56,7 +56,7 @@ For jdk22plus specifically, ANY JDK >= 22 produces a byte-identical artifact
 (pom.xml compiles it with `--release 22`, which pins the floor regardless of
 the build JDK), so which one you point --jdk22plus-home at doesn't affect
 correctness. JDK 25 is used by default via sdkman auto-detection purely to
-match the build JDK build-test-platform.yml already pins for reproducibility
+match the build JDK gpu-ci-platform.yml already pins for reproducibility
 — pass an explicit --jdk22plus-home to build with a different JDK >= 22.
 
 Usage:

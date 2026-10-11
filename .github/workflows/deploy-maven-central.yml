@@ -76,7 +76,7 @@ jobs:
               # jdk22plus floors at JDK 22 and is deployed once for every JDK from 22 up — any
               # JDK >= 22 here builds an identical artifact (pom.xml's --release 22), so this is
               # pinned to 25 purely to match the build JDK used elsewhere (build-release-sdks.yml,
-              # build-test-platform.yml), not a requirement.
+              # gpu-ci-platform.yml), not a requirement.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
               ;;
           esac

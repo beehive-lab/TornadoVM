@@ -1,4 +1,4 @@
-name: Build & Test
+name: "GPU CI [build each SDK once, test on JDK 21-27]"
 
 # Build once per backend, then run that ONE artifact on every supported JDK.
 #
@@ -202,7 +202,7 @@ jobs:
   linux:
     if: github.repository == 'beehive-lab/TornadoVM'
     needs: [code-quality, plan]
-    uses: ./.github/workflows/build-test-platform.yml
+    uses: ./.github/workflows/gpu-ci-platform.yml
     with:
       platform: linux
       build_matrix: ${{ needs.plan.outputs.build_linux }}
@@ -211,7 +211,7 @@ jobs:
   macos:
     if: github.repository == 'beehive-lab/TornadoVM'
     needs: [code-quality, plan]
-    uses: ./.github/workflows/build-test-platform.yml
+    uses: ./.github/workflows/gpu-ci-platform.yml
     with:
       platform: macos
       build_matrix: ${{ needs.plan.outputs.build_macos }}

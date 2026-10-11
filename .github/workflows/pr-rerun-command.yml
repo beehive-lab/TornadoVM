@@ -1,4 +1,4 @@
-name: Rerun Workflows
+name: "PR command: /rerun"
 
 on:
   issue_comment:
@@ -37,7 +37,7 @@ jobs:
               | \`/rerun\` | Rerun only **failed/cancelled/timed-out** workflows |
               | \`/rerun all\` | Rerun **all** workflows for this PR |
               | \`/rerun failed\` | Same as \`/rerun\` |
-              | \`/rerun <name>\` | Rerun workflows matching \`<name>\` (e.g. \`/rerun ci\`, \`/rerun build\`) |
+              | \`/rerun <name>\` | Rerun workflows matching \`<name>\` (e.g. \`/rerun gpu\`, \`/rerun no-gpu\`, \`/rerun nightly\`) |
               | \`/rerun help\` | Show this help message |
             
               **Note:** Only completed workflows can be rerun. In-progress workflows are skipped.`

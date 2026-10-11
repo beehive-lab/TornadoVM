@@ -1,4 +1,4 @@
-name: No-GPU Tests (TC + runtime) [JDK 21, 22-27]
+name: "No-GPU tests: TC + runtime [JDK 21-27]"
 
 # The unit tests that need no GPU, on standard GitHub-hosted runners: TC's (the compiler's lit file
 # tests, its API tests and the clean-room source rules) and tornado-api/tornado-runtime's. TC reads
@@ -6,7 +6,7 @@ name: No-GPU Tests (TC + runtime) [JDK 21, 22-27]
 # class-file version; the GPU workflows build on one host JDK only. The full build comes first so the
 # modular dependencies are on the module path; the tests themselves touch no device.
 #
-# build-test.yml proves one ARTIFACT runs on every JDK; this proves the jdk22plus profile BUILDS on
+# gpu-ci.yml proves one ARTIFACT runs on every JDK; this proves the jdk22plus profile BUILDS on
 # every JDK. The matrix axis is therefore the host JDK, not the profile.
 
 on:
@@ -16,7 +16,7 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
-# As in build-test.yml: one live run per branch, and a superseded pull request run is cancelled.
+# As in gpu-ci.yml: one live run per branch, and a superseded pull request run is cancelled.
 # These are GitHub-hosted rather than self-hosted, so the cost is not a blocked queue, but seven
 # ubuntu-latest jobs per push adds up and the result of a run against an overwritten commit is
 # read by nobody.

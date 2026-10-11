@@ -174,7 +174,7 @@ jobs:
       JDK21_HOME: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
       # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
       # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
-      # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
+      # 25 purely to match the build JDK gpu-ci-platform.yml already uses, not a requirement.
       JDK22PLUS_HOME: /opt/jenkins/jdks/jdk-25.0.2/Contents/Home
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: macos-arm64
@@ -259,7 +259,7 @@ jobs:
       JDK21_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
       # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
       # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
-      # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
+      # 25 purely to match the build JDK gpu-ci-platform.yml already uses, not a requirement.
       JDK22PLUS_HOME: /opt/jenkins/jdks/jdk-25.0.2
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: linux-amd64
@@ -374,7 +374,7 @@ jobs:
       JDK21_HOME: 'C:\jdks\jdk21'
       # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
       # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
-      # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
+      # 25 purely to match the build JDK gpu-ci-platform.yml already uses, not a requirement.
       JDK22PLUS_HOME: 'C:\jdks\jdk25'
       RELEASE_ARCHIVES_DIR: 'C:\release-archives'
       PLATFORM_DIR: windows-amd64

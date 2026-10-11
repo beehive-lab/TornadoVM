@@ -9,7 +9,7 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 
 On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN, cuDF) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
-[![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
+[![GPU CI](https://github.com/beehive-lab/TornadoVM/actions/workflows/gpu-ci.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/gpu-ci.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Install with SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)

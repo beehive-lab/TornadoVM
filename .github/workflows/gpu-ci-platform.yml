@@ -1,6 +1,6 @@
-name: Build & Test (one platform)
+name: "GPU CI (one platform)"
 
-# Reusable half of build-test.yml, invoked once per platform so that each platform's tests start
+# Reusable half of gpu-ci.yml, invoked once per platform so that each platform's tests start
 # as soon as ITS OWN builds finish. `needs:` is a job-level dependency in GitHub Actions -- it
 # cannot reference a single leg of a matrix -- so a single test job depending on a single build job
 # made every leg wait for the slowest build anywhere, including the other machine's. In the run of
@@ -232,7 +232,7 @@ jobs:
           done
 
       # Once per (platform, backend, SDK) on a subset run, everywhere on a full sweep. See the apps
-      # flag in build-test.yml's plan job for why: these rebuild the same two applications
+      # flag in gpu-ci.yml's plan job for why: these rebuild the same two applications
       # against the same artifact on every leg, inside a slot that holds the GPU while it does.
       - name: Build & run TornadoVM-Ray-Tracer (regression)
         if: matrix.apps

@@ -1,4 +1,4 @@
-name: Build & Test exhaustively with all backends and devices
+name: "Weekly: full GPU tests on every device [CUDA, OpenCL]"
 
 on:
   schedule:
