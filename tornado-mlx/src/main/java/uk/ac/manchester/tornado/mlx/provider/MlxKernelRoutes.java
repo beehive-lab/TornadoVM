@@ -2187,9 +2187,9 @@ final class MlxKernelRoutes {
             // qmv_wide: each weight group serves up to five input rows; two simdgroups of four rows each.
             int tiles = (m + 4) / 5;
             int vecs = (m + tiles - 1) / tiles;
+            int groups = (m + vecs - 1) / vecs;
             String kernel = "affine_qmv_wide_" + type + "_gs_" + gs + "_b_" + bits + "_nv_" + vecs + "_kl_8_batch_0";
-            return p -> p.launch(kernel).buffer(0, w).buffer(1, scales).buffer(2, biases).buffer(3, x).buffer(4, out).i32(5, k).i32(6, n).i32(7, m).threadgroups((m + vecs - 1) / vecs, (n + 7) / 8, 1, 32, 2,
-                    1);
+            return p -> p.launch(kernel).buffer(0, w).buffer(1, scales).buffer(2, biases).buffer(3, x).buffer(4, out).i32(5, k).i32(6, n).i32(7, m).threadgroups(groups, (n + 7) / 8, 1, 32, 2, 1);
         }
         int alignment = (32 / bits) * (bits == 2 ? 1 : 2) * 32;
         boolean fast = n % 8 == 0 && k % alignment == 0;
