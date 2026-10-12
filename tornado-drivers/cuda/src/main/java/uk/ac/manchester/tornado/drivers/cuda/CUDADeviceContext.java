@@ -1041,7 +1041,13 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      */
     public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
         long handle = getCommandQueue(executionPlanId).endGraphCaptureAndInstantiate();
-        flushPendingKernelContextWrites(executionPlanId);
+        try {
+            flushPendingKernelContextWrites(executionPlanId);
+        } catch (RuntimeException | Error e) {
+            // The graph is not handed back to the caller, so destroy it here or it leaks.
+            getCommandQueue(executionPlanId).destroyGraph(handle);
+            throw e;
+        }
         return handle;
     }
 
