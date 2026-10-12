@@ -44,6 +44,7 @@ import uk.ac.manchester.tornado.tc.opt.CfgSimplify;
 import uk.ac.manchester.tornado.tc.opt.DeadCodeElimination;
 import uk.ac.manchester.tornado.tc.opt.Inliner;
 import uk.ac.manchester.tornado.tc.opt.FmaRematerialization;
+import uk.ac.manchester.tornado.tc.opt.NativeHalfArithmetic;
 import uk.ac.manchester.tornado.tc.opt.FloatNarrowing;
 import uk.ac.manchester.tornado.tc.opt.MathPeepholes;
 import uk.ac.manchester.tornado.tc.opt.NoWrapInference;
@@ -313,6 +314,9 @@ public final class TcCompiler {
      * legality once types and local-array sizes are final; ABI lowering last, after which the IR is
      * post-ABI.
      */
+    /** -Dtornado.tc.nativeHalf=false: half arithmetic through float (see the native-half step). */
+    private static final boolean NATIVE_HALF = !"false".equals(System.getProperty("tornado.tc.nativeHalf"));
+
     private static final List<Step> PIPELINE = List.of(
             new Step("inline", c -> c.module != null && c.module.functions().size() > 1, c -> Inliner.run(c.module, c.function), Verifier.Stage.PRE_ABI),
             new Step("local-collections", c -> c.module != null, c -> LocalCollections.run(c.function), Verifier.Stage.PRE_ABI),
@@ -344,6 +348,14 @@ public final class TcCompiler {
             new Step("fma-remat", c -> c.options.fuseMultiplyAdd() && (c.target.dialect() == TargetCaps.Dialect.CUDA || c.target.dialect() == TargetCaps.Dialect.OPENCL)
                     && FmaRematerialization.applies(c.function), c -> {
                 new FmaRematerialization().run(c.function);
+                return List.of();
+            }, Verifier.Stage.POST_ABI),
+            // Half sums, differences and products in half on targets with half arithmetic (CUDA sm_53+,
+            // OpenCL with cl_khr_fp16): the same bits as Java's widen-compute-round, without the
+            // conversions. -Dtornado.tc.nativeHalf=false keeps the float path.
+            new Step("native-half", c -> NATIVE_HALF && c.target.fp16() && (c.target.dialect() == TargetCaps.Dialect.CUDA || c.target.dialect() == TargetCaps.Dialect.OPENCL)
+                    && NativeHalfArithmetic.applies(c.function), c -> {
+                new NativeHalfArithmetic().run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI));
 

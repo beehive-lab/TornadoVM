@@ -236,4 +236,14 @@ final class CudaDialect implements CDialect {
         }
         return lines;
     }
+
+    @Override
+    public Optional<String> halfArithmetic(String op, Set<Feature> features) {
+        // The _rn forms: correctly rounded, and never contracted into __hfma (cuda_fp16.h).
+        return Optional.of(switch (op) {
+            case "+" -> "__hadd_rn";
+            case "-" -> "__hsub_rn";
+            default -> "__hmul_rn";
+        });
+    }
 }

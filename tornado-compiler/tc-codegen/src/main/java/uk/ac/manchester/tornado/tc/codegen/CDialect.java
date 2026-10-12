@@ -112,6 +112,16 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
     default void halfRounding(Set<Feature> features) {
     }
 
+    /**
+     * The function for a half {@code +}, {@code -} or {@code *} ({@code op}: "+", "-", "*") that the
+     * device compiler must not contract into an fma, or empty to print the C operator. Java rounds every
+     * half operation; a dialect printing the operator records what forbids contraction.
+     */
+    default Optional<String> halfArithmetic(String op, Set<Feature> features) {
+        halfRounding(features);
+        return Optional.empty();
+    }
+
     default boolean printf() {
         return true;
     }

@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.tc.opt.GlobalValueNumbering;
 import uk.ac.manchester.tornado.tc.opt.LoopInvariantCodeMotion;
 import uk.ac.manchester.tornado.tc.opt.FloatNarrowing;
 import uk.ac.manchester.tornado.tc.opt.FmaRematerialization;
+import uk.ac.manchester.tornado.tc.opt.NativeHalfArithmetic;
 import uk.ac.manchester.tornado.tc.opt.NoWrapInference;
 import uk.ac.manchester.tornado.tc.opt.MathPeepholes;
 import uk.ac.manchester.tornado.tc.opt.Pass;
@@ -130,6 +131,7 @@ public final class OptTool {
             case "fma-remat" -> new FmaRematerialization();
             case "float-narrowing" -> new FloatNarrowing();
             case "no-wrap" -> new NoWrapInference();
+            case "native-half" -> new NativeHalfArithmetic();
             default -> throw new IllegalArgumentException("unknown pass '" + name + "'");
         };
     }

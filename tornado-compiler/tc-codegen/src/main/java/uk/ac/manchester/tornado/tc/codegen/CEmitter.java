@@ -792,6 +792,14 @@ public final class CEmitter {
     }
 
     private R binary(BinaryOp op, Type type, S.Expr a, S.Expr b) {
+        if (type.equals(Type.F16) && (op == BinaryOp.FADD || op == BinaryOp.FSUB || op == BinaryOp.FMUL)) {
+            // From NativeHalfArithmetic: one correctly rounded half operation, never contracted.
+            var symbol = op == BinaryOp.FADD ? "+" : op == BinaryOp.FSUB ? "-" : "*";
+            var function = dialect.halfArithmetic(symbol, features);
+            if (function.isPresent()) {
+                return new R(function.get() + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
+            }
+        }
         return switch (op) {
             case ADD, FADD -> infix(a, "+", b, ADD);
             case SUB, FSUB -> infix(a, "-", b, ADD);
