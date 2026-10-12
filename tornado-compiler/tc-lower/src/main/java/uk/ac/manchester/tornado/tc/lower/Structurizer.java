@@ -375,7 +375,8 @@ public final class Structurizer {
             return true;
         }
         if (inst.type().equals(Type.I1) && inst.users().size() == 1 && inst.users().get(0).isTerminator()
-                && inst.users().get(0).block().equals(inst.block()) && inst.users().get(0).operand(0) == inst) {
+                && inst.users().get(0).block().equals(inst.block()) && inst.users().get(0).operandCount() > 0
+                && inst.users().get(0).operand(0) == inst) {
             // A condition consumed only by its block's branch prints inside the `if`/`while`.
             return true;
         }
