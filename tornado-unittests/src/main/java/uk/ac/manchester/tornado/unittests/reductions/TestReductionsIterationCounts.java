@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -146,7 +146,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
             expected += (i % 5) - 2;
         }
         for (int rep = 0; rep < REPETITIONS; rep++) {
-            assertEquals("n " + n + ", run " + rep, expected, runFloat(TestReductionsIterationCounts::sumOfIndexTerms, new FloatArray(n), 0.0f), 0.0f);
+            assertEquals(expected, runFloat(TestReductionsIterationCounts::sumOfIndexTerms, new FloatArray(n), 0.0f), 0.0f, "n " + n + ", run " + rep);
         }
     }
 
@@ -157,7 +157,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
             expected += input.get(i);
         }
         for (int rep = 0; rep < REPETITIONS; rep++) {
-            assertEquals("start " + start + ", n " + n + ", run " + rep, expected, runFloat(kernel, input, 0.0f), 0.0f);
+            assertEquals(expected, runFloat(kernel, input, 0.0f), 0.0f, "start " + start + ", n " + n + ", run " + rep);
         }
     }
 
@@ -184,7 +184,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
             expected += input.get(i) + ((i % 5) - 2);
         }
         for (int rep = 0; rep < REPETITIONS; rep++) {
-            assertEquals("run " + rep, expected, runFloat(TestReductionsIterationCounts::sumOfIndexTermsFrom1, input, 0.0f), 0.0f);
+            assertEquals(expected, runFloat(TestReductionsIterationCounts::sumOfIndexTermsFrom1, input, 0.0f), 0.0f, "run " + rep);
         }
     }
 
@@ -221,7 +221,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
             try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
                 executionPlan.execute();
             }
-            assertEquals("run " + rep, expected, result.get(0));
+            assertEquals(expected, result.get(0), "run " + rep);
         }
     }
 
@@ -244,7 +244,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
             try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
                 executionPlan.execute();
             }
-            assertEquals("run " + rep, 512, result.get(0));
+            assertEquals(512, result.get(0), "run " + rep);
         }
     }
 
@@ -270,7 +270,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
             try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
                 executionPlan.execute();
             }
-            assertEquals("run " + rep, expected, result.get(0));
+            assertEquals(expected, result.get(0), "run " + rep);
         }
     }
 
@@ -282,7 +282,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
         input.set(0, 1000.0f);
         input.set(1, 1000.0f);
         for (int rep = 0; rep < REPETITIONS; rep++) {
-            assertEquals("run " + rep, 7.0f, runFloat(TestReductionsIterationCounts::maxFrom2, input, -1.0f), 0.0f);
+            assertEquals(7.0f, runFloat(TestReductionsIterationCounts::maxFrom2, input, -1.0f), 0.0f, "run " + rep);
         }
     }
 
@@ -306,7 +306,7 @@ public class TestReductionsIterationCounts extends TornadoTestBase {
             try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
                 executionPlan.execute();
             }
-            assertEquals("run " + rep, expected, result.get(0), 1e-9);
+            assertEquals(expected, result.get(0), 1e-9, "run " + rep);
         }
     }
 }

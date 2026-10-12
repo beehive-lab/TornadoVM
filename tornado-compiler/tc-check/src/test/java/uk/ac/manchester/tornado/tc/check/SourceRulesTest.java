@@ -20,11 +20,11 @@
  */
 package uk.ac.manchester.tornado.tc.check;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 
 /** Clean-room guard: tc-check may not import Graal, JVMCI or ASM, and every file carries the licence. */
@@ -33,6 +33,6 @@ public class SourceRulesTest {
     @Test
     public void sourcesFollowTheCleanRoomRules() {
         var violations = SourceRules.check(Path.of("src"));
-        assertTrue(String.join("\n", violations), violations.isEmpty());
+        assertTrue(violations.isEmpty(), String.join("\n", violations));
     }
 }

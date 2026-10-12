@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.vectortypes;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -103,7 +103,7 @@ public class TestVectorSlices extends TornadoTestBase {
         }
         floats(in, expected);
         for (int i = 0; i < size; i++) {
-            assertEquals("element " + i, expected.get(i), out.get(i), 1e-3f);
+            assertEquals(expected.get(i), out.get(i), 1e-3f, "element " + i);
         }
     }
 
@@ -125,7 +125,7 @@ public class TestVectorSlices extends TornadoTestBase {
         }
         ints(in, expected);
         for (int i = 0; i < size; i++) {
-            assertEquals("element " + i, expected.get(i), out.get(i));
+            assertEquals(expected.get(i), out.get(i), "element " + i);
         }
     }
 }

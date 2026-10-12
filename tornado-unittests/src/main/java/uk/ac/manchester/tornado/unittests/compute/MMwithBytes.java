@@ -252,7 +252,7 @@ public class MMwithBytes extends TornadoTestBase {
 
     private static void assertAllEqual(float expected, FloatArray actual) {
         for (int i = 0; i < actual.getSize(); i++) {
-            assertEquals("index " + i, expected, actual.get(i), 0.0f);
+            assertEquals(expected, actual.get(i), 0.0f, "index " + i);
         }
     }
 }

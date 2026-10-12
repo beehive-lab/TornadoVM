@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.matrix;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.types.matrix.Matrix4x4Float;
 
@@ -43,7 +43,7 @@ public class MatrixFloatOpsTest {
         float[][] expected = { { 0, 1, 0, -2 }, { -1, 0, 0, 1 }, { 0, 0, 1, -3 }, { 0, 0, 0, 1 } };
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 4; j++) {
-                assertEquals("(" + i + "," + j + ")", expected[i][j], m.get(i, j), 1e-6f);
+                assertEquals(expected[i][j], m.get(i, j), 1e-6f, "(" + i + "," + j + ")");
             }
         }
     }
@@ -59,7 +59,7 @@ public class MatrixFloatOpsTest {
                 for (int k = 0; k < 4; k++) {
                     sum += values[i][k] * inv.get(k, j);
                 }
-                assertEquals("(" + i + "," + j + ")", i == j ? 1.0 : 0.0, sum, 1e-5);
+                assertEquals(i == j ? 1.0 : 0.0, sum, 1e-5, "(" + i + "," + j + ")");
             }
         }
     }

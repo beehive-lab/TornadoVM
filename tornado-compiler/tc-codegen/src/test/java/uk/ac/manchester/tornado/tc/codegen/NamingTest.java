@@ -20,12 +20,12 @@
  */
 package uk.ac.manchester.tornado.tc.codegen;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
 
@@ -75,7 +75,7 @@ public class NamingTest {
     @Test
     public void helpersAreInAReservedNamespace() {
         for (var helper : Helpers.cudaNames()) {
-            assertTrue(helper, Naming.of(Dialect.CUDA).isReserved(helper));
+            assertTrue(Naming.of(Dialect.CUDA).isReserved(helper), helper);
         }
     }
 }

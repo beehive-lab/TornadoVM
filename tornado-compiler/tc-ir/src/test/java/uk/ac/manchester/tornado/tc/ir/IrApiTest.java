@@ -20,14 +20,14 @@
  */
 package uk.ac.manchester.tornado.tc.ir;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.Opcode.IntPredicate;
 
@@ -71,14 +71,14 @@ public class IrApiTest {
     @Test
     public void builtKernelVerifies() {
         var diagnostics = Verifier.verify(vectorAdd());
-        assertTrue(diagnostics.toString(), diagnostics.isEmpty());
+        assertTrue(diagnostics.isEmpty(), diagnostics.toString());
     }
 
     @Test
     public void builtKernelPrintsAndRoundTrips() {
         var text = IrPrinter.print(vectorAdd());
-        assertTrue(text, text.contains("^head(%i: i32) [parallel<iv = 0>]:"));
-        assertTrue(text, text.contains("%n = array.length %c : i32  loc(\"VectorAdd.java\":20)"));
+        assertTrue(text.contains("^head(%i: i32) [parallel<iv = 0>]:"), text);
+        assertTrue(text.contains("%n = array.length %c : i32  loc(\"VectorAdd.java\":20)"), text);
         assertEquals(text, IrPrinter.print(IrParser.parseFunction(text)));
     }
 

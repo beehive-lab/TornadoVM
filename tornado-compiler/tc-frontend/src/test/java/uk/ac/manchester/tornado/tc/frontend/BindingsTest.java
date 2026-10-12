@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.tc.frontend;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Executable;
@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Every binding names a method or field that exists in the TornadoVM API (or the JDK) with exactly
@@ -62,7 +62,7 @@ public class BindingsTest {
                     missing.add(key);
                 }
             }
-            assertTrue("bindings without a matching API member: " + missing, missing.isEmpty());
+            assertTrue(missing.isEmpty(), "bindings without a matching API member: " + missing);
         }
     }
 

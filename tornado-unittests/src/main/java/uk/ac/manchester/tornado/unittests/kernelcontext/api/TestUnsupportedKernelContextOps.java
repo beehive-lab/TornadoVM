@@ -240,7 +240,7 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
                         for (int i = g * 64; i < (g + 1) * 64; i++) {
                             expected = Math.max(expected, in.get(i));
                         }
-                        assertEquals("group " + g, expected, out.get(g));
+                        assertEquals(expected, out.get(g), "group " + g);
                     }
                 });
     }
@@ -254,7 +254,7 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out)), () -> {
                     // Exactly one thread of each group wins the compare-and-swap: its local index.
                     for (int g = 0; g < SIZE / 64; g++) {
-                        assertTrue("group " + g + ": " + out.get(g), out.get(g) >= 0 && out.get(g) < 64);
+                        assertTrue(out.get(g) >= 0 && out.get(g) < 64, "group " + g + ": " + out.get(g));
                     }
                 });
     }

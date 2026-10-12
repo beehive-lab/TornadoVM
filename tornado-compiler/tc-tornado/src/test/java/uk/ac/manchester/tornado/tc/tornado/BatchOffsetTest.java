@@ -20,9 +20,9 @@
  */
 package uk.ac.manchester.tornado.tc.tornado;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.IrPrinter;
@@ -53,8 +53,8 @@ public class BatchOffsetTest {
                 """);
         BatchOffset.run(function, 3000);
         var text = new IrPrinter(false).printFunction(function);
-        assertTrue(text, text.contains("i2f %i_global"));
-        assertTrue(text, text.contains("array.store %data[%i], %v"));
-        assertTrue(text, text.contains("icmp.sge %i, %n"));
+        assertTrue(text.contains("i2f %i_global"), text);
+        assertTrue(text.contains("array.store %data[%i], %v"), text);
+        assertTrue(text.contains("icmp.sge %i, %n"), text);
     }
 }

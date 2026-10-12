@@ -20,12 +20,12 @@
  */
 package uk.ac.manchester.tornado.tc.check;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class FileCheckTest {
 
@@ -50,7 +50,7 @@ public class FileCheckTest {
 
     private static void assertPasses(String checks) {
         var result = FileCheck.check("test", checks, INPUT);
-        assertTrue(result.message(), result.passed());
+        assertTrue(result.passed(), result.message());
     }
 
     @Test
@@ -115,7 +115,7 @@ public class FileCheckTest {
     @Test
     public void customPrefixes() {
         var result = FileCheck.check("test", "OPT: %twice\nCHECK: this would fail", INPUT, List.of("OPT"));
-        assertTrue(result.message(), result.passed());
+        assertTrue(result.passed(), result.message());
     }
 
     @Test
@@ -127,6 +127,6 @@ public class FileCheckTest {
     public void failureMessagePointsAtTheCheckLine() {
         var result = FileCheck.check("t.tcir", "CHECK: kernel\nCHECK-NEXT: nope", INPUT);
         assertFalse(result.passed());
-        assertTrue(result.message(), result.message().startsWith("t.tcir:2: error: CHECK-NEXT:"));
+        assertTrue(result.message().startsWith("t.tcir:2: error: CHECK-NEXT:"), result.message());
     }
 }

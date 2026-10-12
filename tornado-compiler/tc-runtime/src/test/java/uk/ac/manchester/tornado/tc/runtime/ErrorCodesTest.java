@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.tc.runtime;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,7 +28,7 @@ import java.nio.file.Path;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.ErrorCodes;
 
@@ -51,14 +51,14 @@ public class ErrorCodesTest {
                 }
             }
         }
-        assertTrue("codes without an ErrorCodes entry: " + missing, missing.isEmpty());
+        assertTrue(missing.isEmpty(), "codes without an ErrorCodes entry: " + missing);
     }
 
     @Test
     public void userFacingCodesHaveHints() {
         for (var c : ErrorCodes.codes()) {
             if (ErrorCodes.category(c) != ErrorCodes.Category.INTERNAL) {
-                assertTrue(c + " has no hint", !ErrorCodes.hint(c).isBlank());
+                assertTrue(!ErrorCodes.hint(c).isBlank(), c + " has no hint");
             }
         }
     }

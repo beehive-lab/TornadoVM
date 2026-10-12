@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.fuzz;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -102,7 +102,7 @@ public class TestFuzzRegressions extends TornadoTestBase {
         }
         conversions(f, expected);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("element " + i + " of " + SPECIAL[i / 4], expected.get(i), out.get(i));
+            assertEquals(expected.get(i), out.get(i), "element " + i + " of " + SPECIAL[i / 4]);
         }
     }
 
@@ -127,9 +127,10 @@ public class TestFuzzRegressions extends TornadoTestBase {
         for (int i = 0; i < out.getSize(); i++) {
             // sqrt (element 2) is exact where it can run in double or the device's float sqrt rounds
             // correctly; a device without double precision computes it in float, which OpenCL allows to
-            // be up to 3 ulp off by default: one ulp is accepted there.
-            float tolerance = i % 4 == 2 ? Math.ulp(expected.get(i)) : 0.0f;
-            assertEquals("element " + i + " of " + SPECIAL[i / 4], expected.get(i), out.get(i), tolerance);
+            // be up to 3 ulp off by default: one ulp is accepted there. JUnit rejects a NaN delta, and
+            // Math.ulp(NaN) is NaN; a NaN expected value only matches NaN anyway.
+            float tolerance = i % 4 == 2 && !Float.isNaN(expected.get(i)) ? Math.ulp(expected.get(i)) : 0.0f;
+            assertEquals(expected.get(i), out.get(i), tolerance, "element " + i + " of " + SPECIAL[i / 4]);
         }
     }
 
@@ -151,7 +152,7 @@ public class TestFuzzRegressions extends TornadoTestBase {
         }
         wrapping(l, n, expected);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("element " + i, expected.get(i), out.get(i));
+            assertEquals(expected.get(i), out.get(i), "element " + i);
         }
     }
 
@@ -179,7 +180,7 @@ public class TestFuzzRegressions extends TornadoTestBase {
         }
         absOfMinValue(l, n, expected);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("element " + i, expected.get(i), out.get(i));
+            assertEquals(expected.get(i), out.get(i), "element " + i);
         }
     }
 }

@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -95,7 +95,7 @@ public class TestReductionWithGridScheduler extends TornadoTestBase {
 
         assertEquals(SIZE, result.get(0), 0.0f);
         for (int g = 0; g < partial.getSize(); g++) {
-            assertEquals("block " + g, BLOCK, partial.get(g), 0.0f);
+            assertEquals(BLOCK, partial.get(g), 0.0f, "block " + g);
         }
     }
 }

@@ -20,13 +20,13 @@
  */
 package uk.ac.manchester.tornado.tc.runtime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
@@ -47,10 +47,10 @@ public class TcCompilerTest {
     @Test
     public void compilesThroughEveryStage() {
         var c = TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, TcOptions.DEFAULTS);
-        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.succeeded(), c.diagnostics().toString());
         assertEquals("K_scale", c.entryName());
         assertEquals("input,verify.pre-abi,parallel,optimize,legality,abi,optimize.post-abi,structure,emit", String.join(",", c.stages().stream().map(TcCompiler.Stage::name).toList()));
-        assertTrue(c.source(), c.source().contains("extern \"C\" __global__ void K_scale("));
+        assertTrue(c.source().contains("extern \"C\" __global__ void K_scale("), c.source());
     }
 
     /** verify=end still verifies, once, before structuring. */
@@ -58,7 +58,7 @@ public class TcCompilerTest {
     public void verifyAtTheEndRunsOnce() {
         var options = new TcOptions(java.util.Set.of(), java.nio.file.Path.of("tc-dumps"), false, java.util.Optional.empty(), false);
         var c = TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, options);
-        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.succeeded(), c.diagnostics().toString());
         assertEquals("input,verify.pre-abi,parallel,optimize,legality,abi,optimize.post-abi,verify.end,structure,emit", String.join(",", c.stages().stream().map(TcCompiler.Stage::name).toList()));
     }
 
@@ -67,9 +67,9 @@ public class TcCompilerTest {
     public void javaKernelsInlineAsAPipelineStep() {
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.Scalars", "helpers", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.succeeded(), c.diagnostics().toString());
         var names = c.stages().stream().map(TcCompiler.Stage::name).toList();
-        assertTrue(names.toString(), names.indexOf("inline") > names.indexOf("verify.pre-abi") && names.indexOf("local-collections") > names.indexOf("inline"));
+        assertTrue(names.indexOf("inline") > names.indexOf("verify.pre-abi") && names.indexOf("local-collections") > names.indexOf("inline"), names.toString());
     }
 
     /** Legality refuses what the device's capabilities rule out, before any code is generated. */
@@ -85,8 +85,8 @@ public class TcCompilerTest {
         // An unused array is removed before legality, so the check runs on the step itself.
         var withShared = IrParser.parseFunction(KERNEL.replace("^entry:\n", "^entry:\n  %buf = alloca.shared f32[256] : ptr<shared>\n"));
         var shared = uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, smallShared);
-        assertEquals(shared.toString(), "TC-E4014", shared.get(0).code());
-        assertTrue(shared.get(0).message(), shared.get(0).message().contains("1024 bytes"));
+        assertEquals("TC-E4014", shared.get(0).code(), shared.toString());
+        assertTrue(shared.get(0).message().contains("1024 bytes"), shared.get(0).message());
         assertTrue(uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, TargetCaps.CUDA_SM89).isEmpty());
     }
 
@@ -113,8 +113,8 @@ public class TcCompilerTest {
     public void inlinesHelperMethodsAndFoldsThem() {
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.Scalars", "helpers", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-        assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertTrue(c.source(), c.source().contains("return v3 + 4.0f;"));
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        assertTrue(c.source().contains("return v3 + 4.0f;"), c.source());
     }
 
     @Test
@@ -123,8 +123,8 @@ public class TcCompilerTest {
         // other on a float test whose else arm leaves the loop: StackOverflowError on juliaset.
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "escapeTime", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-        assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertTrue(c.source(), c.source().contains("while ("));
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        assertTrue(c.source().contains("while ("), c.source());
     }
 
     @Test
@@ -135,10 +135,10 @@ public class TcCompilerTest {
         // The helpers' bytecode comes from the TornadoVM API classes.
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "vectorValue", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-        assertTrue(c.diagnostics().toString(), c.succeeded());
+        assertTrue(c.succeeded(), c.diagnostics().toString());
         // With math optimisations (the default) the products fuse into fmaf on CUDA.
-        assertTrue(c.source(), c.source().contains("fmaf(*((float *) v2), 2.0f, fmaf(*((float *) v), 2.0f, 0.0f))") && !c.source().contains("float4"));
-        assertTrue(c.source(), c.source().contains("unsigned char *v"));
+        assertTrue(c.source().contains("fmaf(*((float *) v2), 2.0f, fmaf(*((float *) v), 2.0f, 0.0f))") && !c.source().contains("float4"), c.source());
+        assertTrue(c.source().contains("unsigned char *v"), c.source());
     }
 
     @Test
@@ -156,15 +156,15 @@ public class TcCompilerTest {
         try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
             var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
             var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.LaunchKernels", "parent", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-            assertTrue(c.diagnostics().toString(), c.succeeded());
+            assertTrue(c.succeeded(), c.diagnostics().toString());
             var src = c.source();
             var ping = "uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_ping_dp";
             var pong = "uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_pong_dp";
-            assertTrue(src, src.contains(ping + "<<<_dp_grid, _dp_block, 0, cudaStreamTailLaunch>>>"));
-            assertTrue(src, src.contains(pong + "<<<_dp_grid, _dp_block>>>"));
+            assertTrue(src.contains(ping + "<<<_dp_grid, _dp_block, 0, cudaStreamTailLaunch>>>"), src);
+            assertTrue(src.contains(pong + "<<<_dp_grid, _dp_block>>>"), src);
             // One definition each, declared before any definition (the launches form a cycle).
-            assertEquals(src, 1, src.split("void " + ping + "\\(long long \\*_kernel_context[^;]*\\)\\n\\{", -1).length - 1);
-            assertTrue(src, src.indexOf("void " + pong + "(") < src.indexOf(")\n{\n", src.indexOf("__global__")));
+            assertEquals(1, src.split("void " + ping + "\\(long long \\*_kernel_context[^;]*\\)\\n\\{", -1).length - 1, src);
+            assertTrue(src.indexOf("void " + pong + "(") < src.indexOf(")\n{\n", src.indexOf("__global__")), src);
             assertEquals("LaunchKernels_parent", c.entryName());
         }
     }
@@ -179,20 +179,20 @@ public class TcCompilerTest {
         try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
             var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
             var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.LaunchKernels", "dispatch", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-            assertTrue(c.diagnostics().toString(), c.succeeded());
+            assertTrue(c.succeeded(), c.diagnostics().toString());
             var src = c.source();
             var scale = "uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_scale_dp";
-            assertTrue(src, src.contains(scale + "<<<_dp_grid, _dp_block>>>"));
+            assertTrue(src.contains(scale + "<<<_dp_grid, _dp_block>>>"), src);
             // One definition of the child (its forward declaration aside).
-            assertEquals(src, 1, src.split("void " + scale + "\\([^;{]*\\)\\n\\{", -1).length - 1);
+            assertEquals(1, src.split("void " + scale + "\\([^;{]*\\)\\n\\{", -1).length - 1, src);
             // The parent holds one launch and the inlined direct call (* 3.0f), with no device function call.
             var parent = src.substring(src.indexOf("void LaunchKernels_dispatch("));
-            assertEquals(src, 1, parent.split(scale + "<<<", -1).length - 1);
-            assertTrue(src, parent.contains("3.0f"));
-            assertFalse(src, parent.contains(scale + "(_kernel_context"));
+            assertEquals(1, parent.split(scale + "<<<", -1).length - 1, src);
+            assertTrue(parent.contains("3.0f"), src);
+            assertFalse(parent.contains(scale + "(_kernel_context"), src);
             // The child is a full kernel with its own thread index.
             var child = src.substring(src.indexOf("void " + scale + "("), src.indexOf("void LaunchKernels_dispatch("));
-            assertTrue(src, child.contains("3.0f") && child.contains("threadIdx.x"));
+            assertTrue(child.contains("3.0f") && child.contains("threadIdx.x"), src);
         }
     }
 
@@ -203,8 +203,8 @@ public class TcCompilerTest {
         try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
             var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
             var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.LaunchKernels", "chosenArgument", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-            assertTrue(c.diagnostics().toString(), c.succeeded());
-            assertTrue(c.source(), c.source().contains("uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_scale_dp<<<"));
+            assertTrue(c.succeeded(), c.diagnostics().toString());
+            assertTrue(c.source().contains("uk_ac_manchester_tornado_tc_frontend_kernels_LaunchKernels_scale_dp<<<"), c.source());
         }
     }
 
@@ -226,12 +226,12 @@ public class TcCompilerTest {
                     for (var st : TcCompiler.compileJava(source, cls, m.getName(), TargetCaps.CUDA_SM89, options, java.util.List.of()).stages()) {
                         if (st.kind() == TcCompiler.Kind.IR && !st.text().isEmpty()) {
                             stages++;
-                            assertEquals(cls + "." + m.getName() + " @" + st.name(), st.text(), uk.ac.manchester.tornado.tc.ir.IrPrinter.print(IrParser.parseFunction(st.text())));
+                            assertEquals(st.text(), uk.ac.manchester.tornado.tc.ir.IrPrinter.print(IrParser.parseFunction(st.text())), cls + "." + m.getName() + " @" + st.name());
                         }
                     }
                 }
             }
-            assertTrue("stages checked: " + stages, stages > 200);
+            assertTrue(stages > 200, "stages checked: " + stages);
         }
     }
 
@@ -242,16 +242,16 @@ public class TcCompilerTest {
         try (var loader = new java.net.URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
             var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classLoader(loader);
             var gemm = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.TileKernels", "gemm", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-            assertTrue(gemm.diagnostics().toString(), gemm.succeeded());
+            assertTrue(gemm.succeeded(), gemm.diagnostics().toString());
             var g = gemm.source();
-            assertTrue(g, g.startsWith("#include \"cuda_tile.h\"") && g.contains("#include <cuda_fp16.h>") && g.contains("__tile_global__ void TileKernels_gemm("));
-            assertTrue(g, g.contains("ct::tile<float, ct::shape<32, 32>> acc;") && g.contains("acc = ct::mma(") && g.contains("auto av = ct::partition_view{"));
-            assertTrue(g, g.contains("reinterpret_cast<__half *>(a_data)") && g.contains("ct::full<ct::tile<float, ct::shape<32, 32>>>(0.0f)"));
+            assertTrue(g.startsWith("#include \"cuda_tile.h\"") && g.contains("#include <cuda_fp16.h>") && g.contains("__tile_global__ void TileKernels_gemm("), g);
+            assertTrue(g.contains("ct::tile<float, ct::shape<32, 32>> acc;") && g.contains("acc = ct::mma(") && g.contains("auto av = ct::partition_view{"), g);
+            assertTrue(g.contains("reinterpret_cast<__half *>(a_data)") && g.contains("ct::full<ct::tile<float, ct::shape<32, 32>>>(0.0f)"), g);
             var sum = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.TileKernels", "positiveRowSum", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
-            assertTrue(sum.diagnostics().toString(), sum.succeeded());
+            assertTrue(sum.succeeded(), sum.diagnostics().toString());
             var r = sum.source();
-            assertTrue(r, r.contains("ct::tile<bool, ct::shape<1, 64>>") && r.contains(" > (float) 0.0") && r.contains("ct::select(") && r.contains("ct::sum(") && r.contains("1_ic)"));
-            assertTrue(r, r.contains("ct::tile<float, ct::shape<1, 1>>"));
+            assertTrue(r.contains("ct::tile<bool, ct::shape<1, 64>>") && r.contains(" > (float) 0.0") && r.contains("ct::select(") && r.contains("ct::sum(") && r.contains("1_ic)"), r);
+            assertTrue(r.contains("ct::tile<float, ct::shape<1, 1>>"), r);
         }
     }
 
@@ -264,8 +264,8 @@ public class TcCompilerTest {
     @Test
     public void siblingParallelLoopsShareADimension() {
         var c = review("siblings", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(100), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(50)));
-        assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertFalse(c.source(), c.source().contains("threadIdx.y"));
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        assertFalse(c.source().contains("threadIdx.y"), c.source());
         assertEquals(1, c.domain().size());
         assertEquals(100, c.domain().get(0).upper());
     }
@@ -277,11 +277,11 @@ public class TcCompilerTest {
         var facts = java.util.List.<uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact>of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(4096),
                 new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Reduce(17));
         var sum = review("sum", facts);
-        assertTrue(sum.diagnostics().toString(), sum.succeeded());
+        assertTrue(sum.succeeded(), sum.diagnostics().toString());
         var src = sum.source();
-        assertTrue(src, src.contains("__shared__ float reduce_scratch[1024];") && src.contains("__syncthreads();") && !src.contains("tc_reduce_"));
+        assertTrue(src.contains("__shared__ float reduce_scratch[1024];") && src.contains("__syncthreads();") && !src.contains("tc_reduce_"), src);
         var max = review("maxOf", facts);
-        assertTrue(max.diagnostics().toString(), max.succeeded() && max.source().contains("java_fmaxf("));
+        assertTrue(max.succeeded() && max.source().contains("java_fmaxf("), max.diagnostics().toString());
     }
 
     @Test
@@ -295,8 +295,8 @@ public class TcCompilerTest {
     @Test
     public void writeOnlyAllocationsAreDropped() {
         var c = review("writeOnlyMatrix", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(4)));
-        assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertFalse(c.source(), c.source().contains("10"));
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        assertFalse(c.source().contains("10"), c.source());
         var read = review("readMatrix", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1)));
         assertFalse(read.succeeded());
         assertEquals("TC-E1011", read.diagnostics().get(0).code());
@@ -316,11 +316,11 @@ public class TcCompilerTest {
         var L = new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(10);
         var same = review("lengthThroughMerge", java.util.List.of(L, L, new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1),
                 new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Unknown()));
-        assertTrue(same.diagnostics().toString(), same.succeeded());
-        assertTrue(same.source(), same.source().contains("= 10;"));
+        assertTrue(same.succeeded(), same.diagnostics().toString());
+        assertTrue(same.source().contains("= 10;"), same.source());
         var different = review("lengthThroughMerge", java.util.List.of(L, new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(20),
                 new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Unknown()));
-        assertTrue(different.diagnostics().toString(), different.succeeded());
+        assertTrue(different.succeeded(), different.diagnostics().toString());
     }
 
     /** Design review TP-3: in a batch, values see the global index and array indices stay chunk-local, per use. */
@@ -328,9 +328,9 @@ public class TcCompilerTest {
     public void batchIndexIsGlobalAsValueAndLocalAsIndex() {
         var c = review("batchShared", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(100),
                 new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.IndexOffset(1000)));
-        assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertTrue(c.source(), c.source().contains("i_global = i + 1000;") && c.source().contains("k = (int) ((unsigned int) i_global + (unsigned int) 1);")
-                && c.source().contains("out_data[(int) ((unsigned int) (int) ((unsigned int) k - (unsigned int) 1) - (unsigned int) 1000)] = k;"));
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        assertTrue(c.source().contains("i_global = i + 1000;") && c.source().contains("k = (int) ((unsigned int) i_global + (unsigned int) 1);")
+                && c.source().contains("out_data[(int) ((unsigned int) (int) ((unsigned int) k - (unsigned int) 1) - (unsigned int) 1000)] = k;"), c.source());
     }
 
     /** Design review FE-5 (not reproduced): a vector setter after a branch that defined another reference compiles. */
@@ -338,7 +338,7 @@ public class TcCompilerTest {
     public void vectorSetterAfterABranchCompiles() {
         var c = review("setterAfterBranch", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(2),
                 new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Unknown()));
-        assertTrue(c.diagnostics().toString(), c.succeeded());
-        assertTrue(c.source(), c.source().contains("= 5.0f;"));
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        assertTrue(c.source().contains("= 5.0f;"), c.source());
     }
 }

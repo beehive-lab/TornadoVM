@@ -261,7 +261,7 @@ public class TestBitManipulation extends TornadoTestBase {
         IntArray expected = new IntArray(4 * size);
         unsignedInts(a, b, expected);
         for (int i = 0; i < 4 * size; i++) {
-            assertEquals("element " + i, expected.get(i), out.get(i));
+            assertEquals(expected.get(i), out.get(i), "element " + i);
         }
     }
 
@@ -288,7 +288,7 @@ public class TestBitManipulation extends TornadoTestBase {
         LongArray expected = new LongArray(4 * size);
         unsignedLongs(a, b, expected);
         for (int i = 0; i < 4 * size; i++) {
-            assertEquals("element " + i, expected.get(i), out.get(i));
+            assertEquals(expected.get(i), out.get(i), "element " + i);
         }
     }
 
@@ -321,10 +321,10 @@ public class TestBitManipulation extends TornadoTestBase {
         LongArray expectedLong = new LongArray(2 * size);
         division(a, b, c, d, expected, expectedLong);
         for (int i = 0; i < 3 * size; i++) {
-            assertEquals("int element " + i, expected.get(i), out.get(i));
+            assertEquals(expected.get(i), out.get(i), "int element " + i);
         }
         for (int i = 0; i < 2 * size; i++) {
-            assertEquals("long element " + i, expectedLong.get(i), longOut.get(i));
+            assertEquals(expectedLong.get(i), longOut.get(i), "long element " + i);
         }
     }
 }

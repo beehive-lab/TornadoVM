@@ -20,23 +20,19 @@
  */
 package uk.ac.manchester.tornado.tc.tornado;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import uk.ac.manchester.tornado.tc.check.Lit;
 import uk.ac.manchester.tornado.tc.tornado.tools.TornadoTool;
 
 /** Runs every {@code .tcir} file under {@code src/test/lit} (the module's LLVM-style file tests). */
-@RunWith(Parameterized.class)
 public class LitTest {
 
     private static final Path ROOT = Path.of("src", "test", "lit");
@@ -46,20 +42,14 @@ public class LitTest {
         return new Lit.ToolResult(result.exitCode(), result.stdout(), result.stderr());
     }));
 
-    @Parameters(name = "{0}")
     public static List<Object[]> files() {
         return Lit.discover(ROOT, ".tcir");
     }
 
-    @Parameter(0)
-    public String name;
-
-    @Parameter(1)
-    public Path file;
-
-    @Test
-    public void run() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("files")
+    public void run(String name, Path file) {
         var outcome = LIT.run(file);
-        assertTrue(name + "\n" + outcome.log(), outcome.passed());
+        assertTrue(outcome.passed(), name + "\n" + outcome.log());
     }
 }

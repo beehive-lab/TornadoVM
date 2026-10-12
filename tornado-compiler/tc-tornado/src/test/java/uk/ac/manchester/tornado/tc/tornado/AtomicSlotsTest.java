@@ -20,13 +20,13 @@
  */
 package uk.ac.manchester.tornado.tc.tornado;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.IrPrinter;
@@ -55,7 +55,7 @@ public class AtomicSlotsTest {
         assertEquals(List.of(-1, 200), info.initial());      // the argument's slot first, filled by the runtime
         assertEquals(Map.of(1, 0), info.params());           // argument 1 -> slot 0
         var text = new IrPrinter(false).printFunction(function);
-        assertTrue(text, !text.contains("atomic_int.new"));
-        assertTrue(text, !function.params().get(1).hasUses());
+        assertTrue(!text.contains("atomic_int.new"), text);
+        assertTrue(!function.params().get(1).hasUses(), text);
     }
 }

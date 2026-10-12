@@ -20,19 +20,16 @@
  */
 package uk.ac.manchester.tornado.tc.codegen;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import uk.ac.manchester.tornado.tc.check.ExternalTool;
 import uk.ac.manchester.tornado.tc.check.Lit;
@@ -45,7 +42,6 @@ import uk.ac.manchester.tornado.tc.codegen.tools.EmitTool;
  * Metal tests are compiled by the Metal framework on the GPU. A RUN line naming one of these tools is
  * skipped on a machine without it.
  */
-@RunWith(Parameterized.class)
 public class LitTest {
 
     private static final Path ROOT = Path.of("src", "test", "lit");
@@ -101,21 +97,15 @@ public class LitTest {
         }
     }
 
-    @Parameters(name = "{0}")
     public static List<Object[]> files() {
         return Lit.discover(ROOT, ".tcir");
     }
 
-    @Parameter(0)
-    public String name;
-
-    @Parameter(1)
-    public Path file;
-
-    @Test
-    public void run() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("files")
+    public void run(String name, Path file) {
         var outcome = LIT.run(file);
-        assumeFalse(outcome.log(), outcome.unsupported());
-        assertTrue(name + "\n" + outcome.log(), outcome.passed());
+        assumeFalse(outcome.unsupported(), outcome.log());
+        assertTrue(outcome.passed(), name + "\n" + outcome.log());
     }
 }

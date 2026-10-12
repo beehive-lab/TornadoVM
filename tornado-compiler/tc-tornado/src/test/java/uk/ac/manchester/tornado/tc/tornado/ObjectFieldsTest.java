@@ -20,13 +20,13 @@
  */
 package uk.ac.manchester.tornado.tc.tornado;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.IrPrinter;
@@ -60,12 +60,12 @@ public class ObjectFieldsTest {
         var facts = List.<ValueSpecialisation.Fact>of(new ValueSpecialisation.Fact.Instance(Map.of("COLUMNS", 255, "ROWS", 255), List.of(MATRIX)));
         assertEquals(1, ValueSpecialisation.run(function, facts));
         assertTrue(AbiLowering.run(function, TargetCaps.CUDA_SM89, List.of(MATRIX)).isEmpty());
-        assertTrue(Verifier.verify(function, Verifier.Stage.POST_ABI).toString(), Verifier.verify(function, Verifier.Stage.POST_ABI).isEmpty());
+        assertTrue(Verifier.verify(function, Verifier.Stage.POST_ABI).isEmpty(), Verifier.verify(function, Verifier.Stage.POST_ABI).toString());
         var text = new IrPrinter(false).printFunction(function);
-        assertTrue(text, text.contains("const 255 : i32"));
-        assertTrue(text, text.contains("const 20 : i64"));
-        assertTrue(text, text.matches("(?s).*load %\\d+ : i32.*zext.*const 8 : i64.*mul.*ptr.offset %m, .*"));
-        assertTrue(text, !text.contains("field.load"));
+        assertTrue(text.contains("const 255 : i32"), text);
+        assertTrue(text.contains("const 20 : i64"), text);
+        assertTrue(text.matches("(?s).*load %\\d+ : i32.*zext.*const 8 : i64.*mul.*ptr.offset %m, .*"), text);
+        assertTrue(!text.contains("field.load"), text);
     }
 
     @Test

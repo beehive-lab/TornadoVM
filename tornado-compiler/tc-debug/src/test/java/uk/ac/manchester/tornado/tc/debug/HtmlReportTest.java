@@ -20,14 +20,14 @@
  */
 package uk.ac.manchester.tornado.tc.debug;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
@@ -49,12 +49,12 @@ public class HtmlReportTest {
                 """), TargetCaps.CUDA_SM89, TcOptions.DEFAULTS.withReport(true, java.nio.file.Path.of("tc-dumps")));
         var html = HtmlReport.render(c);
         assertTrue(html.startsWith("<!doctype html>"));
-        assertFalse("no external resources", html.contains("http://") || html.contains("https://") || html.contains("src="));
+        assertFalse(html.contains("http://") || html.contains("https://") || html.contains("src="), "no external resources");
         for (var stage : List.of("input", "abi", "structure", "emit")) {
-            assertTrue(stage, html.contains("&middot; " + stage + " <small>"));
+            assertTrue(html.contains("&middot; " + stage + " <small>"), stage);
         }
         assertTrue(html.contains("K_copy"));
-        assertTrue("ABI lowering adds lines", html.contains("line(s) added since the previous IR stage"));
+        assertTrue(html.contains("line(s) added since the previous IR stage"), "ABI lowering adds lines");
     }
 
     @Test
