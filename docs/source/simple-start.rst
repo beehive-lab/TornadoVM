@@ -157,41 +157,8 @@ The command above will run the MatrixMultiplication1D example on the integrated 
 Benchmarking
 --------------------------------------------
 
-Running all benchmarks with default values
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-.. code-block:: bash 
-
-  $ tornado-benchmarks.py
-  Running TornadoVM Benchmarks
-  [INFO] This process takes between 30-60 minutes
-  List of benchmarks: 
-         *saxpy
-         *addImage
-         *stencil
-         *convolvearray
-         *convolveimage
-         *blackscholes
-         *montecarlo
-         *blurFilter
-         *renderTrack
-         *euler
-         *nbody
-         *sgemm
-         *dgemm
-         *mandelbrot
-         *dft
-  [INFO] TornadoVM options: -Xms24G -Xmx24G -server 
-  ... 
-
-
-Running a specific benchmark
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash 
-
-  $ tornado -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner --params="sgemm"
+The TornadoVM benchmarks are in their own repository, `tornadovm-benchmark-suite <https://github.com/beehive-lab/tornadovm-benchmark-suite>`_.
+See :ref:`benchmarking` for how to build and run them.
 
 
 Unittests
