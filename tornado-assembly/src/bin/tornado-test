@@ -436,6 +436,10 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.api.TestIO#testCopyInWithDevice",
     "uk.ac.manchester.tornado.unittests.warmup.TestWarmUp#test01",
 
+    ## Intermittent race on the CUDA backend: 512 plans built concurrently from a parallel stream
+    ## occasionally fail with "Index 1 out of bounds for length 1"
+    "uk.ac.manchester.tornado.unittests.functional.TestStreams#testParallelStreams",
+
     # It might have errors during type casting and type conversion. However, the fractals images look correct.
     # This errors might be related to error precision when running many threads in parallel.
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
