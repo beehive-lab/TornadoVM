@@ -504,12 +504,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         // not always 1).
         String opencl = executionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL);
         if (opencl != null) {
-            String strict = opencl.replace("-cl-fast-relaxed-math", "").replace("-cl-mad-enable", "").replaceAll("\\s+", " ").trim();
-            if (!strict.contains("-cl-fp32-correctly-rounded-divide-sqrt")) {
-                strict = (strict + " -cl-fp32-correctly-rounded-divide-sqrt").trim();
-            }
-            executionContext.meta().setCompilerFlags(TornadoVMBackendType.OPENCL, strict);
+            executionContext.meta().setCompilerFlags(TornadoVMBackendType.OPENCL, strictOpenCLFlags(opencl));
         }
+    }
+
+    /** OpenCL build options without the IEEE relaxations, with correctly rounded float division and sqrt. */
+    public static String strictOpenCLFlags(String flags) {
+        String strict = flags.replace("-cl-fast-relaxed-math", "").replace("-cl-mad-enable", "").replaceAll("\\s+", " ").trim();
+        if (!strict.contains("-cl-fp32-correctly-rounded-divide-sqrt")) {
+            strict = (strict + " -cl-fp32-correctly-rounded-divide-sqrt").trim();
+        }
+        return strict;
     }
 
     public void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {

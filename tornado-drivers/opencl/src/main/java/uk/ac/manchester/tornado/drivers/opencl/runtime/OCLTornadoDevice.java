@@ -81,6 +81,7 @@ import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
 public class OCLTornadoDevice implements TornadoXPUDevice {
@@ -225,7 +226,17 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), name)) {
             return deviceContext.getInstalledCode(executionPlanId, task.getId(), name);
         }
-        return TcKernels.compile(executable, tcTarget(), deviceContext, (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
+        return TcKernels.compile(executable, tcTarget(), deviceContext, (entry, source) -> {
+            // A kernel that turns contraction off (a strict plan, or one rounding to half: Java's HalfFloat
+            // rounds after every operation) is built without the relaxed defaults, which let the NVIDIA and
+            // Intel compilers drop exactly those roundings.
+            var meta = executable.meta();
+            var flags = meta.getCompilerFlags(TornadoVMBackendType.OPENCL);
+            if (flags != null && new String(source, java.nio.charset.StandardCharsets.UTF_8).contains("#pragma OPENCL FP_CONTRACT OFF")) {
+                meta.setCompilerFlags(TornadoVMBackendType.OPENCL, TornadoTaskGraph.strictOpenCLFlags(flags));
+            }
+            return deviceContext.installCode(executionPlanId, meta, task.getId(), entry, source);
+        });
     }
 
     /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */

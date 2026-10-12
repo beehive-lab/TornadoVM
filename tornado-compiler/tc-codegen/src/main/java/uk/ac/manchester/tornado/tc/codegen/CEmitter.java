@@ -948,6 +948,9 @@ public final class CEmitter {
     private R convert(Opcode.ConvertOp op, S.Expr value, Type to) {
         var from = value.type();
         var v = expr(value);
+        if (op == Opcode.ConvertOp.FTRUNC && to.equals(Type.F16)) {
+            dialect.halfRounding(features);
+        }
         return switch (op) {
             case SEXT, TRUNC, I2F, FEXT, FTRUNC -> cast(from, to, v);
             case ZEXT -> from.equals(Type.I1) ? cast(from, to, v) : cast(from, to, new R("(" + unsignedName(from) + ") " + wrap(v, UNARY), UNARY));

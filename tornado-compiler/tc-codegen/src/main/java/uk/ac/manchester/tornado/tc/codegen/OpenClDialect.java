@@ -144,6 +144,13 @@ final class OpenClDialect implements CDialect {
     }
 
     @Override
+    public void halfRounding(Set<Feature> features) {
+        // OpenCL C contracts by default (FP_CONTRACT ON), and the NVIDIA and Intel compilers fuse a
+        // half-rounded product into the following add, dropping the rounding: off for such kernels.
+        features.add(Feature.NO_CONTRACT);
+    }
+
+    @Override
     public String saturatingToInt(Type from, Type to, Set<Feature> features) {
         if (from.equals(Type.F16)) {
             features.add(Feature.HALF);
@@ -194,7 +201,8 @@ final class OpenClDialect implements CDialect {
         lines.add("#pragma OPENCL EXTENSION cl_khr_fp16 : enable");
         lines.add("#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable");
         if (features.contains(Feature.NO_CONTRACT)) {
-            // OpenCL C contracts a * b + c by default; a strict plan keeps Java's separate roundings.
+            // OpenCL C contracts a * b + c by default; a strict plan, or a kernel rounding to half, keeps
+            // Java's separate roundings.
             lines.add("#pragma OPENCL FP_CONTRACT OFF");
         }
         if (features.contains(Feature.HALF_BITS)) {

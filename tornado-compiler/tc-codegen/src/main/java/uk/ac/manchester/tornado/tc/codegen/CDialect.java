@@ -105,6 +105,13 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
     }
 
     /** Whether the target can print from a kernel ({@code Debug.printf}). */
+    /**
+     * A value rounded to half (Java's HalfFloat and HAT's F16 round after every operation). A dialect
+     * whose compiler may fuse across that rounding records what the kernel needs to forbid it.
+     */
+    default void halfRounding(Set<Feature> features) {
+    }
+
     default boolean printf() {
         return true;
     }
