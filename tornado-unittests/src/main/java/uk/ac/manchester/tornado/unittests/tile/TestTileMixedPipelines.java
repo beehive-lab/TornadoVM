@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -71,7 +71,7 @@ public class TestTileMixedPipelines extends TornadoTestBase {
 
     private static final int SEQUENCE = 64;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -217,7 +217,7 @@ public class TestTileMixedPipelines extends TornadoTestBase {
         }
 
         for (int i = 0; i < SEQUENCE * MODEL; i++) {
-            assertEquals("element " + i, reference[i], output.get(i), 0.05f);
+            assertEquals(reference[i], output.get(i), 0.05f, "element " + i);
         }
     }
 
@@ -335,7 +335,7 @@ public class TestTileMixedPipelines extends TornadoTestBase {
         }
 
         for (int i = 0; i < size * size; i++) {
-            assertEquals("element " + i, fused.get(i).getFloat32(), tiled.get(i), 0.05f);
+            assertEquals(fused.get(i).getFloat32(), tiled.get(i), 0.05f, "element " + i);
         }
     }
 
@@ -386,7 +386,7 @@ public class TestTileMixedPipelines extends TornadoTestBase {
             for (int column = 0; column < SEQUENCE; column++) {
                 total += middle.get(row * SEQUENCE + column);
             }
-            assertEquals("row " + row + " is not normalised", 1.0, total, 1e-4);
+            assertEquals(1.0, total, 1e-4, "row " + row + " is not normalised");
         }
         for (int row = 0; row < SEQUENCE; row++) {
             for (int column = 0; column < SEQUENCE; column++) {
@@ -394,7 +394,7 @@ public class TestTileMixedPipelines extends TornadoTestBase {
                 for (int inner = 0; inner < SEQUENCE; inner++) {
                     expected += middle.get(inner * SEQUENCE + row) * tail.get(column * SEQUENCE + inner);
                 }
-                assertEquals("(" + row + "," + column + ")", expected, output.get(column * SEQUENCE + row), 0.02f);
+                assertEquals(expected, output.get(column * SEQUENCE + row), 0.02f, "(" + row + "," + column + ")");
             }
         }
     }
@@ -452,7 +452,7 @@ public class TestTileMixedPipelines extends TornadoTestBase {
                     double x = inputs[chain].get(column);
                     expected += matrices[chain].get(row * size + column) * (x / (1.0 + Math.exp(-x)));
                 }
-                assertEquals("chain " + chain + " row " + row, expected, outputs[chain].get(row), 0.02);
+                assertEquals(expected, outputs[chain].get(row), 0.02, "chain " + chain + " row " + row);
             }
         }
     }

@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -71,7 +71,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
     /** See {@link TestTileAttention} for why this is not {@code -inf}. */
     private static final float NEGATIVE_LIMIT = -1.0e30f;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -349,7 +349,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
 
         double[] expected = reference(q, k, v, queryRows, kvRows, scale, Double.NEGATIVE_INFINITY, 0.0);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 
@@ -398,7 +398,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
 
         double[] expected = reference(q, k, v, queryRows, kvRows, scale, sinkValue, 0.0);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 
@@ -433,7 +433,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
 
         double[] expected = reference(q, k, v, queryRows, kvRows, scale, Double.NEGATIVE_INFINITY, softCap);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 

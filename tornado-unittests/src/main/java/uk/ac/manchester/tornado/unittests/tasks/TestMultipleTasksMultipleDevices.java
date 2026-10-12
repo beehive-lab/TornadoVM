@@ -18,15 +18,15 @@
 
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -107,7 +107,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
         }
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpBeforeClass() {
         assertAvailableDevices();
         setDefaultDevices();
@@ -117,7 +117,7 @@ public class TestMultipleTasksMultipleDevices extends TornadoTestBase {
     /**
      * Tests update the arrays in place: start each test from fresh data.
      */
-    @Before
+    @BeforeEach
     public void initData() {
         a = new IntArray(NUM_ELEMENTS);
         b = new IntArray(NUM_ELEMENTS);

@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -96,6 +96,6 @@ public class TestLaunchFailureReporting extends TornadoTestBase {
         }
 
         // And the output must not look like a successful run either.
-        assertEquals("the rejected kernel must not have written anything", -1.0f, out.get(0), 0.0f);
+        assertEquals(-1.0f, out.get(0), 0.0f, "the rejected kernel must not have written anything");
     }
 }

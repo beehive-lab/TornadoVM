@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.memory;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -76,7 +76,7 @@ public class TestReclaimReleasedBuffers extends TornadoTestBase {
                 plan.execute();
             }
             for (int j = 0; j < samples.getSize(); j++) {
-                assertEquals("plan " + p + ", sample " + j, p + j * 1000, samples.get(j));
+                assertEquals(p + j * 1000, samples.get(j), "plan " + p + ", sample " + j);
             }
         }
     }

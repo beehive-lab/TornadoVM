@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -362,7 +362,7 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
                 input.init(3.0f + iteration);
                 executionPlan.execute();
                 for (int i = 0; i < SIZE; i++) {
-                    assertEquals("iteration " + iteration, 2.0f * (3.0f + iteration), output.get(i), 0.001f);
+                    assertEquals(2.0f * (3.0f + iteration), output.get(i), 0.001f, "iteration " + iteration);
                 }
             }
         }
@@ -402,7 +402,7 @@ public class TestOnDemandCopyIn extends TornadoTestBase {
                 input.init(3.0f + iteration);
                 executionPlan.execute();
                 for (int i = 0; i < SIZE; i++) {
-                    assertEquals("iteration " + iteration, 2.0f * (3.0f + iteration), output.get(i), 0.001f);
+                    assertEquals(2.0f * (3.0f + iteration), output.get(i), 0.001f, "iteration " + iteration);
                 }
             }
         }

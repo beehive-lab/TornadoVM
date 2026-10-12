@@ -18,13 +18,13 @@
 
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -278,9 +278,8 @@ public class TestArrays extends TornadoTestBase {
 
         IntArray data = new IntArray(N);
 
-        IntStream.range(0, N).parallel().forEach(idx -> {
-            data.set(idx, idx);
-        });
+        IntStream.range(0, N).parallel().forEach(idx ->
+            data.set(idx, idx));
 
         TaskGraph taskGraph = new TaskGraph("s0");
         assertNotNull(taskGraph);
@@ -479,8 +478,8 @@ public class TestArrays extends TornadoTestBase {
                 float expected = (val + 10.0f) * 2.0f;
 
                 for (int i = 0; i < numElements; i++) {
-                    assertEquals("output[" + i + "] at iter " + iter,
-                            expected, output.get(i), 0.01f);
+                    assertEquals(expected,
+                            output.get(i), 0.01f, "output[" + i + "] at iter " + iter);
                 }
             }
         }
@@ -542,8 +541,8 @@ public class TestArrays extends TornadoTestBase {
                 float expected = val + 10.0f;
 
                 for (int i = 0; i < numElements; i++) {
-                    assertEquals("output[" + i + "] at iteration " + iter,
-                            expected, output.get(i), 0.01f);
+                    assertEquals(expected,
+                            output.get(i), 0.01f, "output[" + i + "] at iteration " + iter);
                 }
             }
         }

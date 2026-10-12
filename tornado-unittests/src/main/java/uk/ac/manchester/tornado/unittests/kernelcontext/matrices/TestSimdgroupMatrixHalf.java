@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -252,7 +252,7 @@ public class TestSimdgroupMatrixHalf extends TornadoTestBase {
     private static void assertClose(float[] ref, FloatArray c, int k) {
         float tol = 1e-4f * k;
         for (int i = 0; i < ref.length; i++) {
-            assertEquals("element " + i, ref[i], c.get(i), tol);
+            assertEquals(ref[i], c.get(i), tol, "element " + i);
         }
     }
 

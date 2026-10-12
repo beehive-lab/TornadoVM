@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -152,7 +152,7 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
         }
 
         for (int i = 0; i < VALUES.length; i++) {
-            assertEquals("out[" + i + "]", in.get(i).getFloat32(), out.get(i).getFloat32(), 0.0f);
+            assertEquals(in.get(i).getFloat32(), out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -197,7 +197,7 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
         }
 
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("out[" + i + "]", 1.0f, out.get(i).getFloat32(), 0.0f);
+            assertEquals(1.0f, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -231,8 +231,8 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
         executeWithGrid(tg, "ph");
 
         for (int i = 0; i < VALUES.length; i++) {
-            assertEquals("lo[" + i + "]", Float.float16ToFloat(Float.floatToFloat16(VALUES[i])), out.get(2 * i), 0.0f);
-            assertEquals("hi[" + i + "]", Float.float16ToFloat(Float.floatToFloat16(VALUES[VALUES.length - 1 - i])), out.get(2 * i + 1), 0.0f);
+            assertEquals(Float.float16ToFloat(Float.floatToFloat16(VALUES[i])), out.get(2 * i), 0.0f, "lo[" + i + "]");
+            assertEquals(Float.float16ToFloat(Float.floatToFloat16(VALUES[VALUES.length - 1 - i])), out.get(2 * i + 1), 0.0f, "hi[" + i + "]");
         }
     }
 
@@ -253,7 +253,7 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
     private static void assertMatchesBits(IntArray bits, HalfFloatArray out) {
         for (int i = 0; i < VALUES.length; i++) {
             float expected = Float.float16ToFloat((short) bits.get(i));
-            assertEquals("out[" + i + "]", expected, out.get(i).getFloat32(), 0.0f);
+            assertEquals(expected, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 

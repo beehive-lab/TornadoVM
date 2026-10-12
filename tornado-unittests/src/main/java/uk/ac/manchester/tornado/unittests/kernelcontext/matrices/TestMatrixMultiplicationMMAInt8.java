@@ -32,10 +32,10 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -318,8 +318,8 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
         for (int i = 0; i < dimM; i++) {
             for (int j = 0; j < dimN; j++) {
                 int idx = i * dimN + j;
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        ref.get(idx), c.get(idx));
+                assertEquals(ref.get(idx),
+                        c.get(idx), String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -489,7 +489,7 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
                 for (int k = 0; k < WMMA_K; k++) {
                     expected += a.get(m * WMMA_K + k) * b.get(k * MMA_N + n);
                 }
-                assertEquals("lane " + lane + " element " + i, 2 * expected, out.get(lane * 4 + i));
+                assertEquals(2 * expected, out.get(lane * 4 + i), "lane " + lane + " element " + i);
             }
         }
     }
@@ -576,8 +576,8 @@ public class TestMatrixMultiplicationMMAInt8 extends TornadoTestBase {
                         for (int k = 0; k < WMMA_K; k++) {
                             dot += a.get(m * WMMA_K + k) * b.get(k * MMA_N + n);
                         }
-                        assertEquals("iterations " + count + " lane " + lane + " element " + i,
-                                2 * (1 + count * dot), out.get(lane * 4 + i));
+                        assertEquals(2 * (1 + count * dot),
+                                out.get(lane * 4 + i), "iterations " + count + " lane " + lane + " element " + i);
                     }
                 }
             }

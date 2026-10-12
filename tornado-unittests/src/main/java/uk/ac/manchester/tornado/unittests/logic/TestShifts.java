@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.logic;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -168,7 +168,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::ushrIntConstant, in, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, in.get(i) >>> 5, out.get(i));
+            assertEquals(in.get(i) >>> 5, out.get(i), "i = " + i);
         }
     }
 
@@ -182,7 +182,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::ushrIntVariable, in, shifts, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, in.get(i) >>> shifts.get(i), out.get(i));
+            assertEquals(in.get(i) >>> shifts.get(i), out.get(i), "i = " + i);
         }
     }
 
@@ -195,7 +195,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::ushrIntTopNibble, in, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, (in.get(i) >>> 28) & 0xF, out.get(i));
+            assertEquals((in.get(i) >>> 28) & 0xF, out.get(i), "i = " + i);
         }
     }
 
@@ -209,7 +209,7 @@ public class TestShifts extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
             for (int k = 0; k < 8; k++) {
-                assertEquals("word " + i + ", nibble " + k, (words.get(i) >>> (4 * k)) & 0xF, out.get(i * 8 + k));
+                assertEquals((words.get(i) >>> (4 * k)) & 0xF, out.get(i * 8 + k), "word " + i + ", nibble " + k);
             }
         }
     }
@@ -224,7 +224,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::shrIntVariable, in, shifts, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, in.get(i) >> shifts.get(i), out.get(i));
+            assertEquals(in.get(i) >> shifts.get(i), out.get(i), "i = " + i);
         }
     }
 
@@ -239,7 +239,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::ushrLongConstant, in, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, in.get(i) >>> 7, out.get(i));
+            assertEquals(in.get(i) >>> 7, out.get(i), "i = " + i);
         }
     }
 
@@ -253,7 +253,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::ushrLongVariable, in, shifts, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, in.get(i) >>> shifts.get(i), out.get(i));
+            assertEquals(in.get(i) >>> shifts.get(i), out.get(i), "i = " + i);
         }
     }
 
@@ -266,7 +266,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::ushrLongTopNibble, in, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, (in.get(i) >>> 60) & 0xFL, out.get(i));
+            assertEquals((in.get(i) >>> 60) & 0xFL, out.get(i), "i = " + i);
         }
     }
 
@@ -280,7 +280,7 @@ public class TestShifts extends TornadoTestBase {
                 .task("t0", TestShifts::shrLongVariable, in, shifts, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("i = " + i, in.get(i) >> shifts.get(i), out.get(i));
+            assertEquals(in.get(i) >> shifts.get(i), out.get(i), "i = " + i);
         }
     }
     // CHECKSTYLE:ON

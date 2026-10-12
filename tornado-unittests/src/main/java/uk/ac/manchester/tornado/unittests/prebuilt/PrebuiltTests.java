@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.AccessorParameters;
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -58,7 +58,7 @@ public class PrebuiltTests extends TornadoTestBase {
     private TornadoDevice defaultDevice;
     private TornadoVMBackendType backendType;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         coops = TornadoNativeArray.ARRAY_HEADER == 16;
     }
@@ -68,7 +68,7 @@ public class PrebuiltTests extends TornadoTestBase {
      * {@code tornado.unittests.device}, so the tests run on, and load kernels for, the selected
      * backend rather than whichever backend happens to be first.
      */
-    @Before
+    @BeforeEach
     public void selectDevice() {
         backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
         defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();

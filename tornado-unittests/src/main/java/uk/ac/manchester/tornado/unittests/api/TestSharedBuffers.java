@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -640,7 +640,7 @@ public class TestSharedBuffers extends TornadoTestBase {
                 }
             }
 
-            assertTrue("Output array should have non-zero values", hasNonZeroOutput);
+            assertTrue(hasNonZeroOutput, "Output array should have non-zero values");
         }
     }
 
@@ -709,7 +709,7 @@ public class TestSharedBuffers extends TornadoTestBase {
                 }
             }
 
-            assertTrue("Output array should have non-zero values", hasNonZeroOutput);
+            assertTrue(hasNonZeroOutput, "Output array should have non-zero values");
         }
     }
 

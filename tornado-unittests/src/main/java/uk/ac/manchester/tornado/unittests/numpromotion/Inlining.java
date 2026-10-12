@@ -20,8 +20,8 @@ package uk.ac.manchester.tornado.unittests.numpromotion;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -122,9 +122,8 @@ public class Inlining extends TornadoTestBase {
         IntArray seq = new IntArray(size);
 
         Random r = new Random();
-        IntStream.range(0, rgbBytes.getSize()).forEach(i -> {
-            rgbBytes.set(i, (byte) r.nextInt());
-        });
+        IntStream.range(0, rgbBytes.getSize()).forEach(i ->
+            rgbBytes.set(i, (byte) r.nextInt()));
 
         TaskGraph taskGraph = new TaskGraph("foo");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
@@ -139,7 +138,7 @@ public class Inlining extends TornadoTestBase {
         rgbToGreyKernel(rgbBytes, seq);
 
         for (int i = 0; i < seq.getSize(); i++) {
-            Assert.assertEquals(seq.get(i), greyInts.get(i));
+            Assertions.assertEquals(seq.get(i), greyInts.get(i));
         }
 
     }
@@ -150,9 +149,8 @@ public class Inlining extends TornadoTestBase {
         IntArray rgbBytes = new IntArray(size * 3);
         IntArray greyInts = new IntArray(size);
         IntArray seq = new IntArray(size);
-        IntStream.range(0, rgbBytes.getSize()).forEach(i -> {
-            rgbBytes.set(i, 1);
-        });
+        IntStream.range(0, rgbBytes.getSize()).forEach(i ->
+            rgbBytes.set(i, 1));
 
         TaskGraph taskGraph = new TaskGraph("foo");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
@@ -167,7 +165,7 @@ public class Inlining extends TornadoTestBase {
         rgbToGreyKernelInt(rgbBytes, seq);
 
         for (int i = 0; i < seq.getSize(); i++) {
-            Assert.assertEquals(seq.get(i), greyInts.get(i));
+            Assertions.assertEquals(seq.get(i), greyInts.get(i));
         }
 
     }
@@ -179,9 +177,8 @@ public class Inlining extends TornadoTestBase {
         IntArray greyInts = new IntArray(size);
         IntArray seq = new IntArray(size);
         Random r = new Random();
-        IntStream.range(0, rgbBytes.getSize()).forEach(i -> {
-            rgbBytes.set(i, (byte) -10);
-        });
+        IntStream.range(0, rgbBytes.getSize()).forEach(i ->
+            rgbBytes.set(i, (byte) -10));
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
@@ -196,7 +193,7 @@ public class Inlining extends TornadoTestBase {
         rgbToGreyKernelSmall(rgbBytes, seq);
 
         for (int i = 0; i < seq.getSize(); i++) {
-            Assert.assertEquals(seq.get(i), greyInts.get(i));
+            Assertions.assertEquals(seq.get(i), greyInts.get(i));
         }
     }
 
@@ -205,9 +202,8 @@ public class Inlining extends TornadoTestBase {
         ByteArray rgbBytes = new ByteArray(1);
         IntArray greyInts = new IntArray(1);
         IntArray seq = new IntArray(1);
-        IntStream.range(0, rgbBytes.getSize()).forEach(i -> {
-            rgbBytes.set(i, (byte) -10);
-        });
+        IntStream.range(0, rgbBytes.getSize()).forEach(i ->
+            rgbBytes.set(i, (byte) -10));
 
         TaskGraph taskGraph = new TaskGraph("s0");
         taskGraph.transferToDevice(DataTransferMode.EVERY_EXECUTION, rgbBytes) //
@@ -222,7 +218,7 @@ public class Inlining extends TornadoTestBase {
         b2i(rgbBytes, seq);
 
         for (int i = 0; i < seq.getSize(); i++) {
-            Assert.assertEquals(seq.get(i), greyInts.get(i));
+            Assertions.assertEquals(seq.get(i), greyInts.get(i));
         }
     }
 }

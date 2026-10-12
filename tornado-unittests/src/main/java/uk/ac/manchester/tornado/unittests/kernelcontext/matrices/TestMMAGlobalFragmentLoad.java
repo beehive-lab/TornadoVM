@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -122,7 +122,7 @@ public class TestMMAGlobalFragmentLoad extends TornadoTestBase {
     private static void check(float[] ref, FloatArray c, int dimM, int dimN, int ldc) {
         for (int i = 0; i < dimM; i++) {
             for (int j = 0; j < dimN; j++) {
-                assertEquals(String.format("C[%d][%d]", i, j), ref[i * dimN + j], c.get(i * ldc + j), 1e-2f);
+                assertEquals(ref[i * dimN + j], c.get(i * ldc + j), 1e-2f, String.format("C[%d][%d]", i, j));
             }
         }
     }

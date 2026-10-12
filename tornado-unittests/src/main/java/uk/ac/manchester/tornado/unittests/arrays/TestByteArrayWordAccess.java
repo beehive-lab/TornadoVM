@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -120,7 +120,7 @@ public class TestByteArrayWordAccess extends TornadoTestBase {
             plan.withGridScheduler(grid("s0.t0", SIZE)).execute();
         }
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("int " + i, bytes.getInt(offset + 4 * i), out.get(i));
+            assertEquals(bytes.getInt(offset + 4 * i), out.get(i), "int " + i);
         }
     }
 
@@ -137,7 +137,7 @@ public class TestByteArrayWordAccess extends TornadoTestBase {
             plan.withGridScheduler(grid("s0.t0", SIZE)).execute();
         }
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("long " + i, bytes.getLong(offset + 8 * i), out.get(i));
+            assertEquals(bytes.getLong(offset + 8 * i), out.get(i), "long " + i);
         }
     }
 
@@ -159,8 +159,8 @@ public class TestByteArrayWordAccess extends TornadoTestBase {
             plan.withGridScheduler(grid("s0.t0", SIZE)).execute();
         }
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("int " + i, ints.get(i) ^ 0x5A5A5A5A, bytes.getInt(4 * i));
-            assertEquals("long " + i, longs.get(i) + 1L, bytes.getLong(SIZE * 4 + 8 * i));
+            assertEquals(ints.get(i) ^ 0x5A5A5A5A, bytes.getInt(4 * i), "int " + i);
+            assertEquals(longs.get(i) + 1L, bytes.getLong(SIZE * 4 + 8 * i), "long " + i);
         }
     }
 
@@ -179,9 +179,9 @@ public class TestByteArrayWordAccess extends TornadoTestBase {
         long half = SIZE * 8L;
         for (int i = 0; i < SIZE; i++) {
             long at = offset + 8L * i;
-            assertEquals("long " + i, src.getLong(at) ^ 1L, dst.getLong(8L * i));
-            assertEquals("low int " + i, src.getInt(at) + 1, dst.getInt(half + 8L * i));
-            assertEquals("high int " + i, src.getInt(at + 4), dst.getInt(half + 8L * i + 4));
+            assertEquals(src.getLong(at) ^ 1L, dst.getLong(8L * i), "long " + i);
+            assertEquals(src.getInt(at) + 1, dst.getInt(half + 8L * i), "low int " + i);
+            assertEquals(src.getInt(at + 4), dst.getInt(half + 8L * i + 4), "high int " + i);
         }
     }
 }

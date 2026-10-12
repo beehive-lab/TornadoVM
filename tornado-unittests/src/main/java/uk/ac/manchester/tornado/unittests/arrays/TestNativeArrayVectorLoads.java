@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -107,7 +107,7 @@ public class TestNativeArrayVectorLoads extends TornadoTestBase {
         run(taskGraph, "s0");
         for (int i = 0; i < N; i++) {
             float expected = input.get(4 * i) + 2.0f * input.get(4 * i + 1) + 3.0f * input.get(4 * i + 2) + 4.0f * input.get(4 * i + 3);
-            assertEquals("element " + i, expected, output.get(i), 0.0f);
+            assertEquals(expected, output.get(i), 0.0f, "element " + i);
         }
     }
 
@@ -125,7 +125,7 @@ public class TestNativeArrayVectorLoads extends TornadoTestBase {
         run(taskGraph, "s1");
         for (int i = 0; i < N; i++) {
             float expected = input.get(4 * i).getFloat32() + 2.0f * input.get(4 * i + 1).getFloat32() + 3.0f * input.get(4 * i + 2).getFloat32() + 4.0f * input.get(4 * i + 3).getFloat32();
-            assertEquals("element " + i, expected, output.get(i), 0.0f);
+            assertEquals(expected, output.get(i), 0.0f, "element " + i);
         }
     }
 
@@ -143,7 +143,7 @@ public class TestNativeArrayVectorLoads extends TornadoTestBase {
         run(taskGraph, "s2");
         for (int i = 0; i < N; i++) {
             float expected = input.get(2 * i).getFloat32() + 2.0f * input.get(2 * i + 1).getFloat32();
-            assertEquals("element " + i, expected, output.get(i), 0.0f);
+            assertEquals(expected, output.get(i), 0.0f, "element " + i);
         }
     }
 }

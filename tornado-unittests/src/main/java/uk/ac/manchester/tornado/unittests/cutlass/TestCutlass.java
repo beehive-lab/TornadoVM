@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.cutlass;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -53,7 +53,7 @@ public class TestCutlass extends TornadoTestBase {
 
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cutlassMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -969,7 +969,7 @@ public class TestCutlass extends TornadoTestBase {
                 for (int i = 0; i < m; i++) {
                     for (int j = 0; j < n; j++) {
                         float expected = Math.max(0.0f, gemm[i * n + j] + bias.get(j).getFloat32());
-                        assertEquals("iteration " + it, expected, d.get(i * n + j).getFloat32(), 0.05f);
+                        assertEquals(expected, d.get(i * n + j).getFloat32(), 0.05f, "iteration " + it);
                     }
                 }
             }
@@ -1003,7 +1003,7 @@ public class TestCutlass extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
             for (int i = 0; i < n * n; i++) {
-                assertEquals("element " + i, 1.0f, c.get(i), 1e-3f);
+                assertEquals(1.0f, c.get(i), 1e-3f, "element " + i);
             }
 
             // The same plan from another thread, with a new value: a call that does not wait for
@@ -1012,7 +1012,7 @@ public class TestCutlass extends TornadoTestBase {
             c.init(0.0f);
             LibraryStreamPerThread.executeOnAnotherThread(plan);
             for (int i = 0; i < n * n; i++) {
-                assertEquals("element " + i, 2.0f, c.get(i), 1e-3f);
+                assertEquals(2.0f, c.get(i), 1e-3f, "element " + i);
             }
         }
     }

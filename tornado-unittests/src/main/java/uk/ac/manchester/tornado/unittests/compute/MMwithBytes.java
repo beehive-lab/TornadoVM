@@ -21,7 +21,7 @@
  */
 package uk.ac.manchester.tornado.unittests.compute;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -36,8 +36,8 @@ import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Test to check the infinity values are properly replaced for code gen.
@@ -108,8 +108,8 @@ public class MMwithBytes extends TornadoTestBase {
         // For simplicity, check that no NaNs or Infinity are in the result
         for (int i = 0; i < numRows; i++) {
             float result = outputVector.get(i);
-            assertFalse("Output contains NaN at index " + i, Float.isNaN(result));
-            assertFalse("Output contains Infinity at index " + i, Float.isInfinite(result));
+            assertFalse(Float.isNaN(result), "Output contains NaN at index " + i);
+            assertFalse(Float.isInfinite(result), "Output contains Infinity at index " + i);
         }
     }
 

@@ -20,10 +20,10 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
@@ -31,7 +31,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Pure-JVM (no-GPU) tests for {@link ReflectionMembers}, the constant-pool-descriptor to

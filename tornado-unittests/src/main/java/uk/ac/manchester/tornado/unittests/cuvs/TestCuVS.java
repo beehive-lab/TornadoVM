@@ -17,16 +17,16 @@
  */
 package uk.ac.manchester.tornado.unittests.cuvs;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -64,7 +64,7 @@ public class TestCuVS extends TornadoTestBase {
      * cuVS library tasks require the CUDA backend and the cuVS C library (libcuvs_c). Unavailable configurations
      * throw the typed *NotSupported exceptions that the TornadoTestRunner counts as [UNSUPPORTED].
      */
-    @Before
+    @BeforeEach
     public void cuVSMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -156,7 +156,7 @@ public class TestCuVS extends TornadoTestBase {
         }
 
         int[][] exact = exactKnn(dataset, nRows, queries, nQueries, dim, k);
-        assertTrue("neighbour overlap with the exact CPU result", overlap(exact, neighbors, k) >= 0.99);
+        assertTrue(overlap(exact, neighbors, k) >= 0.99, "neighbour overlap with the exact CPU result");
         for (int q = 0; q < nQueries; q++) {
             // the nearest neighbour's distance matches the CPU one
             float expected = squaredL2(queries, q, dataset, exact[q][0], dim);
@@ -228,7 +228,7 @@ public class TestCuVS extends TornadoTestBase {
         }
 
         int[][] exact = exactKnn(dataset, nRows, dataset, nRows, dim, k);
-        assertTrue("k-NN graph overlap with the exact CPU result", overlap(exact, neighbors, k) >= 0.99);
+        assertTrue(overlap(exact, neighbors, k) >= 0.99, "k-NN graph overlap with the exact CPU result");
     }
 
     @Test
@@ -253,7 +253,7 @@ public class TestCuVS extends TornadoTestBase {
 
         // approximate, but NN-Descent on a small dataset finds almost all exact neighbours
         int[][] exact = exactKnn(dataset, nRows, dataset, nRows, dim, k);
-        assertTrue("NN-Descent k-NN graph overlap with the exact CPU result", overlap(exact, neighbors, k) >= 0.9);
+        assertTrue(overlap(exact, neighbors, k) >= 0.9, "NN-Descent k-NN graph overlap with the exact CPU result");
     }
 
     @Test
@@ -275,7 +275,7 @@ public class TestCuVS extends TornadoTestBase {
             MemorySegment.copy(ids, 0, neighbors.getSegment(), 0, ids.byteSize());
             int[][] exact = exactKnn(dataset, nRows, dataset, nRows, dim, k);
             double found = overlap(exact, neighbors, k);
-            assertTrue("batched host k-NN graph overlap with the exact CPU result: " + found, found >= OVERLAP_BATCHED);
+            assertTrue(found >= OVERLAP_BATCHED, "batched host k-NN graph overlap with the exact CPU result: " + found);
         }
     }
 
@@ -311,7 +311,7 @@ public class TestCuVS extends TornadoTestBase {
         for (int c = 0; c < clusters; c++) {
             labelOfBlob[c] = labels.get(c * perCluster);
             for (int i = c * perCluster; i < (c + 1) * perCluster; i++) {
-                assertEquals("points of blob " + c, labelOfBlob[c], labels.get(i));
+                assertEquals(labelOfBlob[c], labels.get(i), "points of blob " + c);
             }
         }
         assertEquals(clusters, Arrays.stream(labelOfBlob).distinct().count());
@@ -352,7 +352,7 @@ public class TestCuVS extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
             for (int q = 0; q < nQueries; q++) {
-                assertEquals("query " + q, 1L, neighbors.get(q));
+                assertEquals(1L, neighbors.get(q), "query " + q);
             }
             // The same plan from another thread, with a new value: a call that does not wait for
             // the kernel on this thread's stream reads the first one.
@@ -360,7 +360,7 @@ public class TestCuVS extends TornadoTestBase {
             neighbors.init(-1L);
             LibraryStreamPerThread.executeOnAnotherThread(plan);
             for (int q = 0; q < nQueries; q++) {
-                assertEquals("query " + q, 2L, neighbors.get(q));
+                assertEquals(2L, neighbors.get(q), "query " + q);
             }
         }
     }

@@ -17,7 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -77,7 +78,7 @@ public class FloatAtomicFail extends TornadoTestBase {
             executionPlan.withGridScheduler(gridScheduler).execute();
         }
 
-        org.junit.Assert.assertEquals((float) numThreads, accumulator.get(0), 0.01f);
+        Assertions.assertEquals((float) numThreads, accumulator.get(0), 0.01f);
     }
 
 }

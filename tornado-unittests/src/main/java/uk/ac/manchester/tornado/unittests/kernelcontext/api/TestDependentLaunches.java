@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -122,7 +122,7 @@ public class TestDependentLaunches extends TornadoTestBase {
                 }
                 executionPlan.withGridScheduler(gridScheduler).execute();
                 for (int i = 0; i < SIZE; i++) {
-                    assertEquals("round " + round + " element " + i, 6 * (i + round), output.get(i));
+                    assertEquals(6 * (i + round), output.get(i), "round " + round + " element " + i);
                 }
             }
         }

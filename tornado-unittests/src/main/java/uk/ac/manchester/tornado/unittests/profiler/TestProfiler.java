@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.profiler;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -72,18 +72,18 @@ public class TestProfiler extends TornadoTestBase {
         assertPositive("getKernelDispatchTime()", profiler.getKernelDispatchTime());
         assertPositive("getDeviceReadTime()", profiler.getDeviceReadTime());
 
-        assertEquals("getDeviceWriteTime() + getDeviceReadTime() should equal getDataTransfersTime()", //
-                profiler.getDeviceWriteTime() + profiler.getDeviceReadTime(), profiler.getDataTransfersTime());
-        assertEquals("getTornadoCompilerTime() + getDriverInstallTime() should equal getCompileTime()", //
-                profiler.getTornadoCompilerTime() + profiler.getDriverInstallTime(), profiler.getCompileTime());
+        assertEquals(profiler.getDeviceWriteTime() + profiler.getDeviceReadTime(), //
+                profiler.getDataTransfersTime(), "getDeviceWriteTime() + getDeviceReadTime() should equal getDataTransfersTime()");
+        assertEquals(profiler.getTornadoCompilerTime() + profiler.getDriverInstallTime(), //
+                profiler.getCompileTime(), "getTornadoCompilerTime() + getDriverInstallTime() should equal getCompileTime()");
     }
 
     private static void assertPositive(String counter, long value) {
-        assertTrue(counter + " should be > 0, was " + value, value > 0);
+        assertTrue(value > 0, counter + " should be > 0, was " + value);
     }
 
     private static void assertNotNegative(String counter, long value) {
-        assertTrue(counter + " should be >= 0, was " + value, value >= 0);
+        assertTrue(value >= 0, counter + " should be >= 0, was " + value);
     }
 
     private static void reduction(float[] input, @Reduce float[] output) {

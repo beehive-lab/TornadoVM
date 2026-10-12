@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -60,24 +62,27 @@ public class RuntimeFail extends TornadoTestBase {
      *     tornado-test -V -pk --debug uk.ac.manchester.tornado.unittests.fails.RuntimeFail#test01
      * </code>
      */
-    @Test(expected = TornadoTaskRuntimeException.class)
+    @Test
     public void test01() {
-        FloatArray x = new FloatArray(8192);
-        FloatArray y = new FloatArray(8192);
-        FloatArray z = new FloatArray(8192);
+        assertThrows(TornadoTaskRuntimeException.class, () -> {
+            FloatArray x = new FloatArray(8192);
+            FloatArray y = new FloatArray(8192);
+            FloatArray z = new FloatArray(8192);
 
-        x.init(2.0f);
-        y.init(8.0f);
+            x.init(2.0f);
+            y.init(8.0f);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
-                .task("t0", RuntimeFail::vectorAdd, x, y, z) //
-                .task("t0", RuntimeFail::square, z) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, y) //
+                    .task("t0", RuntimeFail::vectorAdd, x, y, z) //
+                    .task("t0", RuntimeFail::square, z) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, z);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlanPlan.execute();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlanPlan.execute();
+
+        });
 
     }
 

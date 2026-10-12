@@ -17,14 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.runtime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -90,9 +90,9 @@ public class TestNativeContextPerDevice extends TornadoTestBase {
                 executionPlan.withDevice(device).withGridScheduler(gridScheduler).execute();
 
                 long nativeContext = ((TornadoNativeStreamSupport) device).getNativeContext(executionPlan.getId());
-                assertNotEquals("device " + deviceIndex + " has no native context", 0L, nativeContext);
+                assertNotEquals(0L, nativeContext, "device " + deviceIndex + " has no native context");
                 Integer previous = deviceOfContext.put(nativeContext, deviceIndex);
-                assertTrue("devices " + previous + " and " + deviceIndex + " share one native context", previous == null);
+                assertTrue(previous == null, "devices " + previous + " and " + deviceIndex + " share one native context");
             }
 
             for (int i = 0; i < SIZE; i++) {
