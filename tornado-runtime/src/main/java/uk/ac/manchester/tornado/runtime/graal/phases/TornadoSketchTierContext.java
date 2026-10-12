@@ -30,6 +30,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.runtime.kotlin.KotlinSupport;
 import uk.ac.manchester.tornado.runtime.graal.phases.sketcher.TornadoDataflowAnalysis;
 
 
@@ -46,6 +47,11 @@ public class TornadoSketchTierContext extends HighTierContext {
 
     private TornadoDevice device;
 
+    /**
+     * Whether {@link #method} was compiled by kotlinc. Kotlin-specific sketcher rewrites only apply when set.
+     */
+    private final boolean kotlin;
+
     public TornadoSketchTierContext(Providers providers, PhaseSuite<HighTierContext> graphBuilderSuite, OptimisticOptimizations optimisticOpts, ResolvedJavaMethod method, int backendIndex,
             int deviceIndex) {
         super(providers, graphBuilderSuite, optimisticOpts);
@@ -53,6 +59,11 @@ public class TornadoSketchTierContext extends HighTierContext {
         int parameterCount = method.getParameters().length;
         this.argumentAccess = new Access[method.isStatic() ? parameterCount : parameterCount + 1];
         device = TornadoRuntimeProvider.getTornadoRuntime().getBackend(backendIndex).getDevice(deviceIndex);
+        kotlin = KotlinSupport.isKotlinMethod(method);
+    }
+
+    public boolean isKotlin() {
+        return kotlin;
     }
 
     public TornadoDevice getDevice() {

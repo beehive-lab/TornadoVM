@@ -185,6 +185,10 @@
                 <include>io.github.beehive-lab:tornado-cudf</include>
                 <include>io.github.beehive-lab:tornado-cutlass</include>
                 <include>io.github.beehive-lab:tornado-cuvs</include>
+                <include>io.github.beehive-lab:tornado-kotlin-api</include>
+                <include>io.github.beehive-lab:tornado-kotlin-unittests</include>
+                <include>io.github.beehive-lab:tornado-kotlin-benchmarks</include>
+                <include>io.github.beehive-lab:tornado-kotlin-examples</include>
             </includes>
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
