@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -274,12 +274,12 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
 
         // Use a relative tolerance scaled by n to allow for accumulated FP32 rounding
         float tol = Math.max(DELTA, Math.abs(expected) * 1e-4f);
-        assertEquals("n=" + n + " threadgroup vs sequential", expected, sumTG, tol);
-        assertEquals("n=" + n + " simd_sum vs sequential",    expected, sumSS, tol);
-        assertEquals("n=" + n + " simdShuffle vs sequential", expected, sumSD, tol);
+        assertEquals(expected, sumTG, tol, "n=" + n + " threadgroup vs sequential");
+        assertEquals(expected,    sumSS, tol, "n=" + n + " simd_sum vs sequential");
+        assertEquals(expected, sumSD, tol, "n=" + n + " simdShuffle vs sequential");
         // Cross-check: all three must agree with each other
-        assertEquals("n=" + n + " simd_sum vs threadgroup",   sumTG, sumSS, tol);
-        assertEquals("n=" + n + " simdShuffle vs threadgroup",sumTG, sumSD, tol);
+        assertEquals(sumTG,   sumSS, tol, "n=" + n + " simd_sum vs threadgroup");
+        assertEquals(sumTG,sumSD, tol, "n=" + n + " simdShuffle vs threadgroup");
     }
 
     /**
@@ -352,7 +352,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
         }
 
         for (int g = 0; g < numGroups; g++) {
-            assertEquals("Group " + g + " sum mismatch", expected[g], partials.get(g), DELTA);
+            assertEquals(expected[g], partials.get(g), DELTA, "Group " + g + " sum mismatch");
         }
     }
 
@@ -393,7 +393,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
         }
 
         for (int g = 0; g < numGroups; g++) {
-            assertEquals("Group " + g + " sum mismatch", expected[g], partials.get(g), DELTA);
+            assertEquals(expected[g], partials.get(g), DELTA, "Group " + g + " sum mismatch");
         }
     }
 
@@ -434,8 +434,8 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
         for (int g = 0; g < numGroups; g++) {
             float expectedVal = (float) (g * localSize + 1); // lane-0 value for group g
             for (int j = 0; j < localSize; j++) {
-                assertEquals("Group " + g + " lane " + j + " mismatch",
-                        expectedVal, output.get(g * localSize + j), DELTA);
+                assertEquals(expectedVal,
+                        output.get(g * localSize + j), DELTA, "Group " + g + " lane " + j + " mismatch");
             }
         }
     }
@@ -479,8 +479,8 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
 
         for (int g = 0; g < numGroups; g++) {
             for (int lane = 0; lane < localSize; lane++) {
-                assertEquals("Group " + g + " lane " + lane + " should have full group sum",
-                        expectedGroupSums[g], output.get(g * localSize + lane), DELTA);
+                assertEquals(expectedGroupSums[g],
+                        output.get(g * localSize + lane), DELTA, "Group " + g + " lane " + lane + " should have full group sum");
             }
         }
     }
@@ -514,7 +514,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
         }
 
         for (int g = 0; g < numGroups; g++) {
-            assertEquals("Group " + g + " sum of zeros", 0.0f, partials.get(g), DELTA);
+            assertEquals(0.0f, partials.get(g), DELTA, "Group " + g + " sum of zeros");
         }
     }
 
@@ -549,7 +549,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
         }
 
         for (int g = 0; g < numGroups; g++) {
-            assertEquals("Group " + g + " sum of 32x1.0", 32.0f, partials.get(g), DELTA);
+            assertEquals(32.0f, partials.get(g), DELTA, "Group " + g + " sum of 32x1.0");
         }
     }
 
@@ -586,7 +586,7 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
         }
 
         for (int g = 0; g < numGroups; g++) {
-            assertEquals("Group " + g + " negative sum mismatch", expected[g], partials.get(g), DELTA);
+            assertEquals(expected[g], partials.get(g), DELTA, "Group " + g + " negative sum mismatch");
         }
     }
 
@@ -619,8 +619,8 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
         }
 
         for (int i = 0; i < size; i++) {
-            assertEquals("Lane " + i + " shuffleDown(val, 0) should return val",
-                    input.get(i), output.get(i), DELTA);
+            assertEquals(input.get(i),
+                    output.get(i), DELTA, "Lane " + i + " shuffleDown(val, 0) should return val");
         }
     }
 
@@ -654,8 +654,8 @@ public class TestSIMDGroupReductions extends TornadoTestBase {
 
         float expectedVal = input.get(0); // lane 0's value
         for (int i = 0; i < size; i++) {
-            assertEquals("Lane " + i + " should hold lane 0's value",
-                    expectedVal, output.get(i), DELTA);
+            assertEquals(expectedVal,
+                    output.get(i), DELTA, "Lane " + i + " should hold lane 0's value");
         }
     }
 }

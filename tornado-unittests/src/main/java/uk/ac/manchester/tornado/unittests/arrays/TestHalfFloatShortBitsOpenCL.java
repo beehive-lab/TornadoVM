@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -151,7 +151,7 @@ public class TestHalfFloatShortBitsOpenCL extends TornadoTestBase {
         }
 
         for (int i = 0; i < VALUES.length; i++) {
-            assertEquals("out[" + i + "]", in.get(i).getFloat32(), out.get(i).getFloat32(), 0.0f);
+            assertEquals(in.get(i).getFloat32(), out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -196,7 +196,7 @@ public class TestHalfFloatShortBitsOpenCL extends TornadoTestBase {
         }
 
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("out[" + i + "]", 1.0f, out.get(i).getFloat32(), 0.0f);
+            assertEquals(1.0f, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -217,7 +217,7 @@ public class TestHalfFloatShortBitsOpenCL extends TornadoTestBase {
     private static void assertMatchesBits(IntArray bits, HalfFloatArray out) {
         for (int i = 0; i < VALUES.length; i++) {
             float expected = Float.float16ToFloat((short) bits.get(i));
-            assertEquals("out[" + i + "]", expected, out.get(i).getFloat32(), 0.0f);
+            assertEquals(expected, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 

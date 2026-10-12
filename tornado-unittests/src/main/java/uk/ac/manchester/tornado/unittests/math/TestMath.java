@@ -18,13 +18,13 @@
 
 package uk.ac.manchester.tornado.unittests.math;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -694,9 +694,8 @@ public class TestMath extends TornadoTestBase {
         float min = -10000;
         float max = 10000;
 
-        IntStream.range(0, size).parallel().forEach(i -> {
-            a.set(i, min + r.nextFloat() * (max - min));
-        });
+        IntStream.range(0, size).parallel().forEach(i ->
+            a.set(i, min + r.nextFloat() * (max - min)));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -802,10 +801,10 @@ public class TestMath extends TornadoTestBase {
             for (int i = 0; i < size && !anyFused; i++) {
                 anyFused = out.get(i) != 0.0;
             }
-            assertTrue("expected fused multiply-add with tornado.enable.fma=true, but every case rounded separately", anyFused);
+            assertTrue(anyFused, "expected fused multiply-add with tornado.enable.fma=true, but every case rounded separately");
         } else {
             for (int i = 0; i < size; i++) {
-                assertEquals("tornado.enable.fma=false must round the multiply and the add separately, as the host does; case " + i + " did not", 0.0, out.get(i), 0.0);
+                assertEquals(0.0, out.get(i), 0.0, "tornado.enable.fma=false must round the multiply and the add separately, as the host does; case " + i + " did not");
             }
         }
     }
@@ -880,10 +879,10 @@ public class TestMath extends TornadoTestBase {
         for (int i = 0; i < loose[3].getSize(); i++) {
             anyFused |= loose[3].get(i) != 0.0;
         }
-        assertTrue("the unrestricted plan did not fuse, so this test cannot tell the two apart", anyFused);
+        assertTrue(anyFused, "the unrestricted plan did not fuse, so this test cannot tell the two apart");
 
         for (int i = 0; i < strict[3].getSize(); i++) {
-            assertEquals("withStrictFloatingPoint() must round the multiply and the add separately, as the host does; case " + i + " did not", 0.0, strict[3].get(i), 0.0);
+            assertEquals(0.0, strict[3].get(i), 0.0, "withStrictFloatingPoint() must round the multiply and the add separately, as the host does; case " + i + " did not");
         }
     }
 

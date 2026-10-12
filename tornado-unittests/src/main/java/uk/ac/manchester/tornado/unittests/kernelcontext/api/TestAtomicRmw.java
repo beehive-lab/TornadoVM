@@ -23,10 +23,10 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -201,7 +201,7 @@ public class TestAtomicRmw extends TornadoTestBase {
             for (int i = block * THREADS; i < (block + 1) * THREADS; i++) {
                 expected = Math.max(expected, in.get(i));
             }
-            assertEquals("block " + block, expected, out.get(block));
+            assertEquals(expected, out.get(block), "block " + block);
         }
     }
 
@@ -216,7 +216,7 @@ public class TestAtomicRmw extends TornadoTestBase {
             for (int i = block * THREADS; i < (block + 1) * THREADS; i++) {
                 expected = Math.min(expected, in.get(i));
             }
-            assertEquals("block " + block, expected, out.get(block));
+            assertEquals(expected, out.get(block), "block " + block);
         }
     }
 
@@ -234,9 +234,9 @@ public class TestAtomicRmw extends TornadoTestBase {
                     winners++;
                 }
             }
-            assertEquals("exactly one thread of block " + block + " may win the claim", 1, winners);
-            assertTrue("the claimed slot must hold a lane id, but was " + out.get(block), //
-                    out.get(block) >= 0 && out.get(block) < THREADS);
+            assertEquals(1, winners, "exactly one thread of block " + block + " may win the claim");
+            assertTrue(out.get(block) >= 0 && out.get(block) < THREADS, //
+                    "the claimed slot must hold a lane id, but was " + out.get(block));
         }
     }
 
@@ -249,7 +249,7 @@ public class TestAtomicRmw extends TornadoTestBase {
         run("casLoop", in, viaLoop, null);
         run("max", in, viaMax, null);
         for (int block = 0; block < BLOCKS; block++) {
-            assertEquals("block " + block, viaMax.get(block), viaLoop.get(block));
+            assertEquals(viaMax.get(block), viaLoop.get(block), "block " + block);
         }
     }
 
@@ -262,20 +262,20 @@ public class TestAtomicRmw extends TornadoTestBase {
         run("exchange", null, out, seen);
         for (int block = 0; block < BLOCKS; block++) {
             int winner = out.get(block);
-            assertTrue("the surviving value must be a lane id of block " + block + " but was " + winner, //
-                    winner >= 0 && winner < THREADS);
+            assertTrue(winner >= 0 && winner < THREADS, //
+                    "the surviving value must be a lane id of block " + block + " but was " + winner);
         }
         // Exactly one thread per block observes the sentinel; every other observes another lane's id.
         for (int block = 0; block < BLOCKS; block++) {
             int sentinelObservations = 0;
             for (int i = block * THREADS; i < (block + 1) * THREADS; i++) {
                 int observed = seen.get(i);
-                assertTrue("unexpected observed value " + observed, observed == -1 || (observed >= 0 && observed < THREADS));
+                assertTrue(observed == -1 || (observed >= 0 && observed < THREADS), "unexpected observed value " + observed);
                 if (observed == -1) {
                     sentinelObservations++;
                 }
             }
-            assertEquals("exactly one thread of block " + block + " may see the sentinel", 1, sentinelObservations);
+            assertEquals(1, sentinelObservations, "exactly one thread of block " + block + " may see the sentinel");
         }
     }
 }

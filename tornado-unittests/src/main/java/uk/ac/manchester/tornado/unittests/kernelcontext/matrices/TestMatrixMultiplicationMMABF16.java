@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -282,9 +282,9 @@ public class TestMatrixMultiplicationMMABF16 extends TornadoTestBase {
 
         // BF16 quantization error per element is <= 2^-8 relative; a K=64 dot product of
         // U[-1,1] values stays well under this bound in practice. FP16's must be smaller.
-        assertTrue("bf16 error unexpectedly large: " + maxAbsBf, maxAbsBf < 0.25f);
-        assertTrue("fp16 error should not exceed bf16 error: bf16=" + maxAbsBf + " fp16=" + maxAbsHf,
-                maxAbsHf <= maxAbsBf);
+        assertTrue(maxAbsBf < 0.25f, "bf16 error unexpectedly large: " + maxAbsBf);
+        assertTrue(maxAbsHf <= maxAbsBf,
+                "fp16 error should not exceed bf16 error: bf16=" + maxAbsBf + " fp16=" + maxAbsHf);
     }
 
     // -----------------------------------------------------------------------
@@ -326,8 +326,8 @@ public class TestMatrixMultiplicationMMABF16 extends TornadoTestBase {
         for (int i = 0; i < dimM; i++) {
             for (int j = 0; j < dimN; j++) {
                 int idx = i * dimN + j;
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        ref.get(idx), c.get(idx), tol);
+                assertEquals(ref.get(idx),
+                        c.get(idx), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }

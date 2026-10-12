@@ -17,14 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.cusparse;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -53,7 +53,7 @@ public class TestCusparse extends TornadoTestBase {
 
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cusparseMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -538,7 +538,7 @@ public class TestCusparse extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
             for (int i = 0; i < n; i++) {
-                assertEquals("element " + i, 1.0f, y.get(i), 1e-3f);
+                assertEquals(1.0f, y.get(i), 1e-3f, "element " + i);
             }
 
             // The same plan from another thread, with a new value: a call that does not wait for
@@ -547,7 +547,7 @@ public class TestCusparse extends TornadoTestBase {
             y.init(0.0f);
             LibraryStreamPerThread.executeOnAnotherThread(plan);
             for (int i = 0; i < n; i++) {
-                assertEquals("element " + i, 2.0f, y.get(i), 1e-3f);
+                assertEquals(2.0f, y.get(i), 1e-3f, "element " + i);
             }
         }
     }

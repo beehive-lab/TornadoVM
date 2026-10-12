@@ -20,14 +20,14 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -71,8 +71,8 @@ public class ReflectionResolvedJavaTypeTest {
         long previousOffset = -1;
         for (ResolvedJavaField field : fields) {
             Field reflected = ReflectionTestSample.class.getDeclaredField(field.getName());
-            assertEquals("offset must match Unsafe", ReflectionUniverse.UNSAFE.objectFieldOffset(reflected), field.getOffset());
-            assertTrue("instance fields must be sorted by offset", field.getOffset() > previousOffset);
+            assertEquals(ReflectionUniverse.UNSAFE.objectFieldOffset(reflected), field.getOffset(), "offset must match Unsafe");
+            assertTrue(field.getOffset() > previousOffset, "instance fields must be sorted by offset");
             previousOffset = field.getOffset();
         }
     }
@@ -80,7 +80,7 @@ public class ReflectionResolvedJavaTypeTest {
     @Test
     public void instanceFieldsAreCachedAndCanonical() throws Exception {
         ReflectionResolvedJavaType type = universe.lookupType(ReflectionTestSample.class);
-        assertSame("getInstanceFields must be memoized", type.getInstanceFields(false), type.getInstanceFields(false));
+        assertSame(type.getInstanceFields(false), type.getInstanceFields(false), "getInstanceFields must be memoized");
 
         Field alpha = ReflectionTestSample.class.getDeclaredField("alpha");
         ResolvedJavaField canonical = universe.lookupField(alpha);
@@ -105,7 +105,7 @@ public class ReflectionResolvedJavaTypeTest {
                 found = true;
             }
         }
-        assertTrue("staticCounter must appear among static fields", found);
+        assertTrue(found, "staticCounter must appear among static fields");
     }
 
     @Test

@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.cudnn;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -56,7 +56,7 @@ public class TestCuDnn extends TornadoTestBase {
 
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cuDnnMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -443,7 +443,7 @@ public class TestCuDnn extends TornadoTestBase {
             for (int it = 0; it < 5; it++) {
                 plan.execute();
                 for (int i = 0; i < expected.getSize(); i++) {
-                    assertEquals("iteration " + it, expected.get(i), output.get(i), 1e-3f * Math.max(1.0f, Math.abs(expected.get(i))));
+                    assertEquals(expected.get(i), output.get(i), 1e-3f * Math.max(1.0f, Math.abs(expected.get(i))), "iteration " + it);
                 }
             }
         }
@@ -539,7 +539,7 @@ public class TestCuDnn extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
             for (int i = 0; i < size; i++) {
-                assertEquals("element " + i, 1.0f, output.get(i), 1e-3f);
+                assertEquals(1.0f, output.get(i), 1e-3f, "element " + i);
             }
 
             // The same plan from another thread, with a new value: a call that does not wait for
@@ -548,7 +548,7 @@ public class TestCuDnn extends TornadoTestBase {
             output.init(0.0f);
             LibraryStreamPerThread.executeOnAnotherThread(plan);
             for (int i = 0; i < size; i++) {
-                assertEquals("element " + i, 2.0f, output.get(i), 1e-3f);
+                assertEquals(2.0f, output.get(i), 1e-3f, "element " + i);
             }
         }
     }

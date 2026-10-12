@@ -17,8 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.warmup;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -64,7 +64,7 @@ public class TestWarmUp extends TornadoTestBase {
             // The warm-up lasts at least the requested time. The upper bound allows for the in-flight
             // iteration and OS timer slack (Thread.sleep alone can overshoot by several ms on macOS).
             long elapsed = endTime - startTime;
-            Assert.assertTrue("warm-up took " + elapsed + " ms", elapsed >= 1000 && elapsed < 1100);
+            Assertions.assertTrue(elapsed >= 1000 && elapsed < 1100, "warm-up took " + elapsed + " ms");
 
             // Run one more time after the warmup
             plan.withProfiler(ProfilerMode.CONSOLE).execute();

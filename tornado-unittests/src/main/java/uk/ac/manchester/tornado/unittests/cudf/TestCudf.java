@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.cudf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -28,8 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -60,7 +60,7 @@ public class TestCudf extends TornadoTestBase {
 
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cudfMustBeAvailable() {
         // The shim first, because it costs nothing. CudfLibraryProvider.isAvailable() is an FFM
         // symbol lookup and touches no device, while getDefaultDevice() acquires one -- so asking
@@ -148,14 +148,14 @@ public class TestCudf extends TornadoTestBase {
         int previousPosition = -1;
         for (int i = 0; i < n; i++) {
             int position = order.get(i);
-            assertTrue("position " + position + " out of range", position >= 0 && position < n);
-            assertFalse("position " + position + " appears twice", seen[position]);
+            assertTrue(position >= 0 && position < n, "position " + position + " out of range");
+            assertFalse(seen[position], "position " + position + " appears twice");
             seen[position] = true;
 
             int key = keys.get(position);
-            assertTrue("keys are not ascending at " + i, key >= previousKey);
+            assertTrue(key >= previousKey, "keys are not ascending at " + i);
             if (key == previousKey) {
-                assertTrue("equal keys were reordered; the sort is not stable", position > previousPosition);
+                assertTrue(position > previousPosition, "equal keys were reordered; the sort is not stable");
             }
             previousKey = key;
             previousPosition = position;
@@ -192,10 +192,10 @@ public class TestCudf extends TornadoTestBase {
         }
 
         int groups = outGroups.get(0);
-        assertEquals("one row per distinct key", reference.size(), groups);
+        assertEquals(reference.size(), groups, "one row per distinct key");
         for (int i = 0; i < groups; i++) {
             Double expected = reference.get(outKeys.get(i));
-            assertTrue("unexpected group key " + outKeys.get(i), expected != null);
+            assertTrue(expected != null, "unexpected group key " + outKeys.get(i));
             assertEquals(expected, outSums.get(i), 1e-9);
         }
     }
@@ -288,7 +288,7 @@ public class TestCudf extends TornadoTestBase {
             plan.execute();
         }
 
-        assertEquals("the only permutation of one row is the identity", 0, order.get(0));
+        assertEquals(0, order.get(0), "the only permutation of one row is the identity");
     }
 
     @Test
@@ -306,7 +306,7 @@ public class TestCudf extends TornadoTestBase {
             plan.execute();
         }
 
-        assertEquals("an inclusive scan of one row is that row", 3.5, out.get(0), 1e-9);
+        assertEquals(3.5, out.get(0), 1e-9, "an inclusive scan of one row is that row");
     }
 
     /**
@@ -339,7 +339,7 @@ public class TestCudf extends TornadoTestBase {
             plan.execute();
         }
 
-        assertEquals("one distinct key is one group", 1, outGroups.get(0));
+        assertEquals(1, outGroups.get(0), "one distinct key is one group");
         assertEquals(11, outKeys.get(0));
         assertEquals(total, outSums.get(0), 1e-9);
     }
@@ -373,10 +373,10 @@ public class TestCudf extends TornadoTestBase {
             plan.execute();
         }
 
-        assertEquals("n distinct keys are n groups", n, outGroups.get(0));
+        assertEquals(n, outGroups.get(0), "n distinct keys are n groups");
         for (int i = 0; i < n; i++) {
             Double expected = reference.get(outKeys.get(i));
-            assertTrue("unexpected group key " + outKeys.get(i), expected != null);
+            assertTrue(expected != null, "unexpected group key " + outKeys.get(i));
             assertEquals(expected, outSums.get(i), 1e-9);
         }
     }
@@ -413,12 +413,12 @@ public class TestCudf extends TornadoTestBase {
             plan.execute();
         }
 
-        assertEquals("every left row matches every right row", capacity, outCount.get(0));
+        assertEquals(capacity, outCount.get(0), "every left row matches every right row");
         boolean[][] seen = new boolean[leftCount][rightCount];
         for (int i = 0; i < capacity; i++) {
             int l = outLeft.get(i);
             int r = outRight.get(i);
-            assertFalse("pair (" + l + "," + r + ") appears twice", seen[l][r]);
+            assertFalse(seen[l][r], "pair (" + l + "," + r + ") appears twice");
             seen[l][r] = true;
         }
     }
@@ -463,7 +463,7 @@ public class TestCudf extends TornadoTestBase {
             for (Throwable t = expected; t != null; t = t.getCause()) {
                 chain += String.valueOf(t.getMessage()) + " ";
             }
-            assertTrue("the shim's own message should reach Java, not just a status code; got: " + chain, chain.contains("capacity"));
+            assertTrue(chain.contains("capacity"), "the shim's own message should reach Java, not just a status code; got: " + chain);
         }
     }
 
@@ -505,15 +505,15 @@ public class TestCudf extends TornadoTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("the kernel's own output at " + i, values.get(i) * 2.0, scaled.get(i), 1e-9);
+            assertEquals(values.get(i) * 2.0, scaled.get(i), 1e-9, "the kernel's own output at " + i);
         }
 
         int groups = outGroups.get(0);
-        assertEquals("one row per distinct key", reference.size(), groups);
+        assertEquals(reference.size(), groups, "one row per distinct key");
         for (int i = 0; i < groups; i++) {
             Double expected = reference.get(outKeys.get(i));
-            assertTrue("unexpected group key " + outKeys.get(i), expected != null);
-            assertEquals("cuDF summed what the kernel wrote", expected, outSums.get(i), 1e-9);
+            assertTrue(expected != null, "unexpected group key " + outKeys.get(i));
+            assertEquals(expected, outSums.get(i), 1e-9, "cuDF summed what the kernel wrote");
         }
     }
 
@@ -555,7 +555,7 @@ public class TestCudf extends TornadoTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("the first kernel's output at " + i, keys.get(i) * 2, doubled.get(i));
+            assertEquals(keys.get(i) * 2, doubled.get(i), "the first kernel's output at " + i);
         }
 
         // What the host would have produced: a stable sort of the rows by key, which is the order
@@ -567,9 +567,9 @@ public class TestCudf extends TornadoTestBase {
         Arrays.sort(hostOrder, Comparator.comparingInt(a -> keys.get(a)));
 
         for (int i = 0; i < n; i++) {
-            assertEquals("permutation differs from a stable host sort at " + i, hostOrder[i].intValue(), order.get(i));
-            assertEquals("the second kernel gathered the wrong value at " + i, values.get(hostOrder[i]), gathered.get(i), 1e-9);
-            assertEquals("the third kernel read what the second wrote at " + i, values.get(hostOrder[i]) + 1.0, shifted.get(i), 1e-9);
+            assertEquals(hostOrder[i].intValue(), order.get(i), "permutation differs from a stable host sort at " + i);
+            assertEquals(values.get(hostOrder[i]), gathered.get(i), 1e-9, "the second kernel gathered the wrong value at " + i);
+            assertEquals(values.get(hostOrder[i]) + 1.0, shifted.get(i), 1e-9, "the third kernel read what the second wrote at " + i);
         }
     }
 
@@ -625,12 +625,12 @@ public class TestCudf extends TornadoTestBase {
         DoubleArray outResults = (DoubleArray) out[1];
         int groups = (Integer) out[2];
 
-        assertEquals("one row per distinct key", reference.size(), groups);
+        assertEquals(reference.size(), groups, "one row per distinct key");
         for (int i = 0; i < groups; i++) {
             double[] expected = reference.get(outKeys.get(i));
-            assertTrue("unexpected group key " + outKeys.get(i), expected != null);
+            assertTrue(expected != null, "unexpected group key " + outKeys.get(i));
             for (int c = 0; c < columns; c++) {
-                assertEquals("column " + c + " of group " + outKeys.get(i), expected[c], outResults.get(c * n + i), 1e-9);
+                assertEquals(expected[c], outResults.get(c * n + i), 1e-9, "column " + c + " of group " + outKeys.get(i));
             }
         }
     }
@@ -667,16 +667,16 @@ public class TestCudf extends TornadoTestBase {
             IntArray outKeys = (IntArray) out[0];
             DoubleArray outResults = (DoubleArray) out[1];
             int groups = (Integer) out[2];
-            assertEquals(aggregation + ": one row per distinct key", mins.size(), groups);
+            assertEquals(mins.size(), groups, aggregation + ": one row per distinct key");
 
             for (int i = 0; i < groups; i++) {
                 int key = outKeys.get(i);
                 double actual = outResults.get(i);
                 switch (aggregation) {
-                    case MIN -> assertEquals("MIN of group " + key, mins.get(key), actual, 1e-9);
-                    case MAX -> assertEquals("MAX of group " + key, maxes.get(key), actual, 1e-9);
-                    case MEAN -> assertEquals("MEAN of group " + key, sums.get(key) / counts.get(key), actual, 1e-9);
-                    case COUNT -> assertEquals("COUNT of group " + key, counts.get(key).doubleValue(), actual, 1e-9);
+                    case MIN -> assertEquals(mins.get(key), actual, 1e-9, "MIN of group " + key);
+                    case MAX -> assertEquals(maxes.get(key), actual, 1e-9, "MAX of group " + key);
+                    case MEAN -> assertEquals(sums.get(key) / counts.get(key), actual, 1e-9, "MEAN of group " + key);
+                    case COUNT -> assertEquals(counts.get(key).doubleValue(), actual, 1e-9, "COUNT of group " + key);
                     default -> fail("unreachable");
                 }
             }
@@ -719,7 +719,7 @@ public class TestCudf extends TornadoTestBase {
             narrow.put(narrowKeys.get(i), narrowSums.get(i));
         }
         for (int i = 0; i < groups; i++) {
-            assertEquals("groupAggregate disagrees with groupSum on key " + generalKeys.get(i), narrow.get(generalKeys.get(i)), generalSums.get(i), 1e-9);
+            assertEquals(narrow.get(generalKeys.get(i)), generalSums.get(i), 1e-9, "groupAggregate disagrees with groupSum on key " + generalKeys.get(i));
         }
     }
 
@@ -753,7 +753,7 @@ public class TestCudf extends TornadoTestBase {
             try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
                 plan.execute();
             }
-            assertEquals(operations[op].toString(), expected[op], out.get(0), 1e-6);
+            assertEquals(expected[op], out.get(0), 1e-6, operations[op].toString());
         }
     }
 
@@ -775,7 +775,7 @@ public class TestCudf extends TornadoTestBase {
             plan.execute();
             fail("an ungrouped COUNT should be refused, not answered");
         } catch (Exception expected) {
-            assertTrue("the refusal should say why; got: " + causeChain(expected), causeChain(expected).contains("COUNT"));
+            assertTrue(causeChain(expected).contains("COUNT"), "the refusal should say why; got: " + causeChain(expected));
         }
     }
 
@@ -812,19 +812,19 @@ public class TestCudf extends TornadoTestBase {
         int expected = 0;
         for (int i = 0; i < n; i++) {
             boolean keep = values.get(i) > 0.0;
-            assertEquals("the kernel's own mask at " + i, keep ? 1 : 0, mask.get(i));
+            assertEquals(keep ? 1 : 0, mask.get(i), "the kernel's own mask at " + i);
             if (keep) {
                 expected++;
             }
         }
-        assertEquals("survivor count", expected, count.get(0));
+        assertEquals(expected, count.get(0), "survivor count");
 
         int previous = -1;
         int seen = 0;
         for (int i = 0; i < count.get(0); i++) {
             int position = indices.get(i);
-            assertTrue("positions must ascend; " + position + " followed " + previous, position > previous);
-            assertTrue("kept a row the predicate rejected: " + position, values.get(position) > 0.0);
+            assertTrue(position > previous, "positions must ascend; " + position + " followed " + previous);
+            assertTrue(values.get(position) > 0.0, "kept a row the predicate rejected: " + position);
             previous = position;
             seen++;
         }
@@ -851,7 +851,7 @@ public class TestCudf extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
             plan.execute();
         }
-        assertEquals("an all-zero mask keeps nothing", 0, count.get(0));
+        assertEquals(0, count.get(0), "an all-zero mask keeps nothing");
     }
 
     /** Too many survivors for the buffer must fail, for the same reason a short join must. */
@@ -875,7 +875,7 @@ public class TestCudf extends TornadoTestBase {
             plan.execute();
             fail("keeping " + n + " rows in a buffer of " + capacity + " must not report success");
         } catch (Exception expected) {
-            assertTrue("the shim's message should reach Java; got: " + causeChain(expected), causeChain(expected).contains("capacity"));
+            assertTrue(causeChain(expected).contains("capacity"), "the shim's message should reach Java; got: " + causeChain(expected));
         }
     }
 
@@ -912,9 +912,9 @@ public class TestCudf extends TornadoTestBase {
         for (int i = 0; i < n; i++) {
             int position = order.get(i);
             int key = keys.get(position);
-            assertTrue("keys are not descending at " + i, key <= previousKey);
+            assertTrue(key <= previousKey, "keys are not descending at " + i);
             if (key == previousKey) {
-                assertTrue("equal keys were reordered; a descending sort is still stable", position > previousPosition);
+                assertTrue(position > previousPosition, "equal keys were reordered; a descending sort is still stable");
             }
             previousKey = key;
             previousPosition = position;
@@ -947,7 +947,7 @@ public class TestCudf extends TornadoTestBase {
         Arrays.sort(hostOrder, Comparator.<Integer> comparingInt(a -> keys.get(a)).thenComparing(Comparator.<Integer> comparingInt(a -> keys.get(n + a)).reversed()));
 
         for (int i = 0; i < n; i++) {
-            assertEquals("two-key ordering differs from a stable host sort at " + i, hostOrder[i].intValue(), order.get(i));
+            assertEquals(hostOrder[i].intValue(), order.get(i), "two-key ordering differs from a stable host sort at " + i);
         }
     }
 
@@ -972,7 +972,7 @@ public class TestCudf extends TornadoTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("sortedOrderMulti disagrees with sortedOrder at " + i, narrow.get(i), general.get(i));
+            assertEquals(narrow.get(i), general.get(i), "sortedOrderMulti disagrees with sortedOrder at " + i);
         }
     }
 
@@ -1008,7 +1008,7 @@ public class TestCudf extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
             plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
             for (int i = 0; i < n; i++) {
-                assertEquals("element " + i, i + 1.0, out.get(i), 1e-6 * (i + 1));
+                assertEquals(i + 1.0, out.get(i), 1e-6 * (i + 1), "element " + i);
             }
             // The same plan from another thread, with a new value: a call that does not wait for
             // the kernel on this thread's stream reads the first one.
@@ -1016,7 +1016,7 @@ public class TestCudf extends TornadoTestBase {
             out.init(0.0);
             LibraryStreamPerThread.executeOnAnotherThread(plan);
             for (int i = 0; i < n; i++) {
-                assertEquals("element " + i, 2.0 * (i + 1), out.get(i), 1e-6 * (i + 1));
+                assertEquals(2.0 * (i + 1), out.get(i), 1e-6 * (i + 1), "element " + i);
             }
         }
     }

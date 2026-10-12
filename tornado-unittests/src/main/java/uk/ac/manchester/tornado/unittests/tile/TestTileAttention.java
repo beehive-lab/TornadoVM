@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -94,7 +94,7 @@ public class TestTileAttention extends TornadoTestBase {
 
     private static final int SPLITS_LARGE = 16;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -304,7 +304,7 @@ public class TestTileAttention extends TornadoTestBase {
 
         double[] expected = referenceAttention(q, k, v, 0, 0, queryRows, kvRows, scale);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 
@@ -349,7 +349,7 @@ public class TestTileAttention extends TornadoTestBase {
             int kvHead = head / (heads / kvHeads);
             double[] expected = referenceAttention(q, k, v, head * queryRowsPerHead, kvHead * kvRowsPerHead, queryRowsPerHead, kvRowsPerHead, scale);
             for (int i = 0; i < queryRowsPerHead * HEAD_DIM; i++) {
-                assertEquals("head " + head + " element " + i, expected[i], out.get(head * queryRowsPerHead * HEAD_DIM + i), 0.01);
+                assertEquals(expected[i], out.get(head * queryRowsPerHead * HEAD_DIM + i), 0.01, "head " + head + " element " + i);
             }
         }
     }
@@ -409,7 +409,7 @@ public class TestTileAttention extends TornadoTestBase {
                 for (int split = 0; split < splits; split++) {
                     numerator += weights[split] * partials.get((row * splits + split) * HEAD_DIM + d);
                 }
-                assertEquals("row " + row + " dim " + d, numerator / total, out.get(row * HEAD_DIM + d), 1e-4);
+                assertEquals(numerator / total, out.get(row * HEAD_DIM + d), 1e-4, "row " + row + " dim " + d);
             }
         }
     }

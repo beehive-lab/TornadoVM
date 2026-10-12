@@ -18,12 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -64,9 +64,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).parallel().forEach(i -> {
-            input.set(i, r.nextDouble());
-        });
+        IntStream.range(0, SIZE).parallel().forEach(i ->
+            input.set(i, r.nextDouble()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
@@ -101,9 +100,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).parallel().forEach(i -> {
-            input.set(i, r.nextDouble());
-        });
+        IntStream.range(0, SIZE).parallel().forEach(i ->
+            input.set(i, r.nextDouble()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
@@ -134,9 +132,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray result = new DoubleArray(257);
 
         Random r = new Random();
-        IntStream.range(0, SIZE_LARGE).parallel().forEach(i -> {
-            input.set(i, r.nextDouble());
-        });
+        IntStream.range(0, SIZE_LARGE).parallel().forEach(i ->
+            input.set(i, r.nextDouble()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
@@ -186,9 +183,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
-        IntStream.range(0, SIZE2).sequential().forEach(i -> {
-            input.set(i, r.nextDouble());
-        });
+        IntStream.range(0, SIZE2).sequential().forEach(i ->
+            input.set(i, r.nextDouble()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -211,9 +207,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray result = new DoubleArray(1);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input.set(i, r.nextDouble());
-        });
+        IntStream.range(0, SIZE).sequential().forEach(i ->
+            input.set(i, r.nextDouble()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -273,9 +268,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         result.init(1.0);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input.set(i, 1.0);
-        });
+        IntStream.range(0, SIZE).sequential().forEach(i ->
+            input.set(i, 1.0));
 
         input.set(10, r.nextDouble());
         input.set(12, r.nextDouble());
@@ -307,9 +301,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray input = new DoubleArray(SIZE);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, r.nextDouble());
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, r.nextDouble()));
 
         DoubleArray result = new DoubleArray(1);
 
@@ -344,9 +337,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray input = new DoubleArray(SIZE);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, r.nextDouble());
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, r.nextDouble()));
 
         DoubleArray result = new DoubleArray(1);
 
@@ -386,9 +378,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testRemoveOutliers() throws TornadoExecutionPlanException {
         DoubleArray input = new DoubleArray(SIZE);
 
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, 2.0);
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, 2.0));
 
         DoubleArray result = new DoubleArray(1);
 
@@ -660,9 +651,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
     public void testMaxReduction2() throws TornadoExecutionPlanException {
         DoubleArray input = new DoubleArray(SIZE);
         DoubleArray result = new DoubleArray(1);
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, idx);
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, idx));
 
         double neutral = Double.MIN_VALUE + 1;
         result.init(neutral);
@@ -696,9 +686,8 @@ public class TestReductionsDoubles extends TornadoTestBase {
         DoubleArray input = new DoubleArray(SIZE);
         DoubleArray result = new DoubleArray(1);
 
-        IntStream.range(0, SIZE).parallel().forEach(idx -> {
-            input.set(idx, 100);
-        });
+        IntStream.range(0, SIZE).parallel().forEach(idx ->
+            input.set(idx, 100));
 
         result.init(Double.MAX_VALUE);
 

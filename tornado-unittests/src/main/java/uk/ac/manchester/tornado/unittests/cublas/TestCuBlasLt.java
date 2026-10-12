@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.cublas;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -59,7 +59,7 @@ public class TestCuBlasLt extends TornadoTestBase {
     private static final int SIZE = 128;
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cuBlasLtMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -462,7 +462,7 @@ public class TestCuBlasLt extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
             for (int i = 0; i < n * n; i++) {
-                assertEquals("element " + i, 1.0f, c.get(i), 1e-3f);
+                assertEquals(1.0f, c.get(i), 1e-3f, "element " + i);
             }
 
             // The same plan from another thread, with a new value: a call that does not wait for
@@ -471,7 +471,7 @@ public class TestCuBlasLt extends TornadoTestBase {
             c.init(0.0f);
             LibraryStreamPerThread.executeOnAnotherThread(plan);
             for (int i = 0; i < n * n; i++) {
-                assertEquals("element " + i, 2.0f, c.get(i), 1e-3f);
+                assertEquals(2.0f, c.get(i), 1e-3f, "element " + i);
             }
         }
     }

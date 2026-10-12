@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -114,7 +114,7 @@ public class TestSignedBytes extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("byte " + input.get(i), input.get(i), output.get(i));
+            assertEquals(input.get(i), output.get(i), "byte " + input.get(i));
         }
     }
 
@@ -133,7 +133,7 @@ public class TestSignedBytes extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("byte " + input.get(i), input.get(i) < 0 ? 1 : 0, output.get(i));
+            assertEquals(input.get(i) < 0 ? 1 : 0, output.get(i), "byte " + input.get(i));
         }
     }
 
@@ -157,8 +157,8 @@ public class TestSignedBytes extends TornadoTestBase {
 
         for (int i = 0; i < SIZE; i++) {
             byte expected = (byte) input.get(i);
-            assertEquals("int " + input.get(i), expected, bytes.get(i));
-            assertEquals("int " + input.get(i), expected, widened.get(i));
+            assertEquals(expected, bytes.get(i), "int " + input.get(i));
+            assertEquals(expected, widened.get(i), "int " + input.get(i));
         }
     }
 
@@ -179,7 +179,7 @@ public class TestSignedBytes extends TornadoTestBase {
         for (int i = 0; i < SIZE; i++) {
             int group = i / LOCAL_SIZE;
             int mirror = group * LOCAL_SIZE + (LOCAL_SIZE - 1 - i % LOCAL_SIZE);
-            assertEquals("index " + i, input.get(mirror) < 0 ? 1 : 0, output.get(i));
+            assertEquals(input.get(mirror) < 0 ? 1 : 0, output.get(i), "index " + i);
         }
     }
 }

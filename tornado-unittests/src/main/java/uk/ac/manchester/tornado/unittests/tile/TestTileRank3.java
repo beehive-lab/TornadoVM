@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -68,7 +68,7 @@ public class TestTileRank3 extends TornadoTestBase {
     /** Row width of the per-batch scaling kernel: a tile extent, so a constant. */
     private static final int WIDTH = 64;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -156,8 +156,8 @@ public class TestTileRank3 extends TornadoTestBase {
                         expected += a.get(batchIndex * m * k + row * k + inner).getFloat32() //
                                 * b.get(batchIndex * k * n + inner * n + column).getFloat32();
                     }
-                    assertEquals("batch " + batchIndex + " (" + row + "," + column + ")", expected, //
-                            c.get(batchIndex * m * n + row * n + column), 0.05f);
+                    assertEquals(expected, c.get(batchIndex * m * n + row * n + column), //
+                            0.05f, "batch " + batchIndex + " (" + row + "," + column + ")");
                 }
             }
         }
@@ -203,7 +203,7 @@ public class TestTileRank3 extends TornadoTestBase {
         for (int batchIndex = 0; batchIndex < batch; batchIndex++) {
             for (int i = 0; i < rows * WIDTH; i++) {
                 int index = batchIndex * rows * WIDTH + i;
-                assertEquals("index " + index, in.get(index) * (batchIndex + 1), out.get(index), 1e-5);
+                assertEquals(in.get(index) * (batchIndex + 1), out.get(index), 1e-5, "index " + index);
             }
         }
     }

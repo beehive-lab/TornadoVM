@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -66,9 +66,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         result.init(neutral);
 
         Random r = new Random();
-        IntStream.range(0, input.getSize()).sequential().forEach(i -> {
-            input.set(i, r.nextFloat());
-        });
+        IntStream.range(0, input.getSize()).sequential().forEach(i ->
+            input.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -102,9 +101,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         result.init(neutral);
 
         Random r = new Random();
-        IntStream.range(0, input.getSize()).sequential().forEach(i -> {
-            input.set(i, r.nextFloat());
-        });
+        IntStream.range(0, input.getSize()).sequential().forEach(i ->
+            input.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -138,9 +136,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         result.init(neutral);
 
         Random r = new Random();
-        IntStream.range(0, input.getSize()).sequential().forEach(i -> {
-            input.set(i, r.nextFloat());
-        });
+        IntStream.range(0, input.getSize()).sequential().forEach(i ->
+            input.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -191,9 +188,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         FloatArray result = new FloatArray(1);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input.set(i, r.nextFloat());
-        });
+        IntStream.range(0, SIZE).sequential().forEach(i ->
+            input.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -265,9 +261,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         FloatArray result = new FloatArray(1);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input.set(i, r.nextFloat());
-        });
+        IntStream.range(0, SIZE).sequential().forEach(i ->
+            input.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -296,9 +291,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         result.init(neutral);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).sequential().forEach(i -> {
-            input.set(i, 1.0f);
-        });
+        IntStream.range(0, SIZE).sequential().forEach(i ->
+            input.set(i, 1.0f));
 
         input.set(10, r.nextFloat());
         input.set(12, r.nextFloat());
@@ -332,15 +326,14 @@ public class TestReductionsFloats extends TornadoTestBase {
     }
 
     // This is currently not supported
-    @Ignore
+    @Disabled
     public void testSumFloatsCondition() throws TornadoExecutionPlanException {
         FloatArray input = new FloatArray(SIZE2);
         FloatArray result = new FloatArray(1);
 
         Random r = new Random();
-        IntStream.range(0, SIZE2).sequential().forEach(i -> {
-            input.set(i, r.nextFloat());
-        });
+        IntStream.range(0, SIZE2).sequential().forEach(i ->
+            input.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -372,9 +365,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         FloatArray input = new FloatArray(PI_SIZE);
         FloatArray result = new FloatArray(1);
 
-        IntStream.range(0, PI_SIZE).sequential().forEach(i -> {
-            input.set(i, 0);
-        });
+        IntStream.range(0, PI_SIZE).sequential().forEach(i ->
+            input.set(i, 0));
 
         result.init(0.0f);
 
@@ -404,9 +396,8 @@ public class TestReductionsFloats extends TornadoTestBase {
     public void testMaxReduction() throws TornadoExecutionPlanException {
         FloatArray input = new FloatArray(SIZE);
         FloatArray result = new FloatArray(1);
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, idx);
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, idx));
 
         result.init(Float.MIN_VALUE);
 
@@ -439,9 +430,8 @@ public class TestReductionsFloats extends TornadoTestBase {
     public void testMaxReduction2() throws TornadoExecutionPlanException {
         FloatArray input = new FloatArray(SIZE);
         FloatArray result = new FloatArray(1);
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, idx);
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, idx));
 
         result.init(Float.MIN_VALUE);
 
@@ -474,9 +464,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         FloatArray input = new FloatArray(SIZE);
         FloatArray result = new FloatArray(1);
 
-        IntStream.range(0, SIZE).parallel().forEach(idx -> {
-            input.set(idx, idx);
-        });
+        IntStream.range(0, SIZE).parallel().forEach(idx ->
+            input.set(idx, idx));
 
         result.init(Float.MAX_VALUE);
 
@@ -507,9 +496,8 @@ public class TestReductionsFloats extends TornadoTestBase {
         FloatArray input = new FloatArray(SIZE);
         FloatArray result = new FloatArray(1);
 
-        IntStream.range(0, SIZE).parallel().forEach(idx -> {
-            input.set(idx, 100);
-        });
+        IntStream.range(0, SIZE).parallel().forEach(idx ->
+            input.set(idx, 100));
 
         result.init(Float.MAX_VALUE);
 
@@ -557,9 +545,8 @@ public class TestReductionsFloats extends TornadoTestBase {
                 .task("t0", TestReductionsFloats::integrationTornado, input, result, a, b) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
 
-        IntStream.range(0, size).sequential().forEach(idx -> {
-            input.set(idx, 0);
-        });
+        IntStream.range(0, size).sequential().forEach(idx ->
+            input.set(idx, 0));
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {

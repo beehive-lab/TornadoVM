@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * How to test?
@@ -134,9 +134,8 @@ public class TestArrayCopies extends TornadoTestBase {
         IntArray c = new IntArray(numElements);
 
         Random r = new Random();
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a.set(i, r.nextInt());
-        });
+        IntStream.range(0, numElements).sequential().forEach(i ->
+            a.set(i, r.nextInt()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -166,9 +165,8 @@ public class TestArrayCopies extends TornadoTestBase {
         FloatArray c = new FloatArray(numElements);
 
         Random r = new Random();
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a.set(i, r.nextFloat());
-        });
+        IntStream.range(0, numElements).sequential().forEach(i ->
+            a.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -198,9 +196,8 @@ public class TestArrayCopies extends TornadoTestBase {
         DoubleArray c = new DoubleArray(numElements);
 
         Random r = new Random();
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a.set(i, r.nextDouble());
-        });
+        IntStream.range(0, numElements).sequential().forEach(i ->
+            a.set(i, r.nextDouble()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -230,9 +227,8 @@ public class TestArrayCopies extends TornadoTestBase {
         LongArray c = new LongArray(numElements);
 
         Random r = new Random();
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a.set(i, r.nextLong());
-        });
+        IntStream.range(0, numElements).sequential().forEach(i ->
+            a.set(i, r.nextLong()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
@@ -262,9 +258,8 @@ public class TestArrayCopies extends TornadoTestBase {
         IntArray c = new IntArray(numElements);
 
         Random r = new Random();
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a.set(i, r.nextInt());
-        });
+        IntStream.range(0, numElements).sequential().forEach(i ->
+            a.set(i, r.nextInt()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //

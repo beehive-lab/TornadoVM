@@ -18,11 +18,11 @@
 
 package uk.ac.manchester.tornado.unittests.dynsize;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -57,9 +57,8 @@ public class ResizeTest extends TornadoTestBase {
 
     public FloatArray createArray(int numElements) {
         FloatArray a = new FloatArray(numElements);
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a.set(i, 10.0f);
-        });
+        IntStream.range(0, numElements).sequential().forEach(i ->
+            a.set(i, 10.0f));
         return a;
     }
 

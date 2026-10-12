@@ -18,7 +18,9 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -53,35 +55,37 @@ public class TestFails extends TornadoTestBase {
         }
     }
 
-    @Test(expected = TornadoFailureException.class)
+    @Test
     public void test01() {
-        // =============================================================================
-        // Call reset after warm-up. This is not legal in TornadoVM. WarmUP will
-        // initialize the heap and the code cache. If reset is called, it will clean all
-        // state.
-        // This is a different case of calling reset and then execute, because it will
-        // reset the internal state of variables if needed, meanwhile warmup skip many
-        // of those steps.
-        // =============================================================================
-        FloatArray x = new FloatArray(100);
-        FloatArray y = new FloatArray(100);
+        assertThrows(TornadoFailureException.class, () -> {
+            // =============================================================================
+            // Call reset after warm-up. This is not legal in TornadoVM. WarmUP will
+            // initialize the heap and the code cache. If reset is called, it will clean all
+            // state.
+            // This is a different case of calling reset and then execute, because it will
+            // reset the internal state of variables if needed, meanwhile warmup skip many
+            // of those steps.
+            // =============================================================================
+            FloatArray x = new FloatArray(100);
+            FloatArray y = new FloatArray(100);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .task("s0", (a, b) -> {
-                    for (int i = 0; i < 100; i++) {
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                    .task("s0", (a, b) -> {
+                        for (int i = 0; i < 100; i++) {
 
-                    }
-                }, x, y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+                        }
+                    }, x, y) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
 
-        // How to provoke the failure
-        executionPlanPlan.withPreCompilation().execute();
-        reset();
-        executionPlanPlan.execute();
+            // How to provoke the failure
+            executionPlanPlan.withPreCompilation().execute();
+            reset();
+            executionPlanPlan.execute();
+        });
     }
 
     private static void kernel(FloatArray a, FloatArray b) {
@@ -90,23 +94,25 @@ public class TestFails extends TornadoTestBase {
         }
     }
 
-    @Test(expected = TornadoRuntimeException.class)
+    @Test
     public void test02() {
-        // This test fails because the Java method's name to be accelerated corresponds
-        // to an OpenCL token.
+        assertThrows(TornadoRuntimeException.class, () -> {
+            // This test fails because the Java method's name to be accelerated corresponds
+            // to an OpenCL token.
 
-        FloatArray x = new FloatArray(100);
-        FloatArray y = new FloatArray(100);
+            FloatArray x = new FloatArray(100);
+            FloatArray y = new FloatArray(100);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
-                .task("s0", TestFails::kernel, x, y) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                    .task("s0", TestFails::kernel, x, y) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
-        // How to provoke the failure
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlanPlan.execute();
+            // How to provoke the failure
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlanPlan.execute();
+        });
     }
 
 }

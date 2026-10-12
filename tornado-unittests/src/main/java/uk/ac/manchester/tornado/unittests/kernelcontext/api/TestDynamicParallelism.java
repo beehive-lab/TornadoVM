@@ -23,11 +23,11 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -483,7 +483,7 @@ public class TestDynamicParallelism extends TornadoTestBase {
             for (Throwable t = e; t != null; t = t.getCause()) {
                 messages.append(t.getMessage()).append('\n');
             }
-            assertTrue(messages.toString(), messages.toString().contains("local-memory array"));
+            assertTrue(messages.toString().contains("local-memory array"), messages.toString());
             return;
         }
         fail("A local-memory array passed to KernelContext.launch must be rejected");

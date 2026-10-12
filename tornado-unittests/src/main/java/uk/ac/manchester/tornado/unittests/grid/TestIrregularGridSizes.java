@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.grid;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -104,7 +104,7 @@ public class TestIrregularGridSizes extends TornadoTestBase {
                 plan.execute();
             }
             for (int i = 0; i < n + guard; i++) {
-                assertEquals("n=" + n + " element " + i, i < n ? 1 : 0, counts.get(i));
+                assertEquals(i < n ? 1 : 0, counts.get(i), "n=" + n + " element " + i);
             }
         }
     }
@@ -128,7 +128,7 @@ public class TestIrregularGridSizes extends TornadoTestBase {
             }
             for (int i = 0; i < rows + guard; i++) {
                 for (int j = 0; j < stride; j++) {
-                    assertEquals(rows + "x" + cols + " element (" + i + ", " + j + ")", i < rows && j < cols ? 1 : 0, counts.get(i * stride + j));
+                    assertEquals(i < rows && j < cols ? 1 : 0, counts.get(i * stride + j), rows + "x" + cols + " element (" + i + ", " + j + ")");
                 }
             }
         }
@@ -157,7 +157,7 @@ public class TestIrregularGridSizes extends TornadoTestBase {
                 for (int i = 0; i < rows + guard; i++) {
                     for (int j = 0; j < rowStride; j++) {
                         int expected = k < planes && i < rows && j < cols ? 1 : 0;
-                        assertEquals(planes + "x" + rows + "x" + cols + " element (" + k + ", " + i + ", " + j + ")", expected, counts.get(k * planeStride + i * rowStride + j));
+                        assertEquals(expected, counts.get(k * planeStride + i * rowStride + j), planes + "x" + rows + "x" + cols + " element (" + k + ", " + i + ", " + j + ")");
                     }
                 }
             }

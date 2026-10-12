@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -68,7 +68,7 @@ public class TestTileAtomics extends TornadoTestBase {
 
     private static final int ROW_WIDTH = 64;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -200,11 +200,11 @@ public class TestTileAtomics extends TornadoTestBase {
                 expectedOr |= value;
                 expectedXor ^= value;
             }
-            assertEquals("min " + column, expectedMin, minimums.get(column));
-            assertEquals("max " + column, expectedMax, maximums.get(column));
-            assertEquals("and " + column, expectedAnd, ands.get(column));
-            assertEquals("or " + column, expectedOr, ors.get(column));
-            assertEquals("xor " + column, expectedXor, xors.get(column));
+            assertEquals(expectedMin, minimums.get(column), "min " + column);
+            assertEquals(expectedMax, maximums.get(column), "max " + column);
+            assertEquals(expectedAnd, ands.get(column), "and " + column);
+            assertEquals(expectedOr, ors.get(column), "or " + column);
+            assertEquals(expectedXor, xors.get(column), "xor " + column);
         }
     }
 
@@ -236,7 +236,7 @@ public class TestTileAtomics extends TornadoTestBase {
             for (int row = 0; row < rows; row++) {
                 expected -= in.get(row * ROW_WIDTH + column);
             }
-            assertEquals("column " + column, expected, accumulator.get(column), 1e-3);
+            assertEquals(expected, accumulator.get(column), 1e-3, "column " + column);
         }
     }
 
@@ -267,7 +267,7 @@ public class TestTileAtomics extends TornadoTestBase {
             }
             // 96 additions of values in [0, 1): the ordering is arbitrary, so the bound allows
             // for float summation in any order rather than a fixed one.
-            assertEquals("column " + column, expected, accumulator.get(column), 1e-3);
+            assertEquals(expected, accumulator.get(column), 1e-3, "column " + column);
         }
     }
 
@@ -297,7 +297,7 @@ public class TestTileAtomics extends TornadoTestBase {
             for (int block = 0; block < blocks; block++) {
                 expected += in.get(block * ROW_WIDTH + i);
             }
-            assertEquals("element " + i, expected, accumulator.get(i), 1e-3);
+            assertEquals(expected, accumulator.get(i), 1e-3, "element " + i);
         }
     }
 
@@ -329,7 +329,7 @@ public class TestTileAtomics extends TornadoTestBase {
                 for (int inner = 0; inner < size; inner++) {
                     expected += a.get(row * size + inner).getFloat32() * b.get(inner * size + column).getFloat32();
                 }
-                assertEquals("(" + row + "," + column + ")", expected, c.get(row * size + column), 0.05f);
+                assertEquals(expected, c.get(row * size + column), 0.05f, "(" + row + "," + column + ")");
             }
         }
     }

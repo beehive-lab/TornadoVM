@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.codegen;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -198,10 +198,10 @@ public class TestConstantFoldedIntrinsics extends TornadoTestBase {
                     }
                     String what = "inKind=" + inKind + " realOut=" + realOut + " line " + line + " element " + i;
                     if (realOut) {
-                        assertEquals(what, vr, out.get(line * n + i), 0.0f);
+                        assertEquals(vr, out.get(line * n + i), 0.0f, what);
                     } else {
-                        assertEquals(what, vr, out.get(2 * (line * n + i)), 0.0f);
-                        assertEquals(what, vi, out.get(2 * (line * n + i) + 1), 0.0f);
+                        assertEquals(vr, out.get(2 * (line * n + i)), 0.0f, what);
+                        assertEquals(vi, out.get(2 * (line * n + i) + 1), 0.0f, what);
                     }
                 }
             }

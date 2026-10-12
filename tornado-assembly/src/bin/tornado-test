@@ -510,8 +510,10 @@ __TORNADO_MEMORY_TESTS__ = [
 # ################################################################################################################
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT_MODULE__ = " junit/"
-__MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
+__MAIN_TORNADO_JUNIT_MODULE__ = " org.junit.platform.console/"
+__MAIN_TORNADO_JUNIT__ = "org.junit.platform.console.ConsoleLauncher "
+## The ConsoleLauncher module does not require the tests, so resolve their module explicitly
+__JUNIT_ADD_TESTS_MODULE__ = "--add-modules tornado.unittests "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __IGV_LAST_PHASE__ = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.printKernel=True "
@@ -850,14 +852,22 @@ def runTestTheWorld(options, args):
     return stats, failedTests, segFaults
 
 
+def junitSelector(test):
+    """ JUnit Platform ConsoleLauncher arguments that select a test class, or a single method given as Class#method """
+    if "#" in test:
+        return "execute --select-method " + test
+    return "execute --select-class " + test
+
+
 def runWithJUnit(args):
     """ Run the tests using JUNIT """
     if args.monitorClass:
         print("[WARNING] Monitor class is not supported when running with JUnit.")
 
     if (args.testClass != None):
-        command = appendTestRunnerClassToCmd(TORNADO_CMD, args)
-        command = command + " --params \"" + args.testClass + "\""
+        command = TORNADO_CMD + " --jvm \"" + __JUNIT_ADD_TESTS_MODULE__ + "\" "
+        command = appendTestRunnerClassToCmd(command, args)
+        command = command + " --params \"" + junitSelector(args.testClass) + "\""
         os.system(command)
     else:
         runTestTheWorldWithJunit(args)
@@ -865,23 +875,21 @@ def runWithJUnit(args):
 
 def runTestTheWorldWithJunit(args):
     for t in __TEST_THE_WORLD__:
-        command = TORNADO_CMD
+        jvmOptions = __JUNIT_ADD_TESTS_MODULE__
         if t.testParameters:
             for testParam in t.testParameters:
-                command += " " + testParam
+                jvmOptions += " " + testParam
 
-        command = " --jvm \"" + command + "\" "
+        command = TORNADO_CMD + " --jvm \"" + jvmOptions + "\" "
 
         command = appendTestRunnerClassToCmd(command, args)
-        command += " --params \"" + t.testName + "\""
         if t.monitorClass:
             print("[WARNING] Monitor class is not supported when running with JUnit.")
         if t.testMethods:
             for testMethod in t.testMethods:
-                print(
-                    "Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
+                os.system(command + " --params \"" + junitSelector(t.testName + "#" + testMethod) + "\"")
         else:
-            os.system(command)
+            os.system(command + " --params \"" + junitSelector(t.testName) + "\"")
 
 
 def parseArguments():
@@ -900,7 +908,7 @@ def parseArguments():
     parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False,
                         help="Print OpenCL kernel")
     parser.add_argument('--junit', action="store_true", dest="junit", default=False,
-                        help="Run within JUnitCore main class")
+                        help="Run with the JUnit Platform ConsoleLauncher")
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
     parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
                         help="Dump OpenCL Low-TIER GraalIR into IGV")

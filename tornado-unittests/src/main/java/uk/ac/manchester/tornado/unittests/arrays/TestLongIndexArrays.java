@@ -17,8 +17,8 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
@@ -29,7 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -478,7 +478,7 @@ public class TestLongIndexArrays extends TornadoTestBase {
 
         assertEquals(LARGE_SIZE, data.getSizeLong());
         for (long i = LARGE_BASE; i < LARGE_SIZE; i++) {
-            assertEquals("element " + i, (byte) ((i & 0x3F) + 1), data.get(i));
+            assertEquals((byte) ((i & 0x3F) + 1), data.get(i), "element " + i);
         }
         // Elements before the window are untouched
         assertEquals(0, data.get(LARGE_BASE - 1));
@@ -505,7 +505,7 @@ public class TestLongIndexArrays extends TornadoTestBase {
         run(taskGraph, 2 * WINDOW);
 
         for (long i = LARGE_BASE; i < LARGE_SIZE; i++) {
-            assertEquals("element " + i, (i - LARGE_BASE) + 1.0f, data.get(i), 0.0f);
+            assertEquals((i - LARGE_BASE) + 1.0f, data.get(i), 0.0f, "element " + i);
         }
     }
 }

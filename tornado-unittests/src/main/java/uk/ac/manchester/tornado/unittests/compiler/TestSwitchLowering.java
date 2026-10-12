@@ -18,9 +18,9 @@
 
 package uk.ac.manchester.tornado.unittests.compiler;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -147,7 +147,7 @@ public class TestSwitchLowering extends TornadoTestBase {
                 out.init(Float.NaN);
                 executionPlan.execute();
                 for (int i = 0; i < NUM_ELEMENTS; i++) {
-                    assertEquals("op " + op + ", element " + i, 10.0f + op, out.get(i), 0.0f);
+                    assertEquals(10.0f + op, out.get(i), 0.0f, "op " + op + ", element " + i);
                 }
             }
         }
@@ -171,7 +171,7 @@ public class TestSwitchLowering extends TornadoTestBase {
                 out.init(Float.NaN);
                 executionPlan.execute();
                 for (int i = 0; i < NUM_ELEMENTS; i++) {
-                    assertEquals("op " + op + ", element " + i, 2.0f * (op + 1), out.get(i), 0.0f);
+                    assertEquals(2.0f * (op + 1), out.get(i), 0.0f, "op " + op + ", element " + i);
                 }
             }
         }
@@ -194,7 +194,7 @@ public class TestSwitchLowering extends TornadoTestBase {
             selector.set(0, 99);
             executionPlan.execute();
             for (int i = 0; i < NUM_ELEMENTS; i++) {
-                assertEquals("element " + i, -1.0f, out.get(i), 0.0f);
+                assertEquals(-1.0f, out.get(i), 0.0f, "element " + i);
             }
         }
     }

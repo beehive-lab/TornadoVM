@@ -18,9 +18,14 @@
 
 package uk.ac.manchester.tornado.unittests.tools;
 
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.text.DateFormat;
@@ -31,10 +36,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Request;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.platform.engine.DiscoverySelector;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
+import org.junit.platform.launcher.listeners.TestExecutionSummary.Failure;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
@@ -63,12 +72,27 @@ public class TornadoHelper {
         return UNSUPPORTED_EXCEPTIONS.stream().anyMatch(type -> type.isInstance(exception));
     }
 
-    private static void printResult(Result result) {
+    /**
+     * Runs the selected tests on the JUnit Platform and returns the execution summary.
+     */
+    private static TestExecutionSummary run(DiscoverySelector selector) {
+        SummaryGeneratingListener listener = new SummaryGeneratingListener();
+        LauncherFactory.create().execute(LauncherDiscoveryRequestBuilder.request().selectors(selector).build(), listener);
+        return listener.getSummary();
+    }
+
+    private static String stackTrace(Throwable exception) {
+        StringWriter writer = new StringWriter();
+        exception.printStackTrace(new PrintWriter(writer));
+        return writer.toString();
+    }
+
+    private static void printResult(TestExecutionSummary result) {
         // Separate genuinely-failed tests from those skipped as unsupported on this configuration, so the terse
         // (non-verbose) runner does not report unsupported tests as failures (which reads as false regressions).
         long notSupported = result.getFailures().stream().filter(failure -> isUnsupported(failure.getException())).count();
-        long failed = result.getFailureCount() - notSupported;
-        System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", result.getRunCount(), failed, notSupported);
+        long failed = result.getFailures().size() - notSupported;
+        System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", result.getTestsStartedCount(), failed, notSupported);
     }
 
     private static void printResult(int success, int failed, int notSupported) {
@@ -97,7 +121,7 @@ public class TornadoHelper {
     }
 
     /**
-     * It returns the list of methods with the {@link @Test} annotation.
+     * It returns the list of methods with the {@link Test} annotation.
      */
     private static TestSuiteCollection getTestMethods(Class<?> klass) {
         Method[] methods = klass.getMethods();
@@ -108,9 +132,9 @@ public class TornadoHelper {
             boolean testEnabled = false;
             boolean ignoreTest = false;
             for (Annotation a : annotations) {
-                if (a instanceof org.junit.Ignore) {
+                if (a instanceof Disabled) {
                     ignoreTest = true;
-                } else if (a instanceof org.junit.Test) {
+                } else if (a instanceof Test) {
                     testEnabled = true;
                 } else if (a instanceof TornadoNotSupported) {
                     testEnabled = true;
@@ -166,10 +190,9 @@ public class TornadoHelper {
                 continue;
             }
 
-            Request request = Request.method(klass, m.getName());
-            Result result = new JUnitCore().run(request);
+            TestExecutionSummary result = run(selectMethod(klass, m.getName()));
 
-            if (result.wasSuccessful()) {
+            if (result.getFailures().isEmpty()) {
                 message = String.format("%20s", " ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
@@ -179,7 +202,7 @@ public class TornadoHelper {
                 // fail, it simply can't be run on current configuration
                 Optional<Failure> unsupportedConfiguration = result.getFailures().stream().filter(e -> (e.getException() instanceof UnsupportedConfigurationException)).findFirst();
                 if (unsupportedConfiguration.isPresent()) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION: " + unsupportedConfiguration.get().getMessage() + "] " + ColorsTerminal.RESET + "\n");
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION: " + unsupportedConfiguration.get().getException().getMessage() + "] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;
@@ -271,8 +294,9 @@ public class TornadoHelper {
                 bufferFile.append(message);
                 failedCounter++;
                 for (Failure failure : result.getFailures()) {
-                    bufferConsole.append("\t\t\\_[REASON] " + failure.getMessage() + "\n");
-                    bufferFile.append("\t\t\\_[REASON] " + failure.getMessage() + "\n\t" + failure.getTrace() + "\n" + failure.getDescription() + "\n" + failure.getException());
+                    bufferConsole.append("\t\t\\_[REASON] " + failure.getException().getMessage() + "\n");
+                    bufferFile.append("\t\t\\_[REASON] " + failure.getException().getMessage() + "\n\t" + stackTrace(failure.getException()) + "\n" + failure.getTestIdentifier()
+                            .getDisplayName() + "\n" + failure.getException());
                 }
             }
         }
@@ -293,15 +317,11 @@ public class TornadoHelper {
     }
 
     static void runTestClassAndMethod(String klassName, String methodName) throws ClassNotFoundException {
-        Request request = Request.method(Class.forName(klassName), methodName);
-        Result result = new JUnitCore().run(request);
-        printResult(result);
+        printResult(run(selectMethod(Class.forName(klassName), methodName)));
     }
 
     static void runTestClass(String klassName) throws ClassNotFoundException {
-        Request request = Request.aClass(Class.forName(klassName));
-        Result result = new JUnitCore().run(request);
-        printResult(result);
+        printResult(run(selectClass(Class.forName(klassName))));
     }
 
     static class TestSuiteCollection {

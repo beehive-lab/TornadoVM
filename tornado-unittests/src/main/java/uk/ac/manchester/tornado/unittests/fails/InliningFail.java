@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -31,7 +31,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test to check if the appropriate exception is thrown by TornadoVM
@@ -188,32 +189,33 @@ public class InliningFail extends TornadoTestBase {
         }
     }
 
-    @Test (expected = TornadoInliningException.class)
+    @Test
     public void testInliningError() throws TornadoExecutionPlanException {
-        final int numElements = 4096;
-        FloatArray a = new FloatArray(numElements);
-        FloatArray b = new FloatArray(numElements);
-        FloatArray c = new FloatArray(numElements);
+        assertThrows(TornadoInliningException.class, () -> {
+            final int numElements = 4096;
+            FloatArray a = new FloatArray(numElements);
+            FloatArray b = new FloatArray(numElements);
+            FloatArray c = new FloatArray(numElements);
 
-        IntStream.range(0, numElements).sequential().forEach(i -> {
-            a.set(i, (float) Math.random());
+            IntStream.range(0, numElements).sequential().forEach(i ->
+                a.set(i, (float) Math.random()));
+
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                    .task("t0", InliningFail::testInlinedFunction, a, b) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            try (TornadoExecutionPlan tornadoExecutor = new TornadoExecutionPlan(immutableTaskGraph)) {
+                tornadoExecutor.execute();
+            }
+
+            testInlinedFunction(a, c);
+
+            for (int i = 0; i < c.getSize(); i++) {
+                assertEquals(b.get(i), c.get(i), 0.01f);
+            }
         });
-
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                .task("t0", InliningFail::testInlinedFunction, a, b) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan tornadoExecutor = new TornadoExecutionPlan(immutableTaskGraph)) {
-            tornadoExecutor.execute();
-        }
-
-        testInlinedFunction(a, c);
-
-        for (int i = 0; i < c.getSize(); i++) {
-            assertEquals(b.get(i), c.get(i), 0.01f);
-        }
     }
 
 }

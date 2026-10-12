@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -70,7 +70,7 @@ public class TestTileDTypes extends TornadoTestBase {
 
     private static final int ROW_WIDTH = 64;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -209,7 +209,7 @@ public class TestTileDTypes extends TornadoTestBase {
                     expected += a.get(row * k + inner) * b.get(inner * n + column);
                 }
                 // Integer arithmetic: exact, no tolerance.
-                assertEquals("(" + row + "," + column + ")", expected, c.get(row * n + column));
+                assertEquals(expected, c.get(row * n + column), "(" + row + "," + column + ")");
             }
         }
     }
@@ -253,7 +253,7 @@ public class TestTileDTypes extends TornadoTestBase {
                 for (int inner = 0; inner < size; inner++) {
                     accumulated += a.get(row * size + inner) * b.get(inner * size + column);
                 }
-                assertEquals("(" + row + "," + column + ")", accumulated * scale, c.get(row * size + column), 1e-3f);
+                assertEquals(accumulated * scale, c.get(row * size + column), 1e-3f, "(" + row + "," + column + ")");
             }
         }
     }
@@ -275,7 +275,7 @@ public class TestTileDTypes extends TornadoTestBase {
         }
 
         for (int i = 0; i < rows * ROW_WIDTH; i++) {
-            assertEquals("element " + i, Math.abs(in.get(i)), out.get(i));
+            assertEquals(Math.abs(in.get(i)), out.get(i), "element " + i);
         }
     }
 
@@ -306,7 +306,7 @@ public class TestTileDTypes extends TornadoTestBase {
             }
             // Tight enough that an fp32 intermediate would not pass: 64 terms near 1.2 in fp32
             // carry roughly 1e-5 of error, three orders of magnitude above this bound.
-            assertEquals("row " + row, expected, out.get(row), 1e-9);
+            assertEquals(expected, out.get(row), 1e-9, "row " + row);
         }
     }
 
@@ -338,7 +338,7 @@ public class TestTileDTypes extends TornadoTestBase {
                 for (int inner = 0; inner < size; inner++) {
                     expected += a.get(row * size + inner) * b.get(inner * size + column);
                 }
-                assertEquals("(" + row + "," + column + ")", expected, c.get(row * size + column), 1e-12);
+                assertEquals(expected, c.get(row * size + column), 1e-12, "(" + row + "," + column + ")");
             }
         }
     }
@@ -388,13 +388,13 @@ public class TestTileDTypes extends TornadoTestBase {
             plan.withGridScheduler(grid).execute();
             // Hopper and newer: it ran, so the values must be right.
             for (int i = 0; i < rows * ROW_WIDTH; i++) {
-                assertEquals("element " + i, in.getE4M3(i) * 2.0f, out.get(i), 1e-3f);
+                assertEquals(in.getE4M3(i) * 2.0f, out.get(i), 1e-3f, "element " + i);
             }
         } catch (Exception e) {
             String message = String.valueOf(e.getMessage()) + String.valueOf(e.getCause());
-            assertTrue("an fp8 refusal must name fp8 and the capability it needs, got: " + message, //
-                    message.contains("FP8") && message.contains("9.0"));
-            assertTrue("the refusal should name the device's own capability, got: " + message, message.contains("device reports"));
+            assertTrue(message.contains("FP8") && message.contains("9.0"), //
+                    "an fp8 refusal must name fp8 and the capability it needs, got: " + message);
+            assertTrue(message.contains("device reports"), "the refusal should name the device's own capability, got: " + message);
         }
     }
 }
