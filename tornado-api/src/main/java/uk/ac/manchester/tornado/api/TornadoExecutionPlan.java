@@ -560,8 +560,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * {@code -Dtornado.enable.fma=false}.
      *
      * <p>
-     * Implemented for the CUDA backend. Elsewhere the call is accepted and has no effect, so check
-     * the backend before relying on it as a correctness guarantee.
+     * Implemented for the CUDA and Metal backends (on Metal it also disables fast math for the
+     * plan's kernels). Elsewhere the call is accepted and has no effect, so check the backend
+     * before relying on it as a correctness guarantee.
      *
      * @since 7.0.2
      * @return {@link TornadoExecutionPlan}

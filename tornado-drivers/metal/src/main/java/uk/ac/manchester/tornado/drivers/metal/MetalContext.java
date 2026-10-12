@@ -149,10 +149,10 @@ public class MetalContext implements MetalContextInterface {
     /** Bit 0: compile MSL with fast/relaxed math (MTLMathModeFast). Mirrored in {@link MetalObjects}. */
     private static final int METAL_COMPILE_FAST_MATH = 1;
 
-    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext) {
+    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext, boolean fastMath) {
         MetalProgram program = null;
 
-        int compileFlags = TornadoOptions.METAL_FAST_MATH ? METAL_COMPILE_FAST_MATH : 0;
+        int compileFlags = fastMath ? METAL_COMPILE_FAST_MATH : 0;
         try {
             program = new MetalProgram(metalCreateProgramWithSource(contextID, source, lengths, compileFlags), deviceContext);
         } catch (MetalException e) {

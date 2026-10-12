@@ -253,7 +253,9 @@ public class MetalCodeCache {
     public MetalInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {
         logger.info("Installing code for %s into code cache", entryPoint);
 
-        final MetalProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+        // Fast math rounds differently from the host, so a task that asked for strict floating point never gets it.
+        boolean fastMath = TornadoOptions.METAL_FAST_MATH && !meta.isStrictFloatingPoint();
+        final MetalProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length }, fastMath);
 
         if (METAL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDirectory();

@@ -174,8 +174,8 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     @Override
-    public MetalProgram createProgramWithSource(byte[] source, long[] lengths) {
-        return context.createProgramWithSource(source, lengths, this);
+    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, boolean fastMath) {
+        return context.createProgramWithSource(source, lengths, this, fastMath);
     }
 
     @Override

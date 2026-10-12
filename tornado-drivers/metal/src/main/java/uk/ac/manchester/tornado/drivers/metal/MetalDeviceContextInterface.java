@@ -79,7 +79,7 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
 
     long getDeviceId();
 
-    MetalProgram createProgramWithSource(byte[] source, long[] lengths);
+    MetalProgram createProgramWithSource(byte[] source, long[] lengths, boolean fastMath);
 
     MetalProgram createProgramWithBinary(byte[] binary, long[] lengths);
 
