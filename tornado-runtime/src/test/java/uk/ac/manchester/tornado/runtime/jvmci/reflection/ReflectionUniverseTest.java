@@ -20,14 +20,15 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.reflect.Method;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Pure-JVM (no-GPU) tests for {@link ReflectionUniverse}'s shared helpers: JVM type descriptors
@@ -60,9 +61,10 @@ public class ReflectionUniverseTest {
         }
     }
 
-    @Test(expected = ClassNotFoundException.class)
+    @Test
     public void unknownDescriptorThrows() throws Exception {
-        ReflectionUniverse.classForDescriptor("Q", getClass().getClassLoader());
+        assertThrows(ClassNotFoundException.class, () ->
+            ReflectionUniverse.classForDescriptor("Q", getClass().getClassLoader()));
     }
 
     @Test

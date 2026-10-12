@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.sort;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -113,10 +113,10 @@ public class TestBitonicSortHalfFloat extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("mismatch at index " + i, expected[i], data.get(i).getFloat32(), 0.001f);
+            assertEquals(expected[i], data.get(i).getFloat32(), 0.001f, "mismatch at index " + i);
         }
         for (int i = 0; i < SIZE - 1; i++) {
-            assertTrue("not sorted at index " + i, data.get(i).getFloat32() <= data.get(i + 1).getFloat32());
+            assertTrue(data.get(i).getFloat32() <= data.get(i + 1).getFloat32(), "not sorted at index " + i);
         }
     }
 

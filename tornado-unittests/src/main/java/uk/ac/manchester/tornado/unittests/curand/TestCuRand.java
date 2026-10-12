@@ -17,16 +17,16 @@
  */
 
 package uk.ac.manchester.tornado.unittests.curand;
-
 import static uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider.getTornadoRuntime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -36,6 +36,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.curand.CuRand;
 import uk.ac.manchester.tornado.curand.provider.CuRandLibraryProvider;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
@@ -52,7 +53,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
  */
 public class TestCuRand extends TornadoTestBase {
 
-    @Before
+    @BeforeEach
     public void curandMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -103,8 +104,8 @@ public class TestCuRand extends TornadoTestBase {
         double m = mean(output, 0, NUM_ELEMENTS);
         double s = stddev(output, 0, NUM_ELEMENTS, m);
         // 65536 standard normals: the sample mean has standard error 1/256, so 0.05 is ~13 sigma.
-        assertEquals("sample mean", 0.0, m, 0.05);
-        assertEquals("sample standard deviation", 1.0, s, 0.05);
+        assertEquals(0.0, m, 0.05, "sample mean");
+        assertEquals(1.0, s, 0.05, "sample standard deviation");
     }
 
     @Test
@@ -121,8 +122,8 @@ public class TestCuRand extends TornadoTestBase {
         }
 
         double m = mean(output, 0, NUM_ELEMENTS);
-        assertEquals("sample mean", 5.0, m, 0.10);
-        assertEquals("sample standard deviation", 2.0, stddev(output, 0, NUM_ELEMENTS, m), 0.10);
+        assertEquals(5.0, m, 0.10, "sample mean");
+        assertEquals(2.0, stddev(output, 0, NUM_ELEMENTS, m), 0.10, "sample standard deviation");
     }
 
     /**
@@ -145,10 +146,10 @@ public class TestCuRand extends TornadoTestBase {
         }
 
         for (int i = 0; i < half; i++) {
-            assertEquals("element " + i + " outside the slice must be untouched", -7.0f, output.get(i), 0.0f);
+            assertEquals(-7.0f, output.get(i), 0.0f, "element " + i + " outside the slice must be untouched");
         }
         double m = mean(output, half, NUM_ELEMENTS);
-        assertEquals("sample mean of the slice", 0.0, m, 0.05);
+        assertEquals(0.0, m, 0.05, "sample mean of the slice");
     }
 
     /** Successive executions must advance the sequence rather than repeat it. */
@@ -175,7 +176,7 @@ public class TestCuRand extends TornadoTestBase {
                     identical++;
                 }
             }
-            assertNotEquals("a second execution returned the same block of numbers", first.length, identical);
+            assertNotEquals(first.length, identical, "a second execution returned the same block of numbers");
         }
     }
 
@@ -194,9 +195,9 @@ public class TestCuRand extends TornadoTestBase {
 
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             float v = output.get(i);
-            assertTrue("uniform value out of (0,1]: " + v, v > 0.0f && v <= 1.0f);
+            assertTrue(v > 0.0f && v <= 1.0f, "uniform value out of (0,1]: " + v);
         }
-        assertEquals("sample mean", 0.5, mean(output, 0, NUM_ELEMENTS), 0.02);
+        assertEquals(0.5, mean(output, 0, NUM_ELEMENTS), 0.02, "sample mean");
     }
 
     @Test
@@ -216,6 +217,39 @@ public class TestCuRand extends TornadoTestBase {
         for (int i = 0; i < NUM_ELEMENTS; i++) {
             total += output.get(i);
         }
-        assertEquals("sample mean", 0.0, total / NUM_ELEMENTS, 0.05);
+        assertEquals(0.0, total / NUM_ELEMENTS, 0.05, "sample mean");
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuRAND call must follow the kernel before it on that thread's stream, not run on the stream
+     * of the thread that first ran the plan. The kernel slowly fills the output with -1, so a
+     * generation that does not wait for it is overwritten.
+     */
+    @Test
+    public void testGenerateFollowsKernelOnAnotherThread() throws Exception {
+        FloatArray output = new FloatArray(NUM_ELEMENTS);
+        FloatArray sentinel = new FloatArray(1);
+        sentinel.set(0, -1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, output, sentinel) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), output, sentinel, LibraryStreamPerThread.SPINS) //
+                .libraryTask("uniform", CuRand::generateUniform, output, 0, NUM_ELEMENTS) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < NUM_ELEMENTS; i++) {
+                float v = output.get(i);
+                assertTrue(v > 0.0f && v <= 1.0f, "element " + i + " out of (0,1]: " + v);
+            }
+            output.init(0.0f);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < NUM_ELEMENTS; i++) {
+                float v = output.get(i);
+                assertTrue(v > 0.0f && v <= 1.0f, "element " + i + " out of (0,1]: " + v);
+            }
+        }
     }
 }

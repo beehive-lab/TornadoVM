@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -81,7 +81,7 @@ public class TestGridStrideLoop extends TornadoTestBase {
         }
 
         for (int i = 0; i < DATA_SIZE; i++) {
-            assertEquals("element " + i + " should have been visited by a strided thread", i * 2, out.get(i));
+            assertEquals(i * 2, out.get(i), "element " + i + " should have been visited by a strided thread");
         }
     }
 

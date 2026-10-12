@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.cudf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,8 +31,8 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -87,7 +87,7 @@ public class TestCudfColumns extends TornadoTestBase {
 
     private static Path fixture;
 
-    @Before
+    @BeforeEach
     public void cudfMustBeAvailable() throws IOException {
         if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable() || !Cudf.isWriterAvailable() || !Cudf.isSortKeysAvailable()) {
             throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) with readParquetColumns is not built on this host");
@@ -168,20 +168,20 @@ public class TestCudfColumns extends TornadoTestBase {
         }
 
         for (int i = 0; i < ROWS; i++) {
-            assertEquals("id " + i, id(i), longs.get(i));
-            assertEquals("k " + i, i % 3, ints.get(i));
-            assertEquals("v " + i, 0.5 * i, doubles.get(i), 0.0);
-            assertEquals("ts " + i, 1_767_225_600_000_000L + 1_000_001L * i, longs.get(stride + i));
-            assertEquals("d validity " + i, dIsNull(i) ? 0 : 1, valid.get(3 * stride + i));
+            assertEquals(id(i), longs.get(i), "id " + i);
+            assertEquals(i % 3, ints.get(i), "k " + i);
+            assertEquals(0.5 * i, doubles.get(i), 0.0, "v " + i);
+            assertEquals(1_767_225_600_000_000L + 1_000_001L * i, longs.get(stride + i), "ts " + i);
+            assertEquals(dIsNull(i) ? 0 : 1, valid.get(3 * stride + i), "d validity " + i);
             if (!dIsNull(i)) {
-                assertEquals("d " + i, 20454 + i, ints.get(stride + i));
+                assertEquals(20454 + i, ints.get(stride + i), "d " + i);
             }
-            assertEquals("opt validity " + i, optIsNull(i) ? 0 : 1, valid.get(5 * stride + i));
+            assertEquals(optIsNull(i) ? 0 : 1, valid.get(5 * stride + i), "opt validity " + i);
             if (!optIsNull(i)) {
-                assertEquals("opt " + i, -7L * i, longs.get(2 * stride + i));
+                assertEquals(-7L * i, longs.get(2 * stride + i), "opt " + i);
             }
             for (int required : new int[] { 0, 1, 2, 4 }) {
-                assertEquals("a required column is valid everywhere: column " + required + " row " + i, 1, valid.get(required * stride + i));
+                assertEquals(1, valid.get(required * stride + i), "a required column is valid everywhere: column " + required + " row " + i);
             }
         }
     }
@@ -201,7 +201,7 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < 6; i++) {
-            assertEquals("row " + (4 + i) + " of the file", id(4 + i), longs.get(i));
+            assertEquals(id(4 + i), longs.get(i), "row " + (4 + i) + " of the file");
         }
     }
 
@@ -220,7 +220,7 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
             fail("a read of " + ROWS + " rows into a caller expecting " + (ROWS - 1) + " must not report success");
         } catch (Exception expected) {
-            assertTrue("the refusal should say why; got: " + causeChain(expected), causeChain(expected).contains("rows where the caller asked"));
+            assertTrue(causeChain(expected).contains("rows where the caller asked"), "the refusal should say why; got: " + causeChain(expected));
         }
     }
 
@@ -243,10 +243,10 @@ public class TestCudfColumns extends TornadoTestBase {
         for (int copy = 0; copy < 3; copy++) {
             for (int i = 0; i < ROWS; i++) {
                 int row = copy * ROWS + i;
-                assertEquals("id, copy " + copy + " row " + i, id(i), longs.get(row));
-                assertEquals("opt validity, copy " + copy + " row " + i, optIsNull(i) ? 0 : 1, valid.get(stride + row));
+                assertEquals(id(i), longs.get(row), "id, copy " + copy + " row " + i);
+                assertEquals(optIsNull(i) ? 0 : 1, valid.get(stride + row), "opt validity, copy " + copy + " row " + i);
                 if (!optIsNull(i)) {
-                    assertEquals("opt, copy " + copy + " row " + i, -7L * i, longs.get(stride + row));
+                    assertEquals(-7L * i, longs.get(stride + row), "opt, copy " + copy + " row " + i);
                 }
             }
         }
@@ -269,7 +269,7 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < ROWS; i++) {
-            assertEquals("row " + i, id(i), longs.get(i));
+            assertEquals(id(i), longs.get(i), "row " + i);
         }
     }
 
@@ -299,7 +299,7 @@ public class TestCudfColumns extends TornadoTestBase {
         }
         for (int c = 0; c < copies; c++) {
             for (int i = 0; i < ROWS; i++) {
-                assertEquals("copy " + c + " row " + i, id(i), longs.get(c * ROWS + i));
+                assertEquals(id(i), longs.get(c * ROWS + i), "copy " + c + " row " + i);
             }
         }
     }
@@ -355,17 +355,17 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < ROWS; i++) {
-            assertEquals("id " + i, id(i), backLongs.get(i));
-            assertEquals("k " + i, i % 3, back.get(i));
-            assertEquals("v " + i, 0.5 * i, backDoubles.get(i), 0.0);
-            assertEquals("ts " + i, 1_767_225_600_000_000L + 1_000_001L * i, backLongs.get(ROWS + i));
-            assertEquals("d validity " + i, dIsNull(i) ? 0 : 1, backValid.get(3 * ROWS + i));
+            assertEquals(id(i), backLongs.get(i), "id " + i);
+            assertEquals(i % 3, back.get(i), "k " + i);
+            assertEquals(0.5 * i, backDoubles.get(i), 0.0, "v " + i);
+            assertEquals(1_767_225_600_000_000L + 1_000_001L * i, backLongs.get(ROWS + i), "ts " + i);
+            assertEquals(dIsNull(i) ? 0 : 1, backValid.get(3 * ROWS + i), "d validity " + i);
             if (!dIsNull(i)) {
-                assertEquals("d " + i, 20454 + i, back.get(ROWS + i));
+                assertEquals(20454 + i, back.get(ROWS + i), "d " + i);
             }
-            assertEquals("opt validity " + i, optIsNull(i) ? 0 : 1, backValid.get(5 * ROWS + i));
+            assertEquals(optIsNull(i) ? 0 : 1, backValid.get(5 * ROWS + i), "opt validity " + i);
             if (!optIsNull(i)) {
-                assertEquals("opt " + i, -7L * i, backLongs.get(2 * ROWS + i));
+                assertEquals(-7L * i, backLongs.get(2 * ROWS + i), "opt " + i);
             }
         }
     }
@@ -408,10 +408,10 @@ public class TestCudfColumns extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
             plan.execute();
         }
-        assertEquals("survivors", kept, count.get(0));
+        assertEquals(kept, count.get(0), "survivors");
         for (int j = 0; j < kept; j++) {
-            assertEquals("id " + j, 3L * j, backIds.get(j));
-            assertEquals("value " + j, 0.75 * j, backValues.get(j), 0.0);
+            assertEquals(3L * j, backIds.get(j), "id " + j);
+            assertEquals(0.75 * j, backValues.get(j), 0.0, "value " + j);
         }
     }
 
@@ -458,13 +458,13 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < rows; i++) {
-            assertEquals("price " + i, price[i], backLongs.get(i));
+            assertEquals(price[i], backLongs.get(i), "price " + i);
             boolean present = i % 3 != 1;
-            assertEquals("amount valid " + i, present ? 1 : 0, backValid.get(rows + i));
+            assertEquals(present ? 1 : 0, backValid.get(rows + i), "amount valid " + i);
             if (present) {
-                assertEquals("amount " + i, amount[i], backLongs.get(rows + i));
+                assertEquals(amount[i], backLongs.get(rows + i), "amount " + i);
             }
-            assertEquals("ratio " + i, Double.doubleToRawLongBits((float) ratio[i]), Double.doubleToRawLongBits(backDoubles.get(i)));
+            assertEquals(Double.doubleToRawLongBits((float) ratio[i]), Double.doubleToRawLongBits(backDoubles.get(i)), "ratio " + i);
         }
     }
 
@@ -524,13 +524,13 @@ public class TestCudfColumns extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
             plan.execute();
             for (int j = 1; j < m; j++) {
-                assertTrue("ascending at " + j, sorted.get(j - 1) <= sorted.get(j));
+                assertTrue(sorted.get(j - 1) <= sorted.get(j), "ascending at " + j);
             }
             sortSize[0] = 0; // the set has not changed: probe the copy already sorted
             plan.execute();
         }
         for (int i = 0; i < n; i++) {
-            assertEquals("key " + i, host.contains(keys.get(i)) ? 1 : 0, found.get(i));
+            assertEquals(host.contains(keys.get(i)) ? 1 : 0, found.get(i), "key " + i);
         }
     }
 
@@ -564,7 +564,7 @@ public class TestCudfColumns extends TornadoTestBase {
                 }
                 java.util.Arrays.sort(expected, java.util.Comparator.<Integer> comparingLong(i -> keys.get(i)).thenComparingLong(i -> keys.get(stride + i)));
                 for (int i = 0; i < n; i++) {
-                    assertEquals("row " + i + " of " + n, (int) expected[i], order.get(i));
+                    assertEquals((int) expected[i], order.get(i), "row " + i + " of " + n);
                 }
             }
         }
@@ -601,14 +601,14 @@ public class TestCudfColumns extends TornadoTestBase {
         for (int i = 0; i < rows; i++) {
             int r = i % 10;
             String flag = new String(slice(chars, 0, offsets.get(i), offsets.get(i + 1)), java.nio.charset.StandardCharsets.UTF_8);
-            assertEquals("flag " + i, String.valueOf("RANRANRANR".charAt(r)), flag);
-            assertEquals("flag valid " + i, 1, valid.get(stride + i));
+            assertEquals(String.valueOf("RANRANRANR".charAt(r)), flag, "flag " + i);
+            assertEquals(1, valid.get(stride + i), "flag valid " + i);
             boolean present = names[r] != null;
-            assertEquals("name valid " + i, present ? 1 : 0, valid.get(2 * stride + i));
+            assertEquals(present ? 1 : 0, valid.get(2 * stride + i), "name valid " + i);
             if (present) {
                 int from = offsets.get(stride + 1 + i);
                 int to = offsets.get(stride + 1 + i + 1);
-                assertEquals("name " + i, names[r], new String(slice(chars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8));
+                assertEquals(names[r], new String(slice(chars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8), "name " + i);
             }
         }
     }
@@ -666,15 +666,15 @@ public class TestCudfColumns extends TornadoTestBase {
         for (int j = 0; j < kept; j++) {
             int read = readRows - 1 - 2 * j;
             int r = read % 10;
-            assertEquals("pos " + j, read, backPositions.get(j));
+            assertEquals(read, backPositions.get(j), "pos " + j);
             String flag = new String(slice(backChars, 0, backOffsets.get(j), backOffsets.get(j + 1)), java.nio.charset.StandardCharsets.UTF_8);
-            assertEquals("flag " + j, String.valueOf("RANRANRANR".charAt(r)), flag);
+            assertEquals(String.valueOf("RANRANRANR".charAt(r)), flag, "flag " + j);
             boolean present = names[r] != null;
-            assertEquals("name valid " + j, present ? 1 : 0, backValid.get(2 * kept + j));
+            assertEquals(present ? 1 : 0, backValid.get(2 * kept + j), "name valid " + j);
             if (present) {
                 int from = backOffsets.get(kept + 1 + j);
                 int to = backOffsets.get(kept + 1 + j + 1);
-                assertEquals("name " + j, names[r], new String(slice(backChars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8));
+                assertEquals(names[r], new String(slice(backChars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8), "name " + j);
             }
         }
     }
@@ -723,7 +723,7 @@ public class TestCudfColumns extends TornadoTestBase {
         assertEquals(expected.size(), groups.get(0));
         for (int g = 0; g < groups.get(0); g++) {
             double[] sums = expected.get(outKeys.get(g) + "/" + outKeys.get(stride + g));
-            assertTrue("group " + g, sums != null);
+            assertTrue(sums != null, "group " + g);
             assertEquals(sums[0], outSums.get(g), 0.0);
             assertEquals(sums[1], outSums.get(stride + g), 0.0);
         }
@@ -754,11 +754,11 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < rows; i++) {
-            assertEquals("f " + i, Double.doubleToRawLongBits(f[i]), Double.doubleToRawLongBits(doubles.get(i)));
+            assertEquals(Double.doubleToRawLongBits(f[i]), Double.doubleToRawLongBits(doubles.get(i)), "f " + i);
             boolean present = i % 3 != 1;
-            assertEquals("g valid " + i, present ? 1 : 0, valid.get(rows + i));
+            assertEquals(present ? 1 : 0, valid.get(rows + i), "g valid " + i);
             if (present) {
-                assertEquals("g " + i, Double.doubleToRawLongBits((double) (f[i] * 2)), Double.doubleToRawLongBits(doubles.get(rows + i)));
+                assertEquals(Double.doubleToRawLongBits((double) (f[i] * 2)), Double.doubleToRawLongBits(doubles.get(rows + i)), "g " + i);
             }
         }
     }
@@ -798,12 +798,12 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < ROWS; i++) {
-            assertEquals("k widened " + i, i % 3, longs.get(i));
-            assertEquals("k valid " + i, 1, valid.get(i));
-            assertEquals("absent long valid " + i, 0, valid.get(ROWS + i));
-            assertEquals("absent long " + i, 0, longs.get(ROWS + i));
-            assertEquals("id " + i, id(i), longs.get(2 * ROWS + i));
-            assertEquals("absent double valid " + i, 0, valid.get(3 * ROWS + i));
+            assertEquals(i % 3, longs.get(i), "k widened " + i);
+            assertEquals(1, valid.get(i), "k valid " + i);
+            assertEquals(0, valid.get(ROWS + i), "absent long valid " + i);
+            assertEquals(0, longs.get(ROWS + i), "absent long " + i);
+            assertEquals(id(i), longs.get(2 * ROWS + i), "id " + i);
+            assertEquals(0, valid.get(3 * ROWS + i), "absent double valid " + i);
         }
 
         Path floats = Files.createTempFile("tornado-cudf-floats", ".parquet");
@@ -821,7 +821,7 @@ public class TestCudfColumns extends TornadoTestBase {
         }
         float[] f = { 1.5f, -2.25f, 3.4028235e38f, 1.17549435e-38f, 0.0f, -0.0f, 16777217.0f, (float) (-1.0 / 3), 1e-3f, 42.0f };
         for (int i = 0; i < ROWS; i++) {
-            assertEquals("float widened " + i, Double.doubleToRawLongBits(f[i]), Double.doubleToRawLongBits(widened.get(i)));
+            assertEquals(Double.doubleToRawLongBits(f[i]), Double.doubleToRawLongBits(widened.get(i)), "float widened " + i);
         }
     }
 
@@ -841,7 +841,7 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
             fail("the read should have been refused (" + reason + ")");
         } catch (Exception expected) {
-            assertTrue("the refusal should say why; got: " + causeChain(expected), causeChain(expected).contains(reason));
+            assertTrue(causeChain(expected).contains(reason), "the refusal should say why; got: " + causeChain(expected));
         }
     }
 
@@ -864,7 +864,7 @@ public class TestCudfColumns extends TornadoTestBase {
             plan.execute();
         }
         for (int i = 0; i < ROWS; i++) {
-            assertEquals("row " + i, optIsNull(i) ? 0L : -7L * i, out.get(i));
+            assertEquals(optIsNull(i) ? 0L : -7L * i, out.get(i), "row " + i);
         }
     }
 
@@ -898,10 +898,10 @@ public class TestCudfColumns extends TornadoTestBase {
         int hits = 0;
         for (int i = 0; i < n; i++) {
             boolean expected = host.contains(keys.get(i));
-            assertEquals("key " + i, expected ? 1 : 0, mask.get(i));
+            assertEquals(expected ? 1 : 0, mask.get(i), "key " + i);
             hits += expected ? 1 : 0;
         }
-        assertTrue("the data should exercise both answers", hits > 0 && hits < n);
+        assertTrue(hits > 0 && hits < n, "the data should exercise both answers");
     }
 
     /** INT32 keys, with a generated kernel after the probe turning membership into a keep mask. */
@@ -930,7 +930,7 @@ public class TestCudfColumns extends TornadoTestBase {
         }
         for (int i = 0; i < n; i++) {
             int key = i % 100;
-            assertEquals("row " + i, key == 5 || key == 50 ? 0 : 1, keep.get(i));
+            assertEquals(key == 5 || key == 50 ? 0 : 1, keep.get(i), "row " + i);
         }
     }
 
@@ -964,7 +964,7 @@ public class TestCudfColumns extends TornadoTestBase {
                 sizes[1] = m;
                 plan.execute();
                 for (int i = 0; i < n; i++) {
-                    assertEquals("set of " + m + ", key " + 3L * i, i < m ? 1 : 0, mask.get(i));
+                    assertEquals(i < m ? 1 : 0, mask.get(i), "set of " + m + ", key " + 3L * i);
                 }
             }
         }

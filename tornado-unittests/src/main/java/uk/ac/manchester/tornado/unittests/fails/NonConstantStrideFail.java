@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -48,21 +50,23 @@ public class NonConstantStrideFail extends TornadoTestBase {
         }
     }
 
-    @Test(expected = TornadoBailoutRuntimeException.class)
+    @Test
     public void testNonConstantLoopStride() {
-        final int size = 64;
-        IntArray stepHolder = new IntArray(1);
-        stepHolder.set(0, 2);
-        IntArray a = new IntArray(size);
+        assertThrows(TornadoBailoutRuntimeException.class, () -> {
+            final int size = 64;
+            IntArray stepHolder = new IntArray(1);
+            stepHolder.set(0, 2);
+            IntArray a = new IntArray(size);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, stepHolder) //
-                .task("t0", NonConstantStrideFail::kernelWithNonConstantStride, stepHolder, a) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, stepHolder) //
+                    .task("t0", NonConstantStrideFail::kernelWithNonConstantStride, stepHolder, a) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.execute();
+        });
     }
 
 }

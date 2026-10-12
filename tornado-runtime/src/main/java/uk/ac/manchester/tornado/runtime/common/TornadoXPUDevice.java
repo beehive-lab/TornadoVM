@@ -299,4 +299,15 @@ public interface TornadoXPUDevice extends TornadoDevice {
         // no-op by default
     }
 
+    /**
+     * Abandon the capture of an execution graph after the execution failed inside the capture
+     * region: the device stream stops capturing and nothing recorded for the failed capture is
+     * kept, so later captures on this device are not affected.
+     *
+     * @param executionPlanId the execution plan that owns the device stream
+     */
+    default void abortExecutionGraphCapture(long executionPlanId) {
+        // no-op by default
+    }
+
 }

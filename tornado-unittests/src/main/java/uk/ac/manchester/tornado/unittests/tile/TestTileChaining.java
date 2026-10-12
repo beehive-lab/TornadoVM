@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -61,7 +61,7 @@ public class TestTileChaining extends TornadoTestBase {
 
     private static final int TILE = 64;
 
-    @Before
+    @BeforeEach
     public void tileAndCuBlasMustBeAvailable() {
         TileSupport.requireTileSupport();
         if (!CuBlasLibraryProvider.isAvailable()) {
@@ -268,7 +268,7 @@ public class TestTileChaining extends TornadoTestBase {
                     for (int j = 0; j < SIZE; j++) {
                         expectedProjection += matrix.get(i * SIZE + j) * (2.0f * 3.0f * input.get(j));
                     }
-                    assertEquals("replay " + replay + " element " + i, expectedProjection + 0.25f, result.get(i), 0.05f);
+                    assertEquals(expectedProjection + 0.25f, result.get(i), 0.05f, "replay " + replay + " element " + i);
                 }
             }
         }

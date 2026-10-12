@@ -17,13 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.cublas;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -36,6 +37,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cublas.CuBlasLt;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cublas.provider.CuBlasLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -57,7 +59,7 @@ public class TestCuBlasLt extends TornadoTestBase {
     private static final int SIZE = 128;
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cuBlasLtMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -428,6 +430,49 @@ public class TestCuBlasLt extends TornadoTestBase {
         reference(aF, bF, expected, biasF, Activation.RELU, SIZE);
         for (int i = 0; i < SIZE * SIZE; i++) {
             assertEquals(expected.get(i), matrixC.get(i).getFloat32(), 2e-2f * Math.max(0.1f, Math.abs(expected.get(i))));
+        }
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuBLASLt call must follow the kernel that produces its input on that thread's stream, not on the
+     * stream of the thread that first ran the plan.
+     */
+    @Test
+    public void testLtMatmulFollowsKernelOnAnotherThread() throws Exception {
+        final int n = SIZE;
+        FloatArray a = new FloatArray(n * n);
+        FloatArray identity = new FloatArray(n * n);
+        FloatArray c = new FloatArray(n * n);
+        for (int i = 0; i < n; i++) {
+            identity.set(i * n + i, 1.0f);
+        }
+        FloatArray value = new FloatArray(1);
+        value.set(0, 1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, identity) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), a, value, LibraryStreamPerThread.SPINS) //
+                .libraryTask("lt", CuBlasLt::ltMatmulFP32, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        n, n, n, 1.0f, identity, n, a, n, 0.0f, c, n) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < n * n; i++) {
+                assertEquals(1.0f, c.get(i), 1e-3f, "element " + i);
+            }
+
+            // The same plan from another thread, with a new value: a call that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0f);
+            c.init(0.0f);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < n * n; i++) {
+                assertEquals(2.0f, c.get(i), 1e-3f, "element " + i);
+            }
         }
     }
 }

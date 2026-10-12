@@ -23,12 +23,12 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -254,7 +254,7 @@ public class TestDynamicParallelismPipelines extends TornadoTestBase {
             plan.withGridScheduler(new GridScheduler("sort.qs", worker(1, 1))).execute();
         }
         for (int i = 0; i < n; i++) {
-            assertEquals("index " + i, expected[i], data.get(i));
+            assertEquals(expected[i], data.get(i), "index " + i);
         }
     }
 
@@ -337,7 +337,7 @@ public class TestDynamicParallelismPipelines extends TornadoTestBase {
                 c.init(-1);
                 plan.execute();
                 for (int i = 0; i < n; i++) {
-                    assertEquals("iteration " + iteration, (i + 5) * 3 + 1, c.get(i));
+                    assertEquals((i + 5) * 3 + 1, c.get(i), "iteration " + iteration);
                 }
             }
         }
@@ -392,14 +392,14 @@ public class TestDynamicParallelismPipelines extends TornadoTestBase {
                     for (int row = 0; row < n; row++) {
                         dot += matrix.get(col * n + row) * x.get(row);
                     }
-                    assertEquals("y[" + col + "] at iteration " + iteration, dot, y.get(col), 1e-3);
+                    assertEquals(dot, y.get(col), 1e-3, "y[" + col + "] at iteration " + iteration);
                     float scattered = out.get(col);
-                    assertEquals("out[" + col + "] at iteration " + iteration, y.get(col) > 0 ? 2 * y.get(col) : 0.0f, scattered, 1e-4f);
+                    assertEquals(y.get(col) > 0 ? 2 * y.get(col) : 0.0f, scattered, 1e-4f, "out[" + col + "] at iteration " + iteration);
                     if (y.get(col) > 0) {
                         expected += 2 * y.get(col);
                     }
                 }
-                assertEquals("sum at iteration " + iteration, expected, sum.get(0), 1e-2);
+                assertEquals(expected, sum.get(0), 1e-2, "sum at iteration " + iteration);
             }
         }
     }

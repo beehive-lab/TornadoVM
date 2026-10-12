@@ -20,16 +20,16 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.Signature;
@@ -69,18 +69,18 @@ public class ReflectionResolvedJavaMethodTest {
     @Test
     public void signatureIsMemoized() throws Exception {
         ResolvedJavaMethod method = compute();
-        assertSame("getSignature must be memoized", method.getSignature(), method.getSignature());
+        assertSame(method.getSignature(), method.getSignature(), "getSignature must be memoized");
     }
 
     @Test
     public void toStringIsCanonicalPluginMatchingForm() throws Exception {
         String s = compute().toString();
         // The vector/half-float NodePlugins match on this exact shape: holder.name(SimpleParamTypes).
-        assertTrue(s, s.startsWith("ReflectionMethod<"));
-        assertTrue(s, s.contains(ReflectionTestSample.class.getName() + ".compute("));
-        assertTrue(s, s.contains("int"));
-        assertTrue(s, s.contains("int[]"));
-        assertTrue(s, s.endsWith(")>"));
+        assertTrue(s.startsWith("ReflectionMethod<"), s);
+        assertTrue(s.contains(ReflectionTestSample.class.getName() + ".compute("), s);
+        assertTrue(s.contains("int"), s);
+        assertTrue(s.contains("int[]"), s);
+        assertTrue(s.endsWith(")>"), s);
     }
 
     @Test

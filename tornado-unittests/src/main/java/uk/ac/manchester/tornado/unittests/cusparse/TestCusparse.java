@@ -17,15 +17,16 @@
  */
 package uk.ac.manchester.tornado.unittests.cusparse;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -35,6 +36,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.cusparse.Cusparse;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cusparse.provider.CusparseLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -51,7 +53,7 @@ public class TestCusparse extends TornadoTestBase {
 
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cusparseMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -502,5 +504,51 @@ public class TestCusparse extends TornadoTestBase {
             plan.execute();
         }
         assertClose(rows * n, expected, c);
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuSPARSE call must follow the kernel that produces its input on that thread's stream, not on the
+     * stream of the thread that first ran the plan.
+     */
+    @Test
+    public void testSpMVFollowsKernelOnAnotherThread() throws Exception {
+        final int n = 4096;
+        IntArray rowOffsets = new IntArray(n + 1);
+        IntArray colInd = new IntArray(n);
+        FloatArray values = new FloatArray(n);
+        for (int i = 0; i < n; i++) {
+            rowOffsets.set(i, i);
+            colInd.set(i, i);
+            values.set(i, 1.0f);
+        }
+        rowOffsets.set(n, n);
+        FloatArray x = new FloatArray(n);
+        FloatArray y = new FloatArray(n);
+        FloatArray value = new FloatArray(1);
+        value.set(0, 1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, rowOffsets, colInd, values, x) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), x, value, LibraryStreamPerThread.SPINS) //
+                .libraryTask("spmv", Cusparse::cusparseSpMV, n, n, n, rowOffsets, colInd, values, x, y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < n; i++) {
+                assertEquals(1.0f, y.get(i), 1e-3f, "element " + i);
+            }
+
+            // The same plan from another thread, with a new value: a call that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0f);
+            y.init(0.0f);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < n; i++) {
+                assertEquals(2.0f, y.get(i), 1e-3f, "element " + i);
+            }
+        }
     }
 }

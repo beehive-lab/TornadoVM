@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -45,7 +45,7 @@ public class TestTileFP8Arithmetic extends TornadoTestBase {
     private static final int SIZE = 32;
     private static final int OPERATIONS = 10;
 
-    @Before
+    @BeforeEach
     public void requireTileSupport() {
         TileSupport.requireTileSupport();
     }
@@ -183,18 +183,18 @@ public class TestTileFP8Arithmetic extends TornadoTestBase {
                     float[] expected = { x + y, x - y, x * y, x / y, Math.max(x, y), Math.min(x, y),
                             (float) Math.exp(x), x * round(1.25f, e5m2), Math.fma(x, y, y), sum };
                     for (int op = 0; op < OPERATIONS; op++) {
-                        assertEquals("operation " + op + " element " + i,
-                                round(expected[op], e5m2), decode(out.get(op * SIZE + i), e5m2), 0.0f);
+                        assertEquals(round(expected[op], e5m2),
+                                decode(out.get(op * SIZE + i), e5m2), 0.0f, "operation " + op + " element " + i);
                     }
                     float acc = x;
                     for (int k = 0; k < count; k++) {
                         acc = round(acc + y, e5m2);
                     }
-                    assertEquals("loop count " + count + " element " + i, acc, chained.get(i), 0.0f);
+                    assertEquals(acc, chained.get(i), 0.0f, "loop count " + count + " element " + i);
                 }
-                assertEquals("sum", round(sum, e5m2), reduced.get(0), 0.0f);
-                assertEquals("max", max, reduced.get(1), 0.0f);
-                assertEquals("min", min, reduced.get(2), 0.0f);
+                assertEquals(round(sum, e5m2), reduced.get(0), 0.0f, "sum");
+                assertEquals(max, reduced.get(1), 0.0f, "max");
+                assertEquals(min, reduced.get(2), 0.0f, "min");
             }
         }
     }

@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -53,21 +55,23 @@ public class DynamicArrayFail extends TornadoTestBase {
         }
     }
 
-    @Test(expected = TornadoInternalError.class)
+    @Test
     public void testDynamicSizedArrayAllocation() {
-        final int size = 64;
-        IntArray sizes = new IntArray(1);
-        sizes.set(0, 8);
-        IntArray out = new IntArray(size);
+        assertThrows(TornadoInternalError.class, () -> {
+            final int size = 64;
+            IntArray sizes = new IntArray(1);
+            sizes.set(0, 8);
+            IntArray out = new IntArray(size);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, sizes) //
-                .task("t0", DynamicArrayFail::kernelWithDynamicSizedArray, sizes, out) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .transferToDevice(DataTransferMode.FIRST_EXECUTION, sizes) //
+                    .task("t0", DynamicArrayFail::kernelWithDynamicSizedArray, sizes, out) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.execute();
+        });
     }
 
 }

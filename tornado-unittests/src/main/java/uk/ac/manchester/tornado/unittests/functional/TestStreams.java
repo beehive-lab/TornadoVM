@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.functional;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class TestStreams {
 

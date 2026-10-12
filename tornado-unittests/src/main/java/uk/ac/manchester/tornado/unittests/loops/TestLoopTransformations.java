@@ -18,12 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.loops;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -81,13 +81,11 @@ public class TestLoopTransformations extends TornadoTestBase {
 
         Random r = new Random();
 
-        IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA.set(idx, r.nextFloat());
-        });
+        IntStream.range(0, size * size).parallel().forEach(idx ->
+            matrixA.set(idx, r.nextFloat()));
 
-        IntStream.range(0, size).parallel().forEach(idx -> {
-            matrixB.set(idx, r.nextFloat());
-        });
+        IntStream.range(0, size).parallel().forEach(idx ->
+            matrixB.set(idx, r.nextFloat()));
 
         TornadoRuntimeProvider.setProperty("tornado.experimental.partial.unroll", "True");
 
@@ -120,13 +118,11 @@ public class TestLoopTransformations extends TornadoTestBase {
 
         Random r = new Random();
 
-        IntStream.range(0, size * size).parallel().forEach(idx -> {
-            matrixA.set(idx, r.nextFloat());
-        });
+        IntStream.range(0, size * size).parallel().forEach(idx ->
+            matrixA.set(idx, r.nextFloat()));
 
-        IntStream.range(0, size).parallel().forEach(idx -> {
-            matrixB.set(idx, r.nextFloat());
-        });
+        IntStream.range(0, size).parallel().forEach(idx ->
+            matrixB.set(idx, r.nextFloat()));
 
         TornadoRuntimeProvider.setProperty("tornado.experimental.partial.unroll", "True");
 

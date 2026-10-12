@@ -23,8 +23,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.graal.lir;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import tornado.graal.compiler.lir.LIRInstruction;
 import tornado.graal.compiler.lir.Variable;
@@ -77,7 +77,7 @@ public class CUDAGlobalLoadBatchingInvariantsTest {
             check(in, out);
         }
         // A generator that never triggers the pass would make every invariant vacuous.
-        assertTrue("generator never produced a batchable program", reordered > PROGRAMS / 20);
+        assertTrue(reordered > PROGRAMS / 20, "generator never produced a batchable program");
     }
 
     /** Runs every invariant, reporting the offending program when one fails. */
@@ -85,13 +85,13 @@ public class CUDAGlobalLoadBatchingInvariantsTest {
         String where = "\nin:  " + render(in) + "\nout: " + render(out);
 
         // 1. Nothing is lost, added or duplicated.
-        assertEquals("instruction multiset changed" + where, identityCounts(in), identityCounts(out));
+        assertEquals(identityCounts(in), identityCounts(out), "instruction multiset changed" + where);
 
         // 2. Everything that is not a sinkable store keeps its order.
-        assertEquals("non-store order changed" + where, filter(in, false), filter(out, false));
+        assertEquals(filter(in, false), filter(out, false), "non-store order changed" + where);
 
         // 3. The sinkable stores keep their order among themselves.
-        assertEquals("store order changed" + where, filter(in, true), filter(out, true));
+        assertEquals(filter(in, true), filter(out, true), "store order changed" + where);
 
         // 4. Nothing crosses an instruction the pass does not model: for every such
         // instruction, the set of instructions ahead of it is unchanged. This is what
@@ -100,7 +100,7 @@ public class CUDAGlobalLoadBatchingInvariantsTest {
             if (isEligible(op)) {
                 continue;
             }
-            assertEquals("an instruction crossed " + op + where, identityCounts(prefixBefore(in, op)), identityCounts(prefixBefore(out, op)));
+            assertEquals(identityCounts(prefixBefore(in, op)), identityCounts(prefixBefore(out, op)), "an instruction crossed " + op + where);
         }
 
         // 5. No instruction that jumped ahead of a store defines a value that store reads.
@@ -115,7 +115,7 @@ public class CUDAGlobalLoadBatchingInvariantsTest {
                 boolean jumpedAhead = inPos.get(other) > inPos.get(op) && outPos.get(other) < outPos.get(op);
                 if (jumpedAhead) {
                     Value defined = definedValue(other);
-                    assertTrue("hoisting " + other + " clobbers an operand of " + store + where, defined == null || !usedValues(store).contains(defined));
+                    assertTrue(defined == null || !usedValues(store).contains(defined), "hoisting " + other + " clobbers an operand of " + store + where);
                 }
             }
         }

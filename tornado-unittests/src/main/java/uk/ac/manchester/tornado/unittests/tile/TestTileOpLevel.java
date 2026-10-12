@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -113,7 +113,7 @@ public class TestTileOpLevel extends TornadoTestBase {
     /** Relative tolerance for fp8 e4m3: three mantissa bits. */
     private static final double FP8_TOL = 1.5e-1;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -181,7 +181,7 @@ public class TestTileOpLevel extends TornadoTestBase {
      */
     private static void assertClose(String what, double expected, double actual, double tolerance) {
         double magnitude = Math.max(1.0, Math.abs(expected));
-        assertEquals(what, expected, actual, tolerance * magnitude);
+        assertEquals(expected, actual, tolerance * magnitude, what);
     }
 
     // -------------------------------------------------------------------------------------
@@ -1733,7 +1733,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("bitwiseAnd at " + i, x & y, out.get(i));
+            assertEquals(x & y, out.get(i), "bitwiseAnd at " + i);
         }
     }
 
@@ -1749,7 +1749,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("bitwiseOr at " + i, x | y, out.get(i));
+            assertEquals(x | y, out.get(i), "bitwiseOr at " + i);
         }
     }
 
@@ -1765,7 +1765,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("bitwiseXor at " + i, x ^ y, out.get(i));
+            assertEquals(x ^ y, out.get(i), "bitwiseXor at " + i);
         }
     }
 
@@ -1779,7 +1779,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < ELEMENTS; i++) {
             int x = in.get(i);
-            assertEquals("bitwiseNot at " + i, ~x, out.get(i));
+            assertEquals(~x, out.get(i), "bitwiseNot at " + i);
         }
     }
 
@@ -1795,7 +1795,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("shiftLeft at " + i, x << y, out.get(i));
+            assertEquals(x << y, out.get(i), "shiftLeft at " + i);
         }
     }
 
@@ -1811,7 +1811,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("shiftRight at " + i, x >> y, out.get(i));
+            assertEquals(x >> y, out.get(i), "shiftRight at " + i);
         }
     }
 
@@ -1827,8 +1827,8 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("mulhi at " + i, //
-                    (int) ((Integer.toUnsignedLong(x) * Integer.toUnsignedLong(y)) >>> 32), out.get(i));
+            assertEquals((int) ((Integer.toUnsignedLong(x) * Integer.toUnsignedLong(y)) >>> 32), //
+                    out.get(i), "mulhi at " + i);
         }
     }
 
@@ -1844,7 +1844,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("floorDiv at " + i, (int) Math.floor((double) x / (double) y), out.get(i));
+            assertEquals((int) Math.floor((double) x / (double) y), out.get(i), "floorDiv at " + i);
         }
     }
 
@@ -1860,7 +1860,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             int x = a.get(i);
             int y = b.get(i);
-            assertEquals("ceilDiv at " + i, (int) Math.ceil((double) x / (double) y), out.get(i));
+            assertEquals((int) Math.ceil((double) x / (double) y), out.get(i), "ceilDiv at " + i);
         }
     }
 
@@ -1876,7 +1876,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = a.get(i);
             float y = b.get(i);
-            assertEquals("lessThan at " + i, (x < y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x < y) ? 1.0f : 0.0f, out.get(i), 0.0f, "lessThan at " + i);
         }
     }
 
@@ -1892,7 +1892,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = a.get(i);
             float y = b.get(i);
-            assertEquals("lessOrEqual at " + i, (x <= y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x <= y) ? 1.0f : 0.0f, out.get(i), 0.0f, "lessOrEqual at " + i);
         }
     }
 
@@ -1908,7 +1908,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = a.get(i);
             float y = b.get(i);
-            assertEquals("greaterThan at " + i, (x > y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x > y) ? 1.0f : 0.0f, out.get(i), 0.0f, "greaterThan at " + i);
         }
     }
 
@@ -1924,7 +1924,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = a.get(i);
             float y = b.get(i);
-            assertEquals("greaterOrEqual at " + i, (x >= y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x >= y) ? 1.0f : 0.0f, out.get(i), 0.0f, "greaterOrEqual at " + i);
         }
     }
 
@@ -1940,7 +1940,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = a.get(i);
             float y = b.get(i);
-            assertEquals("equalTo at " + i, (x == y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x == y) ? 1.0f : 0.0f, out.get(i), 0.0f, "equalTo at " + i);
         }
     }
 
@@ -1956,7 +1956,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = a.get(i);
             float y = b.get(i);
-            assertEquals("notEqualTo at " + i, (x != y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x != y) ? 1.0f : 0.0f, out.get(i), 0.0f, "notEqualTo at " + i);
         }
     }
 
@@ -1971,7 +1971,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
             float y = 0.5f;
-            assertEquals("lessThan scalar at " + i, (x < y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x < y) ? 1.0f : 0.0f, out.get(i), 0.0f, "lessThan scalar at " + i);
         }
     }
 
@@ -1986,7 +1986,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
             float y = 0.5f;
-            assertEquals("lessOrEqual scalar at " + i, (x <= y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x <= y) ? 1.0f : 0.0f, out.get(i), 0.0f, "lessOrEqual scalar at " + i);
         }
     }
 
@@ -2001,7 +2001,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
             float y = 0.5f;
-            assertEquals("greaterThan scalar at " + i, (x > y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x > y) ? 1.0f : 0.0f, out.get(i), 0.0f, "greaterThan scalar at " + i);
         }
     }
 
@@ -2016,7 +2016,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
             float y = 0.5f;
-            assertEquals("greaterOrEqual scalar at " + i, (x >= y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x >= y) ? 1.0f : 0.0f, out.get(i), 0.0f, "greaterOrEqual scalar at " + i);
         }
     }
 
@@ -2031,7 +2031,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
             float y = 0.5f;
-            assertEquals("equalTo scalar at " + i, (x == y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x == y) ? 1.0f : 0.0f, out.get(i), 0.0f, "equalTo scalar at " + i);
         }
     }
 
@@ -2046,7 +2046,7 @@ public class TestTileOpLevel extends TornadoTestBase {
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
             float y = 0.5f;
-            assertEquals("notEqualTo scalar at " + i, (x != y) ? 1.0f : 0.0f, out.get(i), 0.0f);
+            assertEquals((x != y) ? 1.0f : 0.0f, out.get(i), 0.0f, "notEqualTo scalar at " + i);
         }
     }
 
@@ -2136,7 +2136,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 int x = in.get(row * COLUMNS + column);
                 acc = acc & x;
             }
-            assertEquals("reduceBitAnd of row " + row, acc, out.get(row));
+            assertEquals(acc, out.get(row), "reduceBitAnd of row " + row);
         }
     }
 
@@ -2154,7 +2154,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 int x = in.get(row * COLUMNS + column);
                 acc = acc | x;
             }
-            assertEquals("reduceBitOr of row " + row, acc, out.get(row));
+            assertEquals(acc, out.get(row), "reduceBitOr of row " + row);
         }
     }
 
@@ -2172,7 +2172,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 int x = in.get(row * COLUMNS + column);
                 acc = acc ^ x;
             }
-            assertEquals("reduceBitXor of row " + row, acc, out.get(row));
+            assertEquals(acc, out.get(row), "reduceBitXor of row " + row);
         }
     }
 
@@ -2221,9 +2221,9 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opCreation, new TileContext(), zero, filled, one, ROWS, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, zero, filled, one));
         for (int i = 0; i < ELEMENTS; i++) {
-            assertEquals("zeros at " + i, 0.0f, zero.get(i), 0.0f);
-            assertEquals("full at " + i, 2.5f, filled.get(i), 0.0f);
-            assertEquals("ones at " + i, 1.0f, one.get(i), 0.0f);
+            assertEquals(0.0f, zero.get(i), 0.0f, "zeros at " + i);
+            assertEquals(2.5f, filled.get(i), 0.0f, "full at " + i);
+            assertEquals(1.0f, one.get(i), 0.0f, "ones at " + i);
         }
     }
 
@@ -2235,10 +2235,10 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opIota, new TileContext(), rowIndex, columnIndex, ROWS, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, rowIndex, columnIndex));
         for (int row = 0; row < ROWS; row++) {
-            assertEquals("iota row " + row, row, rowIndex.get(row));
+            assertEquals(row, rowIndex.get(row), "iota row " + row);
         }
         for (int column = 0; column < COLUMNS; column++) {
-            assertEquals("iota column " + column, column, columnIndex.get(column));
+            assertEquals(column, columnIndex.get(column), "iota column " + column);
         }
     }
 
@@ -2280,7 +2280,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opSelect, new TileContext(), a, b, out, ROWS, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < ELEMENTS; i++) {
-            assertEquals("select at " + i, Math.max(a.get(i), b.get(i)), out.get(i), 0.0f);
+            assertEquals(Math.max(a.get(i), b.get(i)), out.get(i), 0.0f, "select at " + i);
         }
     }
 
@@ -2296,9 +2296,9 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, both, either, negated));
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
-            assertEquals("logicalAnd at " + i, (x > 0.0f && x < 1.0f) ? 1.0f : 0.0f, both.get(i), 0.0f);
-            assertEquals("logicalOr at " + i, (x > 0.0f || x < 1.0f) ? 1.0f : 0.0f, either.get(i), 0.0f);
-            assertEquals("logicalNot at " + i, (x > 0.0f) ? 0.0f : 1.0f, negated.get(i), 0.0f);
+            assertEquals((x > 0.0f && x < 1.0f) ? 1.0f : 0.0f, both.get(i), 0.0f, "logicalAnd at " + i);
+            assertEquals((x > 0.0f || x < 1.0f) ? 1.0f : 0.0f, either.get(i), 0.0f, "logicalOr at " + i);
+            assertEquals((x > 0.0f) ? 0.0f : 1.0f, negated.get(i), 0.0f, "logicalNot at " + i);
         }
     }
 
@@ -2324,8 +2324,8 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, nans, infinites));
         for (int i = 0; i < ELEMENTS; i++) {
             float x = in.get(i);
-            assertEquals("isNaN at " + i, Float.isNaN(x) ? 1.0f : 0.0f, nans.get(i), 0.0f);
-            assertEquals("isInfinite at " + i, Float.isInfinite(x) ? 1.0f : 0.0f, infinites.get(i), 0.0f);
+            assertEquals(Float.isNaN(x) ? 1.0f : 0.0f, nans.get(i), 0.0f, "isNaN at " + i);
+            assertEquals(Float.isInfinite(x) ? 1.0f : 0.0f, infinites.get(i), 0.0f, "isInfinite at " + i);
         }
     }
 
@@ -2361,8 +2361,8 @@ public class TestTileOpLevel extends TornadoTestBase {
                 expectedAll = expectedAll && positive;
                 expectedAny = expectedAny || positive;
             }
-            assertEquals("allOf of row " + row, expectedAll ? 1.0f : 0.0f, all.get(row), 0.0f);
-            assertEquals("anyOf of row " + row, expectedAny ? 1.0f : 0.0f, any.get(row), 0.0f);
+            assertEquals(expectedAll ? 1.0f : 0.0f, all.get(row), 0.0f, "allOf of row " + row);
+            assertEquals(expectedAny ? 1.0f : 0.0f, any.get(row), 0.0f, "anyOf of row " + row);
         }
     }
 
@@ -2406,8 +2406,8 @@ public class TestTileOpLevel extends TornadoTestBase {
                 // The point of the case: matmul infers fp16 from its operands, where mma would
                 // have taken fp32 from the accumulator. Rounding the result to fp16 has to be a
                 // no-op, or the inferred type was wider than it should be.
-                assertEquals("matmul result is not fp16-representable at (" + row + ", " + column + ")", //
-                        actual, new HalfFloat(actual).getFloat32(), 0.0f);
+                assertEquals(actual, //
+                        new HalfFloat(actual).getFloat32(), 0.0f, "matmul result is not fp16-representable at (" + row + ", " + column + ")");
             }
         }
     }
@@ -2442,8 +2442,8 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                assertEquals("transpose at (" + row + ", " + column + ")", //
-                        in.get(row * COLUMNS + column), out.get(column * ROWS + row), 0.0f);
+                assertEquals(in.get(row * COLUMNS + column), //
+                        out.get(column * ROWS + row), 0.0f, "transpose at (" + row + ", " + column + ")");
             }
         }
     }
@@ -2458,8 +2458,8 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                assertEquals("broadcast at (" + row + ", " + column + ")", //
-                        in.get(column), out.get(row * COLUMNS + column), 0.0f);
+                assertEquals(in.get(column), //
+                        out.get(row * COLUMNS + column), 0.0f, "broadcast at (" + row + ", " + column + ")");
             }
         }
     }
@@ -2474,7 +2474,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         // Row-major in both shapes, so linear order is preserved element for element.
         for (int i = 0; i < ELEMENTS; i++) {
-            assertEquals("reshape at " + i, in.get(i), out.get(i), 0.0f);
+            assertEquals(in.get(i), out.get(i), 0.0f, "reshape at " + i);
         }
     }
 
@@ -2488,8 +2488,8 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < HALF; column++) {
-                assertEquals("extract at (" + row + ", " + column + ")", //
-                        in.get(row * COLUMNS + HALF + column), out.get(row * HALF + column), 0.0f);
+                assertEquals(in.get(row * COLUMNS + HALF + column), //
+                        out.get(row * HALF + column), 0.0f, "extract at (" + row + ", " + column + ")");
             }
         }
     }
@@ -2505,10 +2505,10 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < HALF; column++) {
-                assertEquals("concat left at (" + row + ", " + column + ")", //
-                        a.get(row * HALF + column), out.get(row * COLUMNS + column), 0.0f);
-                assertEquals("concat right at (" + row + ", " + column + ")", //
-                        b.get(row * HALF + column), out.get(row * COLUMNS + HALF + column), 0.0f);
+                assertEquals(a.get(row * HALF + column), //
+                        out.get(row * COLUMNS + column), 0.0f, "concat left at (" + row + ", " + column + ")");
+                assertEquals(b.get(row * HALF + column), //
+                        out.get(row * COLUMNS + HALF + column), 0.0f, "concat right at (" + row + ", " + column + ")");
             }
         }
     }
@@ -2523,7 +2523,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < ELEMENTS; i++) {
             // element_cast truncates towards zero, like a C cast; it does not round.
-            assertEquals("cast at " + i, (int) in.get(i), out.get(i));
+            assertEquals((int) in.get(i), out.get(i), "cast at " + i);
         }
     }
 
@@ -2536,7 +2536,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opBitcast, new TileContext(), in, out, ROWS, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < ELEMENTS; i++) {
-            assertEquals("bitcast at " + i, Float.floatToRawIntBits(in.get(i)), out.get(i));
+            assertEquals(Float.floatToRawIntBits(in.get(i)), out.get(i), "bitcast at " + i);
         }
     }
 
@@ -2551,7 +2551,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opViewRank1, new TileContext(), in, out, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < COLUMNS; i++) {
-            assertEquals("rank-1 copy at " + i, in.get(i), out.get(i), 0.0f);
+            assertEquals(in.get(i), out.get(i), 0.0f, "rank-1 copy at " + i);
         }
     }
 
@@ -2564,7 +2564,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opViewRank2, new TileContext(), in, out, ROWS, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < ELEMENTS; i++) {
-            assertEquals("rank-2 copy at " + i, in.get(i), out.get(i), 0.0f);
+            assertEquals(in.get(i), out.get(i), 0.0f, "rank-2 copy at " + i);
         }
     }
 
@@ -2580,7 +2580,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opViewRank3, new TileContext(), in, out, batches, ROWS, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < batches * ELEMENTS; i++) {
-            assertEquals("rank-3 copy at " + i, in.get(i), out.get(i), 0.0f);
+            assertEquals(in.get(i), out.get(i), 0.0f, "rank-3 copy at " + i);
         }
     }
 
@@ -2594,8 +2594,8 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int row = 0; row < ROWS; row++) {
             for (int column = 0; column < COLUMNS; column++) {
-                assertEquals("strided read at (" + row + ", " + column + ")", //
-                        in.get(OFFSET + row * PITCH + column), out.get(row * COLUMNS + column), 0.0f);
+                assertEquals(in.get(OFFSET + row * PITCH + column), //
+                        out.get(row * COLUMNS + column), 0.0f, "strided read at (" + row + ", " + column + ")");
             }
         }
     }
@@ -2611,7 +2611,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opMaskedLoadStore, new TileContext(), in, out, ROWS, narrow) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < ROWS * narrow; i++) {
-            assertEquals("masked copy at " + i, in.get(i) * 2.0f, out.get(i), 1e-4f);
+            assertEquals(in.get(i) * 2.0f, out.get(i), 1e-4f, "masked copy at " + i);
         }
     }
 
@@ -2661,12 +2661,12 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, minima, maxima, masked, merged, flipped, swapped));
         for (int i = 0; i < ELEMENTS; i++) {
             int x = in.get(i);
-            assertEquals("atomicMin at " + i, Math.min(seed, x), minima.get(i));
-            assertEquals("atomicMax at " + i, Math.max(seed, x), maxima.get(i));
-            assertEquals("atomicAnd at " + i, seed & x, masked.get(i));
-            assertEquals("atomicOr at " + i, seed | x, merged.get(i));
-            assertEquals("atomicXor at " + i, seed ^ x, flipped.get(i));
-            assertEquals("atomicExchange at " + i, x, swapped.get(i));
+            assertEquals(Math.min(seed, x), minima.get(i), "atomicMin at " + i);
+            assertEquals(Math.max(seed, x), maxima.get(i), "atomicMax at " + i);
+            assertEquals(seed & x, masked.get(i), "atomicAnd at " + i);
+            assertEquals(seed | x, merged.get(i), "atomicOr at " + i);
+            assertEquals(seed ^ x, flipped.get(i), "atomicXor at " + i);
+            assertEquals(x, swapped.get(i), "atomicExchange at " + i);
         }
     }
 
@@ -2679,7 +2679,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opAtomicLoadStore, new TileContext(), in, out, ROWS, COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < ELEMENTS; i++) {
-            assertEquals("atomic load/store at " + i, in.get(i), out.get(i), 0.0f);
+            assertEquals(in.get(i), out.get(i), 0.0f, "atomic load/store at " + i);
         }
     }
 
@@ -2695,7 +2695,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opBlockId, new TileContext(), in, out, blocks * ROWS, blocks * COLUMNS) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < blocks * blocks * ELEMENTS; i++) {
-            assertEquals("block-indexed copy at " + i, in.get(i), out.get(i), 0.0f);
+            assertEquals(in.get(i), out.get(i), 0.0f, "block-indexed copy at " + i);
         }
     }
 
@@ -2712,7 +2712,7 @@ public class TestTileOpLevel extends TornadoTestBase {
                 .task("k", TestTileOpLevel::opNumBlocks, new TileContext(), in, out, tiles * ROWS, COLUMNS, tiles) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
         for (int i = 0; i < tiles * ELEMENTS; i++) {
-            assertEquals("persistent stride at " + i, in.get(i) * 2.0f, out.get(i), 1e-4f);
+            assertEquals(in.get(i) * 2.0f, out.get(i), 1e-4f, "persistent stride at " + i);
         }
     }
 

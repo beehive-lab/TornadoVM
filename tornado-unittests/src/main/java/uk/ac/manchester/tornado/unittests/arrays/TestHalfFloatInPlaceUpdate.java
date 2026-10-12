@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider.getTornadoRuntime;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -147,7 +147,7 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, 2.0f * (i + 1.0f), data.get(i).getFloat32(), 0.01f);
+            assertEquals(2.0f * (i + 1.0f), data.get(i).getFloat32(), 0.01f, "element " + i);
         }
     }
 
@@ -168,7 +168,7 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, 2.0f * (i + 1.0f), data.get(i).getFloat32(), 0.01f);
+            assertEquals(2.0f * (i + 1.0f), data.get(i).getFloat32(), 0.01f, "element " + i);
         }
     }
 
@@ -191,7 +191,7 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, (i + 1.0f) + 0.5f * i, data.get(i).getFloat32(), 0.05f);
+            assertEquals((i + 1.0f) + 0.5f * i, data.get(i).getFloat32(), 0.05f, "element " + i);
         }
     }
 
@@ -217,7 +217,7 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
 
         // The second execution doubles what the first left on the host.
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, 4.0f * (i + 1.0f), data.get(i).getFloat32(), 0.01f);
+            assertEquals(4.0f * (i + 1.0f), data.get(i).getFloat32(), 0.01f, "element " + i);
         }
     }
 }

@@ -41,8 +41,8 @@ public final class JUnitEmitter {
     public static String emit(ReproSpec spec, String className) {
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(PACKAGE).append(";\n\n");
-        sb.append("import static org.junit.Assert.assertEquals;\n\n");
-        sb.append("import org.junit.Test;\n\n");
+        sb.append("import static org.junit.jupiter.api.Assertions.assertEquals;\n\n");
+        sb.append("import org.junit.jupiter.api.Test;\n\n");
         sb.append("import uk.ac.manchester.tornado.api.GridScheduler;\n");
         sb.append("import uk.ac.manchester.tornado.api.KernelContext;\n");
         sb.append("import uk.ac.manchester.tornado.api.TaskGraph;\n");

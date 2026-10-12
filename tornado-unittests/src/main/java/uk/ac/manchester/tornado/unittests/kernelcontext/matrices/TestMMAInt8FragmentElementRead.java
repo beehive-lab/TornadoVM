@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -212,8 +212,8 @@ public class TestMMAInt8FragmentElementRead extends TornadoTestBase {
         }
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                assertEquals("reference C[" + i + "][" + j + "]", dot(a, b, 0, 0, i, j), stored.get(i * N + j));
-                assertEquals("element read C[" + i + "][" + j + "]", stored.get(i * N + j), read.get(i * N + j));
+                assertEquals(dot(a, b, 0, 0, i, j), stored.get(i * N + j), "reference C[" + i + "][" + j + "]");
+                assertEquals(stored.get(i * N + j), read.get(i * N + j), "element read C[" + i + "][" + j + "]");
             }
         }
     }
@@ -240,7 +240,7 @@ public class TestMMAInt8FragmentElementRead extends TornadoTestBase {
             for (int j = 0; j < N; j++) {
                 float expected = (float) dot(a, b, 0, 0, i, j) * scales.get(0) + (float) dot(a, b, M * K, K * N, i, j) * scales.get(1);
                 // Both scales are powers of two over small integers: the FP32 products are exact.
-                assertEquals("C[" + i + "][" + j + "]", expected, out.get(i * N + j), 0.0f);
+                assertEquals(expected, out.get(i * N + j), 0.0f, "C[" + i + "][" + j + "]");
             }
         }
     }
@@ -262,7 +262,7 @@ public class TestMMAInt8FragmentElementRead extends TornadoTestBase {
         }
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                assertEquals("C[" + i + "][" + j + "]", dot(a, b, M * K, K * N, i, j), out.get(i * N + j));
+                assertEquals(dot(a, b, M * K, K * N, i, j), out.get(i * N + j), "C[" + i + "][" + j + "]");
             }
         }
     }
@@ -309,8 +309,8 @@ public class TestMMAInt8FragmentElementRead extends TornadoTestBase {
                     for (int i = 0; i < 4; i++) {
                         int row = lane / 4 + 8 * (i / 2);
                         int col = (lane % 4) * 2 + i % 2;
-                        assertEquals("iterations " + count + " lane " + lane + " element " + i,
-                                1 + count * dot(a, b, 0, 0, row, col), out.get(lane * 4 + i));
+                        assertEquals(1 + count * dot(a, b, 0, 0, row, col),
+                                out.get(lane * 4 + i), "iterations " + count + " lane " + lane + " element " + i);
                     }
                 }
             }

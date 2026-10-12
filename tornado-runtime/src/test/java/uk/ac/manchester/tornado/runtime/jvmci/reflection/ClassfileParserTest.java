@@ -20,14 +20,14 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Pure-JVM (no-GPU) tests for {@link ClassfileParser}: recover the {@code Code} attribute and field
@@ -38,7 +38,7 @@ public class ClassfileParserTest {
     private static byte[] sampleClassfile() throws Exception {
         String resource = ReflectionTestSample.class.getName().replace('.', '/') + ".class";
         try (InputStream in = ReflectionTestSample.class.getClassLoader().getResourceAsStream(resource)) {
-            assertNotNull("sample classfile must be on the test classpath", in);
+            assertNotNull(in, "sample classfile must be on the test classpath");
             return in.readAllBytes();
         }
     }
@@ -47,9 +47,9 @@ public class ClassfileParserTest {
     public void recoversCodeAttribute() throws Exception {
         ClassfileParser.MethodCode code = ClassfileParser.parse(sampleClassfile(), "compute", "(I[I)J");
         assertNotNull(code);
-        assertTrue("compute must have bytecode", code.code().length > 0);
-        assertTrue("compute must reserve locals", code.maxLocals() > 0);
-        assertTrue("compute must reserve stack", code.maxStack() > 0);
+        assertTrue(code.code().length > 0, "compute must have bytecode");
+        assertTrue(code.maxLocals() > 0, "compute must reserve locals");
+        assertTrue(code.maxStack() > 0, "compute must reserve stack");
     }
 
     @Test
