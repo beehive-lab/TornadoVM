@@ -26,7 +26,7 @@ def runPyInstaller(currentDirectory, tornadoSDKPath):
     work_dir = tempfile.mkdtemp(prefix="pyinstaller-build-")
 
     ## List of scripts to compile
-    scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
+    scripts = ["tornado.py", "tornado-test"]
     for s in scripts:
         print("creating " + s + " binary ....  "),
         script_path = os.path.join(bin_dir, s)
