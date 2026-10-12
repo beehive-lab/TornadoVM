@@ -868,8 +868,10 @@ public class TransformerKernelsTest extends TornadoTestBase {
 
     @Test
     public void testReductionOneBlockWithLayer() throws TornadoExecutionPlanException {
-        final int size = 1024;
-        final int localSize = 128; // Work group size
+        // The kernel's final step reads every workgroup's partial sum, which is only safe within one
+        // workgroup: there is no synchronization across workgroups. testReductionOneBlockTwoStepApproach covers many.
+        final int size = 256;
+        final int localSize = size; // One work group
         final int numWorkGroups = size / localSize;
         final float ermsNorm = 1e-5f;
 
