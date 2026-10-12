@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -90,7 +90,7 @@ public class LocalMemoryFail extends TornadoTestBase {
             }
         });
         String message = String.valueOf(failure.getMessage()) + String.valueOf(failure.getCause());
-        assertTrue("the failure should say the pipeline was refused, got: " + message, message.contains("Unable to create the Metal compute pipeline"));
-        assertTrue("the failure should carry Metal's reason, got: " + message, message.contains("hreadgroup memory"));
+        assertTrue(message.contains("Unable to create the Metal compute pipeline"), "the failure should say the pipeline was refused, got: " + message);
+        assertTrue(message.contains("hreadgroup memory"), "the failure should carry Metal's reason, got: " + message);
     }
 }

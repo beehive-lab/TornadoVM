@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.cublas;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -70,7 +70,7 @@ public class TestCuBlas extends TornadoTestBase {
      * typed *NotSupported exceptions that the TornadoTestRunner counts as
      * [UNSUPPORTED] (a JUnit Assume would be silently reported as PASS).
      */
-    @Before
+    @BeforeEach
     public void cuBlasMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -494,7 +494,7 @@ public class TestCuBlas extends TornadoTestBase {
                 }
                 plan.execute();
                 for (int i = 0; i < SIZE; i++) {
-                    assertEquals("iteration " + it, expected.get(i) + 1.0f, output.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
+                    assertEquals(expected.get(i) + 1.0f, output.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))), "iteration " + it);
                 }
             }
         }
@@ -982,7 +982,7 @@ public class TestCuBlas extends TornadoTestBase {
                 throw new AssertionError(failure[0]);
             }
             for (int i = 0; i < n * n; i++) {
-                assertEquals("element " + i, 2.0f, c.get(i), 1e-3f);
+                assertEquals(2.0f, c.get(i), 1e-3f, "element " + i);
             }
         }
     }

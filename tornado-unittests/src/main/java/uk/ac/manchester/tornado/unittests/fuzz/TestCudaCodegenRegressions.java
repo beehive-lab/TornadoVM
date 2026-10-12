@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.fuzz;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -147,7 +147,7 @@ public class TestCudaCodegenRegressions extends TornadoTestBase {
         }
 
         for (int i = 0; i < N; i++) {
-            assertEquals("index " + i, ref.apply(aData[i], bData[i], i), out.get(i));
+            assertEquals(ref.apply(aData[i], bData[i], i), out.get(i), "index " + i);
         }
     }
 

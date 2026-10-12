@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.cufft;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -55,7 +55,7 @@ public class TestCuFft extends TornadoTestBase {
     private static final int N = 256;
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cuFftMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -332,7 +332,7 @@ public class TestCuFft extends TornadoTestBase {
                 }
                 plan.execute();
                 for (int i = 0; i < 2 * N; i++) {
-                    assertEquals("iteration " + it, original.get(i), restored.get(i), 1e-3f);
+                    assertEquals(original.get(i), restored.get(i), 1e-3f, "iteration " + it);
                 }
             }
         }
@@ -360,7 +360,7 @@ public class TestCuFft extends TornadoTestBase {
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
             for (int i = 0; i < 2 * N; i++) {
-                assertEquals("element " + i, i < 2 ? N * 1.0f : 0.0f, output.get(i), 1e-1f);
+                assertEquals(i < 2 ? N * 1.0f : 0.0f, output.get(i), 1e-1f, "element " + i);
             }
 
             // The same plan from another thread, with a new value: a call that does not wait for
@@ -369,7 +369,7 @@ public class TestCuFft extends TornadoTestBase {
             output.init(0.0f);
             LibraryStreamPerThread.executeOnAnotherThread(plan);
             for (int i = 0; i < 2 * N; i++) {
-                assertEquals("element " + i, i < 2 ? N * 2.0f : 0.0f, output.get(i), 1e-1f);
+                assertEquals(i < 2 ? N * 2.0f : 0.0f, output.get(i), 1e-1f, "element " + i);
             }
         }
     }

@@ -23,9 +23,9 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -58,7 +58,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
         }
     }
 
-    @After
+    @AfterEach
     public void after() {
         // make sure the source file generated is deleted
         if (SOURCE_DIR != null) {
@@ -97,11 +97,11 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
             generatedKernel = Files.readAllBytes(fileLog.toPath());
             expectedKernel = Files.readAllBytes(expectedKernelFile.toPath());
         } catch (IOException e) {
-            Assert.fail();
+            Assertions.fail();
         }
 
         boolean fileEquivalent = TestVirtualDeviceFeatureExtraction.performComparison(generatedKernel, expectedKernel);
-        Assert.assertTrue("There is a mismatch between pre-compiled and JIT compiled kernels.", fileEquivalent);
+        Assertions.assertTrue(fileEquivalent, "There is a mismatch between pre-compiled and JIT compiled kernels.");
     }
 
     @Test

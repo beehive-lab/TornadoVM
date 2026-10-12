@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.foundation;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * <p>

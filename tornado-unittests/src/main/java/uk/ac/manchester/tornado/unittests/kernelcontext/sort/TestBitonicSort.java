@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.sort;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -113,7 +113,7 @@ public class TestBitonicSort extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("mismatch at index " + i, expected[i], data.get(i));
+            assertEquals(expected[i], data.get(i), "mismatch at index " + i);
         }
     }
 
@@ -143,7 +143,7 @@ public class TestBitonicSort extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE - 1; i++) {
-            assertTrue("not sorted at index " + i, data.get(i) <= data.get(i + 1));
+            assertTrue(data.get(i) <= data.get(i + 1), "not sorted at index " + i);
         }
         assertEquals(1, data.get(0));
         assertEquals(SIZE, data.get(SIZE - 1));

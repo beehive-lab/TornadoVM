@@ -1,5 +1,7 @@
 open module tornado.unittests {
-    requires transitive junit;
+    requires transitive org.junit.jupiter.api;
+    requires org.junit.platform.launcher;
+    requires org.junit.platform.suite.api;
     requires transitive tornado.api;
     requires tornado.runtime;
     requires tornado.cublas;

@@ -19,7 +19,7 @@ package uk.ac.manchester.tornado.unittests.reductions;
 
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -73,9 +73,8 @@ public class MultipleReductions extends TornadoTestBase {
         result1.init(0);
         result2.init(0);
 
-        IntStream.range(0, size).parallel().forEach(i -> {
-            input.set(i, i);
-        });
+        IntStream.range(0, size).parallel().forEach(i ->
+            input.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //

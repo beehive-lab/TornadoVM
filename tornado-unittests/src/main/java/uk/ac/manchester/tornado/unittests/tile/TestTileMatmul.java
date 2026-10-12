@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -63,7 +63,7 @@ public class TestTileMatmul extends TornadoTestBase {
 
     private static final int TILE_K = 32;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -188,7 +188,7 @@ public class TestTileMatmul extends TornadoTestBase {
                 for (int inner = 0; inner < k; inner++) {
                     expected += a.get(row * k + inner).getFloat32() * b.get(inner * n + column).getFloat32();
                 }
-                assertEquals("(" + row + "," + column + ")", expected, c.get(row * n + column), 0.05f);
+                assertEquals(expected, c.get(row * n + column), 0.05f, "(" + row + "," + column + ")");
             }
         }
     }

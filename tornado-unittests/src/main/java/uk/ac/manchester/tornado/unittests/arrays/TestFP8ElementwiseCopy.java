@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -101,7 +101,7 @@ public class TestFP8ElementwiseCopy extends TornadoTestBase {
         }
 
         for (int i = 0; i < size; i++) {
-            assertEquals("mismatch at index " + i, expected[i], out.getE4M3(i), 0.001f);
+            assertEquals(expected[i], out.getE4M3(i), 0.001f, "mismatch at index " + i);
         }
     }
 

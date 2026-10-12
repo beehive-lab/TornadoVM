@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.codegen;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -131,8 +131,8 @@ public class TestFloatBitsAndComparisons extends TornadoTestBase {
         execute(g);
         for (int i = 0; i < N; i++) {
             int expected = Float.floatToRawIntBits(a.get(i));
-            assertEquals("bits of element " + i, expected, bits.get(i));
-            assertEquals("negated bits of element " + i, expected ^ 0x80000000, Float.floatToRawIntBits(negated.get(i)));
+            assertEquals(expected, bits.get(i), "bits of element " + i);
+            assertEquals(expected ^ 0x80000000, Float.floatToRawIntBits(negated.get(i)), "negated bits of element " + i);
         }
     }
 
@@ -152,8 +152,8 @@ public class TestFloatBitsAndComparisons extends TornadoTestBase {
         execute(g);
         for (int i = 0; i < N; i++) {
             long expected = Double.doubleToRawLongBits(a.get(i));
-            assertEquals("bits of element " + i, expected, bits.get(i));
-            assertEquals("negated bits of element " + i, expected ^ 0x8000000000000000L, Double.doubleToRawLongBits(negated.get(i)));
+            assertEquals(expected, bits.get(i), "bits of element " + i);
+            assertEquals(expected ^ 0x8000000000000000L, Double.doubleToRawLongBits(negated.get(i)), "negated bits of element " + i);
         }
     }
 
@@ -172,7 +172,7 @@ public class TestFloatBitsAndComparisons extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
         execute(g);
         for (int i = 0; i < N; i++) {
-            assertEquals("comparisons of " + a.get(i) + " and " + b.get(i), reference(a.get(i), b.get(i)), out.get(i));
+            assertEquals(reference(a.get(i), b.get(i)), out.get(i), "comparisons of " + a.get(i) + " and " + b.get(i));
         }
     }
 }

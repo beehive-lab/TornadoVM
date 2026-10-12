@@ -18,12 +18,12 @@
 
 package uk.ac.manchester.tornado.unittests.branching;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -983,7 +983,7 @@ public class TestConditionals extends TornadoTestBase {
         IntArray[] in = shortCircuitOperands();
         IntArray out = runShortCircuit("or", TestConditionals::shortCircuitOr, in[0], in[1]);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitOrReference(in[0].get(i), in[1].get(i)), out.get(i));
+            assertEquals(shortCircuitOrReference(in[0].get(i), in[1].get(i)), out.get(i), "a=" + in[0].get(i) + " b=" + in[1].get(i));
         }
     }
 
@@ -992,7 +992,7 @@ public class TestConditionals extends TornadoTestBase {
         IntArray[] in = shortCircuitOperands();
         IntArray out = runShortCircuit("and", TestConditionals::shortCircuitAnd, in[0], in[1]);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitAndReference(in[0].get(i), in[1].get(i)), out.get(i));
+            assertEquals(shortCircuitAndReference(in[0].get(i), in[1].get(i)), out.get(i), "a=" + in[0].get(i) + " b=" + in[1].get(i));
         }
     }
 
@@ -1001,7 +1001,7 @@ public class TestConditionals extends TornadoTestBase {
         IntArray[] in = shortCircuitOperands();
         IntArray out = runShortCircuit("or3", TestConditionals::shortCircuitTripleOr, in[0], in[1]);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitTripleOrReference(in[0].get(i), in[1].get(i)), out.get(i));
+            assertEquals(shortCircuitTripleOrReference(in[0].get(i), in[1].get(i)), out.get(i), "a=" + in[0].get(i) + " b=" + in[1].get(i));
         }
     }
 
@@ -1012,7 +1012,7 @@ public class TestConditionals extends TornadoTestBase {
         for (int i = 0; i < out.getSize(); i++) {
             int a = in[0].get(i);
             int b = in[1].get(i);
-            assertEquals("a=" + a + " b=" + b, (a <= 32 || b >= 16) ? a * (a - 1) / 2 : -1000, out.get(i));
+            assertEquals((a <= 32 || b >= 16) ? a * (a - 1) / 2 : -1000, out.get(i), "a=" + a + " b=" + b);
         }
     }
 
@@ -1021,7 +1021,7 @@ public class TestConditionals extends TornadoTestBase {
         IntArray[] in = shortCircuitOperands();
         IntArray out = runShortCircuit("andNested", TestConditionals::shortCircuitAndNested, in[0], in[1]);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitAndReference(in[0].get(i), in[1].get(i)), out.get(i));
+            assertEquals(shortCircuitAndReference(in[0].get(i), in[1].get(i)), out.get(i), "a=" + in[0].get(i) + " b=" + in[1].get(i));
         }
     }
 
@@ -1030,7 +1030,7 @@ public class TestConditionals extends TornadoTestBase {
         IntArray[] in = shortCircuitOperands();
         IntArray out = runShortCircuit("or3Nested", TestConditionals::shortCircuitTripleOrNested, in[0], in[1]);
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("a=" + in[0].get(i) + " b=" + in[1].get(i), shortCircuitTripleOrReference(in[0].get(i), in[1].get(i)), out.get(i));
+            assertEquals(shortCircuitTripleOrReference(in[0].get(i), in[1].get(i)), out.get(i), "a=" + in[0].get(i) + " b=" + in[1].get(i));
         }
     }
 }

@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -115,7 +115,7 @@ public class TestFP8 extends TornadoTestBase {
                 continue; // 0x00 and 0x80 both decode to zero; -0 re-encodes to +0
             }
             byte re = FP8.e4m3FromFloat(f);
-            assertEquals("byte 0x" + Integer.toHexString(b), (byte) b, re);
+            assertEquals((byte) b, re, "byte 0x" + Integer.toHexString(b));
         }
     }
 
@@ -143,7 +143,7 @@ public class TestFP8 extends TornadoTestBase {
             if (f == 0.0f) {
                 continue;
             }
-            assertEquals("byte 0x" + Integer.toHexString(b), (byte) b, FP8.e5m2FromFloat(f));
+            assertEquals((byte) b, FP8.e5m2FromFloat(f), "byte 0x" + Integer.toHexString(b));
         }
     }
 

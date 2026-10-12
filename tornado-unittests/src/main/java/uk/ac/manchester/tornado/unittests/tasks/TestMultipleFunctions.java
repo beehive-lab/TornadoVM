@@ -17,13 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -374,16 +373,16 @@ public class TestMultipleFunctions extends TornadoTestBase {
         }
 
         for (int i = 0; i < testArrays.calleeReadTor.getSize(); i++) {
-            Assert.assertEquals(testArrays.calleeReadSeq.get(i), testArrays.calleeReadTor.get(i));
+            assertEquals(testArrays.calleeReadSeq.get(i), testArrays.calleeReadTor.get(i));
         }
         for (int i = 0; i < testArrays.callerReadCalleeWriteSeq.getSize(); i++) {
-            Assert.assertEquals(testArrays.callerReadCalleeWriteSeq.get(i), testArrays.callerReadCalleeWriteTor.get(i));
+            assertEquals(testArrays.callerReadCalleeWriteSeq.get(i), testArrays.callerReadCalleeWriteTor.get(i));
         }
         for (int i = 0; i < testArrays.callerReadSeq.getSize(); i++) {
-            Assert.assertEquals(testArrays.callerReadSeq.get(i), testArrays.callerReadTor.get(i));
+            assertEquals(testArrays.callerReadSeq.get(i), testArrays.callerReadTor.get(i));
         }
         for (int i = 0; i < testArrays.callerWriteSeq.getSize(); i++) {
-            Assert.assertEquals(testArrays.callerWriteSeq.get(i), testArrays.callerWriteSeq.get(i));
+            assertEquals(testArrays.callerWriteSeq.get(i), testArrays.callerWriteSeq.get(i));
         }
     }
 
@@ -418,16 +417,16 @@ public class TestMultipleFunctions extends TornadoTestBase {
         }
 
         for (int i = 0; i < testArrays.calleeReadTor.getSize(); i++) {
-            Assert.assertEquals(testArrays.calleeReadSeq.get(i), testArrays.calleeReadTor.get(i));
+            assertEquals(testArrays.calleeReadSeq.get(i), testArrays.calleeReadTor.get(i));
         }
         for (int i = 0; i < testArrays.callerReadCalleeWriteSeq.getSize(); i++) {
-            Assert.assertEquals(testArrays.callerReadCalleeWriteSeq.get(i), testArrays.callerReadCalleeWriteTor.get(i));
+            assertEquals(testArrays.callerReadCalleeWriteSeq.get(i), testArrays.callerReadCalleeWriteTor.get(i));
         }
         for (int i = 0; i < testArrays.callerReadSeq.getSize(); i++) {
-            Assert.assertEquals(testArrays.callerReadSeq.get(i), testArrays.callerReadTor.get(i));
+            assertEquals(testArrays.callerReadSeq.get(i), testArrays.callerReadTor.get(i));
         }
         for (int i = 0; i < testArrays.callerWriteSeq.getSize(); i++) {
-            Assert.assertEquals(testArrays.callerWriteSeq.get(i), testArrays.callerWriteSeq.get(i));
+            assertEquals(testArrays.callerWriteSeq.get(i), testArrays.callerWriteSeq.get(i));
         }
     }
 
@@ -474,25 +473,25 @@ public class TestMultipleFunctions extends TornadoTestBase {
         executionPlan.execute();
 
         for (int i = 0; i < arrays.calleeReadTor.getSize(); i++) {
-            Assert.assertEquals(arrays.calleeReadSeq.get(i), arrays.calleeReadTor.get(i));
+            assertEquals(arrays.calleeReadSeq.get(i), arrays.calleeReadTor.get(i));
         }
         for (int i = 0; i < arrays.callerReadCalleeWriteSeq.getSize(); i++) {
-            Assert.assertEquals(arrays.callerReadCalleeWriteSeq.get(i), arrays.callerReadCalleeWriteTor.get(i));
+            assertEquals(arrays.callerReadCalleeWriteSeq.get(i), arrays.callerReadCalleeWriteTor.get(i));
         }
         for (int i = 0; i < arrays.callerReadSeq.getSize(); i++) {
-            Assert.assertEquals(arrays.callerReadSeq.get(i), arrays.callerReadTor.get(i));
+            assertEquals(arrays.callerReadSeq.get(i), arrays.callerReadTor.get(i));
         }
         for (int i = 0; i < arrays.callerWriteSeq.getSize(); i++) {
-            Assert.assertEquals(arrays.callerWriteSeq.get(i), arrays.callerWriteSeq.get(i));
+            assertEquals(arrays.callerWriteSeq.get(i), arrays.callerWriteSeq.get(i));
         }
         for (int i = 0; i < arrays.callerReadWriteSeq.getSize(); i++) {
-            Assert.assertEquals(arrays.callerReadWriteSeq.get(i), arrays.callerReadWriteTor.get(i));
+            assertEquals(arrays.callerReadWriteSeq.get(i), arrays.callerReadWriteTor.get(i));
         }
         for (int i = 0; i < arrays.callee1WriteSeq.getSize(); i++) {
-            Assert.assertEquals(arrays.callee1WriteSeq.get(i), arrays.callee1WriteTor.get(i));
+            assertEquals(arrays.callee1WriteSeq.get(i), arrays.callee1WriteTor.get(i));
         }
         for (int i = 0; i < arrays.callee2ReadSeq.getSize(); i++) {
-            Assert.assertEquals(arrays.callee2ReadSeq.get(i), arrays.callee2ReadTor.get(i));
+            assertEquals(arrays.callee2ReadSeq.get(i), arrays.callee2ReadTor.get(i));
         }
     }
 
@@ -519,7 +518,7 @@ public class TestMultipleFunctions extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        Assert.assertEquals(-1, arr.get(0));
+        assertEquals(-1, arr.get(0));
     }
 
     //@formatter:off

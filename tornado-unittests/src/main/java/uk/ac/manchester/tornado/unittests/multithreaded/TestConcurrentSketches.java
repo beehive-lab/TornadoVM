@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.multithreaded;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -207,7 +207,7 @@ public class TestConcurrentSketches extends TornadoTestBase {
                 int params = ARITY[k] - 1;
                 int expected = FACTOR[k] * params * (params + 1) / 2;
                 for (int i = 0; i < N; i++) {
-                    assertEquals(NAMES[k] + " element " + i, expected, out.get(i));
+                    assertEquals(expected, out.get(i), NAMES[k] + " element " + i);
                 }
             }
         } finally {
