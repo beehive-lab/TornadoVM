@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
@@ -176,8 +177,9 @@ public class TornadoHelper {
             } else {
                 // If UnsupportedConfigurationException is thrown this means that test did not
                 // fail, it simply can't be run on current configuration
-                if (result.getFailures().stream().filter(e -> (e.getException() instanceof UnsupportedConfigurationException)).count() > 0) {
-                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION: At least 2 accelerators are required] " + ColorsTerminal.RESET + "\n");
+                Optional<Failure> unsupportedConfiguration = result.getFailures().stream().filter(e -> (e.getException() instanceof UnsupportedConfigurationException)).findFirst();
+                if (unsupportedConfiguration.isPresent()) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [UNSUPPORTED CONFIGURATION: " + unsupportedConfiguration.get().getMessage() + "] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;

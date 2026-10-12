@@ -61,8 +61,10 @@ public class TestWarmUp extends TornadoTestBase {
             plan.withWarmUpTime(1000);
             long endTime = System.currentTimeMillis();
 
-            // 7 ms of tolerance
-            Assert.assertTrue((endTime - startTime > 1000) && (endTime - startTime < 1008));
+            // The warm-up lasts at least the requested time. The upper bound allows for the in-flight
+            // iteration and OS timer slack (Thread.sleep alone can overshoot by several ms on macOS).
+            long elapsed = endTime - startTime;
+            Assert.assertTrue("warm-up took " + elapsed + " ms", elapsed >= 1000 && elapsed < 1100);
 
             // Run one more time after the warmup
             plan.withProfiler(ProfilerMode.CONSOLE).execute();
