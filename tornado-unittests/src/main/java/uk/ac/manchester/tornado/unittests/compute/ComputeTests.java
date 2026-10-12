@@ -902,7 +902,9 @@ public class ComputeTests extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
+            // The escape-time iteration is chaotic: a fused multiply-add rounds once where Java rounds
+            // twice, and near the set boundary that last-bit difference grows into a different count.
+            executionPlan.withStrictFloatingPoint().execute();
         }
 
         validateMandelbrot(size, output);
@@ -1002,7 +1004,8 @@ public class ComputeTests extends TornadoTestBase {
 
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
+            // Chaotic iteration, compared per pixel against Java: requires the host's rounding (see testMandelbrot).
+            executionPlan.withStrictFloatingPoint().execute();
         }
 
         for (int i = 0; i < size; i++) {
