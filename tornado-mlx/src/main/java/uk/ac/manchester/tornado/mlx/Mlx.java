@@ -725,22 +725,22 @@ public final class Mlx {
         return task("mlx_arctan2", 2, a, b, c);
     }
 
-    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward zero, as MLX divides integers). */
+    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward negative infinity). */
     public static LibraryTaskDescriptor floorDivide(FloatArray a, FloatArray b, FloatArray c) {
         return task("mlx_floor_divide", 2, a, b, c);
     }
 
-    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward zero, as MLX divides integers). */
+    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward negative infinity). */
     public static LibraryTaskDescriptor floorDivide(HalfFloatArray a, HalfFloatArray b, HalfFloatArray c) {
         return task("mlx_floor_divide", 2, a, b, c);
     }
 
-    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward zero, as MLX divides integers). */
+    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward negative infinity). */
     public static LibraryTaskDescriptor floorDivide(BFloat16Array a, BFloat16Array b, BFloat16Array c) {
         return task("mlx_floor_divide", 2, a, b, c);
     }
 
-    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward zero, as MLX divides integers). */
+    /** Element-wise {@code c = floor(a / b)} (for int32, {@code a / b} rounded toward negative infinity). */
     public static LibraryTaskDescriptor floorDivide(IntArray a, IntArray b, IntArray c) {
         return task("mlx_floor_divide", 2, a, b, c);
     }
@@ -791,36 +791,36 @@ public final class Mlx {
     }
 
     /**
-     * Element-wise quotient and remainder as MLX computes them: {@code quotient = trunc(a / b)}
-     * (rounded toward zero) and {@code remainder} as {@link #remainder} (sign of {@code b}). The
-     * two therefore disagree with {@code a = b * quotient + remainder} when {@code a / b < 0}.
+     * Element-wise quotient and remainder as MLX computes them: {@code quotient = floor(a / b)}
+     * (rounded toward negative infinity) and {@code remainder} as {@link #remainder} (sign of
+     * {@code b}), so {@code a = b * quotient + remainder}.
      */
     public static LibraryTaskDescriptor divmod(FloatArray a, FloatArray b, FloatArray quotient, FloatArray remainder) {
         return task("mlx_divmod", new int[] { 2, 3 }, a, b, quotient, remainder);
     }
 
     /**
-     * Element-wise quotient and remainder as MLX computes them: {@code quotient = trunc(a / b)}
-     * (rounded toward zero) and {@code remainder} as {@link #remainder} (sign of {@code b}). The
-     * two therefore disagree with {@code a = b * quotient + remainder} when {@code a / b < 0}.
+     * Element-wise quotient and remainder as MLX computes them: {@code quotient = floor(a / b)}
+     * (rounded toward negative infinity) and {@code remainder} as {@link #remainder} (sign of
+     * {@code b}), so {@code a = b * quotient + remainder}.
      */
     public static LibraryTaskDescriptor divmod(HalfFloatArray a, HalfFloatArray b, HalfFloatArray quotient, HalfFloatArray remainder) {
         return task("mlx_divmod", new int[] { 2, 3 }, a, b, quotient, remainder);
     }
 
     /**
-     * Element-wise quotient and remainder as MLX computes them: {@code quotient = trunc(a / b)}
-     * (rounded toward zero) and {@code remainder} as {@link #remainder} (sign of {@code b}). The
-     * two therefore disagree with {@code a = b * quotient + remainder} when {@code a / b < 0}.
+     * Element-wise quotient and remainder as MLX computes them: {@code quotient = floor(a / b)}
+     * (rounded toward negative infinity) and {@code remainder} as {@link #remainder} (sign of
+     * {@code b}), so {@code a = b * quotient + remainder}.
      */
     public static LibraryTaskDescriptor divmod(BFloat16Array a, BFloat16Array b, BFloat16Array quotient, BFloat16Array remainder) {
         return task("mlx_divmod", new int[] { 2, 3 }, a, b, quotient, remainder);
     }
 
     /**
-     * Element-wise quotient and remainder as MLX computes them: {@code quotient = trunc(a / b)}
-     * (rounded toward zero) and {@code remainder} as {@link #remainder} (sign of {@code b}). The
-     * two therefore disagree with {@code a = b * quotient + remainder} when {@code a / b < 0}.
+     * Element-wise quotient and remainder as MLX computes them: {@code quotient = floor(a / b)}
+     * (rounded toward negative infinity) and {@code remainder} as {@link #remainder} (sign of
+     * {@code b}), so {@code a = b * quotient + remainder}.
      */
     public static LibraryTaskDescriptor divmod(IntArray a, IntArray b, IntArray quotient, IntArray remainder) {
         return task("mlx_divmod", new int[] { 2, 3 }, a, b, quotient, remainder);

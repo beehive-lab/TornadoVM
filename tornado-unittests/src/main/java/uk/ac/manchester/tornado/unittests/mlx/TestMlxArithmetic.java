@@ -366,7 +366,7 @@ public class TestMlxArithmetic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("quotient " + i, (int) (av[i] / bv[i]), quotient.get(i), 0f);
+            assertEquals("quotient " + i, (float) Math.floor(av[i] / bv[i]), quotient.get(i), 0f);
             assertClose("remainder", i, av[i] - bv[i] * Math.floor(av[i] / bv[i]), remainder.get(i), 1e-5, 1e-5);
         }
     }
@@ -690,7 +690,7 @@ public class TestMlxArithmetic extends MlxTestBase {
     }
 
     @Test
-    public void testIntDivisionTruncatesTowardZero() throws TornadoExecutionPlanException {
+    public void testIntDivisionFloors() throws TornadoExecutionPlanException {
         int[] av = ints(SIZE, -1000, 1000, 24);
         int[] bv = ints(SIZE, 1, 50, 25);
         for (int i = 0; i < SIZE; i += 2) {
@@ -712,10 +712,10 @@ public class TestMlxArithmetic extends MlxTestBase {
             plan.execute();
         }
 
-        // MLX divides integers as C does (toward zero), so floor_divide truncates for int32.
+        // MLX rounds integer floor_divide and divmod quotients toward negative infinity, as Python does.
         for (int i = 0; i < SIZE; i++) {
-            assertEquals(av[i] + " / " + bv[i], av[i] / bv[i], floorDivide.get(i));
-            assertEquals("divmod quotient " + av[i] + " / " + bv[i], av[i] / bv[i], quotient.get(i));
+            assertEquals(av[i] + " / " + bv[i], Math.floorDiv(av[i], bv[i]), floorDivide.get(i));
+            assertEquals("divmod quotient " + av[i] + " / " + bv[i], Math.floorDiv(av[i], bv[i]), quotient.get(i));
             assertEquals("divmod remainder " + av[i] + " % " + bv[i], Math.floorMod(av[i], bv[i]), remainder.get(i));
         }
     }

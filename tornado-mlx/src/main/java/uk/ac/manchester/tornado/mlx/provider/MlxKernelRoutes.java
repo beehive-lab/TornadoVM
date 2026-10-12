@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.Program;
 import uk.ac.manchester.tornado.mlx.provider.MlxMetalKernels.Ref;
@@ -48,6 +49,14 @@ final class MlxKernelRoutes {
     private static final AtomicLong DISPATCHES = new AtomicLong();
 
     private static final double INF = Double.POSITIVE_INFINITY;
+
+    /** The oldest Apple GPU generation the routes support: applegpu_g16 (M4). */
+    static final int MIN_GENERATION = 16;
+
+    /** For a call MLX runs with its NAX kernels on {@code architecture}, which have no route. */
+    private static TornadoLibraryTaskNotSupported naxNotSupported(String function, String architecture) {
+        return new TornadoLibraryTaskNotSupported("MLX " + function + " runs MLX's NAX kernels on " + architecture + ", which the MLX library tasks do not support");
+    }
 
     /** Plans the kernels for one call, or returns null if it cannot run these arguments. */
     interface Route {
@@ -200,7 +209,7 @@ final class MlxKernelRoutes {
             int t = v.sameType(FLOATS, 0, 1);
             return t < 0 ? null : p -> p.binaryScalarLeft("Divide", t, v.size(0), 1.0, v.ref(0), v.ref(1));
         });
-        // floor_divide: floor(divide(a, b)) for floating types; integer Divide otherwise.
+        // floor_divide: floor(divide(a, b)) for floating types; DivMod's floored quotient for integers.
         ROUTES.put("mlx_floor_divide", v -> {
             int t = v.sameType(NUMBERS, 0, 1, 2);
             if (t < 0) {
@@ -210,7 +219,7 @@ final class MlxKernelRoutes {
             return MlxMetalKernels.isFloating(t) ? p -> {
                 p.binary("Divide", t, n, v.ref(0), v.ref(1), v.ref(2));
                 p.unary("Floor", t, t, n, v.ref(2), v.ref(2));
-            } : p -> p.binary("Divide", t, n, v.ref(0), v.ref(1), v.ref(2));
+            } : p -> p.binaryTwo("DivMod", t, n, v.ref(0), v.ref(1), v.ref(2), p.scratch((long) n * MlxMetalKernels.itemSize(t)));
         });
         // round(a, decimals): Round, or multiply by 10^d, Round, multiply by 1 / 10^d.
         ROUTES.put("mlx_round", v -> {
@@ -1480,8 +1489,8 @@ final class MlxKernelRoutes {
     /**
      * a[batch, m, k] @ b for contiguous a, with b [batch, k, n] contiguous ({@code bTransposed} false,
      * ldb = n) or the transpose of w[n, k] ({@code bTransposed} true, ldb = k), optionally with an
-     * addmm source c [m, n]: MLX's GEMV, split-K or regular steel GEMM exactly as Matmul::eval_gpu and
-     * AddMM::eval_gpu pick them on GPUs before generation 15. Returns null where MLX would do otherwise.
+     * addmm source c [m, n]: MLX's wide GEMV, GEMV, split-K or regular steel GEMM exactly as Matmul::eval_gpu
+     * and AddMM::eval_gpu pick them. Throws where MLX would run its NAX kernels.
      */
     private static Encoder matmulKernels(Mm mm, String architecture) {
         int t = mm.type();
@@ -1490,12 +1499,28 @@ final class MlxKernelRoutes {
         int k = mm.k();
         int n = mm.n();
         boolean addmm = mm.c() != null;
-        if (architecture == null || architecture.isEmpty() || MlxMetalKernels.architectureGeneration(architecture) >= 15 || (m == 1 && n == 1) || m <= 0 || k <= 0 || n <= 0
-                || (addmm && batch != 1) || (mm.bTransposed() && batch != 1)) {
+        if (architecture == null || architecture.isEmpty() || (m == 1 && n == 1) || m <= 0 || k <= 0 || n <= 0 || (addmm && batch != 1) || (mm.bTransposed() && batch != 1)) {
             return null;
         }
         char devc = architecture.charAt(architecture.length() - 1);
+        int gen = MlxMetalKernels.architectureGeneration(architecture);
+        if (t != MLX_FLOAT32 && gen >= (devc == 'p' ? 18 : 17)) {
+            throw naxNotSupported(addmm ? "mlx_addmm" : "mlx_matmul", architecture);
+        }
         String type = MlxMetalKernels.typeName(t);
+        if (!addmm && mm.bTransposed() && t != MLX_FLOAT32 && m > 1 && n > 1 && k % 4 == 0 && (m + 4) / 5 <= 3) {
+            // gemv_wide: one stream of the [n, k] matrix serves up to five input rows.
+            int passes = (m + 4) / 5;
+            int vecs = (m + passes - 1) / passes;
+            int kLanes = passes == 1 || n <= 64 ? 32 : 16;
+            int gridX = n >= 65536 ? 1 : passes;
+            String kernel = "gemv_wide_" + type + "_nv" + vecs + "_kl" + kLanes;
+            Ref a = mm.a();
+            Ref b = mm.b();
+            Ref out = mm.out();
+            return p -> p.launchIndexed(kernel, new int[] { 0, 1 }, new boolean[] { false, false }).buffer(0, b).buffer(1, a).buffer(3, out).i32(4, k).i32(5, n).i32(6, m).i32(7, k).i32(8, k)
+                    .i32(11, 1).i32(12, 1).i64(13, 0).i64(14, 0).threadgroups(gridX, (n + 3) / 4, 1, 32, kLanes / 8, 1);
+        }
         int lda = k;
         int ldb = mm.bTransposed() ? k : n;
         long strideA = batch > 1 ? (long) m * k : 0;
@@ -1855,8 +1880,11 @@ final class MlxKernelRoutes {
      */
     private static Encoder fullAttention(View v, int t, int b, int hq, int hkv, int lq, int lk, int d, float scale, boolean causal, String architecture) {
         boolean headDim = d == 64 || d == 72 || d == 80 || d == 96 || d == 128;
-        if (!headDim || (causal && lq > lk) || MlxMetalKernels.architectureGeneration(architecture) >= 17) {
+        if (!headDim || (causal && lq > lk)) {
             return null;
+        }
+        if (MlxMetalKernels.architectureGeneration(architecture) >= 17) {
+            throw naxNotSupported("mlx_fast_scaled_dot_product_attention", architecture);
         }
         int bq = 32;
         int bk = d < 128 ? 32 : 16;
@@ -1974,7 +2002,7 @@ final class MlxKernelRoutes {
         boolean matrix = m >= qmvBatchLimit(k, n, architecture);
         // (MLX's gather_qmm_rhs path needs sorted right indices, which the provider does not ask for.)
         if (matrix && gen >= 17) {
-            return null;
+            throw naxNotSupported("mlx_gather_qmm", architecture);
         }
         int words = k * bits / 32;
         int groups = k / gs;
@@ -2015,8 +2043,11 @@ final class MlxKernelRoutes {
         int batches = v.size(2);
         String architecture = v.architecture();
         if (t < 0 || architecture == null || architecture.isEmpty() || m == 1 || n == 1 || v.size(3) != batches || v.size(0) != ba * m * k || v.size(1) != bb * k * n
-                || v.size(4) != batches * m * n || MlxMetalKernels.architectureGeneration(architecture) >= 17) {
+                || v.size(4) != batches * m * n) {
             return null;
+        }
+        if (MlxMetalKernels.architectureGeneration(architecture) >= 17) {
+            throw naxNotSupported("mlx_gather_mm", architecture);
         }
         int[] tiles = gemmTiles(architecture.charAt(architecture.length() - 1), t, m, n, k, false, batches);
         int bm = tiles[0];
@@ -2055,9 +2086,11 @@ final class MlxKernelRoutes {
         int n = v.intArg(6);
         int segments = v.size(2) / 2;
         String architecture = v.architecture();
-        if (t < 0 || architecture == null || architecture.isEmpty() || v.size(0) != m * k || v.size(1) != k * n || v.size(3) != segments * m * n
-                || MlxMetalKernels.architectureGeneration(architecture) >= 17) {
+        if (t < 0 || architecture == null || architecture.isEmpty() || v.size(0) != m * k || v.size(1) != k * n || v.size(3) != segments * m * n) {
             return null;
+        }
+        if (MlxMetalKernels.architectureGeneration(architecture) >= 17) {
+            throw naxNotSupported("mlx_segmented_mm", architecture);
         }
         int[] tiles = gemmTiles(architecture.charAt(architecture.length() - 1), t, m, n, k, false, segments);
         int bm = tiles[0];
@@ -2116,7 +2149,7 @@ final class MlxKernelRoutes {
 
     /**
      * quantized_matmul(x[m, k], wq[n, k * bits / 32], scales, biases, out, m, k, n, group_size, bits), affine,
-     * transposed weights: MLX's qmv_quad / qmv_fast / qmv kernels when m is below the batch limit.
+     * transposed weights: MLX's qmv_quad / qmv_wide / qmv_fast / qmv kernels when m is below the batch limit.
      */
     private static Encoder quantizedMatmul(View v) {
         if (v.args() < 10 || !v.isArray(0) || !v.isArray(1) || !v.isArray(2) || !v.isArray(3) || !v.isArray(4)) {
@@ -2141,14 +2174,22 @@ final class MlxKernelRoutes {
         Ref x = v.ref(0);
         Ref out = v.ref(4);
         if (m >= qmvBatchLimit(k, n, architecture)) {
-            return gen >= 17 ? null : quantizedPrefill(t, type, m, k, n, gs, bits, w, scales, biases, x, out);
-        }
-        if (gen >= 15 && m >= 2) {
-            return null;
+            if (gen >= 17) {
+                throw naxNotSupported("mlx_quantized_matmul", architecture);
+            }
+            return quantizedPrefill(t, type, m, k, n, gs, bits, w, scales, biases, x, out);
         }
         if (k == 64 || k == 128) {
             String kernel = "affine_qmv_quad_" + type + "_gs_" + gs + "_b_" + bits + "_d_" + k + "_batch_0";
             return p -> p.launch(kernel).buffer(0, w).buffer(1, scales).buffer(2, biases).buffer(3, x).buffer(4, out).i32(5, k).i32(6, n).threadgroups(m, (n + 63) / 64, 1, 32, 1, 1);
+        }
+        if (m >= 2) {
+            // qmv_wide: each weight group serves up to five input rows; two simdgroups of four rows each.
+            int tiles = (m + 4) / 5;
+            int vecs = (m + tiles - 1) / tiles;
+            String kernel = "affine_qmv_wide_" + type + "_gs_" + gs + "_b_" + bits + "_nv_" + vecs + "_kl_8_batch_0";
+            return p -> p.launch(kernel).buffer(0, w).buffer(1, scales).buffer(2, biases).buffer(3, x).buffer(4, out).i32(5, k).i32(6, n).i32(7, m).threadgroups((m + vecs - 1) / vecs, (n + 7) / 8, 1, 32, 2,
+                    1);
         }
         int alignment = (32 / bits) * (bits == 2 ? 1 : 2) * 32;
         boolean fast = n % 8 == 0 && k % alignment == 0;
@@ -3513,7 +3554,12 @@ final class MlxKernelRoutes {
         if (route == null || invocation.isCapturing() || !(invocation.getDevice() instanceof TornadoNativeStreamSupport streams)) {
             return false;
         }
-        Encoder encoder = route.plan(new View(invocation));
+        View view = new View(invocation);
+        String architecture = view.architecture();
+        if (architecture != null && MlxMetalKernels.architectureGeneration(architecture) < MIN_GENERATION) {
+            throw new TornadoLibraryTaskNotSupported("MLX library tasks need an Apple GPU of generation " + MIN_GENERATION + " (M4) or newer; this device is " + architecture);
+        }
+        Encoder encoder = route.plan(view);
         if (encoder == null) {
             return false;
         }

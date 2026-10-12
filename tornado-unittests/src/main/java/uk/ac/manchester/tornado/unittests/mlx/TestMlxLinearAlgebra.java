@@ -573,6 +573,29 @@ public class TestMlxLinearAlgebra extends MlxTestBase {
     }
 
     @Test
+    public void testMatmulTransposedHalfFewRows() throws TornadoExecutionPlanException {
+        // One, two and three passes of MLX's wide GEMV, which streams the matrix once per five rows.
+        final int rows = 512;
+        final int cols = 1024;
+        for (int m : new int[] { 3, 7, 12 }) {
+            HalfFloatArray w = half(values(rows * cols, -0.05f, 0.05f, 39));
+            HalfFloatArray x = half(values(m * cols, -1, 1, 40));
+            HalfFloatArray y = new HalfFloatArray(m * rows);
+
+            TaskGraph taskGraph = new TaskGraph("g") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, w, x) //
+                    .libraryTask("gemvWide", Mlx::matmulTransposed, x, w, y, m, cols, rows) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+
+            assertAllClose("gemv_wide float16 m=" + m, matmulJava(widen(x), widen(w), m, cols, rows, true), y, 2e-3, 2e-3);
+        }
+    }
+
+    @Test
     public void testCrossHalf() throws TornadoExecutionPlanException {
         final int count = 100;
         HalfFloatArray a = half(values(count * 3, -2, 2, 37));
