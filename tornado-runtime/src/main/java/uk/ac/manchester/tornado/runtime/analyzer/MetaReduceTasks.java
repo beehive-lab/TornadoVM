@@ -38,8 +38,10 @@ public class MetaReduceTasks {
     private final HashMap<Integer, ArrayList<Integer>> reduceList;
     private final HashMap<Integer, Integer> reduceSize;
     private final List<ReduceCodeAnalysis.REDUCE_OPERATION> operations;
+    private final int loopStart;
 
-    MetaReduceTasks(int taskIndex, ArrayList<Integer> reduceIndexes, int inputSize, List<ReduceCodeAnalysis.REDUCE_OPERATION> operations) {
+    MetaReduceTasks(int taskIndex, ArrayList<Integer> reduceIndexes, int inputSize, int loopStart, List<ReduceCodeAnalysis.REDUCE_OPERATION> operations) {
+        this.loopStart = loopStart;
         reduceList = new HashMap<>();
         reduceSize = new HashMap<>();
         reduceList.put(taskIndex, reduceIndexes);
@@ -53,6 +55,11 @@ public class MetaReduceTasks {
 
     public int getInputSize(int taskIndex) {
         return reduceSize.get(taskIndex);
+    }
+
+    /** The constant start of the reduction loop: the iterations are {@code inputSize - loopStart}. */
+    public int getLoopStart() {
+        return loopStart;
     }
 
     /** The operations, one per reduce parameter. */

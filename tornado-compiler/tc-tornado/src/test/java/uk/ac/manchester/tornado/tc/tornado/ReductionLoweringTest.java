@@ -68,13 +68,39 @@ public class ReductionLoweringTest {
         assertTrue(ReductionLowering.run(function, List.of(false, true), 256).isEmpty());
         assertTrue(Verifier.verify(function).toString(), Verifier.verify(function).isEmpty());
         var text = new IrPrinter(false).printFunction(function);
-        // The tree is IR: a shared array sized by the largest work-group, barriers and a halving stride.
+        // The tree is IR: a shared array sized by the largest work-group, barriers and a halving fold.
         assertTrue(text, text.contains("alloca.shared") && text.contains("[256] : ptr<shared>"));
-        assertTrue(text, text.contains("tornado.barrier.local()") && text.contains("shr %stride"));
+        assertTrue(text, text.contains("tornado.barrier.local()") && text.contains("%half"));
+        // Each thread accumulates a grid-stride loop from the neutral element.
+        assertTrue(text, text.contains("tornado.global_size<dim = 0>()") && text.contains("%acc: f32"));
+        assertTrue(text, !text.contains("array.load %out"));
         assertTrue(text, !text.contains("tornado.reduce"));
         assertTrue(text, text.contains("tornado.group_id<dim = 0>()"));
         assertTrue(text, !text.contains("parallel<iv = 0>"));
         assertEquals(List.of(new ParallelLoopLowering.Domain(0, 0, 1, 4096)), ParallelLoopLowering.domain(function));
+    }
+
+    @Test
+    public void chainOfTheSameOperationIsAReduction() {
+        // out[0] = (out[0] + x) + 1: the read of out[0] is anywhere along a chain of additions.
+        var chain = SUM.replace("""
+                  %s = fadd %acc, %x : f32""", """
+                  %y = fadd %acc, %x : f32
+                  %c = const 1.0 : f32
+                  %s = fadd %y, %c : f32""");
+        var function = IrParser.parseFunction(chain);
+        assertTrue(ReductionLowering.run(function, List.of(false, true)).isEmpty());
+        assertTrue(Verifier.verify(function).toString(), Verifier.verify(function).isEmpty());
+        assertTrue(ReductionLowering.info(IrParser.parseFunction(chain), List.of(1)).operations().equals(List.of("add")));
+    }
+
+    @Test
+    public void mixedOperationsAreRefused() {
+        var mixed = SUM.replace("""
+                  %s = fadd %acc, %x : f32""", """
+                  %y = fmul %acc, %x : f32
+                  %s = fadd %y, %x : f32""");
+        assertEquals("TC-E3204", ReductionLowering.run(IrParser.parseFunction(mixed), List.of(false, true)).get(0).code());
     }
 
     @Test

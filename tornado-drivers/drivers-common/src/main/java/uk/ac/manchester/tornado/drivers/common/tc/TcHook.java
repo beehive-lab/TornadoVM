@@ -145,7 +145,9 @@ public final class TcHook {
             var tree = new DomainTree(c.domain().size());
             boolean reduction = facts.stream().anyMatch(f -> f instanceof ValueSpecialisation.Fact.Reduce);
             for (var d : c.domain()) {
-                long upper = reduction && d.dim() == 0 && numThreads > 0 ? d.offset() + numThreads : d.upper();
+                // IntDomain's third value is the number of threads. A reduction launches the runtime's count
+                // (a power of two; its partial slots are sized for it), whatever the loop's start.
+                long upper = reduction && d.dim() == 0 && numThreads > 0 ? numThreads : d.upper();
                 // The runtime's launch domains are int: a wider one would wrap.
                 if (d.offset() != (int) d.offset() || d.step() != (int) d.step() || upper != (int) upper) {
                     var why = "the launch domain of dimension " + d.dim() + " (" + d.offset() + " to " + upper + ") does not fit the runtime's int domains";

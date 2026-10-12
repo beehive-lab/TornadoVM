@@ -86,7 +86,7 @@ public class ReduceCodeAnalysis {
 
             // A @Reduce parameter the kernel only reads has no operation: the task is still rewritten,
             // with no final reduction for it.
-            var info = KernelAccess.reductions(kernel, reduceIndices).orElse(new KernelAccess.Reductions(List.of(), -1, -1));
+            var info = KernelAccess.reductions(kernel, reduceIndices).orElse(new KernelAccess.Reductions(List.of(), -1, -1, 0));
             List<REDUCE_OPERATION> operations = info.operations().stream().map(ReduceCodeAnalysis::operationOf).toList();
             if (info.boundParameter() >= 0) {
                 Object bound = taskPackages.get(taskIndex).getTaskParameters()[info.boundParameter() + argOffset];
@@ -100,7 +100,7 @@ public class ReduceCodeAnalysis {
             } else if (info.boundConstant() >= 0) {
                 inputSize = (int) info.boundConstant();
             }
-            tableMetaDataReduce.put(taskIndex, new MetaReduceTasks(taskIndex, reduceIndices, inputSize, operations));
+            tableMetaDataReduce.put(taskIndex, new MetaReduceTasks(taskIndex, reduceIndices, inputSize, (int) info.start(), operations));
             taskIndex++;
         }
 

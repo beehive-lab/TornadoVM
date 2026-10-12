@@ -153,7 +153,8 @@ public final class TcCompiler {
             // An instance method's receiver is parameter 0 of the function, not of the Java signature.
             int receiver = f.params().size() - parameterCount(descriptor);
             var info = uk.ac.manchester.tornado.tc.tornado.ReductionLowering.info(f, reduceIndices.stream().map(i -> i + receiver).toList());
-            return new uk.ac.manchester.tornado.tc.tornado.ReductionLowering.Info(info.operations(), info.boundParameter() < 0 ? -1 : info.boundParameter() - receiver, info.boundConstant());
+            return new uk.ac.manchester.tornado.tc.tornado.ReductionLowering.Info(info.operations(), info.boundParameter() < 0 ? -1 : info.boundParameter() - receiver, info.boundConstant(),
+                    info.start());
         });
     }
 

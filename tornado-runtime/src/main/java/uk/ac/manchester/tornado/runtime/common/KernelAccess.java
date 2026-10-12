@@ -55,9 +55,9 @@ public final class KernelAccess {
     /**
      * The operation of each {@code @Reduce} parameter a reduction is found for ({@code add},
      * {@code mul}, {@code min}, {@code max}), and the {@code @Parallel} loop's bound: the parameter
-     * whose length it is (or -1), else a constant (or -1).
+     * whose length it is (or -1), else a constant (or -1), and its constant start (0 when not constant).
      */
-    public record Reductions(List<String> operations, int boundParameter, long boundConstant) {
+    public record Reductions(List<String> operations, int boundParameter, long boundConstant, long start) {
     }
 
     private static final Provider PROVIDER = ServiceLoader.load(Provider.class).findFirst().orElse(null);

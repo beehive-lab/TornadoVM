@@ -71,7 +71,7 @@ public final class TcAccessProvider implements KernelAccess.Provider {
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         try {
             return TcCompiler.reductions(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, reduceIndices)
-                    .map(i -> new KernelAccess.Reductions(i.operations(), i.boundParameter(), i.boundConstant()));
+                    .map(i -> new KernelAccess.Reductions(i.operations(), i.boundParameter(), i.boundConstant(), i.start()));
         } catch (RuntimeException | StackOverflowError e) {
             return Optional.empty();
         }

@@ -11,21 +11,28 @@ static inline float java_fmaxf(float a, float b) {
 __kernel void TestVirtualDeviceKernel_maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global unsigned char *input, __global unsigned char *result)
 {
   __local float reduce_scratch[1024];
-  int i, lid_x, stride;
+  int gsize_x, i, lid_x, active, half_;
   __global float *input_data, *result_data;
-  float partial;
-  i = (int) get_global_id(0);  // TestVirtualDeviceKernel.java:56
+  float acc, partial;
+  gsize_x = (int) get_global_size(0);  // TestVirtualDeviceKernel.java:57
   input_data = (__global float *) (input + 24L);  // TestVirtualDeviceKernel.java:57
+  i = (int) get_global_id(0);
+  acc = as_float(0xff800000);
+  while (i < 8192) {
+    acc = java_fmaxf(acc, input_data[i]);
+    i = (int) ((uint) i + (uint) gsize_x);
+  }
   lid_x = (int) get_local_id(0);  // TestVirtualDeviceKernel.java:57
-  reduce_scratch[lid_x] = input_data[i];  // TestVirtualDeviceKernel.java:57
+  reduce_scratch[lid_x] = acc;  // TestVirtualDeviceKernel.java:57
   barrier(CLK_LOCAL_MEM_FENCE);  // TestVirtualDeviceKernel.java:57
-  stride = ((int) get_local_size(0)) >> 1;
-  while (stride > 0) {
-    if (lid_x < stride) {
-      reduce_scratch[lid_x] = java_fmaxf(reduce_scratch[lid_x], reduce_scratch[(int) ((uint) lid_x + (uint) stride)]);  // TestVirtualDeviceKernel.java:57
+  active = (int) get_local_size(0);
+  while (active > 1) {
+    half_ = (int) ((uint) active + (uint) 1) >> 1;  // TestVirtualDeviceKernel.java:57
+    if (lid_x < (int) ((uint) active - (uint) half_)) {
+      reduce_scratch[lid_x] = java_fmaxf(reduce_scratch[lid_x], reduce_scratch[(int) ((uint) lid_x + (uint) half_)]);  // TestVirtualDeviceKernel.java:57
     }
     barrier(CLK_LOCAL_MEM_FENCE);  // TestVirtualDeviceKernel.java:57
-    stride = stride >> 1;
+    active = half_;
   }
   partial = reduce_scratch[0];  // TestVirtualDeviceKernel.java:57
   if (lid_x == 0) {
