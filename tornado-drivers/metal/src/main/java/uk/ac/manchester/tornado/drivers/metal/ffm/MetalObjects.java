@@ -341,12 +341,10 @@ public final class MetalObjects {
         }
         try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
             long sourceString = ObjCRuntime.newNSString(new String(source, StandardCharsets.UTF_8));
-            long options = 0;
-            if ((compileFlags & METAL_COMPILE_FAST_MATH) != 0) {
-                long optionsClass = ObjCRuntime.objc_getClass("MTLCompileOptions");
-                options = ObjCRuntime.send(ObjCRuntime.send(optionsClass, "alloc"), "init");
-                ObjCRuntime.sendVoid(options, "setFastMathEnabled:", 1);
-            }
+            // Always pass explicit options: nil options mean the MTLCompileOptions defaults, which enable fast math.
+            long optionsClass = ObjCRuntime.objc_getClass("MTLCompileOptions");
+            long options = ObjCRuntime.send(ObjCRuntime.send(optionsClass, "alloc"), "init");
+            ObjCRuntime.sendVoid(options, "setFastMathEnabled:", (compileFlags & METAL_COMPILE_FAST_MATH) != 0 ? 1 : 0);
             MemorySegment errorSlot = FFMSupport.allocatePointer(arena);
             long library = MetalAPI.newLibraryWithSource(device, sourceString, options, errorSlot);
             long program = registerProgram(library, device, errorSlot);
