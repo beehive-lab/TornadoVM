@@ -1657,7 +1657,7 @@ public class TornadoVMInterpreter {
         try {
             return execute(false);
         } catch (RuntimeException | Error e) {
-            abortCaptureAfterFailure();
+            abortCaptureAfterFailure(e);
             throw e;
         }
     }
@@ -1665,17 +1665,18 @@ public class TornadoVMInterpreter {
     /**
      * Called when an execution fails inside a CUDA-graph capture region. The capture is abandoned,
      * so the device stream is not left capturing and nothing from the failed capture is flushed
-     * into the next one on the same device.
+     * into the next one on the same device. A failure of the clean-up itself is attached to the
+     * execution's failure as a suppressed exception, so the execution's failure is the one reported.
      */
-    private void abortCaptureAfterFailure() {
+    private void abortCaptureAfterFailure(Throwable failure) {
         if (!insideCaptureRegion) {
             return;
         }
         insideCaptureRegion = false;
         try {
             interpreterDevice.abortExecutionGraphCapture(graphExecutionContext.getExecutionPlanId());
-        } catch (RuntimeException suppressed) {
-            // The failure being reported is the execution's, not the clean-up's.
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
         }
     }
 
