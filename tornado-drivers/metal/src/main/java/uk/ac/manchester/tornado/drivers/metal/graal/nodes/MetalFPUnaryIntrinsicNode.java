@@ -74,60 +74,61 @@ public class MetalFPUnaryIntrinsicNode extends UnaryNode implements ArithmeticLI
 
         if (value.isConstant()) {
             if (kind == JavaKind.Double) {
-                double ret = doCompute(value.asJavaConstant().asDouble(), op);
-                result = ConstantNode.forDouble(ret);
+                Double ret = fold(value.asJavaConstant().asDouble(), op);
+                if (ret != null) {
+                    result = ConstantNode.forDouble(ret);
+                }
             } else if (kind == JavaKind.Float) {
-                float ret = doCompute(value.asJavaConstant().asFloat(), op);
-                result = ConstantNode.forFloat(ret);
+                Double ret = fold(value.asJavaConstant().asFloat(), op);
+                if (ret != null) {
+                    result = ConstantNode.forFloat(ret.floatValue());
+                }
             }
         }
         return result;
     }
 
-    private static double computeAcosh(double value) {
-        return Math.log(value + Math.sqrt(value * value - 1));
-    }
-
-    private static float computeAcosh(float value) {
-        return (float) Math.log(value + Math.sqrt(value * value - 1));
-    }
-
-    private static double computeAsinh(double value) {
-        return Math.log(value + Math.sqrt(value * value + 1));
-    }
-
-    private static float computeAsinh(float value) {
-        return (float) Math.log(value + Math.sqrt(value * value + 1));
-    }
-
-    private static double doCompute(double value, Operation op) {
+    /**
+     * The value of {@code op} at a constant, or null when the operation has no exact Java
+     * equivalent; the node is then left for the device to compute. Float constants are folded in
+     * double precision and rounded once.
+     */
+    private static Double fold(double v, Operation op) {
         return switch (op) {
-            case ASIN -> Math.asin(value);
-            case ASINH -> computeAsinh(value);
-            case ACOS -> Math.acos(value);
-            case ACOSH -> computeAcosh(value);
-            case FABS -> Math.abs(value);
-            case EXP -> Math.exp(value);
-            case SQRT -> Math.sqrt(value);
-            case FLOOR -> Math.floor(value);
-            case LOG -> Math.log(value);
-            default -> throw new TornadoInternalError("unable to compute op %s", op);
-        };
-    }
-    // @formatter:on
-
-    private static float doCompute(float value, Operation op) {
-        return switch (op) {
-            case ASIN -> (float) Math.asin(value);
-            case ASINH -> computeAsinh(value);
-            case ACOS -> (float) Math.acos(value);
-            case ACOSH -> computeAcosh(value);
-            case FABS -> Math.abs(value);
-            case EXP -> (float) Math.exp(value);
-            case SQRT -> (float) Math.sqrt(value);
-            case FLOOR -> (float) Math.floor(value);
-            case LOG -> (float) Math.log(value);
-            default -> throw new TornadoInternalError("unable to compute op %s", op);
+            case ACOS -> Math.acos(v);
+            case ACOSH -> Math.log(v + Math.sqrt(v * v - 1));
+            case ASIN -> Math.asin(v);
+            case ASINH -> Math.log(v + Math.sqrt(v * v + 1));
+            case ATAN -> Math.atan(v);
+            case ATANH -> 0.5 * Math.log((1 + v) / (1 - v));
+            case CBRT -> Math.cbrt(v);
+            case CEIL -> Math.ceil(v);
+            case COS -> Math.cos(v);
+            case COSH -> Math.cosh(v);
+            case COSPI -> Math.cos(Math.PI * v);
+            case EXP -> Math.exp(v);
+            case EXP2 -> Math.pow(2, v);
+            case EXP10 -> Math.pow(10, v);
+            case EXPM1 -> Math.expm1(v);
+            case FABS -> Math.abs(v);
+            case FLOOR -> Math.floor(v);
+            case LOG -> Math.log(v);
+            case LOG2 -> Math.log(v) / Math.log(2);
+            case LOG10 -> Math.log10(v);
+            case LOG1P -> Math.log1p(v);
+            case RADIANS -> Math.toRadians(v);
+            case RINT -> Math.rint(v);
+            case ROUND -> Math.signum(v) * Math.floor(Math.abs(v) + 0.5);
+            case RSQRT -> 1 / Math.sqrt(v);
+            case SIN -> Math.sin(v);
+            case SINH -> Math.sinh(v);
+            case SINPI -> Math.sin(Math.PI * v);
+            case SQRT -> Math.sqrt(v);
+            case TAN -> Math.tan(v);
+            case TANH -> Math.tanh(v);
+            case TANPI -> Math.tan(Math.PI * v);
+            case TRUNC -> v < 0 ? Math.ceil(v) : Math.floor(v);
+            default -> null;
         };
     }
 

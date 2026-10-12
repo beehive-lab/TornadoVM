@@ -85,4 +85,15 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
 
     MetalProgram createProgramWithIL(byte[] binary, long[] lengths);
 
+    /**
+     * Raw MTLCommandQueue handle of the execution-plan queue, for external libraries (e.g.
+     * Apple MLX kernels) that encode work on TornadoVM's queue.
+     */
+    long getNativeStream(long executionPlanId);
+
+    /**
+     * Raw MTLDevice handle that owns the execution-plan queue.
+     */
+    long getNativeContext(long executionPlanId);
+
 }

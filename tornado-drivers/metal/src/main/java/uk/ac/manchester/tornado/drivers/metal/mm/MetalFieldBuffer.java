@@ -524,4 +524,14 @@ public class MetalFieldBuffer implements XPUBuffer {
     public int getSizeOfType() {
         throw new TornadoRuntimeException("[ERROR] not implemented");
     }
+
+    @Override
+    public long libraryAddress() {
+        throw new TornadoRuntimeException("[ERROR] An object with fields is not supported as a library-task argument on the Metal backend");
+    }
+
+    @Override
+    public long libraryOffset() {
+        throw new TornadoRuntimeException("[ERROR] An object with fields is not supported as a library-task argument on the Metal backend");
+    }
 }
