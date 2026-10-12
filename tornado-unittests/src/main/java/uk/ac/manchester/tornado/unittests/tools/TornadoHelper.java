@@ -39,6 +39,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.engine.DiscoverySelector;
+import org.junit.platform.engine.support.descriptor.ClassSource;
+import org.junit.platform.engine.support.descriptor.MethodSource;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
@@ -87,14 +89,31 @@ public class TornadoHelper {
         return writer.toString();
     }
 
-    private static void printResult(TestExecutionSummary result) {
+    /**
+     * Name of the test (Class#method) or, for a failure outside any test (e.g., in a static initializer), of the class.
+     */
+    private static String testName(Failure failure) {
+        return failure.getTestIdentifier().getSource().map(source -> switch (source) {
+            case MethodSource method -> method.getClassName() + "#" + method.getMethodName();
+            case ClassSource klass -> klass.getClassName();
+            default -> failure.getTestIdentifier().getDisplayName();
+        }).orElse(failure.getTestIdentifier().getDisplayName());
+    }
+
+    private static void printResult(TestExecutionSummary result, String selection) {
         // Separate genuinely-failed tests from those skipped as unsupported on this configuration, so the terse
         // (non-verbose) runner does not report unsupported tests as failures (which reads as false regressions).
         long notSupported = result.getFailures().stream().filter(failure -> isUnsupported(failure.getException())).count();
         long failed = result.getFailures().size() - notSupported;
+        // One line per failed test, so that tornado-test can tell failures from whitelisted ones without -V.
+        for (Failure failure : result.getFailures()) {
+            if (!isUnsupported(failure.getException())) {
+                System.out.println(FAILED_TEST_MARKER + testName(failure) + " - " + failure.getException());
+            }
+        }
         if (result.getTestsFoundCount() == 0) {
             // JUnit 4 failed a request with no runnable methods; the JUnit Platform reports an empty, successful run.
-            System.out.println("[FAILED] No tests found: nothing was run");
+            System.out.println(FAILED_TEST_MARKER + selection + " - no tests found: nothing was run");
             failed++;
         }
         System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", result.getTestsStartedCount(), failed, notSupported);
@@ -113,6 +132,11 @@ public class TornadoHelper {
      * driver), the last marker names the test that crashed. tornado-test reads it and removes it from the output.
      */
     static final String RUNNING_TEST_MARKER = "[TornadoTestRunner] running ";
+
+    /**
+     * Prefix of the line the non-verbose runner prints for each failed test, read by tornado-test.
+     */
+    static final String FAILED_TEST_MARKER = "[TEST FAILED] ";
 
     /**
      * Console output of the verbose runner. Each line is written as soon as it is complete, not buffered until the
@@ -353,11 +377,11 @@ public class TornadoHelper {
     }
 
     static void runTestClassAndMethod(String klassName, String methodName) throws ClassNotFoundException {
-        printResult(run(selectMethod(Class.forName(klassName), methodName)));
+        printResult(run(selectMethod(Class.forName(klassName), methodName)), klassName + "#" + methodName);
     }
 
     static void runTestClass(String klassName) throws ClassNotFoundException {
-        printResult(run(selectClass(Class.forName(klassName))));
+        printResult(run(selectClass(Class.forName(klassName))), klassName);
     }
 
     static class TestSuiteCollection {
