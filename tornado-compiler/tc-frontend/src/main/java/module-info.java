@@ -7,4 +7,6 @@ module tornado.tc.frontend {
     exports uk.ac.manchester.tornado.tc.frontend;
     exports uk.ac.manchester.tornado.tc.frontend.classfile;
     exports uk.ac.manchester.tornado.tc.frontend.tools;
+
+    uses uk.ac.manchester.tornado.tc.frontend.ModelFrontend;
 }

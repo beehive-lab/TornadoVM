@@ -30,9 +30,16 @@ import java.util.zip.ZipFile;
 
 import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
 import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFormatException;
+import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Inst;
+import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Loc;
+import uk.ac.manchester.tornado.tc.ir.Opcode;
+import uk.ac.manchester.tornado.tc.ir.Opcode.ConvertOp;
+import uk.ac.manchester.tornado.tc.ir.Type;
+import uk.ac.manchester.tornado.tc.ir.Value;
 
 /**
  * The TC Java frontend: class bytes in, pre-ABI TC-SSA out. Class bytes come from a
@@ -51,6 +58,11 @@ public final class Frontend {
          * the field's value is built by the class initialiser.
          */
         default Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
+            return Optional.empty();
+        }
+
+        /** The class loader behind this source, if it has one (model frontends load the kernel's class). */
+        default Optional<ClassLoader> loader() {
             return Optional.empty();
         }
 
@@ -114,6 +126,11 @@ public final class Frontend {
                 @Override
                 public Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
                     return DeviceKernels.resolve(loader, ownerInternalName, field);
+                }
+
+                @Override
+                public Optional<ClassLoader> loader() {
+                    return Optional.of(loader);
                 }
 
                 private final java.util.Map<String, Optional<EnumInfo>> enums = new java.util.concurrent.ConcurrentHashMap<>();
@@ -223,6 +240,113 @@ public final class Frontend {
         }
     }
 
+    /** Code-model frontends on the class or module path (none by default). */
+    private static final List<ModelFrontend> MODEL_FRONTENDS = java.util.ServiceLoader.load(ModelFrontend.class, Frontend.class.getClassLoader()).stream()
+            .map(java.util.ServiceLoader.Provider::get).toList();
+
+    /** The TC type of a JVM field descriptor, as the bytecode frontend types kernel parameters. */
+    public static uk.ac.manchester.tornado.tc.ir.Type typeOf(String descriptor) {
+        return Bindings.type(descriptor);
+    }
+
+    /** The name a kernel function has: the simple class name and the method name. */
+    public static String kernelName(String className, String methodName) {
+        var internal = className.replace('.', '/');
+        return internal.substring(internal.lastIndexOf('/') + 1) + "." + methodName;
+    }
+
+    /** The name a callee has (see {@link Translator#calleeName}); {@code owner} is an internal name. */
+    /** A TornadoVM API field read or call lowered by {@link #apiField} / {@link #apiCall}: its value, if any. */
+    public record ApiResult(Optional<Value> value) {
+    }
+
+    /**
+     * For model frontends: a field of the TornadoVM API ({@code KernelContext.globalIdx}, ...) read as the
+     * bytecode frontend reads it. Empty when the field is not API.
+     */
+    public static Optional<ApiResult> apiField(IrBuilder b, String owner, String name) {
+        return Bindings.field(owner.replace('.', '/'), name).flatMap(binding -> binding instanceof Bindings.Intrinsic(var intrinsic, var type, var immediates)
+                ? Optional.of(new ApiResult(Optional.of(b.intrinsic(intrinsic, immediates, type, List.of()))))
+                : Optional.empty());
+    }
+
+    /**
+     * For model frontends: a call into the TornadoVM API (native arrays, {@code KernelContext},
+     * {@code TornadoMath}, ...) lowered as the bytecode frontend lowers it. {@code args} include the
+     * receiver of an instance call. Empty when the method is not API or its binding needs the bytecode
+     * frontend's own state (vectors, atomics, half floats, device launches).
+     */
+    public static Optional<ApiResult> apiCall(IrBuilder b, String owner, String name, String descriptor, boolean isStatic, List<Value> args) {
+        var binding = Bindings.method(owner.replace('.', '/'), name, descriptor);
+        if (binding.isEmpty()) {
+            return Optional.empty();
+        }
+        return switch (binding.get()) {
+            case Bindings.Intrinsic(var intrinsic, var type, var immediates) -> {
+                var result = b.intrinsic(intrinsic, immediates, type, isStatic ? args : args.subList(1, args.size()));
+                yield Optional.of(new ApiResult(result.producesValue() ? Optional.of(result) : Optional.empty()));
+            }
+            case Bindings.ArrayGet g -> {
+                // Sub-int elements widen to int, as on the JVM operand stack (char unsigned, others signed).
+                Value loaded = b.arrayLoad(args.get(0), args.get(1));
+                var element = loaded.type();
+                if (element.equals(Type.I8) || element.equals(Type.I16)) {
+                    loaded = b.convert(descriptor.endsWith(")C") ? ConvertOp.ZEXT : ConvertOp.SEXT, loaded, Type.I32);
+                }
+                yield Optional.of(new ApiResult(Optional.of(loaded)));
+            }
+            case Bindings.ArraySet s -> {
+                var element = args.get(0).type() instanceof Type.ArrayType(var e) ? e : args.get(2).type();
+                var value = args.get(2);
+                b.arrayStore(args.get(0), args.get(1), element.equals(value.type()) ? value : b.convert(ConvertOp.TRUNC, value, element));
+                yield Optional.of(new ApiResult(Optional.empty()));
+            }
+            case Bindings.ArraySize(var type) -> Optional.of(new ApiResult(Optional.of(b.arrayLength(args.get(0), type))));
+            case Bindings.Convert(var op, var result) -> Optional.of(new ApiResult(Optional.of(b.convert(op, args.get(args.size() - 1), result))));
+            case Bindings.Identity i -> Optional.of(new ApiResult(Optional.of(args.get(0))));
+            case Bindings.SharedArray(var element) -> args.get(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n) && n > 0
+                    ? Optional.of(new ApiResult(Optional.of(b.alloca(AddressSpace.SHARED, element, (int) n))))
+                    : Optional.empty();
+            default -> Optional.empty();
+        };
+    }
+
+    public static String calleeName(String owner, String name, String descriptor) {
+        return Translator.calleeName(owner, name, descriptor);
+    }
+
+    /**
+     * A callee translated from bytecode under {@code name}, with the static methods it calls in turn:
+     * for a model frontend's calls into code that has no model.
+     */
+    public static ModuleResult translateCallee(BytecodeSource source, String owner, String methodName, String descriptor, String name) {
+        var bytes = source.classBytes(owner);
+        if (bytes.isEmpty()) {
+            return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", "class " + owner.replace('/', '.') + " not found", "", Loc.UNKNOWN)), "");
+        }
+        var classFile = ClassFile.parse(bytes.get());
+        var method = classFile.method(methodName, descriptor);
+        if (method.isEmpty() || method.get().code().isEmpty()) {
+            return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + owner.replace('/', '.') + "." + methodName + descriptor + " has no bytecode", "", Loc.UNKNOWN)), "");
+        }
+        var module = new uk.ac.manchester.tornado.tc.ir.IrModule();
+        try {
+            var translated = Translator.translateDevice(source, classFile, method.get(), name);
+            module.add(translated.function());
+            for (var callee : translated.callees().entrySet()) {
+                var ref = callee.getValue();
+                var inner = translateCallee(source, ref.owner(), ref.name(), ref.descriptor(), callee.getKey());
+                if (inner.module().isEmpty()) {
+                    return inner;
+                }
+                inner.module().get().functions().stream().filter(f -> module.find(f.name()).isEmpty()).forEach(module::add);
+            }
+        } catch (Translator.FrontendError e) {
+            return new ModuleResult(Optional.empty(), List.of(e.diagnostic), "");
+        }
+        return new ModuleResult(Optional.of(module), List.of(), "");
+    }
+
     /** A kernel and every static method it calls, transitively: the kernel is the first function. */
     public record ModuleResult(Optional<uk.ac.manchester.tornado.tc.ir.IrModule> module, List<Diagnostic> diagnostics, String bytecode) {
     }
@@ -232,6 +356,12 @@ public final class Frontend {
      * is rejected with {@code TC-E1009}: GPU kernels cannot recurse.
      */
     public static ModuleResult translateWithCallees(BytecodeSource source, String className, String methodName, String descriptor) {
+        for (var model : MODEL_FRONTENDS) {
+            var result = model.translate(source, className, methodName, descriptor);
+            if (result.isPresent()) {
+                return result.get();
+            }
+        }
         var kernel = translate(source, className, methodName, descriptor);
         if (kernel.function().isEmpty()) {
             return new ModuleResult(Optional.empty(), kernel.diagnostics(), kernel.bytecode());
