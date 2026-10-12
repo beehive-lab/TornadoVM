@@ -644,6 +644,48 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * DECIMAL columns read as {@code CudfType.DECIMAL64} land as their unscaled values in the INT64
+     * buffer, whichever width the file stores them in: {@code decimals.parquet} (pyarrow, stored as
+     * integers, as Spark writes them) and {@code decimals-fixed.parquet} (the same values as
+     * FIXED_LEN_BYTE_ARRAY) hold a DECIMAL(7,2) {@code s}, DECIMAL(15,2) {@code b}, DECIMAL(12,4)
+     * {@code w} and a nullable DECIMAL(9,1) {@code n} = i.i, null when {@code i % 3 == 1}.
+     */
+    @Test
+    public void testReadParquetColumnsDecimalUnscaled() throws TornadoExecutionPlanException, IOException {
+        long[] s = { 1234567, -1, 9999999, -9999999, 0, 150, -4242, 700, 99, 10010 };
+        long[] b = { 999999999999999L, -999999999999999L, 123, 0, -5, 12345678901234L, 500, -100, 7777, 1 };
+        long[] w = { 123456789012L, -1, 0, 999999999999L, -999999999999L, 31416, 27183, -14142, 100000, 5000 };
+        int rows = s.length;
+        for (String fixture : new String[] { "decimals.parquet", "decimals-fixed.parquet" }) {
+            Path file = Files.createTempFile("tornado-cudf-decimals", ".parquet");
+            file.toFile().deleteOnExit();
+            try (InputStream in = TestCudfColumns.class.getResourceAsStream(fixture)) {
+                Files.copy(in, file, StandardCopyOption.REPLACE_EXISTING);
+            }
+            LongArray longs = new LongArray(4L * rows);
+            ByteArray valid = new ByteArray(4L * rows);
+            CudfType[] kinds = { CudfType.DECIMAL64, CudfType.DECIMAL64, CudfType.DECIMAL64, CudfType.DECIMAL64 };
+            TaskGraph graph = new TaskGraph("cudf") //
+                    .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(file.toString()), 0, 0, new int[] { 0, 1, 2, 3 }, kinds, new long[] { rows }, rows,
+                            new IntArray(1), longs, new DoubleArray(1), valid, true) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, longs, valid);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+                plan.execute();
+            }
+            for (int i = 0; i < rows; i++) {
+                assertEquals(fixture + " s " + i, s[i], longs.get(i));
+                assertEquals(fixture + " b " + i, b[i], longs.get(rows + i));
+                assertEquals(fixture + " w " + i, w[i], longs.get(2 * rows + i));
+                boolean present = i % 3 != 1;
+                assertEquals(fixture + " n valid " + i, present ? 1 : 0, valid.get(3 * rows + i));
+                if (present) {
+                    assertEquals(fixture + " n " + i, 11L * i, longs.get(3 * rows + i));
+                }
+            }
+        }
+    }
+
     /** A column with nulls, read without asking for validity, is refused rather than read as dense. */
     @Test
     public void testReadParquetColumnsRefusesNullsWithoutValidity() {

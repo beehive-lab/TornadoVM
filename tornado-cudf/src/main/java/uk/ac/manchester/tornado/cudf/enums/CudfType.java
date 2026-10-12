@@ -43,7 +43,14 @@ public enum CudfType {
      * FP32, widened exactly to FP64 into a {@code DoubleArray}: it takes a slot of the FP64 buffer,
      * so a reader keeps one floating-point buffer for both widths.
      */
-    FLOAT32(3);
+    FLOAT32(3),
+
+    /**
+     * DECIMAL of up to 18 digits, its unscaled values into a {@code LongArray}: it takes a slot of the
+     * INT64 buffer, whichever width the file stores (INT32, INT64 or FIXED_LEN_BYTE_ARRAY), and the
+     * caller keeps the scale, which is the column's.
+     */
+    DECIMAL64(4);
 
     private final int code;
 
