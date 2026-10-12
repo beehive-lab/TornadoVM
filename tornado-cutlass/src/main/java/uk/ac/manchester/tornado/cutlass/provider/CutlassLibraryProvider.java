@@ -27,10 +27,10 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
 import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 
 /**
- * {@link TornadoLibraryProvider} for NVIDIA CUTLASS GEMM kernels. The
- * per-(device, execution plan) context holds the plan's CUstream (CUTLASS has
- * no library handle - the stream is passed per launch) and a grow-only device
- * workspace. The workspace is sized in {@link #prepare} - before CUDA graph
+ * {@link TornadoLibraryProvider} for NVIDIA CUTLASS GEMM kernels. CUTLASS has
+ * no library handle: each launch takes the CUstream of the thread running the
+ * plan, and the per-(device, execution plan) context holds only a grow-only
+ * device workspace. The workspace is sized in {@link #prepare} - before CUDA graph
  * capture starts - so {@link #dispatch} allocates nothing and is capture-safe.
  *
  * TornadoVM device pointers are the array base plus a 24-byte header, so their
@@ -40,13 +40,8 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 public final class CutlassLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CutlassContext implements LibraryContext {
-        private final long stream;
         private long workspacePtr;
         private long workspaceBytes;
-
-        private CutlassContext(long stream) {
-            this.stream = stream;
-        }
 
         private void growWorkspace(long required) {
             if (required > workspaceBytes) {
@@ -78,8 +73,7 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
     @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CutlassNativeLib.load();
-        long stream = ((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId);
-        return new CutlassContext(stream);
+        return new CutlassContext();
     }
 
     @Override
@@ -109,50 +103,54 @@ public final class CutlassLibraryProvider implements TornadoLibraryProvider {
     @Override
     public void dispatch(String functionName, LibraryInvocation invocation) {
         CutlassContext context = (CutlassContext) invocation.getContext();
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
         int status = switch (functionName) {
             // (m, n, k, alpha, a, b, beta, c)
             case "cutlassSgemm" -> CutlassNativeLib.sgemm((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     (float) invocation.getArg(3), //
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
                     (float) invocation.getArg(6), invocation.getDevicePointer(7), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             // (m, n, k, alpha, a, b, beta, d)
             case "cutlassHgemm" -> CutlassNativeLib.hgemm((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     (float) invocation.getArg(3), //
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
                     (float) invocation.getArg(6), invocation.getDevicePointer(7), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             // (m, n, k, alpha, a, b, beta, c)
             case "cutlassBgemm" -> CutlassNativeLib.bgemm((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     (float) invocation.getArg(3), //
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
                     (float) invocation.getArg(6), invocation.getDevicePointer(7), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             // (m, n, k, a, b, bias, d)
             case "cutlassGemmBiasRelu" -> CutlassNativeLib.gemmBiasRelu((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             case "cutlassGemmBiasGelu" -> CutlassNativeLib.gemmBiasGelu((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             case "cutlassGemmBiasSilu" -> CutlassNativeLib.gemmBiasSilu((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             case "cutlassGemmBiasSigmoid" -> CutlassNativeLib.gemmBiasSigmoid((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             case "cutlassGemmBiasTanh" -> CutlassNativeLib.gemmBiasTanh((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             case "cutlassGemmBiasHardSwish" -> CutlassNativeLib.gemmBiasHardSwish((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     invocation.getDevicePointer(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             // (m, n, k, alpha, a, b, beta, c, batchCount)
             case "cutlassHgemmBatched" -> CutlassNativeLib.hgemmBatched((int) invocation.getArg(0), (int) invocation.getArg(1), (int) invocation.getArg(2), //
                     (float) invocation.getArg(3), //
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5), //
                     (float) invocation.getArg(6), invocation.getDevicePointer(7), (int) invocation.getArg(8), //
-                    context.workspacePtr, context.stream);
+                    context.workspacePtr, stream);
             default -> throw new TornadoRuntimeException("[ERROR] CUTLASS function not supported: " + functionName);
         };
         CutlassNativeLib.checkStatus(status, functionName);

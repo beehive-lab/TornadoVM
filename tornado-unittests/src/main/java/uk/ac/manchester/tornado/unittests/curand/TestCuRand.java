@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
@@ -36,6 +37,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.curand.CuRand;
 import uk.ac.manchester.tornado.curand.provider.CuRandLibraryProvider;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
@@ -217,5 +219,38 @@ public class TestCuRand extends TornadoTestBase {
             total += output.get(i);
         }
         assertEquals("sample mean", 0.0, total / NUM_ELEMENTS, 0.05);
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuRAND call must follow the kernel before it on that thread's stream, not run on the stream
+     * of the thread that first ran the plan. The kernel slowly fills the output with -1, so a
+     * generation that does not wait for it is overwritten.
+     */
+    @Test
+    public void testGenerateFollowsKernelOnAnotherThread() throws Exception {
+        FloatArray output = new FloatArray(NUM_ELEMENTS);
+        FloatArray sentinel = new FloatArray(1);
+        sentinel.set(0, -1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, output, sentinel) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), output, sentinel, LibraryStreamPerThread.SPINS) //
+                .libraryTask("uniform", CuRand::generateUniform, output, 0, NUM_ELEMENTS) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < NUM_ELEMENTS; i++) {
+                float v = output.get(i);
+                assertTrue("element " + i + " out of (0,1]: " + v, v > 0.0f && v <= 1.0f);
+            }
+            output.init(0.0f);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < NUM_ELEMENTS; i++) {
+                float v = output.get(i);
+                assertTrue("element " + i + " out of (0,1]: " + v, v > 0.0f && v <= 1.0f);
+            }
+        }
     }
 }

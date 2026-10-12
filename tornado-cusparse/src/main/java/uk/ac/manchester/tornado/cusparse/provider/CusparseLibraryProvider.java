@@ -43,11 +43,14 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CusparseContext implements LibraryContext {
         private final long handle;
+        /** The stream the handle is bound to. */
+        private long stream;
         private long workspacePtr;
         private long workspaceBytes;
 
-        private CusparseContext(long handle) {
+        private CusparseContext(long handle, long stream) {
             this.handle = handle;
+            this.stream = stream;
         }
 
         private void growWorkspace(long required, boolean capturing) {
@@ -108,7 +111,7 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] cusparseCreate failed");
         }
         CusparseNativeLib.checkStatus(CusparseNativeLib.cusparseSetStreamNative(handle, stream), "cusparseSetStream");
-        return new CusparseContext(handle);
+        return new CusparseContext(handle, stream);
     }
 
     @Override
@@ -122,6 +125,14 @@ public final class CusparseLibraryProvider implements TornadoLibraryProvider {
     @Override
     public void dispatch(String functionName, LibraryInvocation invocation) {
         CusparseContext context = (CusparseContext) invocation.getContext();
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            CusparseNativeLib.checkStatus(CusparseNativeLib.cusparseSetStreamNative(context.handle, stream), "cusparseSetStream");
+            context.stream = stream;
+        }
         int status = switch (functionName) {
             case "cusparseSpMV" -> spmv(context, invocation);
             case "cusparseSpMM" -> spmm(context, invocation);
