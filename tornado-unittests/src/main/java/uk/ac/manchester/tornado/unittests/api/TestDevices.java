@@ -36,6 +36,8 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
+import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 /**
  * How to run?
@@ -125,9 +127,9 @@ public class TestDevices extends TornadoTestBase {
 
         // Obtain all backends with at least two devices associated to it
         List<TornadoBackend> multiDeviceBackends = tornadoDeviceMap.getBackendsWithPredicate(backend -> backend.getNumDevices() > 1);
-
-        // If the multi-backend list is not empty, then it found at least one backend with multiple devices
-        assertTrue(multiDeviceBackends.size() >= 1);
+        if (multiDeviceBackends.isEmpty()) {
+            throw new TornadoVMMultiDeviceNotSupported("Test requires a backend with at least two devices");
+        }
 
         // Return all backends that can access an NVIDIA GPU
         List<TornadoBackend> backendsWithNVIDIAAccess = tornadoDeviceMap.getBackendsWithDevicePredicate(device -> device //
@@ -135,8 +137,9 @@ public class TestDevices extends TornadoTestBase {
                 .getDeviceName()     //
                 .toLowerCase()       //
                 .contains("nvidia"));
-
-        assertFalse(backendsWithNVIDIAAccess.isEmpty());
+        if (backendsWithNVIDIAAccess.isEmpty()) {
+            throw new UnsupportedConfigurationException("Test requires an NVIDIA device");
+        }
 
         // Another way to perform the previous query
         List<TornadoBackend> backendsWithNVIDIAAccess2 = tornadoDeviceMap //
@@ -160,7 +163,7 @@ public class TestDevices extends TornadoTestBase {
         Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByName("NVIDIA");
 
         // Get the first that meets the criteria
-        TornadoDevice device = deviceStream.findFirst().get();
+        TornadoDevice device = deviceStream.findFirst().orElseThrow(() -> new UnsupportedConfigurationException("Test requires an NVIDIA device"));
         assertNotNull(device);
         assertTrue(device.getPhysicalDevice().getDeviceName().toLowerCase().contains("nvidia"));
     }
@@ -173,7 +176,7 @@ public class TestDevices extends TornadoTestBase {
         Stream<TornadoDevice> deviceStream = deviceMap.getDevicesByType(typeToFind);
 
         // Get the first that meets the criteria
-        TornadoDevice device = deviceStream.findFirst().get();
+        TornadoDevice device = deviceStream.findFirst().orElseThrow(() -> new UnsupportedConfigurationException("Test requires a CPU device"));
         assertNotNull(device);
         assertSame(typeToFind, device.getDeviceType());
     }
