@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -163,7 +163,7 @@ public class TestLibraryNativeBuffers extends TornadoTestBase {
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
             executionPlan.execute();
         }
-        assertEquals("provider did not run", true, NativeBufferTestProvider.handlesChecked);
+        assertEquals(true, NativeBufferTestProvider.handlesChecked, "provider did not run");
         for (int i = 0; i < n; i++) {
             assertEquals(3.0f * i + 1.0f, c.get(i), 0.0f);
         }

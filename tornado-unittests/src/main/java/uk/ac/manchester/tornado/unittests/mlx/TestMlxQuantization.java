@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -105,7 +105,7 @@ public class TestMlxQuantization extends MlxTestBase {
         // that zero is exactly representable, which can push the far edge of the group a step away.)
         for (int i = 0; i < wv.length; i++) {
             float step = Math.abs(scales.get((i / cols) * (cols / groupSize) + (i % cols) / groupSize));
-            assertTrue("quantize " + what + " element " + i + ": " + wv[i] + " vs " + back.get(i), Math.abs(wv[i] - back.get(i)) <= step + 1e-5);
+            assertTrue(Math.abs(wv[i] - back.get(i)) <= step + 1e-5, "quantize " + what + " element " + i + ": " + wv[i] + " vs " + back.get(i));
         }
     }
 
@@ -232,7 +232,7 @@ public class TestMlxQuantization extends MlxTestBase {
             worst = Math.max(worst, Math.abs(y.get(j) - expected[j]));
         }
         // Both operands are rounded to 8-bit floats, which keep about two significant digits.
-        assertTrue("qqmm differs from the float product by " + worst, worst <= 0.1 * Math.max(scale, 1));
+        assertTrue(worst <= 0.1 * Math.max(scale, 1), "qqmm differs from the float product by " + worst);
     }
 
     private static double[] toDoubles(float[] v) {

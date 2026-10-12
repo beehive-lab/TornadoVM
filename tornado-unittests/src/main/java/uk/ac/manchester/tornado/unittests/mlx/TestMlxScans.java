@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.function.DoubleBinaryOperator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -171,7 +171,7 @@ public class TestMlxScans extends MlxTestBase {
             int acc = 0;
             for (int i = 0; i < len; i++) {
                 acc += xv[o * len + i];
-                assertEquals(o + "," + i, acc, output.get(o * len + i));
+                assertEquals(acc, output.get(o * len + i), o + "," + i);
             }
         }
     }

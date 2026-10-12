@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Random;
 
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -46,7 +46,7 @@ public abstract class MlxTestBase extends TornadoTestBase {
      * MLX tasks need the Metal backend and MLX's mlx.metallib. Unavailable configurations throw the typed
      * *NotSupported exceptions that TornadoTestRunner reports as [UNSUPPORTED].
      */
-    @Before
+    @BeforeEach
     public void mlxMustBeAvailable() {
         TornadoVMBackendType backend = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backend != TornadoVMBackendType.METAL) {

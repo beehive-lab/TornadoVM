@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -74,8 +74,8 @@ public class TestMlxSorting extends MlxTestBase {
         boolean[] seen = new boolean[len];
         for (int i = 0; i < len; i++) {
             int k = indices.get((o * len + i) * inner + j);
-            assertTrue("index " + k + " out of range", k >= 0 && k < len);
-            assertTrue("index " + k + " repeated", !seen[k]);
+            assertTrue(k >= 0 && k < len, "index " + k + " out of range");
+            assertTrue(!seen[k], "index " + k + " repeated");
             seen[k] = true;
             s[i] = x[(o * len + k) * inner + j];
         }
@@ -85,11 +85,11 @@ public class TestMlxSorting extends MlxTestBase {
     /** got holds original's kth-smallest value at kth, smaller values before it and larger after. */
     private static void assertPartitioned(String what, float[] original, float[] got, int kth) {
         float[] sorted = sortedJava(original);
-        assertEquals(what + " kth element", sorted[kth], got[kth], 0f);
+        assertEquals(sorted[kth], got[kth], 0f, what + " kth element");
         for (int i = 0; i < got.length; i++) {
-            assertTrue(what + " element " + i + " on the wrong side of kth", i < kth ? got[i] <= got[kth] : got[i] >= got[kth]);
+            assertTrue(i < kth ? got[i] <= got[kth] : got[i] >= got[kth], what + " element " + i + " on the wrong side of kth");
         }
-        assertArrayEquals(what + " is not a permutation", sorted, sortedJava(got), 0f);
+        assertArrayEquals(sorted, sortedJava(got), 0f, what + " is not a permutation");
     }
 
     /** The k largest values of x[from, to), ascending. */
@@ -190,7 +190,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         float[] got = output.toHeapArray();
         for (int o = 0; o < OUTER; o++) {
-            assertArrayEquals("row " + o, sortedJava(slice(xv, o, 0, LEN, 1)), slice(got, o, 0, LEN, 1), 0f);
+            assertArrayEquals(sortedJava(slice(xv, o, 0, LEN, 1)), slice(got, o, 0, LEN, 1), 0f, "row " + o);
         }
     }
 
@@ -210,7 +210,7 @@ public class TestMlxSorting extends MlxTestBase {
         }
 
         for (int o = 0; o < OUTER; o++) {
-            assertArrayEquals("row " + o, sortedJava(slice(xv, o, 0, LEN, 1)), gather(xv, output, o, 0, LEN, 1), 0f);
+            assertArrayEquals(sortedJava(slice(xv, o, 0, LEN, 1)), gather(xv, output, o, 0, LEN, 1), 0f, "row " + o);
         }
     }
 
@@ -297,7 +297,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         float[] got = output.toHeapArray();
         for (int r = 0; r < rows; r++) {
-            assertArrayEquals("row " + r, topkJava(xv, r * cols, (r + 1) * cols, k), sortedJava(Arrays.copyOfRange(got, r * k, (r + 1) * k)), 0f);
+            assertArrayEquals(topkJava(xv, r * cols, (r + 1) * cols, k), sortedJava(Arrays.copyOfRange(got, r * k, (r + 1) * k)), 0f, "row " + r);
         }
     }
 
@@ -343,7 +343,7 @@ public class TestMlxSorting extends MlxTestBase {
         float[] got = output.toHeapArray();
         for (int o = 0; o < outer; o++) {
             for (int j = 0; j < inner; j++) {
-                assertArrayEquals("slice " + o + "," + j, sortedJava(slice(xv, o, j, len, inner)), slice(got, o, j, len, inner), 0f);
+                assertArrayEquals(sortedJava(slice(xv, o, j, len, inner)), slice(got, o, j, len, inner), 0f, "slice " + o + "," + j);
             }
         }
     }
@@ -365,7 +365,7 @@ public class TestMlxSorting extends MlxTestBase {
 
         float[] expected = sortedJava(widen(x));
         for (int i = 0; i < n; i++) {
-            assertEquals("element " + i, expected[i], output.get(i).getFloat32(), 0f);
+            assertEquals(expected[i], output.get(i).getFloat32(), 0f, "element " + i);
         }
     }
 

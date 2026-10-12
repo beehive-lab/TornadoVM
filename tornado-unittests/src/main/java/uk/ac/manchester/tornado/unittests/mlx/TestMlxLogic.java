@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.function.IntBinaryOperator;
 import java.util.function.Predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -91,7 +91,7 @@ public class TestMlxLogic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals(av[i] + " vs " + bv[i], ref.test(av[i], bv[i]) ? 1 : 0, output.get(i));
+            assertEquals(ref.test(av[i], bv[i]) ? 1 : 0, output.get(i), av[i] + " vs " + bv[i]);
         }
     }
 
@@ -110,7 +110,7 @@ public class TestMlxLogic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("x=" + av[i], ref.test(av[i]) ? 1 : 0, output.get(i));
+            assertEquals(ref.test(av[i]) ? 1 : 0, output.get(i), "x=" + av[i]);
         }
     }
 
@@ -136,7 +136,7 @@ public class TestMlxLogic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals(av[i] + ", " + bv[i], ref.applyAsInt(av[i], bv[i]), output.get(i));
+            assertEquals(ref.applyAsInt(av[i], bv[i]), output.get(i), av[i] + ", " + bv[i]);
         }
     }
 
@@ -359,8 +359,8 @@ public class TestMlxLogic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, closeJava(av[i], bv[i], 1e-3f, 1e-5f, false) ? 1 : 0, output.get(i));
-            assertEquals("equalNan element " + i, closeJava(av[i], bv[i], 1e-3f, 1e-5f, true) ? 1 : 0, outputEqualNan.get(i));
+            assertEquals(closeJava(av[i], bv[i], 1e-3f, 1e-5f, false) ? 1 : 0, output.get(i), "element " + i);
+            assertEquals(closeJava(av[i], bv[i], 1e-3f, 1e-5f, true) ? 1 : 0, outputEqualNan.get(i), "equalNan element " + i);
         }
     }
 
@@ -390,10 +390,10 @@ public class TestMlxLogic extends MlxTestBase {
         for (int i = 0; i < SIZE; i++) {
             all &= closeJava(av[i], bv[i], 1e-3f, 1e-5f, true);
         }
-        assertEquals("allclose(a, b)", all ? 1 : 0, differs.get(0));
+        assertEquals(all ? 1 : 0, differs.get(0), "allclose(a, b)");
         // same and b hold the same values, NaNs included, so only NaN handling decides.
-        assertEquals("allclose(b, b) without equalNan", 0, sameNoNan.get(0));
-        assertEquals("allclose(b, b) with equalNan", 1, sameEqualNan.get(0));
+        assertEquals(0, sameNoNan.get(0), "allclose(b, b) without equalNan");
+        assertEquals(1, sameEqualNan.get(0), "allclose(b, b) with equalNan");
     }
 
     @Test
@@ -418,9 +418,9 @@ public class TestMlxLogic extends MlxTestBase {
             plan.execute();
         }
 
-        assertEquals("arrayEqual(a, b)", 0, differs.get(0));
-        assertEquals("arrayEqual(b, b) without equalNan", 0, sameNoNan.get(0));
-        assertEquals("arrayEqual(b, b) with equalNan", 1, sameEqualNan.get(0));
+        assertEquals(0, differs.get(0), "arrayEqual(a, b)");
+        assertEquals(0, sameNoNan.get(0), "arrayEqual(b, b) without equalNan");
+        assertEquals(1, sameEqualNan.get(0), "arrayEqual(b, b) with equalNan");
     }
 
     // ---------------------------------------------------------------- other types
@@ -443,7 +443,7 @@ public class TestMlxLogic extends MlxTestBase {
         float[] x = widen(a);
         float[] y = widen(b);
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, x[i] < y[i] ? 1 : 0, output.get(i));
+            assertEquals(x[i] < y[i] ? 1 : 0, output.get(i), "element " + i);
         }
     }
 
@@ -471,9 +471,9 @@ public class TestMlxLogic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, av[i] == bv[i] ? 1 : 0, output.get(i));
+            assertEquals(av[i] == bv[i] ? 1 : 0, output.get(i), "element " + i);
         }
-        assertEquals("arrayEqual(a, a)", 1, self.get(0));
+        assertEquals(1, self.get(0), "arrayEqual(a, a)");
     }
 
     @Test
@@ -498,7 +498,7 @@ public class TestMlxLogic extends MlxTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("element " + i, av[i] < bv[i] ? 1 : 0, output.get(i));
+            assertEquals(av[i] < bv[i] ? 1 : 0, output.get(i), "element " + i);
         }
     }
 }

@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -84,7 +84,7 @@ public class TestMlx extends MlxTestBase {
             plan.execute();
         }
 
-        assertEquals("kernel dispatches", before + 1, MlxLibraryProvider.kernelDispatches());
+        assertEquals(before + 1, MlxLibraryProvider.kernelDispatches(), "kernel dispatches");
         for (int i = 0; i < SIZE; i++) {
             assertEquals(a.get(i) + b.get(i), c.get(i), 0f);
         }
@@ -135,7 +135,7 @@ public class TestMlx extends MlxTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("element " + i, 0.0f, d.get(i), 1e-5f * a.get(i));
+            assertEquals(0.0f, d.get(i), 1e-5f * a.get(i), "element " + i);
         }
     }
 
@@ -165,7 +165,7 @@ public class TestMlx extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, (av[i] + 1.0f) * b.get(i), c.get(i), 1e-6f);
+            assertEquals((av[i] + 1.0f) * b.get(i), c.get(i), 1e-6f, "element " + i);
         }
     }
 
@@ -187,7 +187,7 @@ public class TestMlx extends MlxTestBase {
                 b.init(10.0f * iteration);
                 plan.execute();
                 for (int i = 0; i < SIZE; i++) {
-                    assertEquals("iteration " + iteration, 11.0f * iteration, c.get(i), 0f);
+                    assertEquals(11.0f * iteration, c.get(i), 0f, "iteration " + iteration);
                 }
             }
         }
@@ -214,7 +214,7 @@ public class TestMlx extends MlxTestBase {
             }
 
             for (int i = 0; i < SIZE; i++) {
-                assertEquals("plan " + p, 101.0f * (p + 1), c.get(i), 0f);
+                assertEquals(101.0f * (p + 1), c.get(i), 0f, "plan " + p);
             }
         }
     }
@@ -258,6 +258,6 @@ public class TestMlx extends MlxTestBase {
         while (cause.getCause() != null && cause.getCause() != cause) {
             cause = cause.getCause();
         }
-        assertTrue("message: " + cause.getMessage(), cause.getMessage().contains("MLX mlx_sum_axis: no TornadoVM/MLX kernel takes these arguments"));
+        assertTrue(cause.getMessage().contains("MLX mlx_sum_axis: no TornadoVM/MLX kernel takes these arguments"), "message: " + cause.getMessage());
     }
 }

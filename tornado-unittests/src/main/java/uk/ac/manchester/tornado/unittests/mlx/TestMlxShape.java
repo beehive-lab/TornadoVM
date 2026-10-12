@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -74,7 +74,7 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int i = 0; i < expected.length; i++) {
-            assertEquals("element " + i, expected[i], output.get(i), 0f);
+            assertEquals(expected[i], output.get(i), 0f, "element " + i);
         }
     }
 
@@ -237,8 +237,8 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int t = 0; t < ROWS * COLS; t++) {
-            assertEquals("row " + t, rv[t % COLS], outRow.get(t), 0f);
-            assertEquals("column " + t, cv[t / COLS], outCol.get(t), 0f);
+            assertEquals(rv[t % COLS], outRow.get(t), 0f, "row " + t);
+            assertEquals(cv[t / COLS], outCol.get(t), 0f, "column " + t);
         }
     }
 
@@ -264,8 +264,8 @@ public class TestMlxShape extends MlxTestBase {
 
         for (int i = 0; i < n; i++) {
             float h = new HalfFloat(xv[i]).getFloat32();
-            assertEquals("float16 " + i, h, toHalf.get(i).getFloat32(), Math.abs(h) * 1e-3f);
-            assertEquals("int32 " + i, (int) xv[i], toInt.get(i));
+            assertEquals(h, toHalf.get(i).getFloat32(), Math.abs(h) * 1e-3f, "float16 " + i);
+            assertEquals((int) xv[i], toInt.get(i), "int32 " + i);
         }
     }
 
@@ -289,8 +289,8 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("bits " + i, Float.floatToRawIntBits(xv[i]), bits.get(i));
-            assertEquals("back " + i, xv[i], back.get(i), 0f);
+            assertEquals(Float.floatToRawIntBits(xv[i]), bits.get(i), "bits " + i);
+            assertEquals(xv[i], back.get(i), 0f, "back " + i);
         }
     }
 
@@ -332,7 +332,7 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int i = 0; i < output.getSize(); i++) {
-            assertEquals("element " + i, i < av.length ? av[i] : bv[i - av.length], output.get(i), 0f);
+            assertEquals(i < av.length ? av[i] : bv[i - av.length], output.get(i), 0f, "element " + i);
         }
     }
 
@@ -360,7 +360,7 @@ public class TestMlxShape extends MlxTestBase {
         for (int t = 0; t < output.getSize(); t++) {
             int r = t / (colsA + colsB);
             int c = t % (colsA + colsB);
-            assertEquals("element " + t, c < colsA ? av[r * colsA + c] : bv[r * colsB + c - colsA], output.get(t), 0f);
+            assertEquals(c < colsA ? av[r * colsA + c] : bv[r * colsB + c - colsA], output.get(t), 0f, "element " + t);
         }
     }
 
@@ -382,8 +382,8 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int i = 0; i < 18; i++) {
-            assertEquals("a " + i, av[i], output.get(i), 0f);
-            assertEquals("b " + i, bv[i], output.get(18 + i), 0f);
+            assertEquals(av[i], output.get(i), 0f, "a " + i);
+            assertEquals(bv[i], output.get(18 + i), 0f, "b " + i);
         }
     }
 
@@ -406,8 +406,8 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int i = 0; i < 18; i++) {
-            assertEquals("a " + i, av[i], output.get(2 * i), 0f);
-            assertEquals("b " + i, bv[i], output.get(2 * i + 1), 0f);
+            assertEquals(av[i], output.get(2 * i), 0f, "a " + i);
+            assertEquals(bv[i], output.get(2 * i + 1), 0f, "b " + i);
         }
     }
 
@@ -435,7 +435,7 @@ public class TestMlxShape extends MlxTestBase {
             int r = t / cols;
             int c = t % cols;
             float got = c < index ? first.get(r * index + c) : second.get(r * (cols - index) + c - index);
-            assertEquals("element " + t, xv[t], got, 0f);
+            assertEquals(xv[t], got, 0f, "element " + t);
         }
     }
 
@@ -568,7 +568,7 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int i = 0; i < xv.length; i++) {
-            assertEquals("element " + i, xv[(i % rows) * cols + i / rows], output.get(i));
+            assertEquals(xv[(i % rows) * cols + i / rows], output.get(i), "element " + i);
         }
     }
 
@@ -591,7 +591,7 @@ public class TestMlxShape extends MlxTestBase {
         }
 
         for (int i = 0; i < xv.length; i++) {
-            assertEquals("element " + i, xv[i], output.get(i), 0f);
+            assertEquals(xv[i], output.get(i), 0f, "element " + i);
         }
     }
 }

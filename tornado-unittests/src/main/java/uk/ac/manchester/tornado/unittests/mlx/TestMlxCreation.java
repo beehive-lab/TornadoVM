@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.function.IntToDoubleFunction;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -184,9 +184,9 @@ public class TestMlxCreation extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("fullLike " + i, -1.5f, full.get(i), 0f);
-            assertEquals("zerosLike " + i, 0f, zeros.get(i), 0f);
-            assertEquals("onesLike " + i, 1f, ones.get(i), 0f);
+            assertEquals(-1.5f, full.get(i), 0f, "fullLike " + i);
+            assertEquals(0f, zeros.get(i), 0f, "zerosLike " + i);
+            assertEquals(1f, ones.get(i), 0f, "onesLike " + i);
         }
     }
 
@@ -210,7 +210,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         for (int r = 0; r < n; r++) {
             for (int c = 0; c < m; c++) {
-                assertEquals(r + "," + c, c - r == 3 ? 1f : 0f, output.get(r * m + c), 0f);
+                assertEquals(c - r == 3 ? 1f : 0f, output.get(r * m + c), 0f, r + "," + c);
             }
         }
     }
@@ -231,7 +231,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         for (int r = 0; r < n; r++) {
             for (int c = 0; c < n; c++) {
-                assertEquals(r + "," + c, r == c ? 1f : 0f, output.get(r * n + c), 0f);
+                assertEquals(r == c ? 1f : 0f, output.get(r * n + c), 0f, r + "," + c);
             }
         }
     }
@@ -254,7 +254,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         for (int r = 0; r < n; r++) {
             for (int c = 0; c < m; c++) {
-                assertEquals(r + "," + c, c - r <= -2 ? 1f : 0f, output.get(r * m + c), 0f);
+                assertEquals(c - r <= -2 ? 1f : 0f, output.get(r * m + c), 0f, r + "," + c);
             }
         }
     }
@@ -347,7 +347,7 @@ public class TestMlxCreation extends MlxTestBase {
             }
 
             for (int t = 0; t < len; t++) {
-                assertEquals("k=" + k + " element " + t, av[(t + Math.max(-k, 0)) * COLS + t + Math.max(k, 0)], output.get(t), 0f);
+                assertEquals(av[(t + Math.max(-k, 0)) * COLS + t + Math.max(k, 0)], output.get(t), 0f, "k=" + k + " element " + t);
             }
         }
     }
@@ -426,8 +426,8 @@ public class TestMlxCreation extends MlxTestBase {
         }
 
         for (int t = 0; t < nx * ny; t++) {
-            assertEquals("x " + t, xv[t % nx], outX.get(t), 0f);
-            assertEquals("y " + t, yv[t / nx], outY.get(t), 0f);
+            assertEquals(xv[t % nx], outX.get(t), 0f, "x " + t);
+            assertEquals(yv[t / nx], outY.get(t), 0f, "y " + t);
         }
     }
 
@@ -453,8 +453,8 @@ public class TestMlxCreation extends MlxTestBase {
         }
 
         for (int t = 0; t < nx * ny; t++) {
-            assertEquals("x " + t, xv[t / ny], outX.get(t), 0f);
-            assertEquals("y " + t, yv[t % ny], outY.get(t), 0f);
+            assertEquals(xv[t / ny], outX.get(t), 0f, "x " + t);
+            assertEquals(yv[t % ny], outY.get(t), 0f, "y " + t);
         }
     }
 
@@ -475,7 +475,7 @@ public class TestMlxCreation extends MlxTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("element " + i, 5 + 3 * i, output.get(i));
+            assertEquals(5 + 3 * i, output.get(i), "element " + i);
         }
     }
 
@@ -495,7 +495,7 @@ public class TestMlxCreation extends MlxTestBase {
 
         for (int r = 0; r < n; r++) {
             for (int c = 0; c < n; c++) {
-                assertEquals(r + "," + c, r == c ? 1 : 0, output.get(r * n + c));
+                assertEquals(r == c ? 1 : 0, output.get(r * n + c), r + "," + c);
             }
         }
     }
@@ -515,7 +515,7 @@ public class TestMlxCreation extends MlxTestBase {
         }
 
         for (int i = 0; i < n; i++) {
-            assertEquals("element " + i, 1.0f, output.get(i).getFloat32(), 0f);
+            assertEquals(1.0f, output.get(i).getFloat32(), 0f, "element " + i);
         }
     }
 }

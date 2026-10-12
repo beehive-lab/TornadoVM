@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -366,7 +366,7 @@ public class TestMlxArithmetic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("quotient " + i, (float) Math.floor(av[i] / bv[i]), quotient.get(i), 0f);
+            assertEquals((float) Math.floor(av[i] / bv[i]), quotient.get(i), 0f, "quotient " + i);
             assertClose("remainder", i, av[i] - bv[i] * Math.floor(av[i] / bv[i]), remainder.get(i), 1e-5, 1e-5);
         }
     }
@@ -391,7 +391,7 @@ public class TestMlxArithmetic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("round(0) x=" + av[i], Math.rint(av[i]), whole.get(i), 0.0);
+            assertEquals(Math.rint(av[i]), whole.get(i), 0.0, "round(0) x=" + av[i]);
             assertClose("round(2) x=" + av[i], i, (float) Math.rint(av[i] * 100f) / 100f, twoDecimals.get(i), 1e-6, 1e-6);
         }
     }
@@ -468,7 +468,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         for (int i = 0; i < SIZE; i++) {
             float expected = Float.isNaN(av[i]) ? 0.5f : av[i] == Float.POSITIVE_INFINITY ? 1e30f : av[i] == Float.NEGATIVE_INFINITY ? -1e30f : av[i];
-            assertEquals("element " + i, expected, output.get(i), 0f);
+            assertEquals(expected, output.get(i), 0f, "element " + i);
         }
     }
 
@@ -493,10 +493,10 @@ public class TestMlxArithmetic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("real " + i, zv[2 * i], real.get(i), 0f);
-            assertEquals("imag " + i, zv[2 * i + 1], imag.get(i), 0f);
-            assertEquals("conjugate re " + i, zv[2 * i], conjugate.get(2 * i), 0f);
-            assertEquals("conjugate im " + i, -zv[2 * i + 1], conjugate.get(2 * i + 1), 0f);
+            assertEquals(zv[2 * i], real.get(i), 0f, "real " + i);
+            assertEquals(zv[2 * i + 1], imag.get(i), 0f, "imag " + i);
+            assertEquals(zv[2 * i], conjugate.get(2 * i), 0f, "conjugate re " + i);
+            assertEquals(-zv[2 * i + 1], conjugate.get(2 * i + 1), 0f, "conjugate im " + i);
         }
     }
 
@@ -637,7 +637,7 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         float[] x = widen(a);
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("round float16 x=" + x[i], Math.rint(x[i]), output.get(i).getFloat32(), 0.0);
+            assertEquals(Math.rint(x[i]), output.get(i).getFloat32(), 0.0, "round float16 x=" + x[i]);
         }
     }
 
@@ -685,7 +685,7 @@ public class TestMlxArithmetic extends MlxTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("element " + i, Math.min(Math.max(av[i], -100), 250), output.get(i));
+            assertEquals(Math.min(Math.max(av[i], -100), 250), output.get(i), "element " + i);
         }
     }
 
@@ -714,9 +714,9 @@ public class TestMlxArithmetic extends MlxTestBase {
 
         // MLX rounds integer floor_divide and divmod quotients toward negative infinity, as Python does.
         for (int i = 0; i < SIZE; i++) {
-            assertEquals(av[i] + " / " + bv[i], Math.floorDiv(av[i], bv[i]), floorDivide.get(i));
-            assertEquals("divmod quotient " + av[i] + " / " + bv[i], Math.floorDiv(av[i], bv[i]), quotient.get(i));
-            assertEquals("divmod remainder " + av[i] + " % " + bv[i], Math.floorMod(av[i], bv[i]), remainder.get(i));
+            assertEquals(Math.floorDiv(av[i], bv[i]), floorDivide.get(i), av[i] + " / " + bv[i]);
+            assertEquals(Math.floorDiv(av[i], bv[i]), quotient.get(i), "divmod quotient " + av[i] + " / " + bv[i]);
+            assertEquals(Math.floorMod(av[i], bv[i]), remainder.get(i), "divmod remainder " + av[i] + " % " + bv[i]);
         }
     }
 
@@ -739,7 +739,7 @@ public class TestMlxArithmetic extends MlxTestBase {
             }
 
             for (int i = 0; i < n; i++) {
-                assertEquals("n=" + n + " element " + i, a.get(i) + b.get(i), output.get(i), 0f);
+                assertEquals(a.get(i) + b.get(i), output.get(i), 0f, "n=" + n + " element " + i);
             }
         }
     }

@@ -17,15 +17,15 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Random;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -178,7 +178,7 @@ public class TestMlxReductions extends MlxTestBase {
     /** Checks an all/any output of {@code rows} rows of length {@code len} against {@code ref}. */
     private static void assertBools(float[] xv, int rows, int len, Predicate<double[]> ref, ByteArray output) {
         for (int r = 0; r < rows; r++) {
-            assertEquals("row " + r, ref.test(row(xv, r, len)) ? 1 : 0, output.get(r));
+            assertEquals(ref.test(row(xv, r, len)) ? 1 : 0, output.get(r), "row " + r);
         }
     }
 
@@ -291,8 +291,8 @@ public class TestMlxReductions extends MlxTestBase {
             plan.execute();
         }
 
-        assertEquals("all(sparse)", 0, allSparse.get(0));
-        assertEquals("all(dense)", 1, allDense.get(0));
+        assertEquals(0, allSparse.get(0), "all(sparse)");
+        assertEquals(1, allDense.get(0), "all(dense)");
     }
 
     @Test
@@ -313,8 +313,8 @@ public class TestMlxReductions extends MlxTestBase {
             plan.execute();
         }
 
-        assertEquals("any(zeros)", 0, anyZeros.get(0));
-        assertEquals("any(one non-zero)", 1, anyOne.get(0));
+        assertEquals(0, anyZeros.get(0), "any(zeros)");
+        assertEquals(1, anyOne.get(0), "any(one non-zero)");
     }
 
     @Test
@@ -440,7 +440,7 @@ public class TestMlxReductions extends MlxTestBase {
         }
 
         for (int r = 0; r < OUTER; r++) {
-            assertEquals("row " + r, argminJava(row(xv, r, LEN)), output.get(r));
+            assertEquals(argminJava(row(xv, r, LEN)), output.get(r), "row " + r);
         }
     }
 
@@ -462,7 +462,7 @@ public class TestMlxReductions extends MlxTestBase {
         }
 
         for (int r = 0; r < rows; r++) {
-            assertEquals("row " + r, argmaxJava(row(xv, r, cols)), output.get(r));
+            assertEquals(argmaxJava(row(xv, r, cols)), output.get(r), "row " + r);
         }
     }
 
@@ -678,7 +678,7 @@ public class TestMlxReductions extends MlxTestBase {
             for (int i = 0; i < len1 * len2; i++) {
                 sum += xv[o * len1 * len2 + i];
             }
-            assertEquals("row " + o, sum, output.get(o));
+            assertEquals(sum, output.get(o), "row " + o);
         }
     }
 

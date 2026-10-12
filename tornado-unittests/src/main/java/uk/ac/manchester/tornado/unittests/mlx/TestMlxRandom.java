@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -71,15 +71,15 @@ public class TestMlxRandom extends MlxTestBase {
 
     private static void assertMoments(String what, FloatArray a, double mean, double variance) {
         for (int i = 0; i < a.getSize(); i++) {
-            assertTrue(what + " element " + i + " is finite", Float.isFinite(a.get(i)));
+            assertTrue(Float.isFinite(a.get(i)), what + " element " + i + " is finite");
         }
-        assertEquals(what + " mean", mean, mean(a), 0.05 * Math.sqrt(variance) + 0.01);
-        assertEquals(what + " variance", variance, variance(a), 0.08 * variance);
+        assertEquals(mean, mean(a), 0.05 * Math.sqrt(variance) + 0.01, what + " mean");
+        assertEquals(variance, variance(a), 0.08 * variance, what + " variance");
     }
 
     private static void assertRange(String what, FloatArray a, float low, float high) {
         for (int i = 0; i < a.getSize(); i++) {
-            assertTrue(what + " element " + i + " = " + a.get(i), a.get(i) >= low && a.get(i) <= high);
+            assertTrue(a.get(i) >= low && a.get(i) <= high, what + " element " + i + " = " + a.get(i));
         }
     }
 
@@ -118,11 +118,11 @@ public class TestMlxRandom extends MlxTestBase {
         int[] counts = new int[CLASSES];
         for (int i = 0; i < out.getSize(); i++) {
             int v = out.get(i);
-            assertTrue(what + " element " + i + " = " + v, v >= 0 && v < CLASSES);
+            assertTrue(v >= 0 && v < CLASSES, what + " element " + i + " = " + v);
             counts[v]++;
         }
         for (int c = 0; c < CLASSES; c++) {
-            assertEquals(what + " frequency of class " + c, p[c], counts[c] / (double) out.getSize(), 0.02);
+            assertEquals(p[c], counts[c] / (double) out.getSize(), 0.02, what + " frequency of class " + c);
         }
     }
 
@@ -143,7 +143,7 @@ public class TestMlxRandom extends MlxTestBase {
             for (int i = 0; i < SIZE; i++) {
                 ones += (output.get(i) >> b) & 1;
             }
-            assertEquals("bit " + b + " frequency", 0.5, ones / (double) SIZE, 0.02);
+            assertEquals(0.5, ones / (double) SIZE, 0.02, "bit " + b + " frequency");
         }
     }
 
@@ -222,11 +222,11 @@ public class TestMlxRandom extends MlxTestBase {
         int[] counts = new int[8];
         for (int i = 0; i < SIZE; i++) {
             int v = output.get(i);
-            assertTrue("element " + i + " = " + v, v >= -3 && v < 5);
+            assertTrue(v >= -3 && v < 5, "element " + i + " = " + v);
             counts[v + 3]++;
         }
         for (int k = 0; k < 8; k++) {
-            assertEquals("frequency of " + (k - 3), 0.125, counts[k] / (double) SIZE, 0.015);
+            assertEquals(0.125, counts[k] / (double) SIZE, 0.015, "frequency of " + (k - 3));
         }
     }
 
@@ -250,11 +250,11 @@ public class TestMlxRandom extends MlxTestBase {
 
         int[] ones = new int[5];
         for (int i = 0; i < SIZE; i++) {
-            assertTrue("element " + i, output.get(i) == 0 || output.get(i) == 1);
+            assertTrue(output.get(i) == 0 || output.get(i) == 1, "element " + i);
             ones[i % 5] += output.get(i);
         }
         for (int k = 0; k < 5; k++) {
-            assertEquals("p=" + k / 4.0, k / 4.0, ones[k] / (SIZE / 5.0), 0.035);
+            assertEquals(k / 4.0, ones[k] / (SIZE / 5.0), 0.035, "p=" + k / 4.0);
         }
     }
 
@@ -385,12 +385,12 @@ public class TestMlxRandom extends MlxTestBase {
         int fixed = 0;
         for (int i = 0; i < n; i++) {
             int v = output.get(i);
-            assertTrue("element " + i + " = " + v, v >= 0 && v < n && !seen[v]);
+            assertTrue(v >= 0 && v < n && !seen[v], "element " + i + " = " + v);
             seen[v] = true;
             fixed += v == i ? 1 : 0;
         }
         // A random permutation has one fixed point on average.
-        assertTrue(fixed + " fixed points", fixed < 10);
+        assertTrue(fixed < 10, fixed + " fixed points");
     }
 
     @Test
@@ -411,9 +411,9 @@ public class TestMlxRandom extends MlxTestBase {
 
         int same = 0;
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("same seed, element " + i, a.get(i), b.get(i), 0.0f);
+            assertEquals(a.get(i), b.get(i), 0.0f, "same seed, element " + i);
             same += a.get(i) == c.get(i) ? 1 : 0;
         }
-        assertTrue("different seeds share " + same + " values", same < 10);
+        assertTrue(same < 10, "different seeds share " + same + " values");
     }
 }

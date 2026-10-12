@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.mlx;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.function.DoubleBinaryOperator;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -86,8 +86,8 @@ public class TestMlxIndexing extends MlxTestBase {
 
         float[] expected = sliceUpdateJava(xv, uv, op);
         for (int i = 0; i < expected.length; i++) {
-            assertEquals("element " + i, expected[i], output.get(i), 1e-6f * Math.abs(expected[i]));
-            assertEquals("x must not change, element " + i, xv[i], x.get(i), 0f);
+            assertEquals(expected[i], output.get(i), 1e-6f * Math.abs(expected[i]), "element " + i);
+            assertEquals(xv[i], x.get(i), 0f, "x must not change, element " + i);
         }
     }
 
@@ -117,7 +117,7 @@ public class TestMlxIndexing extends MlxTestBase {
 
         for (int r = 0; r < outRows; r++) {
             for (int c = 0; c < outCols; c++) {
-                assertEquals(r + "," + c, xv[(r0 + r * rowStep) * COLS + c0 + c * colStep], output.get(r * outCols + c), 0f);
+                assertEquals(xv[(r0 + r * rowStep) * COLS + c0 + c * colStep], output.get(r * outCols + c), 0f, r + "," + c);
             }
         }
     }
@@ -162,7 +162,7 @@ public class TestMlxIndexing extends MlxTestBase {
 
         for (int r = 0; r < outRows; r++) {
             for (int c = 0; c < outCols; c++) {
-                assertEquals(r + "," + c, (r * 4) * COLS + 2 + c * 5, output.get(r * outCols + c));
+                assertEquals((r * 4) * COLS + 2 + c * 5, output.get(r * outCols + c), r + "," + c);
             }
         }
     }

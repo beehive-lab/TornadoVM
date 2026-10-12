@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.tasks;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -66,7 +66,7 @@ public class TestLibraryProviderSelection extends TornadoTestBase {
             executionPlan.execute();
             fail("A cuBLAS library task must not run on the Metal backend");
         } catch (Exception e) {
-            assertTrue("Expected the registry's 'not supported on device' error, got: " + describe(e), mentions(e, "is not supported on device"));
+            assertTrue(mentions(e, "is not supported on device"), "Expected the registry's 'not supported on device' error, got: " + describe(e));
         }
     }
 
