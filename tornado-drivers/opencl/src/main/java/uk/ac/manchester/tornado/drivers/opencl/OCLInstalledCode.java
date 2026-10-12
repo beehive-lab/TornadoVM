@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2018, 2022, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +25,23 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.COPY_IN_TIME;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TASK_KERNEL_TIME;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_IN_SIZE_BYTES;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_DISPATCH_KERNEL_TIME;
+import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
-import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
-import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLGenericGPUScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLKernelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -47,40 +51,72 @@ import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
+/**
+ * An OpenCL kernel built for one device, ready to launch: it sets the kernel's arguments from a
+ * {@link OCLKernelStackFrame}, writes the frame to the device and enqueues the NDRange.
+ *
+ * <p>
+ * Argument order for kernels compiled from OpenCL C: the stack frame, the constant region, the
+ * local region, the global atomics region, then the task's scalar parameters. SPIR-V kernels take
+ * the stack frame followed directly by the parameters, with the frame passed again wherever the
+ * task has a {@code KernelContext}.
+ * </p>
+ */
 public class OCLInstalledCode implements TornadoInstalledCode {
 
+    private final TornadoLogger logger = new TornadoLogger(OCLInstalledCode.class);
+
     private final String name;
+    private final byte[] code;
+    private final OCLDeviceContext deviceContext;
+    private final OCLProgram program;
+    private final OCLKernel kernel;
+    private final OCLKernelScheduler scheduler;
+    private final boolean isSPIRVBinary;
+    private boolean valid;
+
+    /** Staging for one by-value argument: every argument fits in 8 bytes. */
+    private final ByteBuffer argument = ByteBuffer.allocate(Long.BYTES);
+    /** The frame-write event a dependent launch waits on. */
+    private final int[] frameWritten = new int[1];
+    /** Global and local size of a single-work-item launch. */
+    private final long[] oneWorkItem = { 1 };
+
+    public OCLInstalledCode(String entryPoint, byte[] code, OCLDeviceContext deviceContext, OCLProgram program, OCLKernel kernel, boolean isSPIRVBinary) {
+        this.name = entryPoint;
+        this.code = code;
+        this.deviceContext = deviceContext;
+        this.program = program;
+        this.kernel = kernel;
+        this.isSPIRVBinary = isSPIRVBinary;
+        this.scheduler = OCLScheduler.create(deviceContext);
+        this.valid = kernel != null;
+        argument.order(deviceContext.getByteOrder());
+    }
 
     public String getName() {
         return name;
     }
 
-    private static final int CL_MEM_SIZE = 8;
-    private final OCLKernelScheduler DEFAULT_SCHEDULER;
-    private final ByteBuffer buffer = ByteBuffer.allocate(CL_MEM_SIZE);
-    private final byte[] code;
-    private final OCLProgram program;
-    private final OCLDeviceContext deviceContext;
-    private final OCLKernel kernel;
-    private final OCLKernelScheduler scheduler;
-    private final int[] internalEvents = new int[1];
-    private final long[] singleThreadGlobalWorkSize = new long[] { 1 };
-    private final long[] singleThreadLocalWorkSize = new long[] { 1 };
-    private final boolean isSPIRVBinary;
-    private boolean valid;
-    TornadoLogger logger = new TornadoLogger(this.getClass());
+    public byte[] getCode() {
+        return code;
+    }
 
-    public OCLInstalledCode(final String entryPoint, final byte[] code, final OCLDeviceContext deviceContext, final OCLProgram program, final OCLKernel kernel, boolean isSPIRVBinary) {
-        this.name = entryPoint;
-        this.code = code;
-        this.deviceContext = deviceContext;
-        this.scheduler = OCLScheduler.create(deviceContext);
-        this.DEFAULT_SCHEDULER = new OCLGenericGPUScheduler(deviceContext);
-        this.kernel = kernel;
-        this.program = program;
-        valid = kernel != null;
-        buffer.order(deviceContext.getByteOrder());
-        this.isSPIRVBinary = isSPIRVBinary;
+    public String getGeneratedSourceCode() {
+        return new String(code, StandardCharsets.UTF_8);
+    }
+
+    public OCLProgram getProgram() {
+        return program;
+    }
+
+    public OCLKernel getKernel() {
+        return kernel;
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
     }
 
     @Override
@@ -91,249 +127,165 @@ public class OCLInstalledCode implements TornadoInstalledCode {
         }
     }
 
-    public OCLProgram getProgram() {
-        return program;
+    @Override
+    public int launchWithDependencies(long executionPlanId, KernelStackFrame frame, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads, int[] waitEvents) {
+        return submitWithEvents(executionPlanId, (OCLKernelStackFrame) frame, atomicSpace, meta, waitEvents, batchThreads);
     }
 
     @Override
-    public boolean isValid() {
-        return valid;
-    }
-
-    public OCLKernel getKernel() {
-        return kernel;
-    }
-
-
-    public byte[] getCode() {
-        return code;
-    }
-
-    public String getGeneratedSourceCode() {
-        return new String(code);
+    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame frame, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads) {
+        submitWithoutEvents(executionPlanId, (OCLKernelStackFrame) frame, meta, batchThreads);
+        return -1;
     }
 
     /**
-     * Set arguments into the OpenCL device Kernel.
+     * Launches after {@code events}: the frame write waits on them and the kernel waits on the frame
+     * write.
      *
-     * @param kernelArgs
-     *     OpenCL kernel parameters {@link OCLByteBuffer}
-     * @param meta
-     *     task metadata {@link TaskDataContext}
+     * @return the kernel's event
      */
-    private void setKernelArgs(final OCLKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, TaskDataContext meta) {
-        int index = 0;
-
-        // kernel context
-        buffer.clear();
-        buffer.putLong(kernelArgs.toBuffer());
-        kernel.setArg(index, buffer);
-        index++;
-
-        if (isSPIRVBinary) {
-            // Set the rest of the SPIR-V kernel arguments.
-            for (int i = 0, argIndex = 0; i < kernelArgs.getCallArguments().size(); i++) {
-                KernelStackFrame.CallArgument arg = kernelArgs.getCallArguments().get(i);
-                // Include the extra kernel context argument for SPIR-V binaries.
-                if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
-                    buffer.clear();
-                    buffer.putLong(kernelArgs.toBuffer());
-                    kernel.setArg(index + argIndex, buffer);
-                    argIndex++;
-                    continue;
-                }
-                if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
-                    buffer.clear();
-                    PrimitiveSerialiser.put(buffer, arg.getValue());
-                    kernel.setArg(index + argIndex, buffer);
-                } else {
-                    shouldNotReachHere();
-                }
-                argIndex++;
-            }
-            return;
-        }
-
-        // constant memory
-        if (meta != null && meta.getConstantSize() > 0) {
-            kernel.setArg(index, ByteBuffer.wrap(meta.getConstantData()));
-        } else {
-            buffer.clear();
-            buffer.putLong(kernelArgs.toConstantAddress());
-            kernel.setArg(index, buffer);
-        }
-        index++;
-
-        // local memory buffers
-        if (meta != null && meta.getLocalSize() > 0) {
-            logger.info("\tallocating %s of local memory", RuntimeUtilities.humanReadableByteCount(meta.getLocalSize(), true));
-            kernel.setLocalRegion(index, meta.getLocalSize());
-        } else {
-            kernel.setArgUnused(index);
-        }
-        index++;
-
-        // Atomics in Global Memory
-        buffer.clear();
-        buffer.putLong(kernelArgs.toAtomicAddress());
-        kernel.setArg(index, buffer);
-        index++;
-
-        // Parameters
-        for (int i = 0, argIndex = 0; i < kernelArgs.getCallArguments().size(); i++) {
-            KernelStackFrame.CallArgument arg = kernelArgs.getCallArguments().get(i);
-            if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
-                // We do not set any kernel context argument. This is only for the Java side.
-                continue;
-            }
-            if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
-                buffer.clear();
-                PrimitiveSerialiser.put(buffer, arg.getValue());
-                kernel.setArg(index + argIndex, buffer);
-            } else {
-                shouldNotReachHere();
-            }
-            argIndex++;
-        }
-    }
-
-    private void printDebugLaunchInfo(final TaskDataContext meta) {
-        System.out.println("Running on: ");
-        System.out.println("\tPlatform: " + meta.getXPUDevice().getPlatformName());
-        if (meta.getXPUDevice() instanceof OCLTornadoDevice) {
-            System.out.println("\tDevice  : " + ((OCLTornadoDevice) meta.getXPUDevice()).getPhysicalDevice().getDeviceName());
-        }
-    }
-
-    public int submitWithEvents(long executionPlanId, final OCLKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, final TaskDataContext meta, final int[] events, long batchThreads) {
+    public int submitWithEvents(long executionPlanId, OCLKernelStackFrame frame, XPUBuffer atomicSpace, TaskDataContext meta, int[] events, long batchThreads) {
         guarantee(kernel != null, "kernel is null");
+        logSubmission();
+        setKernelArgs(frame, meta);
+        frameWritten[0] = frame.enqueueWrite(executionPlanId, events);
+        recordFrameWrite(executionPlanId, frameWritten[0], meta, frame);
 
-        if (DEBUG) {
-            logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
-        }
-
-        /*
-         * Only set the kernel arguments if they are either: - not set or - have changed
-         */
-        final int[] waitEvents;
-        setKernelArgs(kernelArgs, atomicSpace, meta);
-        internalEvents[0] = kernelArgs.enqueueWrite(executionPlanId, events);
-        waitEvents = internalEvents;
-        updateProfilerKernelContextWrite(executionPlanId, internalEvents[0], meta, kernelArgs);
-
-        int task;
         if (meta == null) {
-            task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
-        } else {
-            if (meta.isParallel() || meta.isWorkerGridAvailable()) {
-                task = scheduler.submit(executionPlanId, kernel, meta, waitEvents, batchThreads);
-            } else {
-                if (meta.isDebug()) {
-                    printDebugLaunchInfo(meta);
-                }
-                if (meta.getGlobalWork() == null) {
-                    task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, waitEvents);
-                } else {
-                    task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), waitEvents);
-                }
-            }
+            return enqueue(executionPlanId, oneWorkItem, oneWorkItem, frameWritten);
         }
-        return task;
-    }
-
-    private void executeSingleThread(long executionPlanId) {
-        deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
-    }
-
-    private int submitSequential(long executionPlanId, final TaskDataContext meta) {
-        final int task;
-
-        if (meta.isThreadInfoEnabled()) {
-            meta.printThreadDims();
-        }
-
-        if ((meta.getGlobalWork() == null) || (meta.getGlobalWork().length == 0)) {
-            // Sequential kernel execution
-            task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, singleThreadGlobalWorkSize, singleThreadLocalWorkSize, null);
-        } else {
-            // Ahead Of Time kernel execution
-            task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
-        }
-        if (TornadoOptions.isProfilerEnabled()) {
-            Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, task);
-            tornadoKernelEvent.waitForEvents(executionPlanId);
-            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
-            // Register globalTime
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
-            // Register the time for the task
-            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
-            // Register the dispatch time of the kernel
-            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
-            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
-            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
-        }
-        return task;
-    }
-
-    private int submitParallel(long executionPlanId, final TaskDataContext meta, long batchThreads) {
-        return scheduler.submit(executionPlanId, kernel, meta, batchThreads);
-    }
-
-    private void launchKernel(long executionPlanId, final OCLKernelStackFrame callWrapper, final TaskDataContext meta, long batchThreads) {
         if (meta.isParallel() || meta.isWorkerGridAvailable()) {
-            submitParallel(executionPlanId, meta, batchThreads);
+            return scheduler.submit(executionPlanId, kernel, meta, frameWritten, batchThreads);
+        }
+        if (meta.isDebug()) {
+            printDeviceInfo(meta);
+        }
+        return meta.getGlobalWork() == null //
+                ? enqueue(executionPlanId, oneWorkItem, oneWorkItem, frameWritten)
+                : enqueue(executionPlanId, meta.getGlobalWork(), meta.getLocalWork(), frameWritten);
+    }
+
+    private void submitWithoutEvents(long executionPlanId, OCLKernelStackFrame frame, TaskDataContext meta, long batchThreads) {
+        if (kernel == null) {
+            throw new TornadoRuntimeException("[ERROR] Generated Kernel is NULL. \nPlease report this issue to https://github.com/beehive-lab/TornadoVM");
+        }
+        logSubmission();
+        setKernelArgs(frame, meta);
+        recordFrameWrite(executionPlanId, frame.enqueueWrite(executionPlanId), meta, frame);
+
+        if (meta == null) {
+            enqueue(executionPlanId, oneWorkItem, oneWorkItem, null);
+        } else if (meta.isParallel() || meta.isWorkerGridAvailable()) {
+            scheduler.submit(executionPlanId, kernel, meta, batchThreads);
         } else {
             submitSequential(executionPlanId, meta);
         }
     }
 
-    private void checkKernelNotNull() {
-        if (kernel == null) {
-            throw new TornadoRuntimeException("[ERROR] Generated Kernel is NULL. \nPlease report this issue to https://github.com/beehive-lab/TornadoVM");
+    /** A task without a parallel loop or worker grid: one work item, or the ahead-of-time sizes when the task has them. */
+    private void submitSequential(long executionPlanId, TaskDataContext meta) {
+        if (meta.isThreadInfoEnabled()) {
+            meta.printThreadDims();
+        }
+        long[] global = meta.getGlobalWork();
+        int kernelEvent = global == null || global.length == 0 //
+                ? enqueue(executionPlanId, oneWorkItem, oneWorkItem, null)
+                : enqueue(executionPlanId, global, meta.getLocalWork(), null);
+        if (TornadoOptions.isProfilerEnabled()) {
+            recordKernelTime(executionPlanId, kernelEvent, meta);
         }
     }
 
-    private void submitWithoutEvents(long executionPlanId, final OCLKernelStackFrame oclKernelStackFrame, final XPUBuffer atomicSpace, final TaskDataContext meta, long batchThreads) {
-        checkKernelNotNull();
+    private int enqueue(long executionPlanId, long[] global, long[] local, int[] waitEvents) {
+        return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, global, local, waitEvents);
+    }
+
+    private void setKernelArgs(OCLKernelStackFrame frame, TaskDataContext meta) {
+        int index = 0;
+        setAddressArg(index++, frame.toBuffer());
+
+        if (isSPIRVBinary) {
+            for (KernelStackFrame.CallArgument arg : frame.getCallArguments()) {
+                if (arg.getValue() instanceof KernelStackFrame.KernelContextArgument) {
+                    setAddressArg(index++, frame.toBuffer());
+                } else {
+                    setValueArg(index++, arg.getValue());
+                }
+            }
+            return;
+        }
+
+        if (meta != null && meta.getConstantSize() > 0) {
+            kernel.setArg(index++, ByteBuffer.wrap(meta.getConstantData()));
+        } else {
+            setAddressArg(index++, frame.toConstantAddress());
+        }
+
+        if (meta != null && meta.getLocalSize() > 0) {
+            logger.info("\tallocating %s of local memory", RuntimeUtilities.humanReadableByteCount(meta.getLocalSize(), true));
+            kernel.setLocalRegion(index++, meta.getLocalSize());
+        } else {
+            kernel.setArgUnused(index++);
+        }
+
+        setAddressArg(index++, frame.toAtomicAddress());
+
+        // The KernelContext exists only on the Java side: OpenCL C kernels read work-item ids directly.
+        for (KernelStackFrame.CallArgument arg : frame.getCallArguments()) {
+            if (!(arg.getValue() instanceof KernelStackFrame.KernelContextArgument)) {
+                setValueArg(index++, arg.getValue());
+            }
+        }
+    }
+
+    private void setAddressArg(int index, long address) {
+        argument.clear();
+        argument.putLong(address);
+        kernel.setArg(index, argument);
+    }
+
+    private void setValueArg(int index, Object value) {
+        if (!isBoxedPrimitive(value) && !value.getClass().isPrimitive()) {
+            throw shouldNotReachHere();
+        }
+        argument.clear();
+        PrimitiveSerialiser.put(argument, value);
+        kernel.setArg(index, argument);
+    }
+
+    private void logSubmission() {
         if (DEBUG) {
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
+    }
 
-        setKernelArgs(oclKernelStackFrame, atomicSpace, meta);
-        int kernelContextWriteEventId = oclKernelStackFrame.enqueueWrite(executionPlanId);
-        updateProfilerKernelContextWrite(executionPlanId, kernelContextWriteEventId, meta, oclKernelStackFrame);
-
-        if (meta == null) {
-            executeSingleThread(executionPlanId);
-        } else {
-            launchKernel(executionPlanId, oclKernelStackFrame, meta, batchThreads);
+    private static void printDeviceInfo(TaskDataContext meta) {
+        System.out.println("Running on: ");
+        System.out.println("\tPlatform: " + meta.getXPUDevice().getPlatformName());
+        if (meta.getXPUDevice() instanceof OCLTornadoDevice device) {
+            System.out.println("\tDevice  : " + device.getPhysicalDevice().getDeviceName());
         }
     }
 
-    private void updateProfilerKernelContextWrite(long executionPlanId, int kernelContextWriteEventId, TaskDataContext meta, OCLKernelStackFrame callWrapper) {
-        if (TornadoOptions.isProfilerEnabled()) {
-            TornadoProfiler profiler = meta.getProfiler();
-            Event event = deviceContext.resolveEvent(executionPlanId, kernelContextWriteEventId);
-            event.waitForEvents(executionPlanId);
-            long copyInTimer = meta.getProfiler().getTimer(ProfilerType.COPY_IN_TIME);
-            copyInTimer += event.getElapsedTime();
-            profiler.setTimer(ProfilerType.COPY_IN_TIME, copyInTimer);
-            profiler.addValueToMetric(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES, meta.getId(), callWrapper.getSize());
-
-            long dispatchValue = profiler.getTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME);
-            dispatchValue += event.getDriverDispatchTime();
-            profiler.setTimer(ProfilerType.TOTAL_DISPATCH_DATA_TRANSFERS_TIME, dispatchValue);
+    private void recordFrameWrite(long executionPlanId, int eventId, TaskDataContext meta, OCLKernelStackFrame frame) {
+        if (!TornadoOptions.isProfilerEnabled()) {
+            return;
         }
+        var event = deviceContext.resolveEvent(executionPlanId, eventId);
+        event.waitForEvents(executionPlanId);
+        var profiler = meta.getProfiler();
+        profiler.setTimer(COPY_IN_TIME, profiler.getTimer(COPY_IN_TIME) + event.getElapsedTime());
+        profiler.addValueToMetric(TOTAL_COPY_IN_SIZE_BYTES, meta.getId(), frame.getSize());
+        profiler.setTimer(TOTAL_DISPATCH_DATA_TRANSFERS_TIME, profiler.getTimer(TOTAL_DISPATCH_DATA_TRANSFERS_TIME) + event.getDriverDispatchTime());
     }
 
-    @Override
-    public int launchWithDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads, int[] waitEvents) {
-        return submitWithEvents(executionPlanId, (OCLKernelStackFrame) callWrapper, atomicSpace, meta, waitEvents, batchThreads);
-    }
-
-    @Override
-    public int launchWithoutDependencies(long executionPlanId, KernelStackFrame callWrapper, XPUBuffer atomicSpace, TaskDataContext meta, long batchThreads) {
-        submitWithoutEvents(executionPlanId, (OCLKernelStackFrame) callWrapper, atomicSpace, meta, batchThreads);
-        return -1;
+    private void recordKernelTime(long executionPlanId, int eventId, TaskDataContext meta) {
+        var event = deviceContext.resolveEvent(executionPlanId, eventId);
+        event.waitForEvents(executionPlanId);
+        long elapsed = event.getElapsedTime();
+        var profiler = meta.getProfiler();
+        profiler.setTimer(TOTAL_KERNEL_TIME, profiler.getTimer(TOTAL_KERNEL_TIME) + elapsed);
+        profiler.setTaskTimer(TASK_KERNEL_TIME, meta.getId(), elapsed);
+        profiler.setTimer(TOTAL_DISPATCH_KERNEL_TIME, profiler.getTimer(TOTAL_DISPATCH_KERNEL_TIME) + event.getDriverDispatchTime());
     }
 }

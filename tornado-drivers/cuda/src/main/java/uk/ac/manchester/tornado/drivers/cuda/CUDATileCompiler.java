@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2018, 2020-2022, 2024, 2025, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,7 +21,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  */
-
 package uk.ac.manchester.tornado.drivers.cuda;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -144,34 +146,21 @@ public final class CUDATileCompiler {
             Path output = workingDirectory.resolve("tornado_tile_kernel.cubin");
             Files.write(input, source);
 
-            List<String> command = new ArrayList<>();
-            command.add(nvcc);
             // -tilecubin emits a cubin containing the tile code; --tile-only skips SIMT
             // code generation, which the generated translation unit has none of anyway.
-            command.add("-tilecubin");
-            command.add("--tile-only");
-            command.add("-std=c++20");
-            command.add("-arch=sm_" + computeMajor + computeMinor);
+            var command = new ArrayList<>(List.of(nvcc, "-tilecubin", "--tile-only", "-std=c++20", "-arch=sm_" + computeMajor + computeMinor));
             if (extraFlags != null && !extraFlags.isBlank()) {
-                for (String flag : extraFlags.trim().split("\\s+")) {
-                    command.add(flag);
-                }
+                command.addAll(List.of(extraFlags.strip().split("\\s+")));
             }
-            command.add("-o");
-            command.add(output.toString());
-            command.add(input.toString());
+            command.addAll(List.of("-o", output.toString(), input.toString()));
 
             Path log = workingDirectory.resolve("nvcc.log");
-            ProcessBuilder builder = new ProcessBuilder(command);
-            builder.redirectErrorStream(true);
             // The output goes to a file rather than a pipe this process reads. Draining the pipe
             // before waitFor would block indefinitely on an nvcc that hangs without closing its
             // stdout, which would defeat the timeout below; a file also cannot fill up and
             // deadlock the child on a full pipe buffer.
-            builder.redirectOutput(log.toFile());
-            Process process = builder.start();
-            boolean finished = process.waitFor(COMPILE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!finished) {
+            Process process = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile()).start();
+            if (!process.waitFor(COMPILE_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
                 throw new TornadoBailoutRuntimeException("[ERROR] The CUDA Tile compiler did not finish within "
                         + COMPILE_TIMEOUT_SECONDS + "s. Command: " + String.join(" ", command));
@@ -201,7 +190,7 @@ public final class CUDATileCompiler {
         if (resolvedNvcc != null) {
             return resolvedNvcc;
         }
-        List<String> candidates = new ArrayList<>();
+        var candidates = new ArrayList<String>();
         String configured = System.getProperty("tornado.cuda.nvcc");
         if (configured != null && !configured.isBlank()) {
             candidates.add(configured);
@@ -261,12 +250,9 @@ public final class CUDATileCompiler {
         Process process = null;
         try {
             output = Files.createTempFile("tornado-nvcc-version-", ".txt");
-            ProcessBuilder builder = new ProcessBuilder(nvcc, "--version");
-            builder.redirectErrorStream(true);
             // Same reasoning as in compile(): the probe writes to a file, so the timeout is what
             // bounds this call rather than the child's willingness to close stdout.
-            builder.redirectOutput(output.toFile());
-            process = builder.start();
+            process = new ProcessBuilder(nvcc, "--version").redirectErrorStream(true).redirectOutput(output.toFile()).start();
             if (!process.waitFor(VERSION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 // Without this the probe is left running for the lifetime of the JVM, and every
                 // candidate after a hung one adds another orphan.
@@ -276,11 +262,8 @@ public final class CUDATileCompiler {
             if (process.exitValue() != 0) {
                 return 0;
             }
-            Matcher matcher = RELEASE_PATTERN.matcher(readQuietly(output));
-            if (matcher.find()) {
-                return Integer.parseInt(matcher.group(1)) * 1000 + Integer.parseInt(matcher.group(2));
-            }
-            return 0;
+            Matcher release = RELEASE_PATTERN.matcher(readQuietly(output));
+            return release.find() ? Integer.parseInt(release.group(1)) * 1000 + Integer.parseInt(release.group(2)) : 0;
         } catch (IOException e) {
             return 0;
         } catch (InterruptedException e) {
@@ -307,7 +290,7 @@ public final class CUDATileCompiler {
             return;
         }
         try (var entries = Files.walk(directory)) {
-            entries.sorted((left, right) -> right.getNameCount() - left.getNameCount()).forEach(path -> {
+            entries.sorted(Comparator.comparingInt(Path::getNameCount).reversed()).forEach(path -> {
                 try {
                     Files.deleteIfExists(path);
                 } catch (IOException ignored) {

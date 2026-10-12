@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2018, 2021, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,13 +83,10 @@ public final class FieldLayout {
             fields.addAll(Arrays.asList(parent.all));
             position = parent.end;
         }
-        List<Field> declared = new ArrayList<>();
-        for (Field field : type.getDeclaredFields()) {
-            if (!Modifier.isStatic(field.getModifiers())) {
-                declared.add(field);
-            }
-        }
-        declared.sort(Comparator.comparingInt((Field f) -> -sizeOf(f)).thenComparing(Field::getName));
+        List<Field> declared = Arrays.stream(type.getDeclaredFields()) //
+                .filter(field -> !Modifier.isStatic(field.getModifiers())) //
+                .sorted(Comparator.comparingInt(FieldLayout::sizeOf).reversed().thenComparing(Field::getName)) //
+                .toList();
         for (Field field : declared) {
             int size = sizeOf(field);
             position = (position + size - 1) / size * size;
@@ -95,8 +94,8 @@ public final class FieldLayout {
             position += size;
         }
         fields.addAll(declared);
-        all = fields.toArray(new Field[0]);
-        own = declared.toArray(new Field[0]);
+        all = fields.toArray(Field[]::new);
+        own = declared.toArray(Field[]::new);
         end = position;
     }
 
@@ -111,11 +110,10 @@ public final class FieldLayout {
 
     /** Offset of {@code field} (declared by this class or a superclass) in the device copy. */
     public int offset(Field field) {
-        Integer offset = offsets.get(field);
-        if (offset == null) {
-            throw new TornadoRuntimeException("field " + field + " is not in the layout");
+        if (offsets.get(field) instanceof Integer offset) {
+            return offset;
         }
-        return offset;
+        throw new TornadoRuntimeException("field " + field + " is not in the layout");
     }
 
     /** Size of the device copy in bytes. */

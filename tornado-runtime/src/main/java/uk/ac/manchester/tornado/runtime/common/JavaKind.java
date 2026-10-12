@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2018, 2021, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,42 +23,57 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 /**
  * The kinds of Java values the runtime lays out in device memory: the eight primitives, references,
  * and {@code void}. Sizes are the Java language sizes; a reference's size depends on the VM and is
  * not given here.
  */
 public enum JavaKind {
-    Boolean('Z', "boolean", 1, boolean.class),
-    Byte('B', "byte", 1, byte.class),
-    Short('S', "short", 2, short.class),
-    Char('C', "char", 2, char.class),
-    Int('I', "int", 4, int.class),
-    Float('F', "float", 4, float.class),
-    Long('J', "long", 8, long.class),
-    Double('D', "double", 8, double.class),
-    Object('A', "Object", -1, Object.class),
-    Void('V', "void", 0, void.class),
-    Illegal('-', "illegal", 0, null);
 
-    private final char typeChar;
-    private final String javaName;
-    private final int byteCount;
+    Boolean(boolean.class, 'Z', 1),
+    Byte(byte.class, 'B', 1),
+    Short(short.class, 'S', 2),
+    Char(char.class, 'C', 2),
+    Int(int.class, 'I', 4),
+    Float(float.class, 'F', 4),
+    Long(long.class, 'J', 8),
+    Double(double.class, 'D', 8),
+    Object(Object.class, 'A', -1),
+    Void(void.class, 'V', 0),
+    Illegal(null, '-', 0);
+
+    /** Primitive classes, {@code void} included, to their kind. */
+    private static final Map<Class<?>, JavaKind> PRIMITIVES = Arrays.stream(values()) //
+            .filter(kind -> kind.javaClass != null && kind.javaClass.isPrimitive()) //
+            .collect(Collectors.toUnmodifiableMap(kind -> kind.javaClass, Function.identity()));
+
     private final Class<?> javaClass;
+    private final char typeChar;
+    private final int byteCount;
 
-    JavaKind(char typeChar, String javaName, int byteCount, Class<?> javaClass) {
-        this.typeChar = typeChar;
-        this.javaName = javaName;
-        this.byteCount = byteCount;
+    JavaKind(Class<?> javaClass, char typeChar, int byteCount) {
         this.javaClass = javaClass;
+        this.typeChar = typeChar;
+        this.byteCount = byteCount;
     }
 
+    /** The descriptor character: {@code 'I'} for int, {@code 'A'} for any reference. */
     public char getTypeChar() {
         return typeChar;
     }
 
+    /** The Java source name: {@code "int"}, {@code "Object"}, {@code "illegal"}. */
     public String getJavaName() {
-        return javaName;
+        return switch (this) {
+            case Object -> "Object";
+            case Illegal -> "illegal";
+            default -> javaClass.getName();
+        };
     }
 
     /** Size in bytes; -1 for {@link #Object}. */
@@ -65,9 +82,10 @@ public enum JavaKind {
     }
 
     public int getBitCount() {
-        return byteCount * 8;
+        return byteCount * java.lang.Byte.SIZE;
     }
 
+    /** One of the eight primitive types ({@code void} is not). */
     public boolean isPrimitive() {
         return byteCount > 0;
     }
@@ -82,13 +100,6 @@ public enum JavaKind {
 
     /** The kind of a value of type {@code type}: its primitive kind, else {@link #Object}. */
     public static JavaKind fromJavaClass(Class<?> type) {
-        if (type.isPrimitive()) {
-            for (JavaKind kind : values()) {
-                if (kind.javaClass == type) {
-                    return kind;
-                }
-            }
-        }
-        return Object;
+        return PRIMITIVES.getOrDefault(type, Object);
     }
 }

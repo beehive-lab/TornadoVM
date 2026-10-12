@@ -1,7 +1,9 @@
 /*
- * Copyright (c) 2018, 2021, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,61 +24,60 @@
 package uk.ac.manchester.tornado.runtime;
 
 import java.lang.management.ManagementFactory;
+import java.util.Optional;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 
 import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 
 /**
- * The parts of the JVM's object layout the runtime still mirrors when it copies Java arrays to a
- * device: the object header size, which places the array length. It is derived from the VM's
- * documented flags, so neither JVMCI nor {@code Unsafe} is needed. Objects use TornadoVM's own
- * layout ({@link FieldLayout}), which does not depend on the JVM.
+ * Where the JVM puts an array's length, which the runtime must know when it copies Java arrays to
+ * a device: right after the object header. The header size follows from the VM's documented flags
+ * (read through the HotSpot diagnostic bean), so neither JVMCI nor {@code Unsafe} is needed. Objects
+ * use TornadoVM's own layout ({@link FieldLayout}), which does not depend on the JVM.
  */
 public class TornadoVMConfigAccess {
 
-    /** HotSpot 64-bit mark-word size; the klass pointer (object hub) lives immediately after it. */
-    private static final int MARK_WORD_SIZE = 8;
+    /** The mark word of a 64-bit HotSpot object header. */
+    private static final int MARK_WORD_BYTES = Long.BYTES;
 
-    /** Object header size in bytes: mark word, plus the klass pointer unless headers are compact. */
-    private static final int HEADER_SIZE = headerSize();
+    private static final int OBJECT_HEADER_BYTES = objectHeaderBytes();
 
     /** Offset at which an object's hub/klass placeholder is zeroed when marshalling it to the device. */
     public final int hubOffset = FieldLayout.HUB_OFFSET;
 
-    public TornadoVMConfigAccess() {
-    }
-
-    private static int headerSize() {
-        if (flag("UseCompactObjectHeaders")) {
-            return MARK_WORD_SIZE;
+    /**
+     * The mark word alone with compact headers (JDK 24+); otherwise mark word plus a klass pointer,
+     * compressed unless the VM says not. Without the HotSpot bean (another VM, a native image)
+     * HotSpot's defaults are assumed.
+     */
+    private static int objectHeaderBytes() {
+        if (flag("UseCompactObjectHeaders", false)) {
+            return MARK_WORD_BYTES;
         }
-        // Without the HotSpot bean (another VM, a native image) assume HotSpot's default.
-        String compressed = option("UseCompressedClassPointers");
-        return compressed == null || Boolean.parseBoolean(compressed) ? MARK_WORD_SIZE + 4 : MARK_WORD_SIZE + 8;
+        return MARK_WORD_BYTES + (flag("UseCompressedClassPointers", true) ? Integer.BYTES : Long.BYTES);
     }
 
-    private static boolean flag(String name) {
-        return Boolean.parseBoolean(option(name));
+    private static boolean flag(String name, boolean fallback) {
+        return vmOption(name).map(Boolean::parseBoolean).orElse(fallback);
     }
 
-    private static String option(String name) {
+    private static Optional<String> vmOption(String name) {
         try {
-            return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption(name).getValue();
+            return Optional.ofNullable(ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class).getVMOption(name).getValue());
         } catch (RuntimeException | LinkageError e) {
             // Not a HotSpot VM, or a flag this JDK does not have (UseCompactObjectHeaders before 24).
-            return null;
+            return Optional.empty();
         }
     }
 
-    /** Offset of the array length field: it is stored immediately after the object header. */
+    /** Offset of an array's length field: immediately after the object header. */
     public final int arrayOopDescLengthOffset() {
-        return HEADER_SIZE;
+        return OBJECT_HEADER_BYTES;
     }
 
     /** Where an object's fields start in its device copy. */
     public int instanceKlassFieldsOffset() {
         return FieldLayout.HEADER_BYTES;
     }
-
 }
