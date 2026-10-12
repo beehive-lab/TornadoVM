@@ -348,7 +348,7 @@ def check_pyinstaller():
     Verify that pyinstaller is on PATH (Windows only).
 
     The Windows SDK build calls PyInstaller inside bin/compile to produce
-    tornado.exe, tornado-test.exe, and tornado-benchmarks.exe.  The underlying
+    tornado.exe and tornado-test.exe.  The underlying
     call uses os.system() which silently ignores failure, so if pyinstaller is
     missing the build completes without any .exe files and CMD users cannot run
     the SDK.  Failing early here avoids a silent bad build.
@@ -429,7 +429,7 @@ def patch_worktree_fix_pyinstaller(worktree_path):
     work_dir = tempfile.mkdtemp(prefix="pyinstaller-build-")
     repo_root = os.environ.get("TORNADO_BUILD_REPO_ROOT", currentDirectory)
 
-    scripts = ["tornado.py", "tornado-test", "tornado-benchmarks.py"]
+    scripts = ["tornado.py", "tornado-test"]
     failed = []
     for s in scripts:
         print("creating " + s + " binary ....  "),
@@ -568,8 +568,8 @@ def patch_worktree_skip_executables(worktree_path):
     executables, for restricted Windows machines that block running unsigned
     binaries (and abort the build when they are invoked):
 
-      * cutils.runPyInstaller(...)  — produces tornado.exe / tornado-test.exe /
-                                      tornado-benchmarks.exe via pyinstaller.exe
+      * cutils.runPyInstaller(...)  — produces tornado.exe / tornado-test.exe
+                                      via pyinstaller.exe
       * subprocess.run([... "zello_world"])  — Level Zero sanity probe used by
                                                the SPIR-V backend build
 

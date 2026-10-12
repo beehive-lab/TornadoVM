@@ -40,11 +40,6 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-benchmarks</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-unittests</artifactId>
             <version>${project.version}</version>
         </dependency>
