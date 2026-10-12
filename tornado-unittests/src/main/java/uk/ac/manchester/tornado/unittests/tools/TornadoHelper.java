@@ -92,6 +92,11 @@ public class TornadoHelper {
         // (non-verbose) runner does not report unsupported tests as failures (which reads as false regressions).
         long notSupported = result.getFailures().stream().filter(failure -> isUnsupported(failure.getException())).count();
         long failed = result.getFailures().size() - notSupported;
+        if (result.getTestsFoundCount() == 0) {
+            // JUnit 4 failed a request with no runnable methods; the JUnit Platform reports an empty, successful run.
+            System.out.println("[FAILED] No tests found: nothing was run");
+            failed++;
+        }
         System.out.printf("Test ran: %s, Failed: %s, Unsupported: %s%n", result.getTestsStartedCount(), failed, notSupported);
     }
 
@@ -101,6 +106,30 @@ public class TornadoHelper {
 
     private static void printResult(int success, int failed, int notSupported, StringBuilder buffer) {
         buffer.append(String.format("Test ran: %s, Failed: %s, Unsupported: %s%n", (success + failed + notSupported), failed, notSupported));
+    }
+
+    /**
+     * Marker printed on stderr before each test of the verbose runner. If the JVM crashes (e.g., a segfault in a
+     * driver), the last marker names the test that crashed. tornado-test reads it and removes it from the output.
+     */
+    static final String RUNNING_TEST_MARKER = "[TornadoTestRunner] running ";
+
+    /**
+     * Console output of the verbose runner. Each line is written as soon as it is complete, not buffered until the
+     * class finishes, so that a JVM crash still shows every result up to the test that crashed. A test result is
+     * one line, written once the test finishes, so output the test prints itself does not split it.
+     */
+    private static final class ConsoleOutput {
+        private final StringBuilder line = new StringBuilder();
+
+        void append(String message) {
+            line.append(message);
+            if (message.endsWith("\n")) {
+                System.out.print(line);
+                System.out.flush();
+                line.setLength(0);
+            }
+        }
     }
 
     static boolean getProperty(String property) {
@@ -161,7 +190,7 @@ public class TornadoHelper {
             methodsToTest.add(method);
         }
 
-        StringBuilder bufferConsole = new StringBuilder();
+        ConsoleOutput bufferConsole = new ConsoleOutput();
         StringBuilder bufferFile = new StringBuilder();
 
         int successCounter = 0;
@@ -190,9 +219,16 @@ public class TornadoHelper {
                 continue;
             }
 
+            System.err.println(RUNNING_TEST_MARKER + klass.getName() + "#" + m.getName());
+            System.err.flush();
             TestExecutionSummary result = run(selectMethod(klass, m.getName()));
 
-            if (result.getFailures().isEmpty()) {
+            if (result.getTestsFoundCount() == 0) {
+                message = String.format("%20s", " ................ " + ColorsTerminal.RED + " [FAILED] " + ColorsTerminal.RESET + "\n") + "\t\t\\_[REASON] No test found: nothing was run\n";
+                bufferConsole.append(message);
+                bufferFile.append(message);
+                failedCounter++;
+            } else if (result.getFailures().isEmpty()) {
                 message = String.format("%20s", " ................ " + ColorsTerminal.GREEN + " [PASS] " + ColorsTerminal.RESET + "\n");
                 bufferConsole.append(message);
                 bufferFile.append(message);
@@ -301,9 +337,9 @@ public class TornadoHelper {
             }
         }
 
-        printResult(successCounter, failedCounter, notSupported, bufferConsole);
+        printResult(successCounter, failedCounter, notSupported);
         printResult(successCounter, failedCounter, notSupported, bufferFile);
-        System.out.println(bufferConsole);
+        System.out.println();
 
         // Print File
         try (BufferedWriter w = new BufferedWriter(new FileWriter("tornado_unittests.log", true))) {
