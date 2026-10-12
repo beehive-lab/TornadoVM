@@ -108,6 +108,12 @@ public final class Structurizer {
             rpo.put(order.get(i), i);
         }
         analyseEdges(order);
+        // Definitions before uses (reverse postorder), so inlineDepth recurses one level at a time.
+        for (var block : order) {
+            for (var inst : block.insts()) {
+                inlineDepth(inst);
+            }
+        }
         var params = new ArrayList<S.Var>();
         for (var param : function.params()) {
             params.add(variable(param));
@@ -364,8 +370,45 @@ public final class Structurizer {
         return code;
     }
 
+    /**
+     * The deepest nesting of in-place expressions in one statement. Past it a value gets a variable:
+     * driver C compilers limit bracket nesting (clang, behind most OpenCL drivers, to 256) and recurse
+     * on the native stack, so a long chain printed as one expression fails to build or crashes.
+     */
+    static final int MAX_INLINE_DEPTH = 32;
+
+    private final Map<Inst, Integer> inlineDepth = new IdentityHashMap<>();
+
     /** Values printed in place instead of through a variable. */
     private boolean isInline(Inst inst) {
+        return inlineDepth(inst) > 0;
+    }
+
+    /** 0 for a value printed through a variable; otherwise the nesting depth of its in-place expression. */
+    private int inlineDepth(Inst inst) {
+        var known = inlineDepth.get(inst);
+        if (known != null) {
+            return known;
+        }
+        int depth = 0;
+        if (inlineByKind(inst)) {
+            depth = 1;
+            for (var operand : inst.operands()) {
+                if (operand instanceof Inst o) {
+                    depth = Math.max(depth, inlineDepth(o) + 1);
+                }
+            }
+            var opcode = inst.opcode();
+            if (depth > MAX_INLINE_DEPTH && !(opcode instanceof Opcode.ConstInt || opcode instanceof Opcode.ConstFloat || opcode instanceof Opcode.Alloca)) {
+                depth = 0;
+            }
+        }
+        inlineDepth.put(inst, depth);
+        return depth;
+    }
+
+    /** Whether a value of this kind and use is printed in place (before the depth limit). */
+    private boolean inlineByKind(Inst inst) {
         var opcode = inst.opcode();
         if (inst.type() instanceof Type.TileType || inst.type() instanceof Type.ObjectType) {
             // Tiles and views are named values (their C++ types are long): one statement each, as on Graal.
