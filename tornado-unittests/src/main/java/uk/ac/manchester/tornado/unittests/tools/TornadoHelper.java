@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP8NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceDynamicParallelismNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
@@ -68,7 +69,7 @@ public class TornadoHelper {
     private static final List<Class<? extends Throwable>> UNSUPPORTED_EXCEPTIONS = List.of(UnsupportedConfigurationException.class, TornadoNoOpenCLPlatformException.class,
             TornadoVMMultiDeviceNotSupported.class, TornadoVMOpenCLNotSupported.class, TornadoVMMetalNotSupported.class, TornadoVMCUDANotSupported.class,
             TornadoDeviceFP64NotSupported.class, TornadoDeviceFP16NotSupported.class, TornadoDeviceMMANotSupported.class,
-            TornadoDeviceDynamicParallelismNotSupported.class);
+            TornadoDeviceDynamicParallelismNotSupported.class, TornadoLibraryTaskNotSupported.class);
 
     private static boolean isUnsupported(Throwable exception) {
         return UNSUPPORTED_EXCEPTIONS.stream().anyMatch(type -> type.isInstance(exception));
@@ -335,6 +336,14 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoDeviceDynamicParallelismNotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [DYNAMIC PARALLELISM UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoLibraryTaskNotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.YELLOW + " [LIBRARY TASK UNSUPPORTED FOR CURRENT DEVICE] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;

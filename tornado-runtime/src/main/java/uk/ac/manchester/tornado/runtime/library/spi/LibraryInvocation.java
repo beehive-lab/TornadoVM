@@ -28,13 +28,16 @@ import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 /**
  * A single library-task call with its arguments already resolved by the
  * TornadoVM interpreter: reference arguments (off-heap arrays/tensors) carry
- * the raw device pointer of their TornadoVM-managed device buffer (past the
- * array header), primitive arguments carry their boxed value.
+ * the address of their first data element in the TornadoVM-managed buffer
+ * (past the array header), plus the native buffer object and the element's
+ * byte offset inside it; primitive arguments carry their boxed value.
  */
 public final class LibraryInvocation {
 
     private final Object[] javaArgs;
     private final long[] devicePointers;
+    private final long[] nativeBuffers;
+    private final long[] nativeOffsets;
     private final boolean[] isReference;
     private final TornadoXPUDevice device;
     private final long executionPlanId;
@@ -42,9 +45,12 @@ public final class LibraryInvocation {
     private final Object tuning;
     private final boolean capturing;
 
-    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, boolean[] isReference, TornadoXPUDevice device, long executionPlanId, LibraryContext context, Object tuning, boolean capturing) {
+    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, long[] nativeBuffers, long[] nativeOffsets, boolean[] isReference, TornadoXPUDevice device, long executionPlanId,
+            LibraryContext context, Object tuning, boolean capturing) {
         this.javaArgs = javaArgs;
         this.devicePointers = devicePointers;
+        this.nativeBuffers = nativeBuffers;
+        this.nativeOffsets = nativeOffsets;
         this.isReference = isReference;
         this.device = device;
         this.executionPlanId = executionPlanId;
@@ -66,11 +72,29 @@ public final class LibraryInvocation {
     }
 
     /**
-     * The raw device pointer for a reference argument at the given position,
-     * pointing at the first data element (past the TornadoVM array header).
+     * The address of the first data element (past the TornadoVM array header) of
+     * a reference argument: a device pointer on CUDA, and a CPU address of the
+     * shared-storage buffer on Metal. See {@code XPUBuffer.libraryAddress()}.
      */
     public long getDevicePointer(int index) {
         return devicePointers[index];
+    }
+
+    /**
+     * The backend's native buffer object for a reference argument: the device
+     * allocation on CUDA, the MTLBuffer on Metal. Providers that bind buffers
+     * rather than raw addresses (e.g. Metal compute encoders) combine it with
+     * {@link #getNativeOffset(int)}.
+     */
+    public long getNativeBuffer(int index) {
+        return nativeBuffers[index];
+    }
+
+    /**
+     * Byte offset of the first data element inside {@link #getNativeBuffer(int)}.
+     */
+    public long getNativeOffset(int index) {
+        return nativeOffsets[index];
     }
 
     public boolean isReference(int index) {

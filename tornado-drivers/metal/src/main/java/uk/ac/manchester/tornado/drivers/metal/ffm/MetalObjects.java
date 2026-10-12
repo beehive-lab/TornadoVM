@@ -868,7 +868,7 @@ public final class MetalObjects {
      * write its contents. Buffers the pending work does not bind -- the common case for a task's
      * inputs -- need no wait.
      */
-    private static void awaitBuffer(long buffer) {
+    public static void awaitBuffer(long buffer) {
         BufferUse use = BUFFER_USES.get(buffer);
         if (use == null) {
             return;

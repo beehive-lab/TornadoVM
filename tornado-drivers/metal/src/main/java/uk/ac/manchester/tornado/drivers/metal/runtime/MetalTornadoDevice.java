@@ -82,10 +82,11 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 
-public class MetalTornadoDevice implements TornadoXPUDevice {
+public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
 
     private static MetalBackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^Metal (\\d)\\.(\\d).*");
@@ -639,6 +640,24 @@ public class MetalTornadoDevice implements TornadoXPUDevice {
     @Override
     public void flushEvents(long executionPlanId) {
         getDeviceContext().flushEvents(executionPlanId);
+    }
+
+    /**
+     * The MTLCommandQueue this execution plan uses on this device. Every Metal kernel and blit
+     * ends in commit + waitUntilCompleted, so work a library encodes on this queue is ordered
+     * after all earlier TornadoVM work.
+     */
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        return getDeviceContext().getNativeStream(executionPlanId);
+    }
+
+    /**
+     * The MTLDevice that owns {@link #getNativeStream(long)}.
+     */
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return getDeviceContext().getNativeContext(executionPlanId);
     }
 
     @Override

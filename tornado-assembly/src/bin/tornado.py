@@ -74,6 +74,7 @@ __CUSPARSE_MODULE__ = "tornado.cusparse"
 __CUDF_MODULE__ = "tornado.cudf"
 __CUVS_MODULE__ = "tornado.cuvs"
 __CUTLASS_MODULE__ = "tornado.cutlass"
+__MLX_MODULE__ = "tornado.mlx"
 
 # ########################################################
 # JAVA FLAGS
@@ -1220,7 +1221,7 @@ class TornadoVMRunnerTool():
             tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
         if ("metal-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + metal + " "
-            tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__
+            tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__ + "," + __MLX_MODULE__
         if ("cuda-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + cuda + " "
             tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CURAND_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__ + "," + __CUDF_MODULE__ + "," + __CUVS_MODULE__
