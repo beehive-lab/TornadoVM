@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.nccl;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -29,8 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -61,7 +61,7 @@ public class TestNcclMultiProcess extends TornadoTestBase {
 
     private static final long CHILD_TIMEOUT_SECONDS = 180;
 
-    @Before
+    @BeforeEach
     public void ncclMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -164,15 +164,15 @@ public class TestNcclMultiProcess extends TornadoTestBase {
                 }
                 rank0.join(100);
             }
-            assertTrue("rank 0 did not finish in time; child output:\n" + childOutput, !rank0.isAlive());
+            assertTrue(!rank0.isAlive(), "rank 0 did not finish in time; child output:\n" + childOutput);
             if (rank0Failure[0] != null) {
                 throw new AssertionError("rank 0 failed: " + rank0Failure[0] + "\nchild output:\n" + childOutput, rank0Failure[0]);
             }
-            assertTrue("the child process did not finish in time", child.waitFor(CHILD_TIMEOUT_SECONDS, TimeUnit.SECONDS));
+            assertTrue(child.waitFor(CHILD_TIMEOUT_SECONDS, TimeUnit.SECONDS), "the child process did not finish in time");
             reader.join(TimeUnit.SECONDS.toMillis(10));
             String output = childOutput.toString();
-            assertEquals("child process failed:\n" + output, 0, child.exitValue());
-            assertTrue(output, output.contains("NCCL-WORKER rank 1 OK"));
+            assertEquals(0, child.exitValue(), "child process failed:\n" + output);
+            assertTrue(output.contains("NCCL-WORKER rank 1 OK"), output);
         } finally {
             child.destroyForcibly();
         }

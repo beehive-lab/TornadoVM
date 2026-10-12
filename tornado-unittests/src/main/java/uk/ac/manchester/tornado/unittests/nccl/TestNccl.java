@@ -17,15 +17,15 @@
  */
 package uk.ac.manchester.tornado.unittests.nccl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.function.BiFunction;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -71,7 +71,7 @@ public class TestNccl extends TornadoTestBase {
     private static final int COUNT = 1024;
     private static final int LOCAL_SIZE = 128;
 
-    @Before
+    @BeforeEach
     public void ncclMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -523,7 +523,7 @@ public class TestNccl extends TornadoTestBase {
         for (int rank = 0; rank < n; rank++) {
             for (int i = 0; i < SIZE; i++) {
                 float sum = 2.0f * (n * (n - 1) / 2.0f + n * (step + i % 3));
-                assertEquals("step " + step, sum + 1.0f, buffers[rank].get(i), 1e-3f);
+                assertEquals(sum + 1.0f, buffers[rank].get(i), 1e-3f, "step " + step);
             }
         }
     }
@@ -567,7 +567,7 @@ public class TestNccl extends TornadoTestBase {
         for (int rank = 0; rank < n; rank++) {
             int previous = (rank - 1 + n) % n;
             for (int i = 0; i < SIZE; i++) {
-                assertEquals("step " + step, 2.0f * (previous * 100 + step * 10 + i % 5), recvs[rank].get(i), 0.0f);
+                assertEquals(2.0f * (previous * 100 + step * 10 + i % 5), recvs[rank].get(i), 0.0f, "step " + step);
             }
         }
     }
@@ -661,7 +661,7 @@ public class TestNccl extends TornadoTestBase {
         closer.setDaemon(true);
         closer.start();
         closer.join(60_000);
-        assertTrue("ncclCommDestroy did not return: a CUDA graph of a closed plan still holds the communicator", !closer.isAlive());
+        assertTrue(!closer.isAlive(), "ncclCommDestroy did not return: a CUDA graph of a closed plan still holds the communicator");
     }
 
     public static void poison(KernelContext context, FloatArray array) {
@@ -725,7 +725,7 @@ public class TestNccl extends TornadoTestBase {
                             return null;
                         });
                         for (int i = 0; i < SIZE; i++) {
-                            assertEquals("step " + step, (i % 7 + 1) + 1.0f, received.get(i), 0.0f);
+                            assertEquals((i % 7 + 1) + 1.0f, received.get(i), 0.0f, "step " + step);
                         }
                     }
                 }
@@ -741,7 +741,7 @@ public class TestNccl extends TornadoTestBase {
 
     private static void checkPipeline(FloatArray received, int step) {
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("step " + step, 2.0f * (step * 10 + i % 9) + 1.0f, received.get(i), 0.0f);
+            assertEquals(2.0f * (step * 10 + i % 9) + 1.0f, received.get(i), 0.0f, "step " + step);
         }
     }
 
@@ -770,9 +770,9 @@ public class TestNccl extends TornadoTestBase {
         }, () -> {
         }, cudaGraph));
         long seconds = (System.nanoTime() - start) / 1_000_000_000L;
-        assertTrue("the group took " + seconds + " s to give up", seconds < 60);
-        assertTrue(failure.getMessage(), failure.getMessage().contains("rank 1"));
-        assertTrue("the communicator rank 0 was waiting on must be aborted", communicator.isAborted());
+        assertTrue(seconds < 60, "the group took " + seconds + " s to give up");
+        assertTrue(failure.getMessage().contains("rank 1"), failure.getMessage());
+        assertTrue(communicator.isAborted(), "the communicator rank 0 was waiting on must be aborted");
         assertThrows(TornadoRuntimeException.class, () -> communicator.commForOrdinal(0));
         communicator.close();
 
@@ -829,9 +829,9 @@ public class TestNccl extends TornadoTestBase {
                         .transferToHost(DataTransferMode.EVERY_EXECUTION, other), () -> {
                         }, cudaGraph, "", Duration.ofSeconds(5)));
         long seconds = (System.nanoTime() - start) / 1_000_000_000L;
-        assertTrue("the group took " + seconds + " s to give up", seconds < 60);
-        assertTrue(failure.getMessage(), failure.getMessage().contains("did not finish within") && failure.getMessage().contains("[0]"));
-        assertTrue("the communicator rank 0 was waiting on must be aborted", communicator.isAborted());
+        assertTrue(seconds < 60, "the group took " + seconds + " s to give up");
+        assertTrue(failure.getMessage().contains("did not finish within") && failure.getMessage().contains("[0]"), failure.getMessage());
+        assertTrue(communicator.isAborted(), "the communicator rank 0 was waiting on must be aborted");
         communicator.close();
 
         // NCCL still works in this process, also with a step timeout that is not reached.
