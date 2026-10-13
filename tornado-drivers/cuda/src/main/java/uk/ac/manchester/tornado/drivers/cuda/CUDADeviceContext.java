@@ -51,6 +51,7 @@ import uk.ac.manchester.tornado.drivers.cuda.power.CUDANvidiaPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDABufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -1101,13 +1102,16 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     /**
-     * Destroys an instantiated CUDA graph. Uses any live execution-plan queue
-     * for the destroy call (cuGraphExecDestroy is independent of the stream).
+     * Destroys an instantiated CUDA graph. cuGraphExecDestroy needs no stream,
+     * so this does not go through an execution-plan queue: when a plan of several
+     * graphs is freed, the first graph's free resets the plan's queues, and the
+     * later graphs would otherwise find no queue and leak their CUDA graphs (and
+     * anything they hold, such as an NCCL communicator that then cannot be
+     * destroyed).
      */
     public void destroyExecutionGraph(long executionGraphHandle) {
-        Long anyPlanId = executionIDs.stream().findFirst().orElse(null);
-        if (anyPlanId != null) {
-            getCommandQueue(anyPlanId).destroyGraph(executionGraphHandle);
+        if (executionGraphHandle != 0) {
+            CUDADriverAPI.cuGraphExecDestroy(executionGraphHandle);
         }
     }
 

@@ -601,5 +601,6 @@
         <module>tornado-cutlass</module>
         <module>tornado-cuvs</module>
         <module>tornado-mlx</module>
+        <module>tornado-nccl</module>
     </modules>
 </project>
