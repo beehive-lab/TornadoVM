@@ -70,7 +70,7 @@ final class MlxKernelRoutes {
 
     /** The arguments of one call, as MLX kernels see them. */
     static final class View {
-        private final LibraryInvocation invocation;
+        final LibraryInvocation invocation;
 
         View(LibraryInvocation invocation) {
             this.invocation = invocation;
@@ -1786,6 +1786,7 @@ final class MlxKernelRoutes {
             };
         });
         ROUTES.put("mlx_fast_scaled_dot_product_attention", MlxKernelRoutes::attention);
+        ROUTES.put("mlx_fast_scaled_dot_product_attention_cached", MlxKernelRoutes::cachedAttention);
         ROUTES.put("mlx_quantize", v -> quantize(v, false));
         ROUTES.put("mlx_dequantize", v -> quantize(v, true));
     }
@@ -1818,7 +1819,7 @@ final class MlxKernelRoutes {
             return null;
         }
         if (lq > 8) {
-            return fullAttention(v, t, b, hq, hkv, lq, lk, d, scale, v.boolArg(11), architecture);
+            return fullAttention(v, t, b, hq, hkv, lq, lk, lk, d, scale, v.boolArg(11), architecture);
         }
         if (!headDim || lq > lk || lq * gqa > 32) {
             return null;
@@ -1875,10 +1876,41 @@ final class MlxKernelRoutes {
     }
 
     /**
+     * scaled_dot_product_attention_cached(q[B, Hq, Lq, D], k[B, Hkv, maxLk, D], v[B, Hkv, maxLk, D], out, start, B, Hq, Hkv, Lq, maxLk, D, scale,
+     * causal): prefill attention over the first {@code start[0] + Lq} rows of buffers that hold {@code maxLk}, the queries being the last
+     * {@code Lq} of them. The length is read from {@code start} when the task runs, so one task graph serves every chunk of a prompt.
+     */
+    private static Encoder cachedAttention(View v) {
+        if (v.args() < 13 || !v.isArray(0) || !v.isArray(1) || !v.isArray(2) || !v.isArray(3)
+                || !(v.invocation.getArg(4) instanceof uk.ac.manchester.tornado.api.types.arrays.IntArray start)) {
+            return null;
+        }
+        int t = v.dtype(0);
+        int b = v.intArg(5);
+        int hq = v.intArg(6);
+        int hkv = v.intArg(7);
+        int lq = v.intArg(8);
+        int maxLk = v.intArg(9);
+        int d = v.intArg(10);
+        float scale = v.floatArg(11);
+        boolean causal = v.boolArg(12);
+        int lk = start.get(0) + lq;
+        String architecture = v.architecture();
+        if (cType(t) == null || architecture == null || architecture.isEmpty() || v.dtype(1) != t || v.dtype(2) != t || v.dtype(3) != t || hkv <= 0 || hq % hkv != 0
+                || lq <= 8 || lk > maxLk) {
+            return null;
+        }
+        if (v.size(0) != b * hq * lq * d || v.size(1) != b * hkv * maxLk * d || v.size(2) != b * hkv * maxLk * d || v.size(3) != b * hq * lq * d) {
+            return null;
+        }
+        return fullAttention(v, t, b, hq, hkv, lq, lk, maxLk, d, scale, causal, architecture);
+    }
+
+    /**
      * Prefill attention (Lq > 8): MLX's steel_attention kernel, where MLX uses it (head dim 64/72/80/96/128,
      * causal only with Lq <= Lk, no NAX). The output strides are those of the contiguous [B, H, Lq, D] buffer.
      */
-    private static Encoder fullAttention(View v, int t, int b, int hq, int hkv, int lq, int lk, int d, float scale, boolean causal, String architecture) {
+    private static Encoder fullAttention(View v, int t, int b, int hq, int hkv, int lq, int lk, int kvRows, int d, float scale, boolean causal, String architecture) {
         boolean headDim = d == 64 || d == 72 || d == 80 || d == 96 || d == 128;
         if (!headDim || (causal && lq > lk)) {
             return null;
@@ -1889,7 +1921,9 @@ final class MlxKernelRoutes {
         int bq = 32;
         int bk = d < 128 ? 32 : 16;
         String type = MlxMetalKernels.typeName(t);
-        String kernel = "steel_attention_" + type + "_bq" + bq + "_bk" + bk + "_bd" + d + "_wm4_wn1_mask" + type;
+        // MLX 0.32.3 names the value head dimension separately (_bv<d>); earlier releases do not.
+        String withValueDim = "steel_attention_" + type + "_bq" + bq + "_bk" + bk + "_bd" + d + "_bv" + d + "_wm4_wn1_mask" + type;
+        String kernel = v.hasKernel(withValueDim) ? withValueDim : "steel_attention_" + type + "_bq" + bq + "_bk" + bk + "_bd" + d + "_wm4_wn1_mask" + type;
         boolean alignQ = lq % bq == 0;
         boolean alignK = lk % bk == 0;
         int nq = (lq + bq - 1) / bq;
@@ -1899,7 +1933,7 @@ final class MlxKernelRoutes {
         java.nio.ByteBuffer params = java.nio.ByteBuffer.allocate(152).order(java.nio.ByteOrder.LITTLE_ENDIAN);
         params.putInt(b).putInt(hq).putInt(d).putInt(lq).putInt(lk).putInt(hq / hkv).putFloat(scale).putInt(nq).putInt(nk).putInt(nqAligned).putInt(nkAligned)
                 .putInt(lq - nqAligned * bq).putInt(lk - nkAligned * bk).putInt(lk - lq);
-        long[][] strides = { { (long) hq * lq * d, (long) lq * d, d }, { (long) hkv * lk * d, (long) lk * d, d }, { (long) hkv * lk * d, (long) lk * d, d },
+        long[][] strides = { { (long) hq * lq * d, (long) lq * d, d }, { (long) hkv * kvRows * d, (long) kvRows * d, d }, { (long) hkv * kvRows * d, (long) kvRows * d, d },
                 { (long) hq * lq * d, (long) lq * d, d } };
         for (long[] st : strides) {
             for (long x : st) {

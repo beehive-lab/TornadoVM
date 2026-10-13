@@ -2805,6 +2805,16 @@ public final class Mlx {
         return task("mlx_fast_scaled_dot_product_attention", 3, q, k, v, out, batch, qHeads, kvHeads, qLen, kvLen, headDim, scale, causal);
     }
 
+    /**
+     * Causal scaled dot-product attention of a prompt chunk over everything before it: {@code q[batch, qHeads, qLen, headDim]} are the queries
+     * at positions {@code start[0] .. start[0] + qLen - 1}, and {@code k, v[batch, kvHeads, maxKvLen, headDim]} hold the keys and values of
+     * positions {@code 0 .. start[0] + qLen - 1} in their first rows. {@code start[0]} is read when the task runs.
+     */
+    public static LibraryTaskDescriptor scaledDotProductAttentionCached(HalfFloatArray q, HalfFloatArray k, HalfFloatArray v, HalfFloatArray out, IntArray start, int batch,
+            int qHeads, int kvHeads, int qLen, int maxKvLen, int headDim, float scale, boolean causal) {
+        return task("mlx_fast_scaled_dot_product_attention_cached", 3, q, k, v, out, start, batch, qHeads, kvHeads, qLen, maxKvLen, headDim, scale, causal);
+    }
+
     // ---------------------------------------------------------------- Fft
     // MLX FFTs. Complex arrays are float arrays of interleaved (real, imaginary) pairs, so a complex
     // [rows, len] array holds 2 * rows * len floats. 2D and 3D transforms run over the last two or

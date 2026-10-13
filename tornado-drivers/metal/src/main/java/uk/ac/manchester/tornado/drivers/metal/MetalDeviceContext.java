@@ -657,12 +657,19 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
 
     /* ---- Native interop (external libraries, e.g. Apple MLX) ---- */
 
+    /** -Dtornado.mlx.async=true: commit the batch before a library task without waiting for it. */
+    private static final boolean ASYNC_LIBRARY_DISPATCH = Boolean.getBoolean("tornado.mlx.async");
+
     @Override
     public long getNativeStream(long executionPlanId) {
         long queue = getCommandQueue(executionPlanId).getCommandQueuePtr();
         // A library encodes its own command buffers on this queue (or reads buffers on the CPU), so
         // the kernels batched before it are committed and finished first.
-        MetalObjects.finish(queue);
+        if (ASYNC_LIBRARY_DISPATCH) {
+            MetalObjects.flush(queue);
+        } else {
+            MetalObjects.finish(queue);
+        }
         return queue;
     }
 
