@@ -146,4 +146,4 @@ tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclGroup [
 - Anything that can block in NCCL needs thought about abort: `ncclCommAbort` cannot run on a thread
   that is still capturing, and blocks while an instantiated graph uses the communicator.
 - Register new tests in `tornado-assembly/src/bin/tornado-test`, and update `README.md`,
-  `ARCHITECTURE.md` and `HYBRID_API_GUIDE.md` §3.8.
+  `ARCHITECTURE.md` and `HYBRID_API_GUIDE.md` §3.9.

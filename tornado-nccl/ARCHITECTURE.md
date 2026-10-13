@@ -3,7 +3,7 @@
 This document explains how the NCCL integration is built: the parts of the module, how one step of a
 multi-GPU program runs through them, the CUDA backend features it depends on, and the full public
 API. For a shorter, example-driven introduction see [README.md](README.md); for the hybrid
-library-task API in general see `HYBRID_API_GUIDE.md` §3.8.
+library-task API in general see `HYBRID_API_GUIDE.md` §3.9.
 
 ## 1. Goal and model
 
