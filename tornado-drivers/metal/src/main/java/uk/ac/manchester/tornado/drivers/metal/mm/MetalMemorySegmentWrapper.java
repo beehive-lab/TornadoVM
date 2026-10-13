@@ -92,6 +92,9 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
         return bufferOffset;
     }
 
+    /** -Dtornado.mlx.async=true: library calls only encode GPU work and never read buffers on the CPU. */
+    private static final boolean ASYNC_LIBRARY_DISPATCH = Boolean.getBoolean("tornado.mlx.async");
+
     /**
      * CPU address of the first element. Metal buffers use shared storage, so this is the
      * memory the GPU reads and writes too.
@@ -99,7 +102,10 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
     @Override
     public long libraryAddress() {
         // A library may read this address on the CPU: pending kernels that bind the buffer must finish first.
-        MetalObjects.awaitBuffer(toBuffer());
+        // A library that only encodes GPU work on the queue (-Dtornado.mlx.async=true) never reads it.
+        if (!ASYNC_LIBRARY_DISPATCH) {
+            MetalObjects.awaitBuffer(toBuffer());
+        }
         return MetalAPI.bufferContents(toBuffer()) + libraryOffset();
     }
 

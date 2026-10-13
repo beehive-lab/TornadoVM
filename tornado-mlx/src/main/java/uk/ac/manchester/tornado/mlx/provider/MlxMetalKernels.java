@@ -731,6 +731,9 @@ final class MlxMetalKernels {
      * Commits and waits by polling a shared event the command buffer signals when its work is done,
      * as the Metal backend does, falling back to {@code waitUntilCompleted} after a short spin.
      */
+    /** {@code -Dtornado.mlx.async=true}: commit without waiting for the GPU. */
+    private static final boolean ASYNC = Boolean.getBoolean("tornado.mlx.async");
+
     private static void commitAndWait(long queue, long device, long commandBuffer) {
         long[] queueEvent = QUEUE_EVENTS.computeIfAbsent(queue, q -> new long[] { send(device, "newSharedEvent"), 0 });
         long value;
@@ -739,6 +742,10 @@ final class MlxMetalKernels {
         }
         sendVoid(commandBuffer, "encodeSignalEvent:value:", queueEvent[0], value);
         sendVoid(commandBuffer, "commit");
+        if (ASYNC) {
+            // The queue runs command buffers in commit order; the next TornadoVM kernel sees this one's writes.
+            return;
+        }
         long start = System.nanoTime();
         int polls = 0;
         while (send(queueEvent[0], "signaledValue") < value) {
