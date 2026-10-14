@@ -52,22 +52,22 @@ public class TornadoLoopUnroller extends BasePhase<CoreProviders> {
     private final CanonicalizerPhase canonicalizer;
 
     /**
-     * Loops that contain a node matching this predicate are never fully unrolled (for example
-     * CUDA Tile loops, which the tile compiler pipelines itself).
+     * Loops matching this predicate are never fully unrolled (for example CUDA Tile loops, which
+     * the tile compiler pipelines itself on most architectures).
      */
-    private final Predicate<Node> keepRolled;
+    private final Predicate<LoopEx> keepRolled;
 
     public TornadoLoopUnroller(CanonicalizerPhase canonicalizer) {
-        this(canonicalizer, node -> false);
+        this(canonicalizer, loop -> false);
     }
 
-    public TornadoLoopUnroller(CanonicalizerPhase canonicalizer, Predicate<Node> keepRolled) {
+    public TornadoLoopUnroller(CanonicalizerPhase canonicalizer, Predicate<LoopEx> keepRolled) {
         this.canonicalizer = canonicalizer;
         this.keepRolled = keepRolled;
     }
 
     private boolean shouldFullUnroll(OptionValues options, LoopEx loop) {
-        if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount()) {
+        if (!loop.isCounted() || !loop.counted().isConstantMaxTripCount() || keepRolled.test(loop)) {
             return false;
         }
         CountedLoopInfo counted = loop.counted();
@@ -80,7 +80,7 @@ public class TornadoLoopUnroller extends BasePhase<CoreProviders> {
             int loops = 0;
             int ifs = 0;
             for (Node node : loop.inside().nodes()) {
-                if (node instanceof ControlFlowAnchorNode || keepRolled.test(node)) {
+                if (node instanceof ControlFlowAnchorNode) {
                     return false;
                 } else if (node instanceof LoopBeginNode) {
                     loops++;

@@ -17,15 +17,15 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashSet;
 import java.util.OptionalInt;
 import java.util.Set;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
@@ -53,7 +53,7 @@ public class TestNativeArrayLayouts extends TornadoTestBase {
         NativeArrayLayouts.registeredTypes().forEach(registered::add);
 
         Class<?>[] permitted = TornadoNativeArray.class.getPermittedSubclasses();
-        assertTrue("TornadoNativeArray should be sealed", permitted != null && permitted.length > 0);
+        assertTrue(permitted != null && permitted.length > 0, "TornadoNativeArray should be sealed");
 
         for (Class<?> subtype : permitted) {
             if (!registered.contains(subtype)) {
@@ -72,16 +72,16 @@ public class TestNativeArrayLayouts extends TornadoTestBase {
         for (Class<?> type : NativeArrayLayouts.registeredTypes()) {
             TornadoNativeArray instance = (TornadoNativeArray) type.getConstructor(int.class).newInstance(4);
             OptionalInt tableSize = NativeArrayLayouts.elementSizeOf(instance);
-            assertTrue(type.getSimpleName() + " must be in the table", tableSize.isPresent());
+            assertTrue(tableSize.isPresent(), type.getSimpleName() + " must be in the table");
 
             if (type == CharArray.class) {
                 // Pre-existing disagreement, pinned on purpose: the API type reports 2 bytes, every
                 // backend has always sized the buffer with its 1-byte character kind. If either side
                 // changes, this assertion is where the decision gets made.
-                assertEquals("CharArray.getElementSize() is expected to disagree with the table", 2, instance.getElementSize());
-                assertEquals("backends size a CharArray element as one byte", 1, tableSize.getAsInt());
+                assertEquals(2, instance.getElementSize(), "CharArray.getElementSize() is expected to disagree with the table");
+                assertEquals(1, tableSize.getAsInt(), "backends size a CharArray element as one byte");
             } else {
-                assertEquals(type.getSimpleName() + ": table width must match the type", instance.getElementSize(), tableSize.getAsInt());
+                assertEquals(instance.getElementSize(), tableSize.getAsInt(), type.getSimpleName() + ": table width must match the type");
             }
         }
     }

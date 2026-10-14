@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.nvtx;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -55,7 +55,7 @@ public class TestNvtx extends TornadoTestBase {
     private static final int SIZE = 256;
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cudaMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {

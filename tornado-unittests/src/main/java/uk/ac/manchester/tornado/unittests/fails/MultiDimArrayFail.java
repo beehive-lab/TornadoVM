@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -57,18 +59,20 @@ public class MultiDimArrayFail extends TornadoTestBase {
         }
     }
 
-    @Test(expected = Error.class)
+    @Test
     public void testMultiDimArrayDeclaration() {
-        final int size = 64;
-        IntArray a = new IntArray(size);
+        assertThrows(Error.class, () -> {
+            final int size = 64;
+            IntArray a = new IntArray(size);
 
-        TaskGraph taskGraph = new TaskGraph("s0") //
-                .task("t0", MultiDimArrayFail::kernelWithLocalMultiDimArray, a) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+            TaskGraph taskGraph = new TaskGraph("s0") //
+                    .task("t0", MultiDimArrayFail::kernelWithLocalMultiDimArray, a) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
 
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
-        executionPlan.execute();
+            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+            TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph);
+            executionPlan.execute();
+        });
     }
 
 }

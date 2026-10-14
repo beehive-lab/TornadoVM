@@ -5,7 +5,7 @@
 
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado</artifactId>
-    <version>7.2.0</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>tornado</name>
     <url>https://github.com/beehive-lab/tornadovm</url>
@@ -58,15 +58,13 @@
              the active jdkNN profile (that regression is what broke the 6.0.0 to 6.0.1-dev bump:
              the SDK's tornado-api jar lost its -jdkNN suffix and a jdk21 preview-enabled jar
              leaked into jdk22plus consumer builds). -->
-        <revision>7.2.0</revision>
+        <revision>7.2.1-jdk21-dev</revision>
         <tornado.version>${project.version}</tornado.version>
         <tornado.backend>opencl</tornado.backend>
         <graalvm.version>23.1.0</graalvm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <classifier>${platform}</classifier>
         <cmake.download>false</cmake.download>
-        <jmh.version>1.29</jmh.version>
-        <tornadojmhjar.name>jmhbenchmarks</tornadojmhjar.name>
         <checkstyle.config.location>tornado-assembly/src/etc/checkstyle.xml</checkstyle.config.location>
         <!-- Tests are skipped by default (GPU unit tests need a device); override with -DskipTests=false
              to run the pure-JVM tornado-runtime unit tests. -->
@@ -127,13 +125,6 @@
                             <source>21</source>
                             <target>21</target>
                             <showDeprecation>true</showDeprecation>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>org.openjdk.jmh</groupId>
-                                    <artifactId>jmh-generator-annprocess</artifactId>
-                                    <version>${jmh.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
@@ -372,7 +363,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <revision>7.2.0</revision>
+                <revision>7.2.1-jdk21-dev</revision>
                 <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
                 <tornado.test.argLine>--enable-preview --add-modules=jdk.incubator.vector --add-modules=jdk.internal.vm.ci --add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.code=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.common=ALL-UNNAMED --add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED</tornado.test.argLine>
             </properties>
@@ -414,13 +405,6 @@
                             <source>21</source>
                             <target>21</target>
                             <showDeprecation>true</showDeprecation>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>org.openjdk.jmh</groupId>
-                                    <artifactId>jmh-generator-annprocess</artifactId>
-                                    <version>${jmh.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
@@ -478,7 +462,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <revision>7.2.0</revision>
+                <revision>7.2.1-jdk22plus-dev</revision>
                 <!-- Runtime module access for the opt-in pure-JVM unit tests, which run under the
                      BUILD JDK; specialised below when that JDK still ships the platform module. -->
                 <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
@@ -515,13 +499,6 @@
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
                             <release>22</release>
                             <showDeprecation>true</showDeprecation>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>org.openjdk.jmh</groupId>
-                                    <artifactId>jmh-generator-annprocess</artifactId>
-                                    <version>${jmh.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
                             <compilerArgs>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
@@ -568,13 +545,6 @@
                             <source>21</source>
                             <target>21</target>
                             <showDeprecation>true</showDeprecation>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>org.openjdk.jmh</groupId>
-                                    <artifactId>jmh-generator-annprocess</artifactId>
-                                    <version>${jmh.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
                             <compilerArgs>
                                 <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
@@ -688,44 +658,6 @@
                     <shortRevisionLength>7</shortRevisionLength>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>${tornadojmhjar.name}</finalName>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>org.openjdk.jmh.Main</mainClass>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                            </transformers>
-                            <filters>
-                                <filter>
-                                    <!--
-                                        Shading signed JARs will fail without this.
-                                        http://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar
-                                    -->
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
     <dependencyManagement>
@@ -741,9 +673,11 @@
                 <version>10.12.3</version>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.13.2</version>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>6.1.3</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.lucene</groupId>
@@ -754,17 +688,6 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-core</artifactId>
-            <version>${jmh.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjdk.jmh</groupId>
-            <artifactId>jmh-generator-annprocess</artifactId>
-            <version>${jmh.version}</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -810,7 +733,6 @@
         <module>tornado-drivers</module>
         <module>tornado-examples</module>
         <module>tornado-fuzz</module>
-        <module>tornado-benchmarks</module>
         <module>tornado-unittests</module>
         <module>tornado-assembly</module>
         <module>tornado-api</module>
@@ -823,5 +745,7 @@
         <module>tornado-cudf</module>
         <module>tornado-cutlass</module>
         <module>tornado-cuvs</module>
+        <module>tornado-mlx</module>
+        <module>tornado-nccl</module>
     </modules>
 </project>

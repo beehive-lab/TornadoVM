@@ -84,6 +84,7 @@ import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoMemorySegment;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Half;
 import uk.ac.manchester.tornado.api.utils.QuantizationUtils;
 import uk.ac.manchester.tornado.drivers.opencl.graal.OCLArchitecture;
 import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
@@ -581,6 +582,45 @@ public class OCLGraphBuilderPlugins {
         r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, FloatArray.class, int.class, int.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoad", HalfFloatArray.class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoad", HalfFloat[].class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", FloatArray.class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", float[].class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", HalfFloatArray.class);
+        registerUnsupportedSimdgroupMatrixLoad(r, message, "simdgroupMatrixLoadTransposed", HalfFloat[].class);
+        registerUnsupportedSimdgroupMatrixMma(r, message, Matrix8x8Half.class, Matrix8x8Half.class);
+        registerUnsupportedSimdgroupMatrixMma(r, message, Matrix8x8Float.class, Matrix8x8Half.class);
+        registerUnsupportedSimdgroupMatrixMma(r, message, Matrix8x8Half.class, Matrix8x8Float.class);
+    }
+
+    private static void registerUnsupportedSimdgroupMatrixLoad(Registration r, String message, String name, Class<?> arrayType) {
+        r.register(new InvocationPlugin(name, Receiver.class, arrayType, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                receiver.get(true);
+                unimplemented(message);
+                return false;
+            }
+        });
+    }
+
+    private static void registerUnsupportedSimdgroupMatrixMma(Registration r, String message, Class<?> aType, Class<?> bType) {
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, aType, bType, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
                 receiver.get(true);
                 unimplemented(message);
                 return false;
@@ -1200,6 +1240,12 @@ public class OCLGraphBuilderPlugins {
                 }
             });
         }
+        // A 32- or 64-bit word at a raw byte offset, read or written whole: one wide access instead of
+        // a byte or half per element, for byte buffers holding packed data. The caller aligns the offset.
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            registerByteArrayWordAccess(r, "getInt", "setInt", JavaKind.Int, indexType, segmentField, baseIndexField);
+            registerByteArrayWordAccess(r, "getLong", "setLong", JavaKind.Long, indexType, segmentField, baseIndexField);
+        }
     }
 
     /**
@@ -1209,6 +1255,27 @@ public class OCLGraphBuilderPlugins {
      * delegate chain {@code get -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract,
      * bodiless on JDK 22+, "this.code is null") is never reached on the reflection path.
      */
+    private static void registerByteArrayWordAccess(Registration r, String getter, String setter, JavaKind kind, Class<?> indexType, Field segmentField, Field baseIndexField) {
+        r.register(new InvocationPlugin(getter, Receiver.class, indexType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin(setter, Receiver.class, indexType, kind.toJavaClass()) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
     private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
         final Field segmentField;
         final Field baseIndexField;

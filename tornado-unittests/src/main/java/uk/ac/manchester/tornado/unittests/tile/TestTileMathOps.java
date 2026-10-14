@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -58,7 +58,7 @@ public class TestTileMathOps extends TornadoTestBase {
 
     private static final int WIDTH = 64;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -215,14 +215,14 @@ public class TestTileMathOps extends TornadoTestBase {
             double runningProduct = 1.0;
             for (int i = 0; i < WIDTH; i++) {
                 int index = row * WIDTH + i;
-                assertEquals("shift " + index, (in.get(index) << 3) >> 3, shifted.get(index));
+                assertEquals((in.get(index) << 3) >> 3, shifted.get(index), "shift " + index);
                 runningSum += values.get(index);
                 runningProduct *= values.get(index);
-                assertEquals("prefixSum " + index, runningSum, prefix.get(index), 1e-3);
-                assertEquals("prefixProduct " + index, runningProduct, products.get(index), 1e-3);
-                assertEquals("bitcast " + index, Float.floatToRawIntBits(values.get(index)), exponent.get(index));
-                assertEquals("concat left " + index, in.get(index), joined.get(row * 2 * WIDTH + i));
-                assertEquals("concat right " + index, in.get(index) + 3, joined.get(row * 2 * WIDTH + WIDTH + i));
+                assertEquals(runningSum, prefix.get(index), 1e-3, "prefixSum " + index);
+                assertEquals(runningProduct, products.get(index), 1e-3, "prefixProduct " + index);
+                assertEquals(Float.floatToRawIntBits(values.get(index)), exponent.get(index), "bitcast " + index);
+                assertEquals(in.get(index), joined.get(row * 2 * WIDTH + i), "concat left " + index);
+                assertEquals(in.get(index) + 3, joined.get(row * 2 * WIDTH + WIDTH + i), "concat right " + index);
             }
         }
     }
@@ -243,7 +243,7 @@ public class TestTileMathOps extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out), rows);
 
         for (int i = 0; i < rows * WIDTH; i++) {
-            assertEquals("element " + i, in.get(i) * 2.0f, out.get(i), 1e-6);
+            assertEquals(in.get(i) * 2.0f, out.get(i), 1e-6, "element " + i);
         }
     }
 
@@ -268,10 +268,10 @@ public class TestTileMathOps extends TornadoTestBase {
 
         for (int i = 0; i < rows * WIDTH; i++) {
             double x = in.get(i);
-            assertEquals("ceil " + i, Math.ceil(x), ceil.get(i), 1e-6);
-            assertEquals("tan " + i, Math.tan(x), tan.get(i), 1e-4);
-            assertEquals("sinh " + i, Math.sinh(x), sinh.get(i), 1e-4);
-            assertEquals("cosh " + i, Math.cosh(x), cosh.get(i), 1e-4);
+            assertEquals(Math.ceil(x), ceil.get(i), 1e-6, "ceil " + i);
+            assertEquals(Math.tan(x), tan.get(i), 1e-4, "tan " + i);
+            assertEquals(Math.sinh(x), sinh.get(i), 1e-4, "sinh " + i);
+            assertEquals(Math.cosh(x), cosh.get(i), 1e-4, "cosh " + i);
         }
     }
 
@@ -295,8 +295,8 @@ public class TestTileMathOps extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, atan2, power), rows);
 
         for (int i = 0; i < rows * WIDTH; i++) {
-            assertEquals("atan2 " + i, Math.atan2(a.get(i), b.get(i)), atan2.get(i), 1e-5);
-            assertEquals("pow " + i, Math.pow(a.get(i), b.get(i)), power.get(i), 1e-4);
+            assertEquals(Math.atan2(a.get(i), b.get(i)), atan2.get(i), 1e-5, "atan2 " + i);
+            assertEquals(Math.pow(a.get(i), b.get(i)), power.get(i), 1e-4, "pow " + i);
         }
     }
 
@@ -331,11 +331,11 @@ public class TestTileMathOps extends TornadoTestBase {
                 float value = in.get(row * WIDTH + i);
                 any |= value > 0.0f;
                 all &= value > 0.0f;
-                assertEquals("not " + row + "," + i, value > 0.0f ? 0.0f : 1.0f, notPositive.get(row * WIDTH + i), 1e-6);
-                assertEquals("special " + row + "," + i, 0.0f, special.get(row * WIDTH + i), 1e-6);
+                assertEquals(value > 0.0f ? 0.0f : 1.0f, notPositive.get(row * WIDTH + i), 1e-6, "not " + row + "," + i);
+                assertEquals(0.0f, special.get(row * WIDTH + i), 1e-6, "special " + row + "," + i);
             }
-            assertEquals("anyOf row " + row, any ? 1 : 0, anyPositive.get(row));
-            assertEquals("allOf row " + row, all ? 1 : 0, allPositive.get(row));
+            assertEquals(any ? 1 : 0, anyPositive.get(row), "anyOf row " + row);
+            assertEquals(all ? 1 : 0, allPositive.get(row), "allOf row " + row);
         }
     }
 
@@ -364,12 +364,12 @@ public class TestTileMathOps extends TornadoTestBase {
             for (int i = 0; i < WIDTH; i++) {
                 int value = in.get(row * WIDTH + i);
                 expectedReduction ^= value;
-                assertEquals("and " + i, value & mask, and.get(row * WIDTH + i));
-                assertEquals("or " + i, value | mask, or.get(row * WIDTH + i));
-                assertEquals("xor " + i, value ^ mask, xor.get(row * WIDTH + i));
-                assertEquals("not " + i, ~value, not.get(row * WIDTH + i));
+                assertEquals(value & mask, and.get(row * WIDTH + i), "and " + i);
+                assertEquals(value | mask, or.get(row * WIDTH + i), "or " + i);
+                assertEquals(value ^ mask, xor.get(row * WIDTH + i), "xor " + i);
+                assertEquals(~value, not.get(row * WIDTH + i), "not " + i);
             }
-            assertEquals("reduceBitXor row " + row, expectedReduction, reduced.get(row));
+            assertEquals(expectedReduction, reduced.get(row), "reduceBitXor row " + row);
         }
     }
 }

@@ -50,7 +50,7 @@ public class VirtualCUDAContext implements CUDAContextInterface {
     }
 
     @Override
-    public long getContextId() {
+    public long getContextId(int deviceIndex) {
         return 0;
     }
 

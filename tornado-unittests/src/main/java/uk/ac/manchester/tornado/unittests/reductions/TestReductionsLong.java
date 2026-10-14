@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -60,9 +60,8 @@ public class TestReductionsLong extends TornadoTestBase {
         LongArray result = new LongArray(1);
         result.init(0);
 
-        IntStream.range(0, SIZE).parallel().forEach(i -> {
-            input.set(i, 2);
-        });
+        IntStream.range(0, SIZE).parallel().forEach(i ->
+            input.set(i, 2));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
@@ -129,9 +128,8 @@ public class TestReductionsLong extends TornadoTestBase {
         LongArray input = new LongArray(SIZE);
 
         Random r = new Random();
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, r.nextInt(10000));
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, r.nextInt(10000)));
 
         LongArray result = new LongArray(1);
         result.init(Long.MIN_VALUE);
@@ -162,9 +160,8 @@ public class TestReductionsLong extends TornadoTestBase {
     @Test
     public void testMinReduction() throws TornadoExecutionPlanException {
         LongArray input = new LongArray(SIZE);
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, idx + 1);
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, idx + 1));
 
         LongArray result = new LongArray(1);
         result.init(Integer.MAX_VALUE);
@@ -196,9 +193,8 @@ public class TestReductionsLong extends TornadoTestBase {
     public void testMaxReduction2() throws TornadoExecutionPlanException {
         LongArray input = new LongArray(SIZE);
         LongArray result = new LongArray(1);
-        IntStream.range(0, SIZE).forEach(idx -> {
-            input.set(idx, idx);
-        });
+        IntStream.range(0, SIZE).forEach(idx ->
+            input.set(idx, idx));
 
         long neutral = Long.MIN_VALUE;
 
@@ -230,9 +226,8 @@ public class TestReductionsLong extends TornadoTestBase {
         LongArray input = new LongArray(SIZE);
         LongArray result = new LongArray(1);
 
-        IntStream.range(0, SIZE).parallel().forEach(idx -> {
-            input.set(idx, 100);
-        });
+        IntStream.range(0, SIZE).parallel().forEach(idx ->
+            input.set(idx, 100));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //

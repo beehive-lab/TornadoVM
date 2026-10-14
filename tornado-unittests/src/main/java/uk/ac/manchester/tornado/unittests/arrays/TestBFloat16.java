@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -128,9 +128,9 @@ public class TestBFloat16 extends TornadoTestBase {
             float viaBits = Float.intBitsToFloat(b << 16);
             float viaCodec = BFloat16.bf16ToFloat((short) b);
             if (Float.isNaN(viaBits)) {
-                assertTrue("bits 0x" + Integer.toHexString(b), Float.isNaN(viaCodec));
+                assertTrue(Float.isNaN(viaCodec), "bits 0x" + Integer.toHexString(b));
             } else {
-                assertEquals("bits 0x" + Integer.toHexString(b), viaBits, viaCodec, 0.0f);
+                assertEquals(viaBits, viaCodec, 0.0f, "bits 0x" + Integer.toHexString(b));
             }
         }
     }
@@ -146,7 +146,7 @@ public class TestBFloat16 extends TornadoTestBase {
             if (f == 0.0f) {
                 continue; // 0x0000 / 0x8000 both decode to zero; -0 re-encodes to +0
             }
-            assertEquals("bits 0x" + Integer.toHexString(b), (short) b, BFloat16.bf16FromFloat(f));
+            assertEquals((short) b, BFloat16.bf16FromFloat(f), "bits 0x" + Integer.toHexString(b));
         }
     }
 
@@ -351,7 +351,7 @@ public class TestBFloat16 extends TornadoTestBase {
             if (Float.isNaN(host)) {
                 continue;
             }
-            assertEquals("bits 0x" + Integer.toHexString(in.get(i) & 0xFFFF), host, out.get(i), 0.0f);
+            assertEquals(host, out.get(i), 0.0f, "bits 0x" + Integer.toHexString(in.get(i) & 0xFFFF));
         }
     }
 }

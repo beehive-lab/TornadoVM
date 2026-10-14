@@ -23,9 +23,9 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -79,7 +79,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
         return sourceSum == expectedSum;
     }
 
-    @After
+    @AfterEach
     public void after() {
         // make sure the source file generated is deleted
         if (FEATURE_DUMP_DIR != null) {
@@ -120,11 +120,11 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
             inputBytes = Files.readAllBytes(fileLog.toPath());
             expectedBytes = Files.readAllBytes(expectedKernelFile.toPath());
         } catch (IOException e) {
-            Assert.fail();
+            Assertions.fail();
         }
 
         boolean fileEquivalent = performComparison(inputBytes, expectedBytes);
-        Assert.assertTrue(fileEquivalent);
+        Assertions.assertTrue(fileEquivalent);
     }
 
     @Test

@@ -17,13 +17,17 @@
  */
 package uk.ac.manchester.tornado.unittests.cublas;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.GridScheduler;
+import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -66,7 +70,7 @@ public class TestCuBlas extends TornadoTestBase {
      * typed *NotSupported exceptions that the TornadoTestRunner counts as
      * [UNSUPPORTED] (a JUnit Assume would be silently reported as PASS).
      */
-    @Before
+    @BeforeEach
     public void cuBlasMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -490,7 +494,7 @@ public class TestCuBlas extends TornadoTestBase {
                 }
                 plan.execute();
                 for (int i = 0; i < SIZE; i++) {
-                    assertEquals("iteration " + it, expected.get(i) + 1.0f, output.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))));
+                    assertEquals(expected.get(i) + 1.0f, output.get(i), 0.01f * Math.max(1.0f, Math.abs(expected.get(i))), "iteration " + it);
                 }
             }
         }
@@ -909,6 +913,76 @@ public class TestCuBlas extends TornadoTestBase {
             for (int it = 0; it < 5; it++) {
                 plan.execute();
                 assertEquals(peakAt + 1, result.get(0));
+            }
+        }
+    }
+
+    /** Writes {@code value[0]} to every element, slowly, so a library call that does not wait for it reads stale data. */
+    public static void slowFill(KernelContext context, FloatArray a, FloatArray value, int spins) {
+        int i = context.globalIdx;
+        if (i < a.getSize()) {
+            float v = value.get(0);
+            float x = v;
+            for (int s = 0; s < spins; s++) {
+                x = x * 1.0000001f - v * 0.0000001f;
+            }
+            a.set(i, x);
+        }
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * GEMM must follow the kernel that produces its input on that thread's stream, not on the
+     * stream of the thread that first ran the plan.
+     */
+    @Test
+    public void testGemmFollowsKernelOnAnotherThread() throws Exception {
+        final int n = 256;
+        FloatArray a = new FloatArray(n * n);
+        FloatArray identity = new FloatArray(n * n);
+        FloatArray c = new FloatArray(n * n);
+        for (int i = 0; i < n; i++) {
+            identity.set(i * n + i, 1.0f);
+        }
+        FloatArray value = new FloatArray(1);
+        value.set(0, 1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, identity) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", TestCuBlas::slowFill, new KernelContext(), a, value, 200000) //
+                .libraryTask("sgemm", CuBlas::cublasSgemm, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        n, n, n, 1.0f, identity, n, a, n, 0.0f, c, n) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        WorkerGrid worker = new WorkerGrid1D(n * n);
+        worker.setLocalWork(256, 1, 1);
+        GridScheduler scheduler = new GridScheduler("streamPerThread.fill", worker);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(scheduler).execute();
+            for (int i = 0; i < n * n; i++) {
+                assertEquals(1.0f, c.get(i), 1e-3f);
+            }
+            // The same plan from another thread, with a new value: a GEMM that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0f);
+            c.init(0.0f);
+            Throwable[] failure = new Throwable[1];
+            Thread other = new Thread(() -> {
+                try {
+                    plan.execute();
+                } catch (Throwable t) {
+                    failure[0] = t;
+                }
+            });
+            other.start();
+            other.join();
+            if (failure[0] != null) {
+                throw new AssertionError(failure[0]);
+            }
+            for (int i = 0; i < n * n; i++) {
+                assertEquals(2.0f, c.get(i), 1e-3f, "element " + i);
             }
         }
     }

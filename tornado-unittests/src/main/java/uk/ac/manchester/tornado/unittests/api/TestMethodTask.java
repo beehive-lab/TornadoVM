@@ -17,13 +17,13 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -91,7 +91,7 @@ public class TestMethodTask extends TornadoTestBase {
 
         TornadoTaskRuntimeException e = assertThrows(TornadoTaskRuntimeException.class, //
                 () -> taskGraph.task("t0", kernel, new FloatArray(1), new FloatArray(1)));
-        assertTrue(e.getMessage(), e.getMessage().contains("must be static"));
+        assertTrue(e.getMessage().contains("must be static"), e.getMessage());
     }
 
     @Test

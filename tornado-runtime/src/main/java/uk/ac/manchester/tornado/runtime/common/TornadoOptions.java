@@ -263,7 +263,8 @@ public class TornadoOptions {
      * the accelerator was never used - so a wholly broken device path is indistinguishable
      * from a working one by the program's own output, and any timing taken around it
      * measures sequential Java. Both first-party harnesses already disable it for exactly
-     * that reason ({@code tornado-test} and {@code tornado-benchmarks.py} hardcode
+     * that reason ({@code tornado-test} and the {@code tornado-benchmarks.py} runner of the
+     * <a href="https://github.com/beehive-lab/tornadovm-benchmark-suite">TornadoVM benchmark suite</a> hardcode
      * {@code -Dtornado.recover.bailout=False}), as does the CUDA Tile documentation.
      * </p>
      *

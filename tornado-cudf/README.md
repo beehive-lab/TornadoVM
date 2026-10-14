@@ -53,6 +53,23 @@ compile.
 The SDK assembly unpacks `libtornado-cudf.so` into its own `lib/`, so nothing needs to go on
 `LD_LIBRARY_PATH` except libcudf itself.
 
+## With a release SDK
+
+The Linux `cuda` and `full` release SDKs ship `libtornado-cudf.so` in `lib/`, built against
+libcudf 26.08. Releases up to 7.2.0 did not: their build skipped it when libcudf was missing.
+libcudf itself is not bundled. It is about 1 GB, built for one CUDA major version, and its C++ ABI
+changes with every RAPIDS release. So install the matching release at run time, the way
+`tornado-cuvs` takes `libcuvs_c`, and put its library directories on `LD_LIBRARY_PATH`:
+
+```bash
+python3 -m pip install --extra-index-url https://pypi.nvidia.com "libcudf-cu12==26.8.*"
+SITE=$(python3 -c 'import libcudf, os; print(os.path.dirname(os.path.dirname(libcudf.__file__)))')
+export LD_LIBRARY_PATH=$(find "$SITE" -name '*.so*' -path '*lib*' -printf '%h\n' | sort -u | paste -sd:):$LD_LIBRARY_PATH
+```
+
+To check, run `ldd $TORNADOVM_HOME/lib/libtornado-cudf.so | grep 'not found'`; it should print
+nothing.
+
 ## Using it
 
 ```java
@@ -80,6 +97,10 @@ while the per-row work around them is exactly what TornadoVM compiles well.
 | `runningSum` | `scan` inclusive | `SUM(x) OVER (...)` |
 | `innerJoin` | `inner_join` | equi-join, returns index pairs |
 | `selectedIndices` | `apply_boolean_mask` | `WHERE` -- stream compaction, returns the surviving positions |
+| `containedIn` | `contains` | `k IN (set)` / anti-join -- one byte a key, INT32 or INT64 |
+| `readParquetColumns` | `io::read_parquet` | a table scan -- INT32/DATE, INT64/TIMESTAMP and FP64 columns, with validity bytes when asked |
+| `writeParquetColumns` | `io::write_parquet` | the inverse: device buffers to a Parquet file, with field ids, null masks and statistics; the row count can come from a device counter |
+| `sortKeys` | `sort` | a set sorted once, for a generated binary-search probe that every batch reuses |
 
 `sortedOrder` and `groupSum` are the narrow cases of `sortedOrderMulti` and `groupAggregate`; they
 stay because they are what most callers want to read.
@@ -93,4 +114,11 @@ caller gave fails rather than truncating.
 Keys are 32-bit and values FP64, which is what a SQL planner produces, and no column carries a
 validity mask, so every operand is dense and non-null. Widening either is more entry points rather
 than a different design; null support is the one that changes signatures, since it has to carry a
-mask per column, and it is deliberately left out rather than half-offered.
+mask per column.
+
+`readParquetColumns` and `containedIn` are those entry points, for a lakehouse scan rather than a
+group-by: 64-bit ids, dates and timestamps as integers, optional columns, and an equality delete
+that is a set probe. `readParquetColumns` writes one validity byte a row a column (1 for a value)
+when asked, and refuses a null otherwise. Both take their sizes in a host holder read when the task
+runs -- `long[] rows`, `int[] {keys, set}` -- so one execution plan serves every file of a table,
+whatever its row count.

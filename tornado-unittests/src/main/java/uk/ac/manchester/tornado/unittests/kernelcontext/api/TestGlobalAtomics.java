@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -88,7 +88,7 @@ public class TestGlobalAtomics extends TornadoTestBase {
 
         int expectedPerBucket = TOTAL / NUM_BUCKETS;
         for (int b = 0; b < NUM_BUCKETS; b++) {
-            assertEquals("bucket " + b, expectedPerBucket, buckets.get(b));
+            assertEquals(expectedPerBucket, buckets.get(b), "bucket " + b);
         }
     }
 

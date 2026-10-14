@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.cudf.provider;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cudf.Cudf;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -32,8 +33,8 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * <p>
  * There is no handle to create and no workspace to size, which is the difference from cuSPARSE:
  * cuDF allocates through RMM per call and every buffer this module touches belongs to TornadoVM
- * already. The context therefore holds only the stream, and exists so that a task graph executed
- * twice concurrently does not share one.
+ * already. The context therefore holds nothing: each call takes the stream of the thread running
+ * the plan, which is looked up per call because a plan may run on different threads.
  *
  * <p>
  * {@link #canHandle} answers false when the shim is missing, which is the usual case. A provider
@@ -43,11 +44,6 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 public final class CudfLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CudfContext implements LibraryContext {
-        private final long stream;
-
-        private CudfContext(long stream) {
-            this.stream = stream;
-        }
     }
 
     /**
@@ -65,19 +61,22 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport && CudfNativeLib.isAvailable();
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport && CudfNativeLib.isAvailable();
     }
 
     @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CudfNativeLib.load();
-        return new CudfContext(((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId));
+        return new CudfContext();
     }
 
     @Override
     public void dispatch(String functionName, LibraryInvocation invocation) {
-        CudfContext context = (CudfContext) invocation.getContext();
-        long stream = context.stream;
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
         int status = switch (functionName) {
             case "readParquet" -> CudfNativeLib.readParquet(stream, pathOf(invocation.getArg(0)), (Integer) invocation.getArg(1), (Integer) invocation.getArg(2),
                     (Integer) invocation.getArg(3), (int[]) invocation.getArg(4), (Long) invocation.getArg(5), invocation.getDevicePointer(6), invocation.getDevicePointer(7),
@@ -93,6 +92,42 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
             }
             case "containsRe" -> CudfNativeLib.containsRe(stream, (Long) invocation.getArg(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2),
                     (Long) invocation.getArg(3), pathOf(invocation.getArg(4)), invocation.getDevicePointer(5));
+            case "readParquetColumns" -> CudfNativeLib.readParquetColumns(stream, pathOf(invocation.getArg(0)), (Integer) invocation.getArg(1), (Integer) invocation.getArg(2),
+                    (int[]) invocation.getArg(3), (int[]) invocation.getArg(4), ((long[]) invocation.getArg(5))[0], (Long) invocation.getArg(6), invocation.getDevicePointer(7),
+                    invocation.getDevicePointer(8), invocation.getDevicePointer(9), invocation.getDevicePointer(10), (Boolean) invocation.getArg(11));
+            case "containedIn" -> {
+                // The sizes travel in a host holder for the reason the path does: they are read
+                // when the task runs, so one plan can probe a different set for every file.
+                int[] sizes = (int[]) invocation.getArg(0);
+                yield CudfNativeLib.contains(stream, (Integer) invocation.getArg(4), invocation.getDevicePointer(2), sizes[1], invocation.getDevicePointer(1), sizes[0],
+                        invocation.getDevicePointer(3));
+            }
+            case "writeParquetColumns" -> CudfNativeLib.writeParquetColumns(stream, pathOf(invocation.getArg(0)), pathOf(invocation.getArg(1)), (int[]) invocation.getArg(2),
+                    (int[]) invocation.getArg(3), (int[]) invocation.getArg(4), ((long[]) invocation.getArg(5))[0], invocation.getDevicePointer(6), (Long) invocation.getArg(7),
+                    invocation.getDevicePointer(8), invocation.getDevicePointer(9), invocation.getDevicePointer(10), invocation.getDevicePointer(11), (Integer) invocation.getArg(12),
+                    (Integer) invocation.getArg(13));
+            case "writeParquetColumnsWithStrings" -> {
+                long[] settings = (long[]) invocation.getArg(16);
+                yield CudfNativeLib.writeParquetColumnsWithStrings(stream, pathOf(invocation.getArg(0)), pathOf(invocation.getArg(1)), (int[]) invocation.getArg(2),
+                        (int[]) invocation.getArg(3), (int[]) invocation.getArg(4), ((long[]) invocation.getArg(5))[0], invocation.getDevicePointer(6), (Long) invocation.getArg(7),
+                        invocation.getDevicePointer(8), invocation.getDevicePointer(9), invocation.getDevicePointer(10), invocation.getDevicePointer(11), (int) settings[0],
+                        (int) settings[1], invocation.getDevicePointer(12), invocation.getDevicePointer(13), settings[2], invocation.getDevicePointer(14),
+                        invocation.getDevicePointer(15), settings[3]);
+            }
+            case "sortKeys" -> CudfNativeLib.sortKeys(stream, (Integer) invocation.getArg(3), invocation.getDevicePointer(1), ((int[]) invocation.getArg(0))[0],
+                    invocation.getDevicePointer(2));
+            case "readParquetStringColumns" -> CudfNativeLib.readParquetStringColumns(stream, pathOf(invocation.getArg(0)), (int[]) invocation.getArg(1),
+                    ((long[]) invocation.getArg(2))[0], (Long) invocation.getArg(3), invocation.getDevicePointer(4), invocation.getDevicePointer(5), (Long) invocation.getArg(6),
+                    invocation.getDevicePointer(7), (Integer) invocation.getArg(8));
+            case "groupAggregateLongs" -> {
+                int[] size = (int[]) invocation.getArg(0);
+                yield CudfNativeLib.groupAggregateLongs(stream, size[0], size[1], size[2], (Integer) invocation.getArg(1), invocation.getDevicePointer(2),
+                        invocation.getDevicePointer(3), (Integer) invocation.getArg(4), invocation.getDevicePointer(5), invocation.getDevicePointer(6), invocation.getDevicePointer(7));
+            }
+            case "sortedOrderLongs" -> {
+                int[] size = (int[]) invocation.getArg(0);
+                yield CudfNativeLib.sortedOrderLongs(stream, invocation.getDevicePointer(1), size[0], size[1], (Integer) invocation.getArg(2), invocation.getDevicePointer(3));
+            }
             case "sortedOrder" -> CudfNativeLib.sortedOrder(stream, invocation.getDevicePointer(1), (Integer) invocation.getArg(0), invocation.getDevicePointer(2));
             case "groupSum" -> CudfNativeLib.groupSum(stream, invocation.getDevicePointer(1), invocation.getDevicePointer(2), (Integer) invocation.getArg(0), invocation.getDevicePointer(3),
                     invocation.getDevicePointer(4), invocation.getDevicePointer(5));
@@ -113,7 +148,7 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public void destroyContext(LibraryContext context) {
-        // Nothing to release: the stream belongs to the execution plan and cuDF's own allocations
+        // Nothing to release: the streams belong to the execution plan and cuDF's own allocations
         // are freed inside the shim before it returns.
     }
 

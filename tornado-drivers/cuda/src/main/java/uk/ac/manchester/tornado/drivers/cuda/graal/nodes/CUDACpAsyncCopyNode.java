@@ -50,9 +50,19 @@ public class CUDACpAsyncCopyNode extends FixedWithNextNode implements LIRLowerab
     @Input private ValueNode srcIndex;
     private final int srcElemBytes;
     private final int headerBytes;
+    private final int copyBytes;
 
     public CUDACpAsyncCopyNode(ValueNode dstTile, ValueNode dstIndex, ValueNode srcArray,
                                ValueNode srcIndex, int srcElemBytes, int headerBytes) {
+        this(dstTile, dstIndex, srcArray, srcIndex, srcElemBytes, headerBytes, 4);
+    }
+
+    /**
+     * A copy of {@code copyBytes} bytes, 4 or 16: the source address and the destination slot must
+     * both be aligned to it.
+     */
+    public CUDACpAsyncCopyNode(ValueNode dstTile, ValueNode dstIndex, ValueNode srcArray,
+                               ValueNode srcIndex, int srcElemBytes, int headerBytes, int copyBytes) {
         super(TYPE, StampFactory.forVoid());
         this.dstTile = dstTile;
         this.dstIndex = dstIndex;
@@ -60,6 +70,7 @@ public class CUDACpAsyncCopyNode extends FixedWithNextNode implements LIRLowerab
         this.srcIndex = srcIndex;
         this.srcElemBytes = srcElemBytes;
         this.headerBytes = headerBytes;
+        this.copyBytes = copyBytes;
     }
 
     @Override
@@ -67,6 +78,6 @@ public class CUDACpAsyncCopyNode extends FixedWithNextNode implements LIRLowerab
         gen.getLIRGeneratorTool().append(new CUDALIRStmt.CpAsyncCopyStmt(
                 gen.operand(dstTile), gen.operand(dstIndex),
                 gen.operand(srcArray), gen.operand(srcIndex),
-                srcElemBytes, headerBytes));
+                srcElemBytes, headerBytes, copyBytes));
     }
 }

@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -63,7 +63,7 @@ public class TestTileLlmKernels extends TornadoTestBase {
 
     private static final int TILE_K = 32;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -173,8 +173,8 @@ public class TestTileLlmKernels extends TornadoTestBase {
                 double angle = position * Math.exp(-logBaseOverDim * i);
                 double x1 = original.get(row * dim + i);
                 double x2 = original.get(row * dim + HALF_DIM + i);
-                assertEquals("row " + row + " first half " + i, x1 * Math.cos(angle) - x2 * Math.sin(angle), data.get(row * dim + i), 1e-4);
-                assertEquals("row " + row + " second half " + i, x2 * Math.cos(angle) + x1 * Math.sin(angle), data.get(row * dim + HALF_DIM + i), 1e-4);
+                assertEquals(x1 * Math.cos(angle) - x2 * Math.sin(angle), data.get(row * dim + i), 1e-4, "row " + row + " first half " + i);
+                assertEquals(x2 * Math.cos(angle) + x1 * Math.sin(angle), data.get(row * dim + HALF_DIM + i), 1e-4, "row " + row + " second half " + i);
             }
         }
     }
@@ -210,7 +210,7 @@ public class TestTileLlmKernels extends TornadoTestBase {
                         expected += a.get(batchIndex * m * k + row * k + inner).getFloat32() //
                                 * b.get(batchIndex * k * n + inner * n + column).getFloat32();
                     }
-                    assertEquals("batch " + batchIndex + " (" + row + "," + column + ")", expected, c.get(batchIndex * m * n + row * n + column), 0.05f);
+                    assertEquals(expected, c.get(batchIndex * m * n + row * n + column), 0.05f, "batch " + batchIndex + " (" + row + "," + column + ")");
                 }
             }
         }
@@ -251,7 +251,7 @@ public class TestTileLlmKernels extends TornadoTestBase {
         }
 
         for (int i = 0; i < rows * HALF_DIM; i++) {
-            assertEquals("element " + i, in.get(i) * mask.get(i) * keepScale, out.get(i), 1e-5);
+            assertEquals(in.get(i) * mask.get(i) * keepScale, out.get(i), 1e-5, "element " + i);
         }
     }
 }

@@ -78,7 +78,8 @@ public enum MetalVariablePrefix {
     HALF4("half4", "v4hf_"),
     HALF8("half8", "v8hf_"),
     HALF16("half16", "v16hf_"),
-    SIMDGROUP_FLOAT8X8("simdgroup_float8x8", "smf_");
+    SIMDGROUP_FLOAT8X8("simdgroup_float8x8", "smf_"),
+    SIMDGROUP_HALF8X8("simdgroup_half8x8", "smh_");
 
     // @formatter:on
 

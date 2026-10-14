@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -63,7 +63,7 @@ public class TestTileShapes extends TornadoTestBase {
 
     private static final int ROWS = 16;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -163,8 +163,8 @@ public class TestTileShapes extends TornadoTestBase {
 
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < WIDTH; column++) {
-                assertEquals("(" + row + "," + column + ")", in.get(row * WIDTH + column) + bias.get(column), //
-                        out.get(row * WIDTH + column), 1e-5);
+                assertEquals(in.get(row * WIDTH + column) + bias.get(column), out.get(row * WIDTH + column), //
+                        1e-5, "(" + row + "," + column + ")");
             }
         }
     }
@@ -186,8 +186,8 @@ public class TestTileShapes extends TornadoTestBase {
                 total += in.get(row * WIDTH + column);
             }
             for (int column = 0; column < WIDTH; column++) {
-                assertEquals("(" + row + "," + column + ")", in.get(row * WIDTH + column) / total, //
-                        out.get(row * WIDTH + column), 1e-5);
+                assertEquals(in.get(row * WIDTH + column) / total, out.get(row * WIDTH + column), //
+                        1e-5, "(" + row + "," + column + ")");
             }
         }
     }
@@ -208,7 +208,7 @@ public class TestTileShapes extends TornadoTestBase {
             for (int column = 0; column < WIDTH; column++) {
                 total += in.get(row * WIDTH + column);
             }
-            assertEquals("row " + row, total, out.get(row), 1e-4);
+            assertEquals(total, out.get(row), 1e-4, "row " + row);
         }
     }
 
@@ -228,7 +228,7 @@ public class TestTileShapes extends TornadoTestBase {
                 double gate = in.get(row * 2 * WIDTH + i);
                 double value = in.get(row * 2 * WIDTH + WIDTH + i);
                 double expected = gate / (1.0 + Math.exp(-gate)) * value;
-                assertEquals("(" + row + "," + i + ")", expected, out.get(row * WIDTH + i), 1e-4);
+                assertEquals(expected, out.get(row * WIDTH + i), 1e-4, "(" + row + "," + i + ")");
             }
         }
     }

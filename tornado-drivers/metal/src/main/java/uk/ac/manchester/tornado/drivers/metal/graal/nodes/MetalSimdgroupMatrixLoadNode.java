@@ -40,11 +40,12 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
 
 /**
- * Loads an 8x8 single-precision fragment from {@code array} starting at element
+ * Loads an 8x8 single- or half-precision fragment from {@code array} starting at element
  * {@code base} with {@code stride} elements between rows ({@code simdgroup_load}),
  * for {@link uk.ac.manchester.tornado.api.KernelContext#simdgroupMatrixLoad}.
  *
- * <p>The source may be a device {@code FloatArray} or a threadgroup {@code float[]}
+ * <p>The source may be a device {@code FloatArray}/{@code HalfFloatArray} or a threadgroup
+ * {@code float[]}/{@code HalfFloat[]}
  * (when {@code array} is a {@link LocalArrayNode}). Implements
  * {@link MarkArrayParameterAccess} so the dataflow analysis sees the array as read
  * (an opaque intrinsic consuming a kernel parameter is otherwise invisible to it).
@@ -65,19 +66,35 @@ public class MetalSimdgroupMatrixLoadNode extends FixedWithNextNode implements L
     @Input
     private ValueNode stride;
 
+    private final MetalKind fragmentKind;
+    private final boolean transpose;
+
     public MetalSimdgroupMatrixLoadNode(ValueNode array, ValueNode base, ValueNode stride) {
-        super(TYPE, MetalStampFactory.getStampFor(MetalKind.SIMDGROUP_FLOAT8X8));
+        this(array, base, stride, MetalKind.SIMDGROUP_FLOAT8X8, false);
+    }
+
+    /**
+     * @param fragmentKind
+     *     {@link MetalKind#SIMDGROUP_FLOAT8X8} for a {@code float} source or {@link MetalKind#SIMDGROUP_HALF8X8} for a {@code half} source.
+     * @param transpose
+     *     loads the transpose of the 8x8 block ({@code simdgroup_load(..., ulong2(0, 0), true)}).
+     */
+    public MetalSimdgroupMatrixLoadNode(ValueNode array, ValueNode base, ValueNode stride, MetalKind fragmentKind, boolean transpose) {
+        super(TYPE, MetalStampFactory.getStampFor(fragmentKind));
         this.array = array;
         this.base = base;
         this.stride = stride;
+        this.fragmentKind = fragmentKind;
+        this.transpose = transpose;
     }
 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        Variable result = tool.newVariable(LIRKind.value(MetalKind.SIMDGROUP_FLOAT8X8));
+        Variable result = tool.newVariable(LIRKind.value(fragmentKind));
         boolean local = array instanceof LocalArrayNode;
-        tool.append(new MetalLIRStmt.SimdgroupMatrixLoadStmt(result, gen.operand(array), gen.operand(base), gen.operand(stride), local));
+        boolean half = fragmentKind == MetalKind.SIMDGROUP_HALF8X8;
+        tool.append(new MetalLIRStmt.SimdgroupMatrixLoadStmt(result, gen.operand(array), gen.operand(base), gen.operand(stride), local, half, transpose));
         gen.setResult(this, result);
     }
 

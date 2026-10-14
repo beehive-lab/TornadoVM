@@ -83,7 +83,7 @@ public class MetalCodeCache {
     }
 
     private Path resolveDirectory(String dir) {
-        final String tornadoRoot = System.getenv("TORNADO_SDK");
+        final String tornadoRoot = System.getenv("TORNADOVM_HOME");
         final String deviceDir = String.format("device-%d-%d", deviceContext.getPlatformContext().getPlatformIndex(), deviceContext.getDevice().getIndex());
         final Path outDir = Paths.get(tornadoRoot + "/" + dir + "/" + deviceDir);
         createOrReuseDirectory(outDir);

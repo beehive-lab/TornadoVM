@@ -23,7 +23,7 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;

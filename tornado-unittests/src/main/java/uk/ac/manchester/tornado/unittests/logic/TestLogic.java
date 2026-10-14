@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.logic;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -214,7 +214,7 @@ public class TestLogic extends TornadoTestBase {
         }
     }
 
-    @Ignore
+    @Disabled
     public void testLogic04() throws TornadoExecutionPlanException {
         final int N = 1024;
         IntArray data = new IntArray(N);
@@ -352,7 +352,7 @@ public class TestLogic extends TornadoTestBase {
         logicOrOfAnd(count, cell, sequential);
 
         for (int i = 0; i < N; i++) {
-            assertEquals("index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i), sequential.get(i), output.get(i));
+            assertEquals(sequential.get(i), output.get(i), "index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i));
         }
     }
 
@@ -383,7 +383,7 @@ public class TestLogic extends TornadoTestBase {
         logicOrOfAndAnd(count, cell, w, sequential);
 
         for (int i = 0; i < N; i++) {
-            assertEquals("index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i) + " w=" + w.get(i), sequential.get(i), output.get(i));
+            assertEquals(sequential.get(i), output.get(i), "index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i) + " w=" + w.get(i));
         }
     }
 
@@ -414,7 +414,7 @@ public class TestLogic extends TornadoTestBase {
         logicOrOfAndOr(count, cell, w, sequential);
 
         for (int i = 0; i < N; i++) {
-            assertEquals("index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i) + " w=" + w.get(i), sequential.get(i), output.get(i));
+            assertEquals(sequential.get(i), output.get(i), "index " + i + ": count=" + count.get(i) + " cell=" + cell.get(i) + " w=" + w.get(i));
         }
     }
     // CHECKSTYLE:ON

@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.drivers.metal.graal.lir.MetalLIRStmt;
 import uk.ac.manchester.tornado.runtime.graal.nodes.interfaces.MarkArrayParameterAccess;
 
 /**
- * Stores an 8x8 fragment to device memory ({@code simdgroup_store}), for
+ * Stores an 8x8 fragment to device or threadgroup memory ({@code simdgroup_store}), for
  * {@link uk.ac.manchester.tornado.api.KernelContext#simdgroupMatrixStore}.
  *
  * <p>A pure side-effect that must run convergently across the SIMD group, so it is
@@ -70,7 +70,8 @@ public class MetalSimdgroupMatrixStoreNode extends FixedWithNextNode implements 
     @Override
     public void generate(NodeLIRBuilderTool gen) {
         LIRGeneratorTool tool = gen.getLIRGeneratorTool();
-        tool.append(new MetalLIRStmt.SimdgroupMatrixStoreStmt(gen.operand(matrix), gen.operand(array), gen.operand(base), gen.operand(stride)));
+        boolean local = array instanceof LocalArrayNode;
+        tool.append(new MetalLIRStmt.SimdgroupMatrixStoreStmt(gen.operand(matrix), gen.operand(array), gen.operand(base), gen.operand(stride), local));
     }
 
     @Override

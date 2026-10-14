@@ -2,14 +2,16 @@
 
 The **hybrid API** lets a single TornadoVM `TaskGraph` mix JIT-compiled Java
 tasks (`@Parallel` / `KernelContext`) with calls into vendor-optimized native
-GPU libraries — **cuBLAS, cuBLASLt, cuFFT, cuDNN, cuSPARSE, and CUTLASS**.
+GPU libraries — **cuBLAS, cuBLASLt, cuFFT, cuDNN, cuSPARSE, CUTLASS and cuVS** on
+NVIDIA GPUs, and **Apple MLX** on Apple silicon.
 A native call becomes a **library task**: it shares TornadoVM-managed device
 buffers with the surrounding kernels, runs on the same CUDA stream, and is
 captured into CUDA Graphs — so data produced by a JIT kernel feeds a library
 call (and vice-versa) with **no extra copies and no manual memory management**.
 
-> Requires the **CUDA backend** (`make BACKEND=cuda`) and an NVIDIA GPU.
-> Library tasks are silently reported as `UNSUPPORTED` on OpenCL/Metal.
+> The NVIDIA providers require the **CUDA backend** (`make BACKEND=cuda`) and an NVIDIA GPU; the
+> Apple MLX provider requires the **Metal backend** (`make BACKEND=metal`) on Apple silicon. A library
+> task on a backend its provider does not support is reported as `UNSUPPORTED`.
 
 ---
 
@@ -17,7 +19,7 @@ call (and vice-versa) with **no extra copies and no manual memory management**.
 
 1. [Quick start](#1-quick-start)
 2. [Core concepts](#2-core-concepts)
-3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE · cuVS
+3. [Provider catalog](#3-provider-catalog) — cuBLAS · cuBLASLt · cuFFT · cuDNN · CUTLASS · cuSPARSE · cuVS · Apple MLX · NCCL
 4. [Composition patterns](#4-composition-patterns)
 5. [CUDA Graphs](#5-cuda-graphs)
 6. [Execution-plan controls](#6-execution-plan-controls)
@@ -118,6 +120,8 @@ Each provider registers a unique id, matched by the factory:
 | `nvidia/cusparse` | `tornado-cusparse` |
 | `nvidia/cutlass` | `tornado-cutlass` |
 | `nvidia/cuvs` | `tornado-cuvs` |
+| `apple/mlx` | `tornado-mlx` |
+| `nvidia/nccl` | `tornado-nccl` |
 
 ---
 
@@ -312,6 +316,155 @@ new TaskGraph("knn")
     .transferToHost(DataTransferMode.EVERY_EXECUTION, ids, distances);
 ```
 
+### 3.8 Apple MLX — array operations on Metal (`apple/mlx`)
+
+[MLX](https://github.com/ml-explore/mlx)'s operations on Apple silicon, through the Metal backend. Each
+task launches MLX's own Metal kernels from `mlx.metallib` on TornadoVM's command queue, bound to
+TornadoVM's buffers: no MLX array, no result allocation and no copy. 246 operations in 14 categories
+(arithmetic, logic, reductions, scans, sorting, indexing, linear algebra, quantization, `mlx.fast`,
+FFT, convolution, creation, shape, random). Arrays are row-major, as in TornadoVM, so no transposes
+are needed.
+
+All factories are static methods of `Mlx` (`Mlx::add`, `Mlx::rmsNorm`, ...), grouped by category:
+
+| Category | Operations (examples) |
+|---|---|
+| Arithmetic, logic | `add`, `multiply`, `exp`, `log`, `tanh`, `sigmoid`, `clip`, `where`, `round`; comparisons, `isnan`, `isclose`, bitwise |
+| Reductions, scans | `sum`/`mean`/`max`/`var`/`logsumexp` (whole, axis, axes), `argmax`, `softmax`; `cumsum`, `logcumsumexp` |
+| Sorting, indexing | `sort`, `argsort`, `partition`, `topk`; `slice`, `sliceUpdate` |
+| Linear algebra | `matmul`, `addmm`, `einsum`, `tensordot`, `kron`, `gatherMm`, `segmentedMm`, norms, cross |
+| Quantization | `quantize`, `dequantize`, `quantizedMatmul`, `gatherQmm`, `qqmm` |
+| Neural network (`mlx.fast`) | `rmsNorm`, `layerNorm`, `rope`, `scaledDotProductAttention` |
+| FFT, convolution | FFTs; 1D/2D and transposed convolutions |
+| Creation, shape, random | `arange`, `eye`, `tril`; `reshape`, `transpose`, `concatenate`, `pad`; samplers |
+
+An argument form no kernel reproduces exactly (for example an axis reduction with `inner > 1`) fails
+with the operation's name and arguments rather than falling back. Operations without a TornadoVM/MLX
+route (linear-algebra decompositions, which MLX runs only on its CPU stream; gather/scatter; fp8) are
+not exposed.
+
+```java
+new TaskGraph("layer")
+    .transferToDevice(DataTransferMode.FIRST_EXECUTION, x, weight, w)
+    .task("embed", MyKernels::embed, x)                                   // Java kernel
+    .libraryTask("norm", Mlx::rmsNorm, x, weight, xn, rows, dim, 1e-5f)   // MLX kernel, same buffers and queue
+    .libraryTask("proj", Mlx::matmul, xn, w, y, rows, dim, hidden)
+    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+```
+
+See [`tornado-mlx/README.md`](tornado-mlx/README.md) for the full operation list and benchmarks.
+
+### 3.9 NCCL — multi-GPU collectives and point-to-point (`nvidia/nccl`)
+
+Collectives and point-to-point transfers across GPUs, in one process or several, with [NCCL](https://github.com/NVIDIA/nccl). An
+`NcclCommunicator` has one rank per CUDA device; each rank runs its own execution plan on its own
+device, and the collective is a library task in every rank's task graph. NCCL reads and writes the
+TornadoVM buffers directly, on the plan's stream, so the data stays on the GPUs between the kernels
+around it. The design and the full API are described in
+[`tornado-nccl/ARCHITECTURE.md`](tornado-nccl/ARCHITECTURE.md).
+
+| Factory | Operation |
+|---|---|
+| `allReduce(comm, send, recv, op)` | `recv = op(send of every rank)` on every rank |
+| `allReduceInPlace(comm, buffer, op)` | the same, in place |
+| `broadcast(comm, buffer, root)` | `buffer` of rank `root` to every rank, in place |
+| `reduce(comm, send, recv, op, root)` | `recv = op(send of every rank)` on rank `root` only |
+| `allGather(comm, send, recv)` | `send` of every rank, concatenated in rank order (`recv` is `size()` times larger) |
+| `reduceScatter(comm, send, recv, op)` | reduce, then rank `r` keeps block `r` (`send` is `size()` times larger) |
+| `send(comm, buffer, peer)` | send `buffer` to rank `peer`, which adds a matching `recv` |
+| `recv(comm, buffer, peer)` | receive `buffer` from rank `peer`, which adds a matching `send` |
+| `sendRecv(comm, send, toPeer, recv, fromPeer)` | send and receive in one step, as one NCCL group |
+
+`op` is an `NcclRedOp` (`SUM`, `PROD`, `MAX`, `MIN`, `AVG`). Element types: `FloatArray`,
+`DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `IntArray`, `LongArray`, `Int8Array`, `ByteArray`.
+
+A collective completes only when every rank has enqueued it, so the plans of the ranks must execute
+**together**. `NcclPlanGroup` runs each plan on a thread of its own (always the same one) and waits for
+all of them:
+
+```java
+TornadoDevice[] gpus = { TornadoExecutionPlan.getDevice(0, 0), TornadoExecutionPlan.getDevice(0, 1) };
+try (NcclCommunicator comm = NcclCommunicator.create(gpus)) {
+    TornadoExecutionPlan[] plans = new TornadoExecutionPlan[gpus.length];
+    for (int r = 0; r < gpus.length; r++) {
+        TaskGraph graph = new TaskGraph("rank" + r)
+            .task("grad", MyKernels::gradient, new KernelContext(), weights[r], grads[r])   // Java kernel
+            .libraryTask("sum", Nccl::allReduceInPlace, comm, grads[r], NcclRedOp.AVG)     // NCCL, same buffer and stream
+            .task("step", MyKernels::update, new KernelContext(), weights[r], grads[r])     // Java kernel
+            .transferToHost(DataTransferMode.UNDER_DEMAND, weights[r]);
+        WorkerGrid worker = new WorkerGrid1D(n);
+        worker.setLocalWork(256, 1, 1);
+        GridScheduler grid = new GridScheduler("rank" + r + ".grad", worker);
+        grid.addWorkerGrid("rank" + r + ".step", worker);
+        plans[r] = new TornadoExecutionPlan(graph.snapshot());
+        plans[r].withDevice(gpus[r]).withGridScheduler(grid);
+    }
+    try (NcclPlanGroup ranks = new NcclPlanGroup(plans)) {
+        for (int step = 0; step < steps; step++) {
+            ranks.execute();
+        }
+    }
+}
+```
+
+**Groups:** `Nccl.group(NcclGroup)` issues several operations of one communicator together, as one
+NCCL group, in a single task: exchanges with several peers (an all-to-all, a halo exchange in more
+than one direction, which would deadlock as separate tasks) and several collectives fused into one
+launch.
+
+```java
+NcclGroup halo = NcclGroup.on(comm)
+        .send(toLeft, left).recv(fromLeft, left)
+        .send(toRight, right).recv(fromRight, right);
+graph.libraryTask("halo", Nccl::group, halo);
+```
+
+A group holds any of the operations above; a buffer may appear only once in it. Kernels go before or
+after the group task, never inside it, so they stay ordered with the NCCL operations.
+
+`send` and `recv` suit a one-way pipeline (stage `r` sends to stage `r + 1`). When a rank both sends
+and receives in the same step (a ring shift, a halo exchange), use `sendRecv`: issued as separate
+tasks, two ranks that each send to the other first would both wait in their send forever.
+
+Executing the plans one after the other on one thread hangs at the first collective.
+
+**When a rank fails:** the other ranks would wait for it inside NCCL forever. `NcclPlanGroup` aborts
+the communicators its ranks have used (`NcclCommunicator.abort()`), which makes the waiting ranks
+return, and `execute()` throws the failure of the rank that failed first. An aborted communicator
+cannot be used again: create a new communicator and new plans; NCCL keeps working in the process.
+A step can also hang with no rank failing (a `send` that no rank receives, collectives posted in a
+different order on each rank). `ranks.withStepTimeout(Duration.ofSeconds(30))` bounds every step:
+when it runs out, the group aborts the communicators in the same way and `execute()` throws, naming
+the ranks that were still running. `ranks.execute((rank, plan) -> ...)` runs a step in which each rank
+runs part of its plan, such as one of several programs that share the device's buffers.
+
+**Several processes:** a communicator can span processes (and machines). One process creates an
+`NcclUniqueId` and the application hands it to the others (socket, MPI, shared file, environment
+variable; `toBase64()`/`fromBase64()` help). Each process then creates its own ranks with
+`NcclCommunicator.create(id, worldSize, firstRank, localGpus...)`, which blocks until all ranks have
+joined, and runs an `NcclPlanGroup` over the plans of its local ranks. `size()` is the world size, so
+peers and shapes are checked against the whole job. The process that created the id must keep
+running until every rank has joined: NCCL's bootstrap listener lives in it.
+
+```java
+// rank 0
+NcclUniqueId id = NcclUniqueId.create();
+publish(id.toBase64());                                         // however the job reaches its processes
+NcclCommunicator comm = NcclCommunicator.create(id, worldSize, 0, gpu);
+// every other process
+NcclCommunicator comm = NcclCommunicator.create(NcclUniqueId.fromBase64(received), worldSize, myRank, gpu);
+```
+
+**CUDA graphs:** NCCL tasks are captured like any other library task. Call `withCUDAGraph()` on every
+rank's plan: the first `NcclPlanGroup.execute()` captures each rank's graph (kernels, transfers and
+NCCL calls) and runs it, and later steps replay it. NCCL sets up its connections inside the capture
+on its own, so no warm-up is needed. Close the plans before the communicator: a captured graph
+refers to it.
+
+`BenchmarkNcclAllReduce` and `BenchmarkNcclSendRecv` compare a step with an NCCL all-reduce or ring
+exchange against handing the buffers on through the host (`-Dtornado.nccl.benchmark.cudaGraph=true`
+runs every plan as a CUDA graph).
+
 > **cuTENSOR** (`nvidia/cutensor`, tensor contractions / einsum) is implemented
 > on branch `hybrid-cutensor` but is **not part of this build**.
 
@@ -471,6 +624,12 @@ The launcher adds the provider modules to `--add-modules` automatically when the
 CUDA backend is present:
 `tornado.cublas, tornado.cufft, tornado.cudnn, tornado.cusparse, tornado.cutlass, tornado.cuvs`.
 
+The Apple MLX provider (`tornado-mlx`) builds with the Metal backend and has no native module:
+
+```bash
+make BACKEND=metal       # activates the metal-backend Maven profile
+```
+
 ### 8.2 Per-library install requirements
 
 | Provider | Extra dependency | How to get it |
@@ -480,7 +639,9 @@ CUDA backend is present:
 | cuDNN | libcudnn 9 | `apt install libcudnn9-cuda-12 libcudnn9-dev-cuda-12` |
 | CUTLASS | header-only, **CUDA 12+** | fetched by CMake `FetchContent` (v3.5.1); no install |
 | cuSPARSE | in the CUDA toolkit | nothing |
+| Apple MLX | `mlx.metallib` (MLX) | `brew install mlx`; or `-Dtornado.mlx.metallib=<path>` |
 | cuVS | `libcuvs_c` (cuVS 26.08) | `pip install libcuvs-cu12` (or conda `libcuvs`), then add its `lib64` to `LD_LIBRARY_PATH` |
+| NCCL | `libnccl.so.2` (NCCL 2.x) | `apt install libnccl2` or `pip install nvidia-nccl-cu13` (then add its `nvidia/nccl/lib` to `LD_LIBRARY_PATH`) |
 
 The CUTLASS kernel arch defaults to
 `sm_80` SASS + `compute_80` PTX (runs on all Ampere/Ada, JITs for Hopper);
@@ -619,6 +780,8 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 | `UnsatisfiedLinkError: libtornado-<x>` | Native module was skipped at build time (library not found). Set the corresponding `*_ROOT` and rebuild. |
 | CUTLASS FP16 rejects a shape | `k` or `n` not a multiple of 4 (8-byte alignment). Pad, or use `cutlassSgemm` (FP32, unconstrained). |
 | Wrong result from cuBLAS | Column-major mismatch — transpose (SGEMV) or swap operands (SGEMM). |
+| MLX task fails with ``Library `apple/mlx` is not supported`` | Default device is not Metal, or `mlx.metallib` is missing. Build `make BACKEND=metal`; `brew install mlx`. |
+| `MLX <op>: no TornadoVM/MLX kernel takes these arguments` | The arguments are outside what the TornadoVM/MLX kernels reproduce (dtype or shape). Change the shape (e.g. reduce trailing axes) or the dtype. |
 | `CUDA_ERROR_LAUNCH_FAILED` after a tensor-core call | The kernel was built for the wrong SM. Rebuild with `CUDA_ARCH=<your cc>`. |
 
 ---
@@ -627,6 +790,6 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 
 - `docs/source/hybrid-api.rst` — architecture reference (SPI internals).
 - Per-provider READMEs: `tornado-cublas/`, `tornado-cufft/`, `tornado-cudnn/`,
-  `tornado-cutlass/`, `tornado-cusparse/`, `tornado-cuvs/`.
+  `tornado-cutlass/`, `tornado-cusparse/`, `tornado-cuvs/`, `tornado-mlx/`.
 - Unit tests double as worked examples:
-  `tornado-unittests/.../unittests/{cublas,cufft,cudnn,cusparse,cutlass,cuvs}/`.
+  `tornado-unittests/.../unittests/{cublas,cufft,cudnn,cusparse,cutlass,cuvs,mlx}/`.

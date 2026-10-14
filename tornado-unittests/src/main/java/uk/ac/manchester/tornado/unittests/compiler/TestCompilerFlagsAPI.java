@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.compiler;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider.getTornadoRuntime;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
@@ -177,7 +177,7 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
         for (int i = 0; i < SIZE && !differs; i++) {
             differs = Float.floatToRawIntBits(exact.get(i)) != Float.floatToRawIntBits(approximate.get(i));
         }
-        assertTrue("fast-math changed nothing, so the flag never reached the compiler for " + backend(), differs);
+        assertTrue(differs, "fast-math changed nothing, so the flag never reached the compiler for " + backend());
     }
 
     /** And a flag the compiler does accept still produces the right answer. */

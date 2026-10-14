@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>7.2.0</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>tornado-drivers-cuda</artifactId>
     <name>tornado-drivers-cuda</name>
@@ -25,8 +25,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

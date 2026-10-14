@@ -83,11 +83,11 @@ public class TornadoTaskSpecialisation extends BasePhase<TornadoHighTierContext>
     private int index;
     private boolean printOnce = true;
 
-    public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer) {
+    public TornadoTaskSpecialisation(CanonicalizerPhase canonicalizer, CUDATileLoopPolicies tileLoopPolicies) {
         this.canonicalizer = canonicalizer;
         this.valueTypeReplacement = new TornadoValueTypeReplacement();
         this.deadCodeElimination = new DeadCodeEliminationPhase();
-        this.loopUnroll = new TornadoLoopUnroller(canonicalizer, CUDATileLoopPolicies::isTileOperation);
+        this.loopUnroll = new TornadoLoopUnroller(canonicalizer, tileLoopPolicies::keepRolled);
     }
 
     private static boolean hasPanamaArraySizeNode(StructuredGraph graph) {

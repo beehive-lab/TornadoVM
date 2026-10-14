@@ -55,7 +55,6 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -761,8 +760,10 @@ public class TornadoVMInterpreter {
             if (isWarmup) {
                 return lastEvent;
             }
-            insideCaptureRegion = false;
+            // Still inside the region until the graph is instantiated: if that fails, the failure
+            // handler abandons the capture and drops its deferred writes.
             executeGraphEndCapture(logBuilder, graphId);
+            insideCaptureRegion = false;
         return lastEvent;
     }
 
@@ -1448,6 +1449,8 @@ public class TornadoVMInterpreter {
 
         final Object[] callArgs = new Object[numArgs];
         final long[] devicePointers = new long[numArgs];
+        final long[] nativeBuffers = new long[numArgs];
+        final long[] nativeOffsets = new long[numArgs];
         final boolean[] isReference = new boolean[numArgs];
 
         for (int i = 0; i < numArgs; i++) {
@@ -1459,8 +1462,11 @@ public class TornadoVMInterpreter {
                 final DataObjectState globalState = resolveGlobalObjectState(argIndex);
                 final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
                 callArgs[i] = objects.get(argIndex);
-                // Pointer to the first data element on the device, past the array header
-                devicePointers[i] = objectState.getXPUBuffer().toBuffer() + TornadoNativeArray.ARRAY_HEADER;
+                // First data element past the array header, as the backend exposes it to native libraries
+                final XPUBuffer buffer = objectState.getXPUBuffer();
+                devicePointers[i] = buffer.libraryAddress();
+                nativeBuffers[i] = buffer.toBuffer();
+                nativeOffsets[i] = buffer.libraryOffset();
                 isReference[i] = true;
             } else {
                 TornadoInternalError.shouldNotReachHere();
@@ -1504,8 +1510,8 @@ public class TornadoVMInterpreter {
             nvtxDevice.nvtxRangePush(descriptor.getLibraryName() + "/" + descriptor.getFunctionName());
         }
         try {
-            provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext,
-                    descriptor.getTuning(), insideCaptureRegion));
+            provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, nativeBuffers, nativeOffsets, isReference, interpreterDevice,
+                    graphExecutionContext.getExecutionPlanId(), libraryContext, descriptor.getTuning(), insideCaptureRegion));
         } finally {
             if (nvtxDevice != null) {
                 nvtxDevice.nvtxRangePop();
@@ -1652,7 +1658,30 @@ public class TornadoVMInterpreter {
     }
 
     public Event execute() {
-        return execute(false);
+        try {
+            return execute(false);
+        } catch (RuntimeException | Error e) {
+            abortCaptureAfterFailure(e);
+            throw e;
+        }
+    }
+
+    /**
+     * Called when an execution fails inside a CUDA-graph capture region. The capture is abandoned,
+     * so the device stream is not left capturing and nothing from the failed capture is flushed
+     * into the next one on the same device. A failure of the clean-up itself is attached to the
+     * execution's failure as a suppressed exception, so the execution's failure is the one reported.
+     */
+    private void abortCaptureAfterFailure(Throwable failure) {
+        if (!insideCaptureRegion) {
+            return;
+        }
+        insideCaptureRegion = false;
+        try {
+            interpreterDevice.abortExecutionGraphCapture(graphExecutionContext.getExecutionPlanId());
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+        }
     }
 
     /**

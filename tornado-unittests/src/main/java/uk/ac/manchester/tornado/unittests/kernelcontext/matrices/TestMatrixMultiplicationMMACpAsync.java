@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -256,8 +256,8 @@ public class TestMatrixMultiplicationMMACpAsync extends TornadoTestBase {
         for (int i = 0; i < dimM; i++) {
             for (int j = 0; j < dimN; j++) {
                 int idx = i * dimN + j;
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        ref.get(idx), c.get(idx), tol);
+                assertEquals(ref.get(idx),
+                        c.get(idx), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -353,16 +353,16 @@ public class TestMatrixMultiplicationMMACpAsync extends TornadoTestBase {
     public void testSharedHalfTileWithoutFp16Spelling() throws TornadoExecutionPlanException {
         FloatArray out = runSharedHalfTile(false);
         for (int i = 0; i < WMMA_M * MMA_N; i++) {
-            assertEquals("out[" + i + "]", sharedHalfTileReference(), out.get(i), 0.01f);
+            assertEquals(sharedHalfTileReference(), out.get(i), 0.01f, "out[" + i + "]");
         }
     }
 
     @Test
     public void testSharedHalfTileWithFp16Spelling() throws TornadoExecutionPlanException {
         FloatArray out = runSharedHalfTile(true);
-        assertEquals("out[0]", sharedHalfTileReference() + BIAS, out.get(0), 0.01f);
+        assertEquals(sharedHalfTileReference() + BIAS, out.get(0), 0.01f, "out[0]");
         for (int i = 1; i < WMMA_M * MMA_N; i++) {
-            assertEquals("out[" + i + "]", sharedHalfTileReference(), out.get(i), 0.01f);
+            assertEquals(sharedHalfTileReference(), out.get(i), 0.01f, "out[" + i + "]");
         }
     }
 

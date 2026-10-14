@@ -99,6 +99,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FP8Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
+import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Half;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.Int8Array;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -456,6 +457,23 @@ public class MetalGraphBuilderPlugins {
                 return true;
             }
         });
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoad", HalfFloatArray.class, MetalKind.SIMDGROUP_HALF8X8, false);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoad", HalfFloat[].class, MetalKind.SIMDGROUP_HALF8X8, false);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", FloatArray.class, MetalKind.SIMDGROUP_FLOAT8X8, true);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", float[].class, MetalKind.SIMDGROUP_FLOAT8X8, true);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", HalfFloatArray.class, MetalKind.SIMDGROUP_HALF8X8, true);
+        registerSimdgroupMatrixLoad(r, "simdgroupMatrixLoadTransposed", HalfFloat[].class, MetalKind.SIMDGROUP_HALF8X8, true);
+        // Mixed precision: half (or half and float) inputs accumulate into a float fragment.
+        registerSimdgroupMatrixMma(r, Matrix8x8Half.class, Matrix8x8Half.class);
+        registerSimdgroupMatrixMma(r, Matrix8x8Float.class, Matrix8x8Half.class);
+        registerSimdgroupMatrixMma(r, Matrix8x8Half.class, Matrix8x8Float.class);
+        r.register(new InvocationPlugin("simdgroupMatrixStore", Receiver.class, Matrix8x8Float.class, float[].class, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
+                b.add(new MetalSimdgroupMatrixStoreNode(matrix, array, base, stride));
+                return true;
+            }
+        });
         r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, Matrix8x8Float.class, Matrix8x8Float.class, Matrix8x8Float.class) {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
@@ -467,6 +485,26 @@ public class MetalGraphBuilderPlugins {
             @Override
             public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode matrix, ValueNode array, ValueNode base, ValueNode stride) {
                 b.add(new MetalSimdgroupMatrixStoreNode(matrix, array, base, stride));
+                return true;
+            }
+        });
+    }
+
+    private static void registerSimdgroupMatrixLoad(Registration r, String name, Class<?> arrayType, MetalKind fragmentKind, boolean transpose) {
+        r.register(new InvocationPlugin(name, Receiver.class, arrayType, int.class, int.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode array, ValueNode base, ValueNode stride) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixLoadNode(array, base, stride, fragmentKind, transpose));
+                return true;
+            }
+        });
+    }
+
+    private static void registerSimdgroupMatrixMma(Registration r, Class<?> aType, Class<?> bType) {
+        r.register(new InvocationPlugin("simdgroupMatrixMultiplyAccumulate", Receiver.class, aType, bType, Matrix8x8Float.class) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode a, ValueNode bMat, ValueNode c) {
+                b.addPush(JavaKind.Object, new MetalSimdgroupMatrixMmaNode(a, bMat, c));
                 return true;
             }
         });
@@ -1060,6 +1098,27 @@ public class MetalGraphBuilderPlugins {
      * {@code get -> TornadoMemorySegment.getShortAtIndex -> MemorySegment.getAtIndex} (abstract, bodiless on JDK 22+)
      * is never reached on the reflection path. Mirrors the OpenCL and CUDA backends.
      */
+    private static void registerByteArrayWordAccess(Registration r, String getter, String setter, JavaKind kind, Class<?> indexType, Field segmentField, Field baseIndexField) {
+        r.register(new InvocationPlugin(getter, Receiver.class, indexType) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaReadNode readNode = new JavaReadNode(kind, addressNode, LocationIdentity.any(), BarrierType.NONE, MemoryOrderMode.PLAIN, false);
+                b.addPush(kind, readNode);
+                return true;
+            }
+        });
+        r.register(new InvocationPlugin(setter, Receiver.class, indexType, kind.toJavaClass()) {
+            @Override
+            public boolean apply(GraphBuilderContext b, ResolvedJavaMethod targetMethod, Receiver receiver, ValueNode byteIndex, ValueNode value) {
+                AddressNode addressNode = arrayElementAddress(b, receiver, byteIndex, JavaKind.Byte, segmentField, baseIndexField);
+                JavaWriteNode writeNode = new JavaWriteNode(kind, addressNode, LocationIdentity.any(), value, BarrierType.NONE, false);
+                b.add(writeNode);
+                return true;
+            }
+        });
+    }
+
     private static void registerHalfFloatArrayGetSet(InvocationPlugins plugins) {
         final Field segmentField;
         final Field baseIndexField;
@@ -1129,6 +1188,12 @@ public class MetalGraphBuilderPlugins {
                     return true;
                 }
             });
+        }
+        // A 32- or 64-bit word at a raw byte offset, read or written whole: one wide access instead of
+        // a byte or half per element, for byte buffers holding packed data. The caller aligns the offset.
+        for (Class<?> indexType : ARRAY_INDEX_TYPES) {
+            registerByteArrayWordAccess(r, "getInt", "setInt", JavaKind.Int, indexType, segmentField, baseIndexField);
+            registerByteArrayWordAccess(r, "getLong", "setLong", JavaKind.Long, indexType, segmentField, baseIndexField);
         }
     }
 

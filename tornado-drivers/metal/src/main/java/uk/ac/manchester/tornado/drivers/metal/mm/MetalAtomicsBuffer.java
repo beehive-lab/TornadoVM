@@ -154,4 +154,14 @@ public class MetalAtomicsBuffer implements XPUBuffer {
         return 0;
     }
 
+
+    @Override
+    public long libraryAddress() {
+        throw new TornadoRuntimeException("[ERROR] An atomics buffer is not supported as a library-task argument on the Metal backend");
+    }
+
+    @Override
+    public long libraryOffset() {
+        throw new TornadoRuntimeException("[ERROR] An atomics buffer is not supported as a library-task argument on the Metal backend");
+    }
 }

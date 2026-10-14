@@ -117,7 +117,7 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
             deviceContext.getPlatformContext().freeOffHeapMemory(hostPointer);
             hostPointer = 0;
         }
-        deviceContext.getPlatformContext().releaseBuffer(toBuffer());
+        deviceContext.getPlatformContext().releaseBuffer(deviceContext.getDeviceIndex(), toBuffer());
     }
 
     /**

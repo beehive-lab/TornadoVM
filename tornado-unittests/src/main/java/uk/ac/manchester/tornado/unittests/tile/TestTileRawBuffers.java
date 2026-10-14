@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -77,7 +77,7 @@ public class TestTileRawBuffers extends TornadoTestBase {
     /** Records per tile. */
     private static final int ROWS = 32;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -136,7 +136,7 @@ public class TestTileRawBuffers extends TornadoTestBase {
             plan.withGridScheduler(new GridScheduler("raw.k", worker)).execute();
         }
         for (int i = 0; i < ROWS; i++) {
-            assertEquals("byte " + i, raw.get(i), (byte) out.get(i));
+            assertEquals(raw.get(i), (byte) out.get(i), "byte " + i);
         }
     }
 
@@ -173,10 +173,10 @@ public class TestTileRawBuffers extends TornadoTestBase {
                 int packed = raw.get(record * RECORD_BYTES + 2 + j) & 0xFF;
                 double expectedLow = ((packed & 0x0F) - 8.0) * scales[record];
                 double expectedHigh = (((packed >> 4) & 0x0F) - 8.0) * scales[record];
-                assertEquals("low field of record " + record + " byte " + j, //
-                        expectedLow, out.get(record * VALUES + j), 1e-4);
-                assertEquals("high field of record " + record + " byte " + j, //
-                        expectedHigh, out.get(record * VALUES + PACKED_BYTES + j), 1e-4);
+                assertEquals(expectedLow, //
+                        out.get(record * VALUES + j), 1e-4, "low field of record " + record + " byte " + j);
+                assertEquals(expectedHigh, //
+                        out.get(record * VALUES + PACKED_BYTES + j), 1e-4, "high field of record " + record + " byte " + j);
             }
         }
     }

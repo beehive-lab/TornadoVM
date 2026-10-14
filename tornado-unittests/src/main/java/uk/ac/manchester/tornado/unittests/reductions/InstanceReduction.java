@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -63,9 +63,8 @@ public class InstanceReduction extends TornadoTestBase {
         FloatArray expected = new FloatArray(1);
 
         Random rand = new Random();
-        IntStream.range(0, N).forEach(i -> {
-            input.set(i, rand.nextFloat());
-        });
+        IntStream.range(0, N).forEach(i ->
+            input.set(i, rand.nextFloat()));
 
         for (int i = 0; i < N; i++) {
             expected.set(0, expected.get(0) + input.get(i));

@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.prebuilt;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.AccessorParameters;
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -61,7 +61,7 @@ public class TestPrebuiltTaskOrdering extends TornadoTestBase {
     private static TornadoVMBackendType backendType;
     private static boolean coops;
 
-    @BeforeClass
+    @BeforeAll
     public static void init() {
         backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackendType(0);
         defaultDevice = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(0);
@@ -181,8 +181,8 @@ public class TestPrebuiltTaskOrdering extends TornadoTestBase {
             plan.withGridScheduler(gridScheduler).withDevice(defaultDevice).execute();
         }
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("the JIT task ran", 101, unrelated.get(i));
-            assertEquals("the prebuilt task ran", 3, c.get(i));
+            assertEquals(101, unrelated.get(i), "the JIT task ran");
+            assertEquals(3, c.get(i), "the prebuilt task ran");
         }
     }
 
@@ -209,8 +209,8 @@ public class TestPrebuiltTaskOrdering extends TornadoTestBase {
             plan.withGridScheduler(gridScheduler).withDevice(defaultDevice).execute();
         }
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("the JIT task ran", 101, b.get(i));
-            assertEquals("the prebuilt task saw the JIT task's result", 102, c.get(i));
+            assertEquals(101, b.get(i), "the JIT task ran");
+            assertEquals(102, c.get(i), "the prebuilt task saw the JIT task's result");
         }
     }
 }

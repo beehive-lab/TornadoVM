@@ -17,14 +17,15 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * How to run?
@@ -39,11 +40,11 @@ public class TestByteArrayTypedAccess extends TornadoTestBase {
 
     private void assertHalfFloatEquals(String message, float expected, HalfFloat actual, float tolerance) {
         if (Float.isNaN(expected)) {
-            assertTrue(message + " - NaN not preserved", Float.isNaN(actual.getFloat32()));
+            assertTrue(Float.isNaN(actual.getFloat32()), message + " - NaN not preserved");
         } else if (Float.isInfinite(expected)) {
-            assertEquals(message + " - Infinite value not preserved", expected, actual.getFloat32(), 0.0f);
+            assertEquals(expected, actual.getFloat32(), 0.0f, message + " - Infinite value not preserved");
         } else {
-            assertEquals(message, expected, actual.getFloat32(), tolerance);
+            assertEquals(expected, actual.getFloat32(), tolerance, message);
         }
     }
 
@@ -73,26 +74,30 @@ public class TestByteArrayTypedAccess extends TornadoTestBase {
         for (int i = 0; i < numHalfFloats; i++) {
             int byteIndex = i * 2;
             HalfFloat retrieved = byteArray.getHalfFloat(byteIndex);
-            assertEquals("Half-float value mismatch at index " + byteIndex,
-                    testValues[i].getFloat32(), retrieved.getFloat32(), 0.01f);
+            assertEquals(testValues[i].getFloat32(),
+                    retrieved.getFloat32(), 0.01f, "Half-float value mismatch at index " + byteIndex);
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testByteArrayHalfFloatMisalignedSet() {
-        ByteArray byteArray = new ByteArray(10);
-        HalfFloat value = new HalfFloat(1.0f);
+        assertThrows(IllegalArgumentException.class, () -> {
+            ByteArray byteArray = new ByteArray(10);
+            HalfFloat value = new HalfFloat(1.0f);
 
-        // This should throw IllegalArgumentException due to misaligned byte index
-        byteArray.setHalfFloat(1, value); // byte index 1 is not aligned to 2-byte boundary
+            // This should throw IllegalArgumentException due to misaligned byte index
+            byteArray.setHalfFloat(1, value); // byte index 1 is not aligned to 2-byte boundary
+        }); // byte index 1 is not aligned to 2-byte boundary
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testByteArrayHalfFloatMisalignedGet() {
-        ByteArray byteArray = new ByteArray(10);
+        assertThrows(IllegalArgumentException.class, () -> {
+            ByteArray byteArray = new ByteArray(10);
 
-        // This should throw IllegalArgumentException due to misaligned byte index
-        byteArray.getHalfFloat(3); // byte index 3 is not aligned to 2-byte boundary
+            // This should throw IllegalArgumentException due to misaligned byte index
+            byteArray.getHalfFloat(3); // byte index 3 is not aligned to 2-byte boundary
+        }); // byte index 3 is not aligned to 2-byte boundary
     }
 
     @Test
@@ -156,8 +161,8 @@ public class TestByteArrayTypedAccess extends TornadoTestBase {
         // Verify sequential values
         for (int i = 0; i < 4; i++) {
             HalfFloat retrieved = byteArray.getHalfFloat(i * 2);
-            assertEquals("Sequential half-float mismatch at position " + i,
-                    i + 0.5f, retrieved.getFloat32(), 0.001f);
+            assertEquals(i + 0.5f,
+                    retrieved.getFloat32(), 0.001f, "Sequential half-float mismatch at position " + i);
         }
 
         // Test overwrite behavior
@@ -165,10 +170,10 @@ public class TestByteArrayTypedAccess extends TornadoTestBase {
         byteArray.setHalfFloat(4, overwriteValue); // Overwrite position 2
 
         HalfFloat retrieved = byteArray.getHalfFloat(4);
-        assertEquals("Overwrite failed", -99.75f, retrieved.getFloat32(), 0.001f);
+        assertEquals(-99.75f, retrieved.getFloat32(), 0.001f, "Overwrite failed");
 
         // Verify other values unchanged
-        assertEquals("Adjacent value corrupted", 0.5f, byteArray.getHalfFloat(0).getFloat32(), 0.001f);
-        assertEquals("Adjacent value corrupted", 3.5f, byteArray.getHalfFloat(6).getFloat32(), 0.001f);
+        assertEquals(0.5f, byteArray.getHalfFloat(0).getFloat32(), 0.001f, "Adjacent value corrupted");
+        assertEquals(3.5f, byteArray.getHalfFloat(6).getFloat32(), 0.001f, "Adjacent value corrupted");
     }
 }

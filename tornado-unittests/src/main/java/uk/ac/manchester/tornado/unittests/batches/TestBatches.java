@@ -18,13 +18,14 @@
 
 package uk.ac.manchester.tornado.unittests.batches;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -53,6 +54,7 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
  */
 public class TestBatches extends TornadoTestBase {
 
+    @BeforeEach
     @Override
     public void before() {
         super.before();
@@ -720,7 +722,7 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a1);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            Assert.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
+            Assertions.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
         }
     }
 
@@ -737,7 +739,7 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a1);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            Assert.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
+            Assertions.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
         }
     }
 
@@ -754,7 +756,7 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a1);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            Assert.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
+            Assertions.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
         }
     }
 
@@ -771,7 +773,7 @@ public class TestBatches extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, a1);
         ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
         try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            Assert.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
+            Assertions.assertThrows(TornadoBailoutRuntimeException.class, () -> executionPlan.withBatch("1MB").execute());
         }
     }
 

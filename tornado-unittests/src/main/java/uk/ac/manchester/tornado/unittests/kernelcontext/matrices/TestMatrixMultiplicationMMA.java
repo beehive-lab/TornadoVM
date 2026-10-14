@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -36,8 +36,8 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * <p>
@@ -376,8 +376,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int i = 0; i < dimM; i++) {
             for (int j = 0; j < dimN; j++) {
                 int idx = i * dimN + j;
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        ref.get(idx), c.get(idx), tol);
+                assertEquals(ref.get(idx),
+                        c.get(idx), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -429,8 +429,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         final float tol = 0.01f;
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, c.get(i * N + j), tol);
+                assertEquals(expected,
+                        c.get(i * N + j), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -480,8 +480,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         final float tol = 0.01f;
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, c.get(i * N + j), tol);
+                assertEquals(expected,
+                        c.get(i * N + j), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -532,8 +532,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 float expected = (float)(i * 16 + j);
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, c.get(i * N + j), tol);
+                assertEquals(expected,
+                        c.get(i * N + j), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -586,8 +586,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         final float tol = 0.01f;
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, c.get(i * N + j), tol);
+                assertEquals(expected,
+                        c.get(i * N + j), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -639,8 +639,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
             for (int j = 0; j < N; j++) {
                 int idx = i * N + j;
                 float expected = (float)(100 * i + j);
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, c.get(idx), 0.01f);
+                assertEquals(expected,
+                        c.get(idx), 0.01f, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -700,8 +700,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int idx = 0; idx < 128; idx++) {
             float expected = (float) idx;
             float actual = out.get(idx);
-            assertEquals(String.format("idx=%d", idx),
-                    expected, actual, 0.01f);
+            assertEquals(expected,
+                    actual, 0.01f, String.format("idx=%d", idx));
         }
     }
 
@@ -770,8 +770,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 float expected = (float)(i * 16 + j + 8);
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, c.get(i * N + j), tol);
+                assertEquals(expected,
+                        c.get(i * N + j), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -876,8 +876,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 float expected = (float)(256 + 16 * i + j);
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, c.get(i * N + j), tol);
+                assertEquals(expected,
+                        c.get(i * N + j), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -1019,8 +1019,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
         for (int i = 0; i < M; i++) {
             for (int j = 0; j < N; j++) {
                 float expected = (float)(i * 16 + (j % 16));
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        expected, C.get(i * N + j), tol);
+                assertEquals(expected,
+                        C.get(i * N + j), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }
@@ -1144,8 +1144,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
             for (int i = 0; i < 4; i++) {
                 int m = lane / 4 + 8 * (i / 2);
                 int n = (lane % 4) * 2 + (i % 2);
-                assertEquals("lane " + lane + " element " + i,
-                        2.0f * fragmentReference(aHost, bHost, m, n), out.get(lane * 4 + i), 0.01f);
+                assertEquals(2.0f * fragmentReference(aHost, bHost, m, n),
+                        out.get(lane * 4 + i), 0.01f, "lane " + lane + " element " + i);
             }
         }
     }
@@ -1160,8 +1160,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
 
         for (int m = 0; m < WMMA_M; m++) {
             for (int n = 0; n < MMA_N; n++) {
-                assertEquals(String.format("C[%d][%d]", m, n),
-                        fragmentReference(aHost, bHost, m, n), out.get(m * MMA_N + n), 0.01f);
+                assertEquals(fragmentReference(aHost, bHost, m, n),
+                        out.get(m * MMA_N + n), 0.01f, String.format("C[%d][%d]", m, n));
             }
         }
     }
@@ -1277,8 +1277,8 @@ public class TestMatrixMultiplicationMMA extends TornadoTestBase {
                         int m = lane / 4 + 8 * (i / 2);
                         int n = (lane % 4) * 2 + i % 2;
                         float expected = 2.0f * (1.0f + count * fragmentReference(aHost, bHost, m, n));
-                        assertEquals("iterations " + count + " lane " + lane + " element " + i,
-                                expected, out.get(lane * 4 + i), 0.01f);
+                        assertEquals(expected,
+                                out.get(lane * 4 + i), 0.01f, "iterations " + count + " lane " + lane + " element " + i);
                     }
                 }
             }

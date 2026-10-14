@@ -135,6 +135,21 @@ public class TornadoExecutionContext {
         return kernelStackFrame;
     }
 
+    /**
+     * Records an argument that is passed by value -- the Java object itself -- and never allocated
+     * on a device. Identity, not equality, decides whether it is already recorded, so two holders
+     * with equal contents stay two arguments.
+     */
+    public int insertConstant(Object parameter) {
+        for (int i = 0; i < constants.size(); i++) {
+            if (constants.get(i) == parameter) {
+                return i;
+            }
+        }
+        constants.add(parameter);
+        return constants.size() - 1;
+    }
+
     public int insertVariable(Object parameter, Access access) {
         int index;
         if (parameter.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(parameter.getClass())) {

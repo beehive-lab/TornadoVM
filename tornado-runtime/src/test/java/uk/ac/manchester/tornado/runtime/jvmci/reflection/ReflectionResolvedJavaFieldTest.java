@@ -20,16 +20,16 @@
  */
 package uk.ac.manchester.tornado.runtime.jvmci.reflection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import jdk.vm.ci.meta.ResolvedJavaField;
 
@@ -67,7 +67,7 @@ public class ReflectionResolvedJavaFieldTest {
         // displacement the kernel's field lowering emits, so these must agree exactly.
         assertEquals(ReflectionUniverse.UNSAFE.objectFieldOffset(reflected), gamma.getOffset());
         // And it must be past the object header (never 0) for an instance field.
-        assertTrue("instance field offset must be positive", gamma.getOffset() > 0);
+        assertTrue(gamma.getOffset() > 0, "instance field offset must be positive");
     }
 
     @Test
@@ -109,7 +109,7 @@ public class ReflectionResolvedJavaFieldTest {
     @Test
     public void toStringNamesTheField() throws Exception {
         String s = lookup(ReflectionFieldSample.class, "gamma").toString();
-        assertTrue(s, s.startsWith("ReflectionField<"));
-        assertTrue(s, s.contains("gamma"));
+        assertTrue(s.startsWith("ReflectionField<"), s);
+        assertTrue(s.contains("gamma"), s);
     }
 }

@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado</artifactId>
-        <version>7.2.0</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>tornado-assembly</artifactId>
     <packaging>pom</packaging>
@@ -41,11 +41,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-fuzz</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-benchmarks</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -86,6 +81,11 @@
                     <artifactId>tornado-drivers-metal</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-mlx</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
 
@@ -113,6 +113,11 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cufft</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-nccl</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

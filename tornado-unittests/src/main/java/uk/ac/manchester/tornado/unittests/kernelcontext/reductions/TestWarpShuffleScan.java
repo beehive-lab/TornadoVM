@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -127,7 +127,7 @@ public class TestWarpShuffleScan extends TornadoTestBase {
         }
 
         for (int i = 0; i < BLOCK_SIZE; i++) {
-            assertEquals("mismatch at index " + i, expected[i], data.get(i), 0.01f);
+            assertEquals(expected[i], data.get(i), 0.01f, "mismatch at index " + i);
         }
     }
 

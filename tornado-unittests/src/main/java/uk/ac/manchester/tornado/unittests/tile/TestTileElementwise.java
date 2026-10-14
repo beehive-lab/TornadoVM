@@ -17,10 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -66,7 +67,7 @@ public class TestTileElementwise extends TornadoTestBase {
      * counts as [UNSUPPORTED]; a JUnit Assume would be reported as a pass, which would hide the
      * fact that nothing ran.
      */
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -303,8 +304,8 @@ public class TestTileElementwise extends TornadoTestBase {
         Tile f32 = tc.full(DType.F32, 1.0 / 3.0, 64);
         Tile back = tc.cast(tc.cast(f32, DType.F16), DType.F32);
         float expected = new HalfFloat((float) (1.0 / 3.0)).getFloat32();
-        org.junit.Assert.assertEquals(expected, (float) back.getElement(0), 0.0f);
-        org.junit.Assert.assertNotEquals("half precision should lose something", 1.0f / 3.0f, (float) back.getElement(0), 0.0f);
+        Assertions.assertEquals(expected, (float) back.getElement(0), 0.0f);
+        Assertions.assertNotEquals(1.0f / 3.0f, (float) back.getElement(0), 0.0f, "half precision should lose something");
     }
 
     @Test

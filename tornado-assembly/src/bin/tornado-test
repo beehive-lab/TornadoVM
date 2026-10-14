@@ -22,6 +22,7 @@ import argparse
 import os
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import time
@@ -136,7 +137,9 @@ __TEST_THE_WORLD__ = [
     ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNativeArrayVectorLoads"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestLongIndexArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestByteArrayWordAccess"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestBasicOperations"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestFP8"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestBFloat16"),
@@ -184,17 +187,37 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.cublas.TestCuBlasLt"),
     TestEntry("uk.ac.manchester.tornado.unittests.cuvs.TestCuVS"),
     TestEntry("uk.ac.manchester.tornado.unittests.cufft.TestCuFft"),
+    TestEntry("uk.ac.manchester.tornado.unittests.nccl.TestNccl"),
+    TestEntry("uk.ac.manchester.tornado.unittests.nccl.TestNcclMultiProcess"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn"),
     TestEntry("uk.ac.manchester.tornado.unittests.nvtx.TestNvtx"),
     TestEntry("uk.ac.manchester.tornado.unittests.cusparse.TestCusparse"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudf.TestCudf"),
+    TestEntry("uk.ac.manchester.tornado.unittests.cudf.TestCudfColumns"),
     TestEntry("uk.ac.manchester.tornado.unittests.cutlass.TestCutlass"),
     TestEntry("uk.ac.manchester.tornado.unittests.curand.TestCuRand"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlx"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxArithmetic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxLogic"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxReductions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxScans"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxSorting"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxIndexing"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxLinearAlgebra"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxQuantization"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxNeuralNetwork"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxFft"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxConvolution"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxCreation"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxShape"),
+    TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxRandom"),
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLargeTaskGraphs"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryTaskArity"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryProviderSelection"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestLibraryNativeBuffers"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestManyArgumentTasks"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestAliasedTaskArguments"),
     TestEntry("uk.ac.manchester.tornado.unittests.temporary.values.TestTemporaryValues"),
@@ -229,14 +252,18 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestNativeArrayLayouts"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestOnDemandCopyIn"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCopyInPipelines"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestConsumeNamedAndUnnamed"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestCudaGraphPlanTeardown"),
+    TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestFailedCudaGraphCapture"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestPinnedTransfers"),
     TestEntry("uk.ac.manchester.tornado.unittests.executor.TestExecutor"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestIrregularGridSizes"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.Grids"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLaunchFailureReporting"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestDependentLaunches"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestVectorAdditionKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.KernelContextWorkGroupTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestAtomicRmw"),
@@ -268,6 +295,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupTiledMatrix"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrixPrimitives"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestSimdgroupMatrixHalf"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsIntegersKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsFloatsKernelContext"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionsDoublesKernelContext"),
@@ -307,6 +335,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.NonConstantStrideFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.FloatAtomicFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.BitOpsUnsupportedFail"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fails.LocalMemoryFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestDeepInliningChain"),
@@ -332,11 +361,13 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleFunctions"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksMultipleDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentBackends"),
+    TestEntry("uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentCudaGraphCapture"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestDevices"),
     TestEntry("uk.ac.manchester.tornado.unittests.compiler.TestCompilerFlagsAPI"),
     TestEntry("uk.ac.manchester.tornado.unittests.compiler.TestSwitchLowering"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestMemorySegmentsAsType"),
     TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestRuntimeAPI"),
+    TestEntry("uk.ac.manchester.tornado.unittests.runtime.TestNativeContextPerDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
@@ -364,9 +395,12 @@ __TEST_THE_WORLD__ = [
                   "-Dtornado.features.dump.dir=" + os.environ["TORNADOVM_HOME"] + "/virtualFeaturesOut.out"]),
 
     ## Tests for Multi-Thread and Memory
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestConcurrentSketches"),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestMultiThreadedExecutionPlans",
               testParameters=["-Dtornado.device.memory=4GB"]),
 
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestReclaimReleasedBuffers",
+              testParameters=["-Dtornado.device.memory=1GB"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.memory.TestStressDeviceMemory",
               testParameters=[
                   "-Dtornado.device.memory=4GB",
@@ -421,6 +455,10 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     "uk.ac.manchester.tornado.unittests.api.TestIO#testCopyInWithDevice",
     "uk.ac.manchester.tornado.unittests.warmup.TestWarmUp#test01",
 
+    ## Intermittent race on the CUDA backend: 512 plans built concurrently from a parallel stream
+    ## occasionally fail with "Index 1 out of bounds for length 1"
+    "uk.ac.manchester.tornado.unittests.functional.TestStreams#testParallelStreams",
+
     # It might have errors during type casting and type conversion. However, the fractals images look correct.
     # This errors might be related to error precision when running many threads in parallel.
     "uk.ac.manchester.tornado.unittests.compute.ComputeTests#testMandelbrot",
@@ -458,6 +496,18 @@ __TORNADO_TESTS_WHITE_LIST__ = [
 
     'uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers#testCopyDevicePointersMatrix',
 
+    ## NCCL tests that need two GPUs; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testPipelineSendThenRecv",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testPipelineWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testRankFailureAbortsCommunicator",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testRankFailureAbortsCommunicatorWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testUnmatchedSendTimesOut",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testUnmatchedSendTimesOutWithCudaGraph",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testTwoRanksOnTwoGpus",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNcclMultiProcess#testTwoProcesses",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testMultiGraphPlanWithCudaGraphReleasesCommunicator",
+    "uk.ac.manchester.tornado.unittests.nccl.TestNccl#testStepRunsSelectedGraphs",
+
     ## Test Devices: provided filters depend on the actual hardware installed.
     ## The fact that these tests fail, does not mean the API is wrong.
     'uk.ac.manchester.tornado.unittests.api.TestDevices#test04',
@@ -474,6 +524,9 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## failure disappears under the sanitizer's slowdown). Only a full inter-kernel stream
     ## synchronize resolves it. Tracked separately for the CUDA backend.
     "uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles#testMultipleReductions",
+
+    ## Need two GPUs; the CI machines have one.
+    "uk.ac.manchester.tornado.unittests.vm.concurrency.TestConcurrentCudaGraphCapture#testPlansCaptureOnSeveralThreadsAtOnce",
 
 ]
 
@@ -493,8 +546,10 @@ __TORNADO_MEMORY_TESTS__ = [
 # ################################################################################################################
 __MAIN_TORNADO_TEST_RUNNER_MODULE__ = " tornado.unittests/"
 __MAIN_TORNADO_TEST_RUNNER__ = "uk.ac.manchester.tornado.unittests.tools.TornadoTestRunner "
-__MAIN_TORNADO_JUNIT_MODULE__ = " junit/"
-__MAIN_TORNADO_JUNIT__ = "org.junit.runner.JUnitCore "
+__MAIN_TORNADO_JUNIT_MODULE__ = " org.junit.platform.console/"
+__MAIN_TORNADO_JUNIT__ = "org.junit.platform.console.ConsoleLauncher "
+## The ConsoleLauncher module does not require the tests, so resolve their module explicitly
+__JUNIT_ADD_TESTS_MODULE__ = "--add-modules tornado.unittests "
 __IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
 __IGV_LAST_PHASE__ = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.printKernel=True "
@@ -518,7 +573,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "7.2.0"
+__VERSION__ = "7.2.1-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]
@@ -527,6 +582,17 @@ except:
     sys.exit(-1)
 
 __TEST_NOT_PASSED__ = False
+
+## Printed by TornadoTestRunner once all the tests of a class/method have run. A run that exits without it did not finish.
+__RUN_COMPLETED_MARKER__ = "Test ran: "
+## Header of a HotSpot fatal error report (hs_err), and the signals/exceptions it names.
+__FATAL_ERROR_PATTERN__ = re.compile(r"A fatal error has been detected by the Java Runtime Environment|Segmentation fault|Bus error")
+__FATAL_SIGNAL_PATTERN__ = re.compile(r"^#\s+(SIGSEGV|SIGBUS|SIGILL|SIGFPE|SIGABRT|EXCEPTION_\w+)\b", re.MULTILINE)
+__HS_ERR_FILE_PATTERN__ = re.compile(r"^#\s+(\S*hs_err_pid\d+\.log)", re.MULTILINE)
+## Printed on stderr by the verbose TornadoTestRunner before each test, to name the test a crashed JVM was running.
+__RUNNING_TEST_MARKER__ = "[TornadoTestRunner] running "
+## Printed by the non-verbose TornadoTestRunner for each failed test: "[TEST FAILED] Class#method - reason".
+__FAILED_TEST_MARKER__ = "[TEST FAILED] "
 
 
 class Colors:
@@ -622,6 +688,75 @@ def runMonitorClass(monitorClass: Optional[Union[str, MonitorClass]], cmd: str, 
     return True
 
 
+def signalName(number):
+    try:
+        return signal.Signals(number).name
+    except ValueError:
+        return "signal " + str(number)
+
+
+def detectCrash(returnCode, out, err):
+    """ Returns why a test JVM terminated abnormally (segfault, fatal JVM error, killed by a signal, non-zero exit,
+        or exiting before reporting its results), or None if it ran to completion. A crash must never be silent:
+        a JVM that dies mid-class prints no [FAILED] line for the tests it did not run.
+    """
+    output = out + "\n" + err
+    reason = None
+    fatalSignal = __FATAL_SIGNAL_PATTERN__.search(output)
+    fatal = __FATAL_ERROR_PATTERN__.search(output)
+    if fatalSignal is not None:
+        reason = "fatal JVM error (" + fatalSignal.group(1) + ")"
+    elif fatal is not None:
+        reason = "fatal JVM error (" + fatal.group(0) + ")"
+    elif returnCode is not None and returnCode < 0:
+        reason = "killed by " + signalName(-returnCode)
+    elif returnCode is not None and returnCode > 128:
+        reason = "killed by " + signalName(returnCode - 128)
+    elif returnCode:
+        reason = "exit code " + str(returnCode)
+    elif __RUN_COMPLETED_MARKER__ not in output:
+        reason = "exited before reporting its results"
+    if reason is None:
+        return None
+
+    # The verbose runner announces each test on stderr before it runs, and prints its result line after it.
+    running = [line[len(__RUNNING_TEST_MARKER__):].strip() for line in err.splitlines() if line.startswith(__RUNNING_TEST_MARKER__)]
+    if running and re.search(r"Running test: (\x1b\[[0-9;]*m)?" + re.escape(running[-1].split("#")[-1]) + r"\b", out) is None:
+        reason += ", while running " + running[-1]
+    hsErr = __HS_ERR_FILE_PATTERN__.search(output)
+    if hsErr is not None:
+        reason += ", report: " + hsErr.group(1)
+    return reason
+
+
+def removeRunningTestMarkers(err):
+    return "\n".join(line for line in err.splitlines() if not line.startswith(__RUNNING_TEST_MARKER__))
+
+
+def reportCrash(test, reason):
+    global __TEST_NOT_PASSED__
+    __TEST_NOT_PASSED__ = True
+    print(Colors.RED + "[CRASH] " + test + ": " + reason + Colors.RESET)
+
+
+def checkSystemStatus(status, test, junit=False):
+    """ Check the wait status returned by os.system() for the run of a test. """
+    global __TEST_NOT_PASSED__
+    if os.name == 'posix' and os.WIFSIGNALED(status):
+        reportCrash(test, "killed by " + signalName(os.WTERMSIG(status)))
+        return
+    code = os.WEXITSTATUS(status) if os.name == 'posix' else status
+    if code > 128:
+        reportCrash(test, "killed by " + signalName(code - 128))
+    elif junit and code == 1:
+        # The ConsoleLauncher exits with 1 when tests failed, and with 2 when it found no tests to run.
+        __TEST_NOT_PASSED__ = True
+    elif junit and code == 2:
+        reportCrash(test, "no tests found")
+    elif code != 0:
+        reportCrash(test, "exit code " + str(code))
+
+
 def runSingleCommand(cmd, args):
     """ Run a command without processing the result of which tests
         are passed and failed. This method is used to pass a single
@@ -641,9 +776,26 @@ def runSingleCommand(cmd, args):
     out = out.decode('utf-8')
     err = err.decode('utf-8')
 
-    print(err)
+    print(removeRunningTestMarkers(err))
     print(out)
+    processStats(out, {"[PASS]": 0, "[FAILED]": 0, "[UNSUPPORTED]": 0}, {}, [], args.testClass)
+    crash = detectCrash(p.returncode, out, err)
+    if crash is not None:
+        reportCrash(args.testClass, crash)
     print("Total Time (s): " + str(end - start))
+
+
+def recordFailedTest(test, stats, failedTests, count=True):
+    """ A failed test fails the run, unless it is in the whitelist. """
+    global __TEST_NOT_PASSED__
+    if count:
+        stats["[FAILED]"] = stats["[FAILED]"] + 1
+    if test in __TORNADO_TESTS_WHITE_LIST__:
+        failedTests[test] = "YES"
+        print(Colors.RED + "Test: " + test + " in whiteList." + Colors.RESET)
+    else:
+        failedTests[test] = "NO"
+        __TEST_NOT_PASSED__ = True
 
 
 def processStats(out, stats, failedTests, segFaults, unittest):
@@ -651,16 +803,15 @@ def processStats(out, stats, failedTests, segFaults, unittest):
         of methods that were failed and passed
     """
 
-    global __TEST_NOT_PASSED__
-
     pattern = r'Test: class (?P<test_class>[\w\.]+)*\S*$'
     regex = re.compile(pattern)
 
     statsProcessing = out.splitlines()
     className = ""
     for line in statsProcessing:
-        if "SIGSEGV" in line:
-            segFaults.append(unittest)
+        if line.startswith(__FAILED_TEST_MARKER__):
+            recordFailedTest(line[len(__FAILED_TEST_MARKER__):].split(" - ")[0], stats, failedTests)
+            continue
 
         match = regex.search(line)
         if match != None:
@@ -680,13 +831,7 @@ def processStats(out, stats, failedTests, segFaults, unittest):
             if (name.endswith(".")):
                 name = name[:-16]
 
-            if (className + "#" + name in __TORNADO_TESTS_WHITE_LIST__):
-                failedTests[className + "#" + name] = "YES"
-                print(Colors.RED + "Test: " + className + "#" + name + " in whiteList." + Colors.RESET)
-            else:
-                ## set a flag
-                failedTests[className + "#" + name] = "NO"
-                __TEST_NOT_PASSED__ = True
+            recordFailedTest(className + "#" + name, stats, failedTests, count=False)
 
         elif (l.find("UNSUPPORTED") != -1):
             stats["[UNSUPPORTED]"] = stats["[UNSUPPORTED]"] + 1
@@ -711,18 +856,30 @@ def runCommandWithStats(command, stats, failedTests, segFaults, monitorClass):
     if not monitor_status:
         out += monitor_failed_msg
 
-    # Run the test again if the monitor passed but the test seg faulted.
-    # Otherwise, consider this test as not worth to try again.
-    if (err.rfind("Segmentation fault") > 0 and monitor_status):
+    # A JVM killed by the monitor is already reported as failed by monitor_failed_msg.
+    crash = detectCrash(p.returncode, out, err) if monitor_status else None
+
+    # Run the test again if the monitor passed but the test crashed, to tell a flaky crash from a deterministic one.
+    # The crash is reported either way: a crash that passes on the second run is still a crash.
+    if crash is not None:
+        print(removeRunningTestMarkers(err))
+        print(out)
         print(Colors.REVERSE)
-        print("[!] RUNNING AGAIN BECAUSE OF A SEG FAULT")
+        print("[!] RUNNING AGAIN BECAUSE OF A CRASH: " + crash)
         print(Colors.RESET)
         p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = p.communicate()
         out = out.decode('utf-8')
         err = err.decode('utf-8')
+        retryCrash = detectCrash(p.returncode, out, err)
+        if retryCrash is None:
+            crash += " (passed on retry)"
+        else:
+            crash += "; on retry: " + retryCrash
+        segFaults.append(unittest + " - " + crash)
+        reportCrash(unittest, crash)
 
-    print(err)
+    print(removeRunningTestMarkers(err))
     print(out)
 
     return processStats(out, stats, failedTests, segFaults, unittest)
@@ -752,7 +909,7 @@ def runTests(args):
         command = command + " --params \"" + args.testClass + "\""
         print(command)
         if (args.live_mode):
-            os.system(command)
+            checkSystemStatus(os.system(command), args.testClass)
         else:
             runSingleCommand(command, args)
     else:
@@ -784,12 +941,26 @@ def runTests(args):
                     print(Colors.RED + f"{test} - [WHITELISTED]: {whitelisted}")
             print(Colors.RED)
             print("==================================================")
-            if len(segFaults) != 0:
-                print("SEGFAULT TESTS")
-                print("==================================================")
-                for test in segFaults:
-                    print(test)
-                print("==================================================")
+
+        notWhitelisted = [test for test, whitelisted in failedTests.items() if whitelisted == "NO"]
+        if not args.verbose and len(notWhitelisted) != 0:
+            print(Colors.RED)
+            print("==================================================")
+            print("FAILED TESTS (not in the whitelist)")
+            print("==================================================")
+            for test in notWhitelisted:
+                print(test)
+            print("==================================================")
+
+        # Always reported, verbose or not: a crashed JVM leaves no [FAILED] line for the tests it did not run.
+        if len(segFaults) != 0:
+            print(Colors.RED)
+            print("==================================================")
+            print("CRASHED TESTS (segfaults, fatal JVM errors, abnormal exits)")
+            print("==================================================")
+            for test in segFaults:
+                print(test)
+            print("==================================================")
 
         print(Colors.CYAN + "Total Time(s): " + str(end - start))
         print(Colors.RESET)
@@ -805,6 +976,8 @@ def runTestTheWorld(options, args):
     for t in __TEST_THE_WORLD__:
         if args.quickPass and t.testName in __TORNADO_QUICK_PASS_SKIP_TESTS__:
             continue
+        if args.mlx and ".unittests.mlx." not in t.testName:
+            continue
         command = options
         if t.testParameters:
             for testParam in t.testParameters:
@@ -819,12 +992,12 @@ def runTestTheWorld(options, args):
                 testMethodCmd = command + "#" + testMethod + "\""
                 print(testMethodCmd)
                 if (args.live_mode):
-                    os.system(testMethodCmd)
+                    checkSystemStatus(os.system(testMethodCmd), t.testName + "#" + testMethod)
                 else:
                     stats, failedTests, segFaults = runCommandWithStats(testMethodCmd, stats, failedTests, segFaults, t.monitorClass)
         elif (args.live_mode):
             command += "\""
-            os.system(command)
+            checkSystemStatus(os.system(command), t.testName)
         else:
             command += "\""
             print(command)
@@ -833,38 +1006,45 @@ def runTestTheWorld(options, args):
     return stats, failedTests, segFaults
 
 
+def junitSelector(test):
+    """ JUnit Platform ConsoleLauncher arguments that select a test class, or a single method given as Class#method """
+    if "#" in test:
+        return "execute --select-method " + test
+    return "execute --select-class " + test
+
+
 def runWithJUnit(args):
     """ Run the tests using JUNIT """
     if args.monitorClass:
         print("[WARNING] Monitor class is not supported when running with JUnit.")
 
     if (args.testClass != None):
-        command = appendTestRunnerClassToCmd(TORNADO_CMD, args)
-        command = command + " --params \"" + args.testClass + "\""
-        os.system(command)
+        command = TORNADO_CMD + " --jvm \"" + __JUNIT_ADD_TESTS_MODULE__ + "\" "
+        command = appendTestRunnerClassToCmd(command, args)
+        command = command + " --params \"" + junitSelector(args.testClass) + "\""
+        checkSystemStatus(os.system(command), args.testClass, junit=True)
     else:
         runTestTheWorldWithJunit(args)
 
 
 def runTestTheWorldWithJunit(args):
     for t in __TEST_THE_WORLD__:
-        command = TORNADO_CMD
+        jvmOptions = __JUNIT_ADD_TESTS_MODULE__
         if t.testParameters:
             for testParam in t.testParameters:
-                command += " " + testParam
+                jvmOptions += " " + testParam
 
-        command = " --jvm \"" + command + "\" "
+        command = TORNADO_CMD + " --jvm \"" + jvmOptions + "\" "
 
         command = appendTestRunnerClassToCmd(command, args)
-        command += " --params \"" + t.testName + "\""
         if t.monitorClass:
             print("[WARNING] Monitor class is not supported when running with JUnit.")
         if t.testMethods:
             for testMethod in t.testMethods:
-                print(
-                    "Unable to run specific test methods with the default JUnit runner: " + t.testName + "#" + testMethod)
+                checkSystemStatus(os.system(command + " --params \"" + junitSelector(t.testName + "#" + testMethod) + "\""),
+                                  t.testName + "#" + testMethod, junit=True)
         else:
-            os.system(command)
+            checkSystemStatus(os.system(command + " --params \"" + junitSelector(t.testName) + "\""), t.testName, junit=True)
 
 
 def parseArguments():
@@ -883,7 +1063,7 @@ def parseArguments():
     parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False,
                         help="Print OpenCL kernel")
     parser.add_argument('--junit', action="store_true", dest="junit", default=False,
-                        help="Run within JUnitCore main class")
+                        help="Run with the JUnit Platform ConsoleLauncher")
     parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
     parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
                         help="Dump OpenCL Low-TIER GraalIR into IGV")
@@ -897,6 +1077,8 @@ def parseArguments():
                         help="Visualize output in live mode (no wait)")
     parser.add_argument('--quickPass', "-qp", action="store_true", dest="quickPass", default=False,
                         help="Quick pass without stress memory and output for logs in a file.")
+    parser.add_argument('--mlx', action="store_true", dest="mlx", default=False,
+                        help="Run only the Apple MLX library-task tests (Metal backend with MLX installed)")
     parser.add_argument('--device', dest="device", default=None, help="Set an specific device. E.g `s0.t0.device=0:1`")
     parser.add_argument('--printExec', dest="printExecution", action="store_true", default=False,
                         help="Print OpenCL Kernel Execution Time")

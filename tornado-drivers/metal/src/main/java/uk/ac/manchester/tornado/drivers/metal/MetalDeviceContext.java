@@ -42,6 +42,8 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
@@ -137,6 +139,14 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public void sync(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
+        if (MetalObjects.batchesDispatches()) {
+            // The host sees results only by reading a buffer back, and every read waits for the
+            // command buffers that bind that buffer, so committing the open one is enough. Waiting
+            // here would drain the GPU at the end of every task graph, which is where a plan of
+            // many small graphs spends most of its time.
+            commandQueue.flush();
+            return;
+        }
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
@@ -649,5 +659,29 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
         return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType, sizeSource, sizeDest);
+    }
+
+    /* ---- Native interop (external libraries, e.g. Apple MLX) ---- */
+
+    /** -Dtornado.mlx.async=true: commit the batch before a library task without waiting for it. */
+    private static final boolean ASYNC_LIBRARY_DISPATCH = Boolean.getBoolean("tornado.mlx.async");
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        long queue = getCommandQueue(executionPlanId).getCommandQueuePtr();
+        // A library encodes its own command buffers on this queue (or reads buffers on the CPU), so
+        // the kernels batched before it are committed and finished first.
+        if (ASYNC_LIBRARY_DISPATCH) {
+            MetalObjects.flush(queue);
+        } else {
+            MetalObjects.finish(queue);
+        }
+        return queue;
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        // Taken from the queue itself so the two handles always belong together.
+        return MetalAPI.queueDevice(getNativeStream(executionPlanId));
     }
 }

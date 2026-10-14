@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -74,7 +74,7 @@ public class TestTileGemmVariants extends TornadoTestBase {
      */
     private static final int GROUP_M = 2;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -235,7 +235,7 @@ public class TestTileGemmVariants extends TornadoTestBase {
                     float right = transposeB ? b.get(column * k + inner).getFloat32() : b.get(inner * n + column).getFloat32();
                     expected += left * right;
                 }
-                assertEquals("(" + row + "," + column + ")", expected, c.get(row * n + column), 0.05f);
+                assertEquals(expected, c.get(row * n + column), 0.05f, "(" + row + "," + column + ")");
             }
         }
     }
@@ -295,7 +295,7 @@ public class TestTileGemmVariants extends TornadoTestBase {
                     up += activation * upWeights.get(column * k + inner).getFloat32();
                 }
                 double expected = gate / (1.0 + Math.exp(-gate)) * up;
-                assertEquals("(" + row + "," + column + ")", expected, out.get(row * n + column), 0.05);
+                assertEquals(expected, out.get(row * n + column), 0.05, "(" + row + "," + column + ")");
             }
         }
     }
