@@ -450,6 +450,47 @@ public class TestCuDnn extends TornadoTestBase {
     }
 
     /**
+     * Four task graphs of one plan, each with a convolution, under a CUDA graph. Each convolution
+     * needs a larger workspace than the one before, and a graph captured before a larger workspace
+     * is prepared must still find its own workspace when it is replayed.
+     */
+    @Test
+    public void testConv2dWorkspaceGrowsAcrossCapturedGraphs() throws TornadoExecutionPlanException {
+        // N, C, H, W, K: each convolution needs a larger workspace than the one before
+        int[][] shapes = { { 2, 16, 16, 16, 16 }, { 4, 32, 32, 32, 32 }, { 8, 64, 48, 48, 64 }, { 16, 128, 56, 56, 128 } };
+        int count = shapes.length;
+        FloatArray[] inputs = new FloatArray[count];
+        FloatArray[] filters = new FloatArray[count];
+        FloatArray[] outputs = new FloatArray[count];
+        FloatArray[] expected = new FloatArray[count];
+        TaskGraph[] graphs = new TaskGraph[count];
+        for (int g = 0; g < count; g++) {
+            int n = shapes[g][0], c = shapes[g][1], h = shapes[g][2], w = shapes[g][3], k = shapes[g][4];
+            inputs[g] = randomArray(n * c * h * w);
+            filters[g] = randomArray(k * c * 3 * 3);
+            outputs[g] = new FloatArray(n * k * h * w);
+            expected[g] = new FloatArray(n * k * h * w);
+            convJava(inputs[g], filters[g], expected[g], n, c, h, w, k, 3, 3, 1, 1);
+            graphs[g] = new TaskGraph("workspace" + g) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputs[g], filters[g]) //
+                    .libraryTask("conv", CuDnn::cudnnConv2d, inputs[g], filters[g], outputs[g], n, c, h, w, k, 3, 3, 1, 1) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outputs[g]);
+        }
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graphs[0].snapshot(), graphs[1].snapshot(), graphs[2].snapshot(), graphs[3].snapshot())) {
+            plan.withCUDAGraph();
+            for (int it = 0; it < 3; it++) {
+                plan.execute();
+                for (int g = 0; g < count; g++) {
+                    for (int i = 0; i < expected[g].getSize(); i++) {
+                        assertEquals(expected[g].get(i), outputs[g].get(i), 1e-2f * Math.max(1.0f, Math.abs(expected[g].get(i))), "graph " + g + ", iteration " + it);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * A cuDNN library task fed by an input placed on the device with an explicit upload, then
      * refreshed between executions. The input is declared {@code FIRST_EXECUTION}, so the second
      * result can only differ if the upload actually reached the device.
