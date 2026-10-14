@@ -415,6 +415,57 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * DECIMAL64 and FLOAT32 columns written from the device and read back: a required DECIMAL(7,2),
+     * a nullable DECIMAL(15,4) and a FLOAT, with the decimal extremes, negatives and nulls. The
+     * decimals come back unscaled and exact, the floats as Java narrows and widens them.
+     */
+    @Test
+    public void testWriteParquetColumnsDecimalAndFloat() throws TornadoExecutionPlanException, IOException {
+        Path out = Files.createTempFile("tornado-cudf-write-decimals", ".parquet");
+        out.toFile().deleteOnExit();
+        long[] price = { 9999999, -9999999, 0, 1, -1, 12345, 42, 700, -4242, 10010 };
+        long[] amount = { 999999999999999L, -999999999999999L, 0, 31416, -27183, 1, 10000, -5, 123456789012345L, 77 };
+        double[] ratio = { 1.5, -2.25, 3.4028234663852886e38, 1e-3, 0.0, -0.0, 16777217.0, -1.0 / 3, 42.0, 0.1 };
+        int rows = price.length;
+        LongArray longs = new LongArray(2L * rows);
+        DoubleArray doubles = new DoubleArray(rows);
+        ByteArray valid = new ByteArray(3L * rows);
+        for (int i = 0; i < rows; i++) {
+            longs.set(i, price[i]);
+            longs.set(rows + i, amount[i]);
+            doubles.set(i, ratio[i]);
+            valid.set(i, (byte) 1);
+            valid.set(rows + i, (byte) (i % 3 == 1 ? 0 : 1));
+            valid.set(2 * rows + i, (byte) 1);
+        }
+        LongArray backLongs = new LongArray(2L * rows);
+        DoubleArray backDoubles = new DoubleArray(rows);
+        ByteArray backValid = new ByteArray(3L * rows);
+        ParquetColumnType[] types = { ParquetColumnType.DECIMAL64, ParquetColumnType.DECIMAL64, ParquetColumnType.FLOAT32 };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, longs, doubles, valid) //
+                .libraryTask("write", Cudf::writeParquetColumns, new StringBuilder(out.toString()), "price\namount\nratio", new int[] { 1, 2, 3 }, types,
+                        new boolean[] { false, true, false }, new int[] { 7, 15, 0 }, new int[] { 2, 4, 0 }, new long[] { rows }, new IntArray(1), rows, new IntArray(1),
+                        longs, doubles, valid, 2, 0) //
+                .libraryTask("reread", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0, 1, 2 },
+                        new CudfType[] { CudfType.DECIMAL64, CudfType.DECIMAL64, CudfType.FLOAT32 }, new long[] { rows }, rows, new IntArray(1), backLongs, backDoubles,
+                        backValid, true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, backLongs, backDoubles, backValid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < rows; i++) {
+            assertEquals("price " + i, price[i], backLongs.get(i));
+            boolean present = i % 3 != 1;
+            assertEquals("amount valid " + i, present ? 1 : 0, backValid.get(rows + i));
+            if (present) {
+                assertEquals("amount " + i, amount[i], backLongs.get(rows + i));
+            }
+            assertEquals("ratio " + i, Double.doubleToRawLongBits((float) ratio[i]), Double.doubleToRawLongBits(backDoubles.get(i)));
+        }
+    }
+
     /** Binary search of a sorted set: the probe a sorted set allows, as a kernel. */
     public static void probeSorted(LongArray sorted, IntArray size, LongArray keys, ByteArray found) {
         for (@Parallel int i = 0; i < keys.getSize(); i++) {

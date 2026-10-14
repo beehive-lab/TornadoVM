@@ -40,7 +40,14 @@ public enum ParquetColumnType {
     DATE(3),
 
     /** TIMESTAMP in microseconds, from a {@code LongArray}. */
-    TIMESTAMP_MICROS(4);
+    TIMESTAMP_MICROS(4),
+    /** FLOAT, from a {@code DoubleArray}: each double narrowed to a float as Java's cast does. */
+    FLOAT32(5),
+    /**
+     * DECIMAL of up to 18 digits, from a {@code LongArray} of unscaled values: written as an INT64
+     * decimal with the precision and scale given with it (see {@code Cudf.writeParquetColumns}).
+     */
+    DECIMAL64(6);
 
     private final int code;
 
