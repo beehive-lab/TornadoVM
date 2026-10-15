@@ -82,4 +82,28 @@ public class TestTcCompilerBugs extends TornadoTestBase {
         privateArrayInLoop(expected);
         assertSame(expected, out);
     }
+
+    // ---------------------------------------------------------------- TC-2
+
+    public static void unrollWrappingInduction(IntArray out) {
+        for (@Parallel int id = 0; id < out.getSize(); id++) {
+            int cnt = 0;
+            for (int i = 0; i < 2000000000; i += 1500000000) {
+                cnt++;
+            }
+            out.set(id, cnt + id);
+        }
+    }
+
+    /** TC-2: a fully unrolled loop counts its trips with the induction variable's int wrap-around. */
+    @Test
+    public void testFullUnrollWrapsInductionVariable() throws TornadoExecutionPlanException {
+        IntArray out = new IntArray(N);
+        runOnDevice("tc2", new TaskGraph("s0") //
+                .task("t0", TestTcCompilerBugs::unrollWrappingInduction, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        IntArray expected = new IntArray(N);
+        unrollWrappingInduction(expected);
+        assertSame(expected, out);
+    }
 }

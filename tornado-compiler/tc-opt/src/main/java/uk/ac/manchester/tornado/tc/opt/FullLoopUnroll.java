@@ -122,8 +122,10 @@ public final class FullLoopUnroll implements Pass {
         boolean privateArray = touchesPrivateArray(header) || touchesPrivateArray(body);
         int maxTrips = privateArray ? MAX_TRIPS_PRIVATE : MAX_TRIPS;
         // (64 either way today; kept separate so the two budgets can be tuned independently.)
+        // The induction variable wraps at its own width, as in Java (an int i += 1500000000 turns negative).
+        boolean narrow = counted.iv().type().equals(uk.ac.manchester.tornado.tc.ir.Type.I32);
         int trips = 0;
-        for (long i = init; holds(predicate, i, bound) == (stay == 0); i += step) {
+        for (long i = init; holds(predicate, i, bound) == (stay == 0); i = narrow ? (int) (i + step) : i + step) {
             if (++trips > maxTrips) {
                 return false;
             }
