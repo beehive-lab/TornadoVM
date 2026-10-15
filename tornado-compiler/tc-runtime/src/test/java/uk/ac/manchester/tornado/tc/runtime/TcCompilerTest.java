@@ -83,13 +83,11 @@ public class TcCompilerTest {
         assertEquals("TC-E4012", doubles.diagnostics().get(0).code());
         assertTrue(TcCompiler.compile(IrParser.parseFunction(KERNEL), noDoubles, TcOptions.DEFAULTS).succeeded());
 
+        // Local memory over the reported size is left to the driver, which knows the real limit and
+        // refuses with its reason (LocalMemoryFail on Metal).
         var smallShared = new TargetCaps(TargetCaps.Dialect.CUDA, 89, true, true, 16, 1024, 512, 32, true, 0);
-        // An unused array is removed before legality, so the check runs on the step itself.
         var withShared = IrParser.parseFunction(KERNEL.replace("^entry:\n", "^entry:\n  %buf = alloca.shared f32[256] : ptr<shared>\n"));
-        var shared = uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, smallShared);
-        assertEquals("TC-E4014", shared.get(0).code(), shared.toString());
-        assertTrue(shared.get(0).message().contains("1024 bytes"), shared.get(0).message());
-        assertTrue(uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, TargetCaps.CUDA_SM89).isEmpty());
+        assertTrue(uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, smallShared).isEmpty());
     }
 
     private static TargetCaps cuda(int cc, int nvrtc) {

@@ -100,7 +100,6 @@ public final class ErrorCodes {
             Map.entry("TC-E4011", new Entry(Category.UNSUPPORTED, "fp8 tiles need compute capability 9.0 (Hopper) or newer; use F16 or BF16 operands on this device")),
             Map.entry("TC-E4012", new Entry(Category.UNSUPPORTED, "the device has no double precision: use float")),
             Map.entry("TC-E4013", new Entry(Category.UNSUPPORTED, "the device has no half precision: use float")),
-            Map.entry("TC-E4014", new Entry(Category.INVALID_KERNEL, "shrink the kernel's local arrays to fit the device's shared memory per work-group")),
             Map.entry("TC-E4015", new Entry(Category.UNSUPPORTED, "warp operations need 32-lane warps on this backend")),
             Map.entry("TC-E4016", new Entry(Category.UNSUPPORTED, "launch the child kernel from the host (a TaskGraph) on this device")),
             Map.entry("TC-E4017", new Entry(Category.UNSUPPORTED, "tensor cores (mma.sync) and cp.async need an Ampere (sm_80) or newer GPU; use the scalar path on this device")),

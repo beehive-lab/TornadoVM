@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.Inst;
@@ -40,7 +39,6 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * <li>TC-E4012: double precision on a device without it;</li>
  * <li>TC-E4013: half precision on a device without it (not on OpenCL, whose compilers take half
  * with the pragma);</li>
- * <li>TC-E4014: more shared (local) memory than a work-group has;</li>
  * <li>TC-E4015: warp operations, written for 32-lane warps, on another SIMD width;</li>
  * <li>TC-E4016: a device launch where kernels cannot launch kernels;</li>
  * <li>TC-E4017: tensor-core MMA or {@code cp.async} below CUDA sm_80;</li>
@@ -63,11 +61,9 @@ public final class Legality {
         if (!target.fp16() && target.dialect() != TargetCaps.Dialect.OPENCL) {
             first(function, t -> uses(t, Type.F16)).ifPresent(i -> problems.add(at(function, i, "TC-E4013", "this kernel uses half precision, which the device does not support")));
         }
-        long shared = insts(function).mapToLong(i -> i.opcode() instanceof Opcode.Alloca(var space, var element, var count) && space == AddressSpace.SHARED ? (long) bytes(element) * count : 0).sum();
-        if (shared > target.localMemoryBytes()) {
-            problems.add(new Diagnostic("TC-E4014", "the kernel's local arrays need " + shared + " bytes of shared memory; a work-group has " + target.localMemoryBytes(), "@" + function.name(),
-                    Loc.UNKNOWN));
-        }
+        // Local memory is not checked here: the driver is the authority, and its limit is not the one the
+        // device reports (CUDA takes up to the opt-in size, 99 KB on sm_89, against 48 KB reported;
+        // NVIDIA's OpenCL adds its own bytes; Metal's pipeline aligns). It refuses with the reason.
         if (target.warpSize() != 32) {
             insts(function).filter(i -> intrinsic(i, "tornado.simd.")).findFirst()
                     .ifPresent(i -> problems.add(at(function, i, "TC-E4015", "warp operations are written for 32-lane warps; the device's SIMD width is " + target.warpSize())));
@@ -118,15 +114,6 @@ public final class Legality {
 
     private static boolean intrinsic(Inst inst, String prefix) {
         return inst.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith(prefix);
-    }
-
-    private static int bytes(Type type) {
-        return switch (type) {
-            case Type.IntType(var bits) -> Math.max(1, bits / 8);
-            case Type.FloatType f -> f.bits() / 8;
-            case Type.VectorType(var element, var length) -> bytes(element) * length;
-            default -> 8;
-        };
     }
 
     private static Diagnostic at(Function function, Inst inst, String code, String message) {
