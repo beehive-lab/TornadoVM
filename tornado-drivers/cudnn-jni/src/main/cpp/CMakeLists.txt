@@ -6,7 +6,9 @@ cmake_policy(SET CMP0091 NEW)
 
 project (TornadoCuDnn)
 
-find_package(JNI REQUIRED)
+# Only the JNI headers are used. Without components FindJNI also requires AWT, which headless JDKs
+# (containers, CI) do not ship; asking for JVM alone needs CMake 3.24 (older versions ignore it).
+find_package(JNI REQUIRED COMPONENTS JVM)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
