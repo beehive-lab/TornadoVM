@@ -16,7 +16,7 @@
         "If Statements":  "4",
         "Switch Statements":  "0",
         "Switch Cases":  "0",
-        "Cast Operations":  "4",
+        "Cast Operations":  "6",
         "Vector Operations":  "0",
         "Total Integer Operations":  "10",
         "Total Float Operations":  "0",
@@ -26,7 +26,7 @@
         "Boolean Operations":  "0",
         "Float Math Functions":  "2",
         "Integer Math Functions":  "0",
-        "Integer Comparison":  "4",
+        "Integer Comparison":  "5",
         "Float Comparison":  "0"
     }
 }

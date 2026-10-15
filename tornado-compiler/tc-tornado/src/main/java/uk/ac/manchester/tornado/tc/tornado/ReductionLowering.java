@@ -157,7 +157,7 @@ public final class ReductionLowering {
         var pre = IrBuilder.insertingBefore(entryTerm).at(loc);
         var gid = pre.intrinsic("tornado.thread_id.global", Immediates.of("dim", 0), Type.I32, List.of());
         var gsize = pre.intrinsic("tornado.global_size", Immediates.of("dim", 0), Type.I32, List.of());
-        Value first = start.getAsLong() == 0 ? gid : pre.binary(BinaryOp.ADD, gid, pre.constInt(Type.I32, start.getAsLong()));
+        Value first = start.getAsLong() == 0 ? gid : ParallelLoopLowering.gridStride(pre, pre.constInt(Type.I32, start.getAsLong()), gid, pre.constInt(Type.I32, 1));
         entryTerm.setSuccessorArgs(entryIndex, List.of(first, neutral(pre, op, accType)));
 
         // The read of out[0] becomes the accumulator; the stored value is the next one.
@@ -166,8 +166,9 @@ public final class ReductionLowering {
         var next = store.operand(2);
         store.erase();
 
-        // Grid stride: i += global size (any launch size covers the iterations).
-        var step = IrBuilder.insertingBefore(latch).at(loc).binary(BinaryOp.ADD, iv, gsize);
+        // Grid stride: i += global size (any launch size covers the iterations), clamped to the int range.
+        var inLatch = IrBuilder.insertingBefore(latch).at(loc);
+        var step = ParallelLoopLowering.gridStride(inLatch, iv, gsize, inLatch.constInt(Type.I32, 1));
         latch.setSuccessorArgs(back, List.of(step, next));
         header.removeAttribute("parallel");
 
@@ -193,12 +194,13 @@ public final class ReductionLowering {
         return List.of();
     }
 
-    /** The operation's neutral element: 0, 1, or the extreme of the type for min and max. */
+    /** The operation's neutral element: 0 (-0.0 for floats), 1, or the extreme of the type for min and max. */
     private static Value neutral(IrBuilder b, String op, Type type) {
         boolean fp = type instanceof Type.FloatType;
         boolean wide = type.equals(Type.I64);
         return switch (op) {
-            case "add" -> fp ? b.constFloat(type, 0.0) : b.constInt(type, 0);
+            // -0.0, not +0.0: -0.0 + +0.0 is +0.0, so only -0.0 leaves every x (signed zeros included) unchanged.
+            case "add" -> fp ? b.constFloat(type, -0.0) : b.constInt(type, 0);
             case "mul" -> fp ? b.constFloat(type, 1.0) : b.constInt(type, 1);
             case "min" -> fp ? b.constFloat(type, Double.POSITIVE_INFINITY) : b.constInt(type, wide ? Long.MAX_VALUE : Integer.MAX_VALUE);
             default -> fp ? b.constFloat(type, Double.NEGATIVE_INFINITY) : b.constInt(type, wide ? Long.MIN_VALUE : Integer.MIN_VALUE);

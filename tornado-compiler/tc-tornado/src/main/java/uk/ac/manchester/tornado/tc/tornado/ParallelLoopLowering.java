@@ -34,9 +34,12 @@ import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.Opcode.BinaryOp;
+import uk.ac.manchester.tornado.tc.ir.Opcode.ConvertOp;
+import uk.ac.manchester.tornado.tc.ir.Opcode.IntPredicate;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
 import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
+import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopShape;
@@ -132,14 +135,12 @@ public final class ParallelLoopLowering {
         var entry = counted.entry().terminator();
         var before = IrBuilder.insertingBefore(entry);
         var gid = before.intrinsic("tornado.thread_id.global", Immediates.of("dim", dim), Type.I32, List.of());
-        // The grid-stride arithmetic is TC's own and stays within the loop's int range: no signed wrap
-        // (the emitter prints wrapping arithmetic for everything else, as Java defines it).
-        counted.entry().setArgument(ivIndex, noSignedWrap(before.add(counted.init(), scaled(before, gid, step))));
+        counted.entry().setArgument(ivIndex, gridStride(before, counted.init(), gid, step));
 
         var latch = counted.backEdge().terminator();
         var inLatch = IrBuilder.insertingBefore(latch);
         var size = inLatch.intrinsic("tornado.global_size", Immediates.of("dim", dim), Type.I32, List.of());
-        var advanced = noSignedWrap(inLatch.add(iv, scaled(inLatch, size, step)));
+        var advanced = gridStride(inLatch, iv, size, step);
         var add = counted.increment();
         advanced.setName(add.name());
         counted.backEdge().setArgument(ivIndex, advanced);
@@ -186,6 +187,46 @@ public final class ParallelLoopLowering {
         if (offset.isPresent() && stride.isPresent() && upper.isPresent()) {
             loop.header().function().addAttribute(Attribute.of("domain", "dim", dim, "offset", offset.getAsLong(), "step", stride.getAsLong(), "upper", upper.getAsLong()));
         }
+    }
+
+    /**
+     * {@code base + count * step}, the grid-stride arithmetic. For an int index it is evaluated in 64
+     * bits and clamped to the int range: with more than 2^30 iterations at step 1, thread {@code g}
+     * computes {@code g + gsize > Integer.MAX_VALUE}, and a wrapped (negative) index would pass
+     * {@code i < n} and run iterations a second time. A clamped index is past every int bound in the
+     * direction of the step, so the thread leaves the loop. The 64-bit arithmetic cannot overflow
+     * ({@code |base| <= 2^31}, {@code |count * step| <= 2^62}).
+     */
+    static Inst gridStride(IrBuilder b, Value base, Value count, Value step) {
+        var k = Constants.integer(step);
+        var c = Constants.integer(base);
+        if (!base.type().equals(Type.I32) || c.isPresent() && k.isPresent() && fitsInt(c.getAsLong(), k.getAsLong())) {
+            // A constant start and step with count in [0, Integer.MAX_VALUE] (a thread id or the global size):
+            // the int arithmetic cannot overflow.
+            return noSignedWrap(b.add(base, scaled(b, count, step)));
+        }
+        Value product = b.convert(ConvertOp.SEXT, count, Type.I64);
+        if (k.isEmpty() || k.getAsLong() != 1) {
+            Value wideStep = k.isPresent() ? b.constInt(Type.I64, k.getAsLong()) : b.convert(ConvertOp.SEXT, step, Type.I64);
+            product = noSignedWrap(b.binary(BinaryOp.MUL, product, wideStep));
+        }
+        Value wide = noSignedWrap(b.add(b.convert(ConvertOp.SEXT, base, Type.I64), product));
+        if (k.isEmpty() || k.getAsLong() > 0) {
+            var max = b.constInt(Type.I64, Integer.MAX_VALUE);
+            wide = b.select(b.icmp(IntPredicate.SGT, wide, max), max, wide);
+        }
+        if (k.isEmpty() || k.getAsLong() < 0) {
+            var min = b.constInt(Type.I64, Integer.MIN_VALUE);
+            wide = b.select(b.icmp(IntPredicate.SLT, wide, min), min, wide);
+        }
+        return b.convert(ConvertOp.TRUNC, wide, Type.I32);
+    }
+
+    /** Whether {@code base + count * step} stays in the int range for every count in [0, Integer.MAX_VALUE]. */
+    private static boolean fitsInt(long base, long step) {
+        // base and step are int constants, so the long arithmetic is exact.
+        long far = base + (long) Integer.MAX_VALUE * step;
+        return Math.min(base, far) >= Integer.MIN_VALUE && Math.max(base, far) <= Integer.MAX_VALUE;
     }
 
     private static Value scaled(IrBuilder b, Value v, Value step) {

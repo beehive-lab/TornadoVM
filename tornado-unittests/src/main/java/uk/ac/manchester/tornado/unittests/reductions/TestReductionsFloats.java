@@ -563,4 +563,38 @@ public class TestReductionsFloats extends TornadoTestBase {
         assertEquals(finalValueSeq, finalValueTornado, 0.01f);
     }
 
+    private static void reductionAddSignedZeros(FloatArray input, @Reduce FloatArray result) {
+        for (@Parallel int i = 0; i < input.getSize(); i++) {
+            result.set(0, result.get(0) + input.get(i));
+        }
+    }
+
+    /**
+     * A sum of -0.0 values is -0.0 in Java. Lanes with no element (padding, the tail of the last group)
+     * must add an element that leaves -0.0 unchanged: -0.0, not +0.0 (-0.0 + +0.0 is +0.0).
+     */
+    @Test
+    public void testSumFloatsSignedZero() throws TornadoExecutionPlanException {
+        // Not a multiple of any work-group size: the last group has idle lanes.
+        FloatArray input = new FloatArray(1000);
+        input.init(-0.0f);
+        FloatArray result = new FloatArray(1);
+        result.init(-0.0f);
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //
+                .task("t0", TestReductionsFloats::reductionAddSignedZeros, input, result) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, result);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.execute();
+        }
+
+        FloatArray sequential = new FloatArray(1);
+        sequential.init(-0.0f);
+        reductionAddSignedZeros(input, sequential);
+
+        assertEquals(Float.floatToRawIntBits(sequential.get(0)), Float.floatToRawIntBits(result.get(0)));
+    }
+
 }

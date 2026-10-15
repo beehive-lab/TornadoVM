@@ -11,16 +11,19 @@ static inline float java_fmaxf(float a, float b) {
 __kernel void TestVirtualDeviceKernel_maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global unsigned char *input, __global unsigned char *result)
 {
   __local float reduce_scratch[1024];
-  int gsize_x, i, lid_x, active, half_;
+  long v3, v7, v13;
   __global float *input_data, *result_data;
+  int i, lid_x, active, half_;
   float acc, partial;
-  gsize_x = (int) get_global_size(0);  // TestVirtualDeviceKernel.java:57
+  v3 = (long) ((int) get_global_size(0));  // TestVirtualDeviceKernel.java:57
   input_data = (__global float *) (input + 24L);  // TestVirtualDeviceKernel.java:57
   i = (int) get_global_id(0);
   acc = as_float(0xff800000);
   while (i < 8192) {
-    acc = java_fmaxf(acc, input_data[i]);
-    i = (int) ((uint) i + (uint) gsize_x);
+    v7 = (long) i;  // TestVirtualDeviceKernel.java:57
+    v13 = v7 + v3;  // TestVirtualDeviceKernel.java:57
+    i = (int) (v13 > 2147483647L ? 2147483647L : v13);
+    acc = java_fmaxf(acc, input_data[v7]);
   }
   lid_x = (int) get_local_id(0);  // TestVirtualDeviceKernel.java:57
   reduce_scratch[lid_x] = acc;  // TestVirtualDeviceKernel.java:57

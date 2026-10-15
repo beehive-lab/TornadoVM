@@ -1,25 +1,38 @@
 ; @Parallel loops become grid-stride loops; the innermost parallel loop is dimension 0 (x) as in
-; TornadoVM's loop interchange on GPUs, the enclosing one dimension 1 (y).
+; TornadoVM's loop interchange on GPUs, the enclosing one dimension 1 (y). The stride is added in 64 bits
+; and clamped to Integer.MAX_VALUE: a wrapped index would be negative, pass i < n and re-run iterations.
 ; RUN: tc-tornado --parallel %s | FileCheck %s
 
 ; CHECK-LABEL: kernel @matrixAdd(
 ; CHECK:       ^bci0:
 ; CHECK-NEXT:    %i = const 0 : i32
 ; CHECK-NEXT:    %[[GY:[0-9]+]] = tornado.thread_id.global<dim = 1>() : i32
-; CHECK-NEXT:    %[[IY:[0-9]+]] = add %i, %[[GY]] : i32
+; CHECK-NEXT:    %[[IY:[0-9]+]] = add %i, %[[GY]] : i32 [nsw]
 ; CHECK-NEXT:    br ^bci3(%[[IY]])
 ; CHECK-NEXT:  ^bci3(%i.1: i32) [parallel<iv = 0>, grid<dim = 1>]:
 ; CHECK:       ^bci9:
 ; CHECK-NEXT:    %j = const 0 : i32
 ; CHECK-NEXT:    %[[GX:[0-9]+]] = tornado.thread_id.global<dim = 0>() : i32
-; CHECK-NEXT:    %[[JX:[0-9]+]] = add %j, %[[GX]] : i32
+; CHECK-NEXT:    %[[JX:[0-9]+]] = add %j, %[[GX]] : i32 [nsw]
 ; CHECK-NEXT:    br ^bci12(%[[JX]])
 ; CHECK-NEXT:  ^bci12(%j.1: i32) [parallel<iv = 0>, grid<dim = 0>]:
 ; CHECK:         %[[SX:[0-9]+]] = tornado.global_size<dim = 0>() : i32
-; CHECK-NEXT:    %j.2 = add %j.1, %[[SX]] : i32
+; CHECK-NEXT:    %[[WX:[0-9]+]] = sext %[[SX]] : i64
+; CHECK-NEXT:    %[[VX:[0-9]+]] = sext %j.1 : i64
+; CHECK-NEXT:    %[[NX:[0-9]+]] = add %[[VX]], %[[WX]] : i64 [nsw]
+; CHECK-NEXT:    %[[MX:[0-9]+]] = const 2147483647 : i64
+; CHECK-NEXT:    %[[OX:[0-9]+]] = icmp.sgt %[[NX]], %[[MX]] : i1
+; CHECK-NEXT:    %[[CX:[0-9]+]] = select %[[OX]], %[[MX]], %[[NX]] : i64
+; CHECK-NEXT:    %j.2 = trunc %[[CX]] : i32
 ; CHECK-NEXT:    br ^bci12(%j.2)
 ; CHECK:         %[[SY:[0-9]+]] = tornado.global_size<dim = 1>() : i32
-; CHECK-NEXT:    %i.2 = add %i.1, %[[SY]] : i32
+; CHECK-NEXT:    %[[WY:[0-9]+]] = sext %[[SY]] : i64
+; CHECK-NEXT:    %[[VY:[0-9]+]] = sext %i.1 : i64
+; CHECK-NEXT:    %[[NY:[0-9]+]] = add %[[VY]], %[[WY]] : i64 [nsw]
+; CHECK-NEXT:    %[[MY:[0-9]+]] = const 2147483647 : i64
+; CHECK-NEXT:    %[[OY:[0-9]+]] = icmp.sgt %[[NY]], %[[MY]] : i1
+; CHECK-NEXT:    %[[CY:[0-9]+]] = select %[[OY]], %[[MY]], %[[NY]] : i64
+; CHECK-NEXT:    %i.2 = trunc %[[CY]] : i32
 ; CHECK-NEXT:    br ^bci3(%i.2)
 kernel @matrixAdd(%c: array<f32>, %rows: i32, %cols: i32) -> void {
 ^entry:
