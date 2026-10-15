@@ -752,6 +752,12 @@ public final class MetalObjects {
             MetalAPI.encodeSignalEvent(commandBuffer, queueEvent.event, value);
         }
         MetalAPI.commit(commandBuffer);
+        if (queueEvent.foreignPending) {
+            // Committed after the library's command buffers on an in-order queue: signalling value
+            // means they have finished too.
+            queueEvent.foreignPending = false;
+            queueEvent.foreignCover = value;
+        }
         long previous = queueEvent.lastCommitted;
         queueEvent.lastCommitted = ObjCRuntime.retain(commandBuffer);
         if (previous != 0) {
@@ -781,6 +787,7 @@ public final class MetalObjects {
 
     /** Per command queue: a shared event, the last value it was asked to signal, and the open command buffer. */
     private static final class QueueEvent {
+        final long queue;
         final long event;
         long value;
         /** The command buffer kernels are being encoded into, or null. Guarded by this object's lock. */
@@ -793,8 +800,20 @@ public final class MetalObjects {
          * and a busy CPU core can slow the GPU on a chip where they share power.
          */
         volatile boolean block;
+        /**
+         * Whether a native library has encoded work on this queue that no command buffer of this
+         * backend, committed after it, signals yet. Guarded by this object's lock.
+         */
+        boolean foreignPending;
+        /**
+         * The value of a command buffer committed after a native library's work, which therefore
+         * finishes only after that work does, or 0 when none is outstanding. Guarded by this object's
+         * lock.
+         */
+        long foreignCover;
 
-        QueueEvent(long event) {
+        QueueEvent(long queue, long event) {
+            this.queue = queue;
             this.event = event;
         }
     }
@@ -802,7 +821,7 @@ public final class MetalObjects {
     private static final Map<Long, QueueEvent> QUEUE_EVENTS = new ConcurrentHashMap<>();
 
     private static QueueEvent queueEvent(long queue) {
-        return QUEUE_EVENTS.computeIfAbsent(queue, q -> new QueueEvent(MetalAPI.newSharedEvent(MetalAPI.queueDevice(q))));
+        return QUEUE_EVENTS.computeIfAbsent(queue, q -> new QueueEvent(q, MetalAPI.newSharedEvent(MetalAPI.queueDevice(q))));
     }
 
     /** Commits {@code commandBuffer} on {@code queue}, after anything still open there, and returns once the GPU has finished it. */
@@ -865,12 +884,72 @@ public final class MetalObjects {
         }
     }
 
+    /** Set once any native library has encoded work without waiting for it; never cleared. */
+    private static volatile boolean foreignWork;
+
+    /**
+     * Records that a native library is about to encode work on {@code queue} that it will not wait
+     * for -- MLX under {@code -Dtornado.mlx.async=true}. That work runs in commit order with this
+     * backend's command buffers but signals none of this backend's events, so without this record a
+     * host read of a buffer it writes ({@link #awaitBuffer}) or {@link #finish} returns before it has
+     * finished, and the host sees stale contents.
+     */
+    public static void markForeignWork(long queue) {
+        if (queue == 0) {
+            return;
+        }
+        QueueEvent queueEvent = queueEvent(queue);
+        synchronized (queueEvent) {
+            queueEvent.foreignPending = true;
+        }
+        foreignWork = true;
+    }
+
+    /**
+     * Returns once the native-library work recorded on the queue ({@link #markForeignWork}) has
+     * finished. A command buffer of this backend committed after it already covers it; otherwise an
+     * empty one is committed to signal its completion.
+     */
+    private static void awaitForeignWork(QueueEvent queueEvent) {
+        long cover;
+        synchronized (queueEvent) {
+            if (queueEvent.foreignPending) {
+                commitOpenBatch(queueEvent);
+            }
+            if (queueEvent.foreignPending) {
+                try (ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
+                    long marker = MetalAPI.commandBuffer(queueEvent.queue);
+                    if (marker != 0) {
+                        commitSignalled(queueEvent, marker, ++queueEvent.value);
+                    }
+                }
+            }
+            cover = queueEvent.foreignCover;
+        }
+        if (cover == 0) {
+            return;
+        }
+        waitForValue(queueEvent, cover);
+        synchronized (queueEvent) {
+            if (queueEvent.foreignCover == cover) {
+                queueEvent.foreignCover = 0;
+            }
+        }
+    }
+
     /**
      * Returns once no command buffer that binds {@code buffer} is pending, so the host can read or
      * write its contents. Buffers the pending work does not bind -- the common case for a task's
      * inputs -- need no wait.
      */
     public static void awaitBuffer(long buffer) {
+        if (foreignWork) {
+            // A native library writes and reads buffers through its own command buffers, which do not
+            // register in BUFFER_USES: any buffer may be one of them, so wait for all of that work.
+            for (QueueEvent queueEvent : QUEUE_EVENTS.values()) {
+                awaitForeignWork(queueEvent);
+            }
+        }
         BufferUse use = BUFFER_USES.get(buffer);
         if (use == null) {
             return;
@@ -981,6 +1060,7 @@ public final class MetalObjects {
             }
             return;
         }
+        awaitForeignWork(queueEvent);
         long value;
         synchronized (queueEvent) {
             value = queueEvent.value;
