@@ -26,6 +26,8 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -105,5 +107,57 @@ public class TestTcCompilerBugs extends TornadoTestBase {
         IntArray expected = new IntArray(N);
         unrollWrappingInduction(expected);
         assertSame(expected, out);
+    }
+
+    // ---------------------------------------------------------------- TC-3
+
+    public static void floatRemainder(FloatArray a, FloatArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, a.get(i) % 0.75f);
+        }
+    }
+
+    public static void doubleRemainder(DoubleArray a, DoubleArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, a.get(i) % 0.75);
+        }
+    }
+
+    /** TC-3: float {@code %} compiles on OpenCL and Metal (no {@code fmodf} there) and matches Java. */
+    @Test
+    public void testFloatRemainder() throws TornadoExecutionPlanException {
+        FloatArray a = new FloatArray(N);
+        for (int i = 0; i < N; i++) {
+            a.set(i, (i - N / 2) * 0.37f);
+        }
+        FloatArray out = new FloatArray(N);
+        runOnDevice("tc3", new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestTcCompilerBugs::floatRemainder, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        FloatArray expected = new FloatArray(N);
+        floatRemainder(a, expected);
+        for (int i = 0; i < N; i++) {
+            assertEquals(Float.floatToRawIntBits(expected.get(i)), Float.floatToRawIntBits(out.get(i)), "index " + i);
+        }
+    }
+
+    /** TC-3: double {@code %} keeps working. */
+    @Test
+    public void testDoubleRemainder() throws TornadoExecutionPlanException {
+        DoubleArray a = new DoubleArray(N);
+        for (int i = 0; i < N; i++) {
+            a.set(i, (i - N / 2) * 0.37);
+        }
+        DoubleArray out = new DoubleArray(N);
+        runOnDevice("tc3d", new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestTcCompilerBugs::doubleRemainder, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        DoubleArray expected = new DoubleArray(N);
+        doubleRemainder(a, expected);
+        for (int i = 0; i < N; i++) {
+            assertEquals(Double.doubleToRawLongBits(expected.get(i)), Double.doubleToRawLongBits(out.get(i)), "index " + i);
+        }
     }
 }

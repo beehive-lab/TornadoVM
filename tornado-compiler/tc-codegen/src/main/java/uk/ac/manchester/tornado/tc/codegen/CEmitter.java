@@ -815,7 +815,8 @@ public final class CEmitter {
             case DIV -> javaDivision(type, a, "/", b, type.equals(Type.I64) ? "java_ldiv" : "java_idiv");
             case REM -> javaDivision(type, a, "%", b, type.equals(Type.I64) ? "java_lrem" : "java_irem");
             case FDIV -> infix(a, "/", b, MUL);
-            case FREM -> new R((type.equals(Type.F32) ? "fmodf(" : "fmod(") + expr(a).text + ", " + expr(b).text + ")", ATOM);
+            // fmodf is CUDA's float spelling; OpenCL C and MSL overload fmod for float.
+            case FREM -> new R((type.equals(Type.F32) && target.dialect() == TargetCaps.Dialect.CUDA ? "fmodf(" : "fmod(") + expr(a).text + ", " + expr(b).text + ")", ATOM);
             case AND -> infix(a, "&", b, BAND);
             case OR -> infix(a, "|", b, BOR);
             case XOR -> infix(a, "^", b, BXOR);
