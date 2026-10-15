@@ -211,6 +211,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxCreation"),
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxShape"),
     TestEntry("uk.ac.manchester.tornado.unittests.mlx.TestMlxRandom"),
+    TestEntry(testName="uk.ac.manchester.tornado.unittests.mlx.TestMlxAsyncDispatch",
+              testParameters=["-Dtornado.mlx.async=true"]),
     TestEntry("uk.ac.manchester.tornado.unittests.virtualization.TestsVirtualLayer"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestSingleTaskSingleDevice"),
     TestEntry("uk.ac.manchester.tornado.unittests.tasks.TestMultipleTasksSingleDevice"),

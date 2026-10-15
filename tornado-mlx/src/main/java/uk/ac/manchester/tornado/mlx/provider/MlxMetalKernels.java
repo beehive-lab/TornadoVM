@@ -743,7 +743,9 @@ final class MlxMetalKernels {
         sendVoid(commandBuffer, "encodeSignalEvent:value:", queueEvent[0], value);
         sendVoid(commandBuffer, "commit");
         if (ASYNC) {
-            // The queue runs command buffers in commit order; the next TornadoVM kernel sees this one's writes.
+            // The queue runs command buffers in commit order; the next TornadoVM kernel sees this one's writes,
+            // and the Metal backend waits for this command buffer before a host read or write of any buffer
+            // (it was told in getNativeStream, MetalObjects.markForeignWork).
             return;
         }
         long start = System.nanoTime();
