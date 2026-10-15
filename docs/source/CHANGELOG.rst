@@ -7,6 +7,16 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 7.3.1
+---------------
+15/10/26
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1240 <https://github.com/beehive-lab/TornadoVM/pull/1240>`_: Deploy tornado-mlx and tornado-nccl to Maven Central in the release pipeline
+
+
 TornadoVM 7.3.0
 ---------------
 14/10/26
