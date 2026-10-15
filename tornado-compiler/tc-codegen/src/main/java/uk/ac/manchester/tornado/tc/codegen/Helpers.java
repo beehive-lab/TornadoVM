@@ -528,6 +528,15 @@ final class Helpers {
         return sb.toString();
     }
 
+    /** The source of every helper of {@code dialect} (what {@link Naming} scans for the names it calls). */
+    static java.util.Collection<String> sources(Dialect dialect) {
+        return switch (dialect) {
+            case CUDA -> CUDA.values();
+            case OPENCL -> OPENCL.values();
+            case METAL -> METAL.values();
+        };
+    }
+
     static String source(String helper, Dialect dialect) {
         var text = switch (dialect) {
             case CUDA -> CUDA.get(helper);

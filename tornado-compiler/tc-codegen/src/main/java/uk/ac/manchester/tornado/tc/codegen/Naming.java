@@ -121,6 +121,28 @@ public final class Naming {
             }
             default -> throw new IllegalArgumentException(dialect.name());
         }
+        // Every function the emitter can print for this dialect: intrinsic templates, Java-semantics
+        // helpers and the preamble with all its features. A local of that name would hide it (a Java
+        // local `sinpi` declared at the top of the kernel makes `sinpi(x)` a call of a float).
+        var printed = new java.util.ArrayList<String>(Intrinsics.templates(dialect));
+        printed.addAll(Helpers.sources(dialect));
+        printed.addAll(CDialect.of(dialect).preamble(java.util.EnumSet.allOf(CDialect.Feature.class)));
+        printed.forEach(text -> reserved.addAll(calledNames(text)));
+    }
+
+    private static final java.util.regex.Pattern CALLED = java.util.regex.Pattern.compile("(?<![.\\w>$#])([A-Za-z][A-Za-z0-9_]*)(?:\\s*\\(|<(?=[A-Za-z_]))");
+
+    /**
+     * The names {@code text} calls or instantiates ({@code f(...)}, {@code as_type<float>}), member
+     * calls ({@code .x(}, {@code ->f(}) excluded. Names with a leading underscore are already reserved.
+     */
+    static Set<String> calledNames(String text) {
+        var names = new HashSet<String>();
+        var m = CALLED.matcher(text);
+        while (m.find()) {
+            names.add(m.group(1));
+        }
+        return names;
     }
 
     private static List<String> concat(List<String> a, List<String> b) {

@@ -26,9 +26,11 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -158,6 +160,65 @@ public class TestTcCompilerBugs extends TornadoTestBase {
         doubleRemainder(a, expected);
         for (int i = 0; i < N; i++) {
             assertEquals(Double.doubleToRawLongBits(expected.get(i)), Double.doubleToRawLongBits(out.get(i)), "index " + i);
+        }
+    }
+
+    // ---------------------------------------------------------------- TC-4
+
+    // The locals keep their names in the kernel (javac -g): each is named like a function the emitter prints.
+    public static void localsNamedSinpi(FloatArray a, FloatArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            float sinpi = TornadoMath.sinpi(a.get(i));
+            float cospi = TornadoMath.cospi(a.get(i));
+            float sinpif = sinpi * 2.0f;
+            float cospif = cospi * 3.0f;
+            out.set(i, sinpi + cospi + sinpif + cospif);
+        }
+    }
+
+    /** TC-4: locals named {@code sinpi}, {@code cospi}, {@code sinpif}, {@code cospif} do not hide the builtins. */
+    @Test
+    public void testLocalsNamedLikeSinpiBuiltins() throws TornadoExecutionPlanException {
+        FloatArray a = new FloatArray(N);
+        for (int i = 0; i < N; i++) {
+            a.set(i, i * 0.125f);
+        }
+        FloatArray out = new FloatArray(N);
+        runOnDevice("tc4", new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestTcCompilerBugs::localsNamedSinpi, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        FloatArray expected = new FloatArray(N);
+        localsNamedSinpi(a, expected);
+        for (int i = 0; i < N; i++) {
+            assertEquals(expected.get(i), out.get(i), 1e-4f, "index " + i);
+        }
+    }
+
+    public static void localsNamedLlmax(LongArray x, LongArray out) {
+        for (@Parallel int i = 0; i < x.getSize(); i++) {
+            long llmax = Math.max(x.get(i), 7L);
+            long llmin = Math.min(x.get(i), -7L);
+            out.set(i, llmax * 1000 + llmin);
+        }
+    }
+
+    /** TC-4: locals named {@code llmax}, {@code llmin} do not hide CUDA's long min/max. */
+    @Test
+    public void testLocalsNamedLikeLongMinMaxBuiltins() throws TornadoExecutionPlanException {
+        LongArray x = new LongArray(N);
+        for (int i = 0; i < N; i++) {
+            x.set(i, (i - N / 2) * 3L);
+        }
+        LongArray out = new LongArray(N);
+        runOnDevice("tc4l", new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
+                .task("t0", TestTcCompilerBugs::localsNamedLlmax, x, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        LongArray expected = new LongArray(N);
+        localsNamedLlmax(x, expected);
+        for (int i = 0; i < N; i++) {
+            assertEquals(expected.get(i), out.get(i), "index " + i);
         }
     }
 }

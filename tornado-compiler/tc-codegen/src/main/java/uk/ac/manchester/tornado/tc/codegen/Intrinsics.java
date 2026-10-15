@@ -330,6 +330,11 @@ public final class Intrinsics {
         cudaTyped(name, "f64", f64 + "($0)");
     }
 
+    /** Every template of {@code dialect} (what {@link Naming} scans for the names it calls). */
+    static List<String> templates(Dialect dialect) {
+        return TABLE.entrySet().stream().filter(e -> e.getKey().dialect() == dialect).map(e -> e.getValue().template()).toList();
+    }
+
     /** The spelling of {@code name} for {@code dialect}, preferring a row for {@code type}. */
     public static Optional<Spelling> lookup(String name, Dialect dialect, Type type) {
         var typed = TABLE.get(new Key(name, dialect, type.text()));
