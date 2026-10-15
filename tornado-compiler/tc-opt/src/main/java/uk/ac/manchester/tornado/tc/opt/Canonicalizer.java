@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.tc.ir.Value;
 import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 
 /**
- * Constant folding and algebraic simplification (optimisation list items O2, O3) with Java
+ * Constant folding and algebraic simplification with Java
  * semantics (JLS §15, §5.1): integer arithmetic wraps, division truncates toward zero and
  * {@code MIN_VALUE / -1 == MIN_VALUE}, shift counts are masked to the width, float-to-integer
  * conversion saturates with NaN becoming 0, and floating-point folding uses Java's own IEEE
@@ -152,7 +152,7 @@ public final class Canonicalizer implements Pass {
     private static Optional<Value> laneOf(Inst read, Value vector, int lane) {
         Value current = vector;
         if (!(vector.type() instanceof Type.VectorType vec) || lane < 0 || lane >= vec.length()) {
-            return Optional.empty(); // malformed: left for the verifier (IR-3)
+            return Optional.empty(); // malformed: left for the verifier
         }
         while (current instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name)) {
             if (name.equals("tornado.vector.make")) {
@@ -185,7 +185,7 @@ public final class Canonicalizer implements Pass {
         while (current instanceof Inst i && i.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(INSERT)) {
             int lane = i.immediates().requireInt("lane");
             if (lane < 0 || lane >= lanes.length) {
-                return Optional.empty(); // malformed: left for the verifier (IR-3)
+                return Optional.empty(); // malformed: left for the verifier
             }
             if (lanes[lane] == null) {
                 lanes[lane] = i.operand(1);

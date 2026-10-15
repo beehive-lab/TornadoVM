@@ -661,7 +661,7 @@ public final class Structurizer {
         }
         // Only on an unconditional branch: the variable is written before the terminator, so on a
         // conditional one the other successor (or an expression inlined there) would read the new value
-        // where it expects the old one (design review CG-3).
+        // where it expects the old one.
         if (!(user.opcode() instanceof Opcode.Branch)) {
             return Optional.empty();
         }

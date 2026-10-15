@@ -24,10 +24,10 @@ import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 
-/** The three C3 design-test kernels, as TornadoVM users write them. */
-public final class C3Kernels {
+/** Basic kernels (vector add, if/else, block sum), as TornadoVM users write them. */
+public final class BasicKernels {
 
-    private C3Kernels() {
+    private BasicKernels() {
     }
 
     public static void add(KernelContext ctx, FloatArray a, FloatArray b, FloatArray c) {

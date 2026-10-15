@@ -27,9 +27,9 @@ import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;
 import uk.ac.manchester.tornado.api.types.vectors.Float4;
 
-/** Kernels for the design-review findings that compiled wrong or failed (design-review.md). */
-public final class ReviewKernels {
-    // TP-8: reductions are IR trees (sum, and max with Java NaN semantics)
+/** Kernels that once compiled wrong or were refused, kept as regression tests. */
+public final class RegressionKernels {
+    // Reductions are IR trees (sum, and max with Java NaN semantics)
     public static void sum(FloatArray in, @Reduce FloatArray out) {
         for (@Parallel int i = 0; i < in.getSize(); i++) {
             out.set(0, out.get(0) + in.get(i));
@@ -42,13 +42,13 @@ public final class ReviewKernels {
         }
     }
 
-    // TP-2: a reduction into out[1], not out[0]
+    // A reduction into out[1], not out[0]
     public static void reduceAtOne(FloatArray in, @Reduce FloatArray out) {
         for (@Parallel int i = 0; i < in.getSize(); i++) {
             out.set(1, out.get(1) + in.get(i));
         }
     }
-    // TP-4: two sibling parallel loops
+    // Two sibling parallel loops
     public static void siblings(IntArray a, IntArray b) {
         for (@Parallel int i = 0; i < a.getSize(); i++) {
             a.set(i, a.get(i) + 1);
@@ -57,7 +57,7 @@ public final class ReviewKernels {
             b.set(j, b.get(j) + 1);
         }
     }
-    // FE-4: a vector setter in a device helper
+    // A vector setter in a device helper
     static void bump(Float4 v) {
         v.setX(v.getX() + 1f);
     }
@@ -80,23 +80,23 @@ public final class ReviewKernels {
         f.set(0, 0, 10);
         out.set(0, f.get(0, 0));
     }
-    // TP-5: a length read through a ternary
+    // A length read through a ternary
     public static void lengthThroughMerge(FloatArray a, FloatArray b, IntArray out, int pick) {
         FloatArray x = pick > 0 ? a : b;
         out.set(0, x.getSize());
     }
-    // TP-14: a scalar parameter used early in the entry block
+    // A scalar parameter used early in the entry block
     public static void scalarEarly(IntArray out, int n) {
         out.set(0, n * 2);
     }
-    // TP-3: an index expression that is also a value, in a batch
+    // An index expression that is also a value, in a batch
     public static void batchShared(IntArray out) {
         for (@Parallel int i = 0; i < out.getSize(); i++) {
             int k = i + 1;
             out.set(k - 1, k);
         }
     }
-    // FE-5: a vector setter after a branch that defined another reference slot
+    // A vector setter after a branch that defined another reference slot
     public static void setterAfterBranch(FloatArray out, int c) {
         if (c > 0) {
             FloatArray x = out;

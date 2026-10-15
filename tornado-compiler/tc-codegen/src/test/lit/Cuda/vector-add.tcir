@@ -1,4 +1,4 @@
-; The C3 vector add after ABI lowering: kernel ABI, while-loop peephole, folded addresses,
+; A grid-stride vector add after ABI lowering: kernel ABI, while-loop peephole, folded addresses,
 ; Java line comments; the result compiles for sm_89.
 ; RUN: tc-emit %s | FileCheck %s
 ; RUN: tc-emit %s | nvcc-ptx

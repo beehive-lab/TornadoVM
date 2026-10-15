@@ -35,7 +35,7 @@ import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
- * Full unrolling of small constant-trip loops (optimisation list item O9). A loop made of a header
+ * Full unrolling of small constant-trip loops. A loop made of a header
  * and one body block, whose induction variable starts, steps and ends at constants, is replaced by
  * its iterations laid out in one straight-line block: indices become constants, so private arrays
  * indexed by them ({@code float[] r = new float[3]}) can live in registers. Tornado policy: only

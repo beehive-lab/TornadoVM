@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
 import uk.ac.manchester.tornado.tc.ir.Verifier;
 
 /**
- * Frontend coverage (gate C4a): translates every candidate kernel method in a jar and reports which
+ * Frontend coverage: translates every candidate kernel method in a jar and reports which
  * translate to verified TC-SSA and, for the others, which diagnostic stopped them. A candidate is a
  * static method with a TornadoVM native array, a {@code KernelContext} or a primitive array among
  * its parameters.

@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 
 /**
- * Loop-invariant code motion (optimisation list item O10, pure subset): pure instructions whose
+ * Loop-invariant code motion (pure instructions only): pure instructions whose
  * operands are all defined outside a loop move to the end of the loop's unique entry block. Pure
  * operations have no side effects and cannot trap (division is not pure), so executing them on the
  * entry path is always safe. Memory reads are not moved yet: that needs the memory-effect analysis.

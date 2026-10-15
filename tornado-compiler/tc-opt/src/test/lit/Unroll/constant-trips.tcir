@@ -1,4 +1,4 @@
-; Full unroll (O9): a loop with a constant start, step and bound and no nested control flow becomes
+; Full unroll: a loop with a constant start, step and bound and no nested control flow becomes
 ; its iterations in one block, so the private array is indexed by constants (registers in nvcc).
 ; Loops with an unknown bound, or more than 64 trips (1024 instructions unrolled; 4096 when the loop
 ; touches a private array), stay.

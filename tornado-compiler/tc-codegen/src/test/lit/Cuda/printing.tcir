@@ -1,4 +1,4 @@
-; Printing never changes meaning (design review CG-1, CG-2, CG-10):
+; Printing never changes meaning:
 ; - a negated negative operand prints -(-x), not the decrement --x;
 ; - an operand folded into a spelling template is parenthesised unless it fills a whole call
 ;   argument: (long long) (i + j) * 2, and x - (i * j);

@@ -246,7 +246,7 @@ public final class TcCompiler {
             }
             if (!c.atomics().initial().isEmpty()) {
                 // A child numbers its atomic slots from 0 like its parent and shares the parent's
-                // atomics region: refused until children get their own slot range (design review TP-1).
+                // atomics region: refused until children get their own slot range.
                 var p = parent.compilation();
                 var problem = new Diagnostic("TC-E3207", "kernel " + child + ", launched from the device, uses atomic counters", "", Loc.UNKNOWN);
                 return new Compilation(p.function(), p.target(), false, "", "", p.stages(), List.of(problem), p.nanos() + nanos, p.domain(), p.atomics(), p.features());
@@ -497,8 +497,8 @@ public final class TcCompiler {
     }
 
     /**
-     * Runs one stage. Its text form is rendered only when a dump or report needs it: profiling the
-     * C3 kernels showed that printing the IR costs as much as a lowering (decision review, C3).
+     * Runs one stage. Its text form is rendered only when a dump or report needs it: profiling showed
+     * that printing the IR costs as much as a lowering.
      */
     private void stage(String name, Kind kind, Runnable work, Supplier<String> render) {
         var event = new TcEvents.Stage();

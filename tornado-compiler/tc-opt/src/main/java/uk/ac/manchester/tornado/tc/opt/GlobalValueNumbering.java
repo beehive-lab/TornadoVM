@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.tc.ir.Value;
 import uk.ac.manchester.tornado.tc.ir.analysis.Analyses;
 
 /**
- * Dominator-based global value numbering (optimisation list item O6): a pure instruction that
+ * Dominator-based global value numbering: a pure instruction that
  * computes the same operation on the same operands as one in a dominating position is replaced by
  * it. Operands of commutative integer operations are put in a canonical order first. Constants are
  * numbered too, so each distinct constant appears once per dominator scope.
@@ -94,7 +94,7 @@ public final class GlobalValueNumbering implements Pass {
 
     /**
      * Opcode, type, operands and attributes (an attribute can change meaning). An operand without an
-     * ordinal is keyed by its own identity, never by a hash that two values could share (IR-5).
+     * ordinal is keyed by its own identity, never by a hash that two values could share.
      */
     private static Key key(Inst inst, Map<Value, Integer> ordinal) {
         var operands = new ArrayList<Object>();

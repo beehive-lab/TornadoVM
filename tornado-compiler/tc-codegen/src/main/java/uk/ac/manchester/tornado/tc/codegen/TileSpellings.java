@@ -72,7 +72,7 @@ final class TileSpellings {
         return required(CPP, dtype, "element type");
     }
 
-    /** A table entry that must exist: a missing one is an error, never the text "null" (CG-4). */
+    /** A table entry that must exist: a missing one is an error, never the text "null". */
     private static String required(Map<String, String> table, String key, String what) {
         var value = table.get(key);
         if (value == null) {
@@ -110,7 +110,7 @@ final class TileSpellings {
         return (TileType) v.type();
     }
 
-    /** A constant operand (an axis, a fill value): TileTyping guarantees it; anything else is an error, never 0 (CG-4). */
+    /** A constant operand (an axis, a fill value): TileTyping guarantees it; anything else is an error, never 0. */
     private static long intConstant(Value v) {
         return Constants.integer(v).orElseThrow(() -> new CEmitter.EmitException("TC-E3401", "a tile axis must be a compile-time constant"));
     }

@@ -22,7 +22,7 @@ import java.nio.file.*;
 import uk.ac.manchester.tornado.tc.ir.IrParser;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.*;
-/** Warm compile-time microbenchmark of the C3 kernels (decision review, C3). Run: java -cp <tc classes>:. CompileTimeBench <dir with .tcir>. */
+/** Warm compile-time microbenchmark of IR kernels. Run: java -cp <tc classes>:. CompileTimeBench <dir with .tcir>. */
 public class CompileTimeBench {
     public static void main(String[] a) throws Exception {
         var dir = Path.of(a[0]);

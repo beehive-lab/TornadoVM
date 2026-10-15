@@ -1,4 +1,4 @@
-; The C3 vector add after ABI lowering: kernel ABI, while-loop peephole, folded addresses,
+; A grid-stride vector add after ABI lowering: kernel ABI, while-loop peephole, folded addresses,
 ; Java line comments; the result type-checks with utils/mslcheck.
 ; RUN: tc-emit --target=metal --no-line-comments %s | FileCheck %s
 ; RUN: tc-emit --target=metal %s | mslcheck

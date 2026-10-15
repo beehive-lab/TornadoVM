@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
 
 /**
- * Inlines every call in a kernel (optimisation list item O1): GPU kernels are compiled as one
+ * Inlines every call in a kernel: GPU kernels are compiled as one
  * function, as on the Graal path. At a call, the block is split; the callee's blocks are cloned into
  * the caller with its parameters replaced by the call's operands; each {@code ret v} becomes a branch
  * to the continuation block, whose argument replaces the call's result. Repeats until no call is left.

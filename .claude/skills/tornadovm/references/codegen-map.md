@@ -43,7 +43,7 @@ Paths are under `tornado-compiler/<module>/src/main/java/uk/ac/manchester/tornad
   flag plus `break`/`do { } while (false)`.
 - **Clean room.** `SourceRules` (in every module's tests) and checkstyle fail the build on Graal,
   JVMCI or ASM imports.
-- **Differential check.** `tornado-compiler/utils/tc-diff.py run --device <d> --out DIR --against OLD`
-  runs the unit-test suites on one device and compares pass/fail and launch configurations with an
-  earlier run.
+- **Device check.** `tornado-selftest [-d B:D] [-g GROUP]` prints the `TargetCaps` TC uses for each
+  device and runs ~20 kernels (IR-level backend, @Parallel, KernelContext, types, Java semantics,
+  strict FP, warps, tensor cores) against the JVM; module `tornado-compiler/tc-selftest`.
 - **CUDA vs PTX** — `tornado-drivers/cuda` (CUDA C++ via NVRTC) is the CUDA backend; PTX is out of scope.

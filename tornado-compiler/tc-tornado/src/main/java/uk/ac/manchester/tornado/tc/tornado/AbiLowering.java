@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.tc.ir.Value;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
 /**
- * TornadoVM kernel ABI lowering (optimisation list item T7): Java-level arrays become byte pointers
+ * TornadoVM kernel ABI lowering: Java-level arrays become byte pointers
  * into global memory, following the native-array layout that TornadoVM's runtime uses: a header of
  * {@link TargetCaps#arrayHeaderBytes()} bytes whose first 64-bit word is the element count, followed
  * by the elements.
@@ -110,7 +110,7 @@ public final class AbiLowering {
             }
         }
         // An array chosen at run time (a ternary, a loop-carried array) reaches a block argument: it is
-        // the same device pointer as the parameters that flow into it (TP-5).
+        // the same device pointer as the parameters that flow into it.
         for (var block : function.blocks()) {
             if (block == function.entry()) {
                 continue;

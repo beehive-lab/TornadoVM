@@ -37,7 +37,7 @@ import uk.ac.manchester.tornado.tc.ir.analysis.CountedLoop;
  * {@code i + offset}, and every array index that depends on it is made chunk-local again by
  * subtracting {@code offset}. An index that is exactly the parallel index reads the chunk-local
  * {@code i} directly. Values and indices are handled per use, so an expression used as both
- * ({@code k = i + 1; a[k - 1] = k}) is right in both roles (design review TP-3).
+ * ({@code k = i + 1; a[k - 1] = k}) is right in both roles.
  */
 public final class BatchOffset {
 

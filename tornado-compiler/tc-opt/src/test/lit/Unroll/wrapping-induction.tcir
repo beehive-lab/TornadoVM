@@ -1,4 +1,4 @@
-; Full unroll (O9) counts trips with the induction variable wrapping at its own width, as Java does
+; Full unroll counts trips with the induction variable wrapping at its own width, as Java does
 ; (TC-2): `for (int i = 0; i < 2000000000; i += 1500000000)` runs 10 times (i turns negative at the
 ; third step), not 2. A loop whose wrapped variable keeps it inside for more than 64 trips stays a loop,
 ; for int and for long.

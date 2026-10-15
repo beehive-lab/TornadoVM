@@ -102,13 +102,9 @@ compiler when it is installed: `nvcc` (PTX), `utils/clbuild` (the OpenCL driver)
 -framework Foundation`) and `utils/mslcheck` (MSL against a mock `metal_stdlib`, anywhere). A `RUN:`
 line whose tool is missing is skipped.
 
-The GPU suites (`tornado-test`) cover TC through the runtime. The regression harness
-[`tc-diff.py`](utils/tc-diff.py) runs them per device and compares
-each test and each launch configuration with an earlier run:
-
-```bash
-python3 tornado-compiler/utils/tc-diff.py run --device 1:0 --out ~/tc-diff/new --against ~/tc-diff/old
-```
+The GPU suites (`tornado-test`) cover TC through the runtime. For a quick check of one machine,
+`tornado-selftest` ([below](#checking-tc-on-a-machine-tornado-selftest)) runs a small set of kernels
+on every device in a few seconds.
 
 ## Checking TC on a machine: tornado-selftest
 

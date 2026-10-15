@@ -373,7 +373,7 @@ public final class Verifier {
                 }
             }
             case Opcode.Call _c -> {
-                // Callee signatures are checked at module level once device functions exist (after C6).
+                // Callee signatures are not checked here: every call is inlined before code generation.
             }
             case Opcode.Intrinsic(var name) -> {
                 // Every intrinsic is described by the registry (its effects); an unknown one is a TC bug.

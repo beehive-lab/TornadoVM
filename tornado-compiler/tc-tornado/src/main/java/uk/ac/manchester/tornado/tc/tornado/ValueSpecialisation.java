@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
 
 /**
- * Value specialisation (optimisation list item T1): folds what is known about the actual task
+ * Value specialisation: folds what is known about the actual task
  * arguments into the kernel, as TornadoVM's task specialisation does on the Graal path. A kernel
  * compiled this way is valid only for those argument facts, so they are part of the compilation-cache
  * key.
@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.tc.ir.Value;
  * <ul>
  * <li>{@link Fact.Length}: {@code array.length} of that parameter becomes a constant. Required for
  * correctness, not just speed: on the device, the header of an array that is not copied in is not
- * initialised (C3 finding).</li>
+ * initialised.</li>
  * <li>{@link Fact.Scalar}: uses of a primitive parameter become the constant; the parameter stays in
  * the signature, as on the Graal path.</li>
  * </ul>
@@ -118,7 +118,7 @@ public final class ValueSpecialisation {
     /**
      * The length of an array chosen at run time ({@code x = c ? a : b}, a loop-carried array) folds
      * when every array that can reach it has the same known length: the device header of an array the
-     * kernel only writes is not initialised, so a length read there would be garbage (TP-5).
+     * kernel only writes is not initialised, so a length read there would be garbage.
      */
     private static int foldMergedLengths(Function function, List<Fact> facts) {
         var lengths = new java.util.IdentityHashMap<Value, Long>();
@@ -229,7 +229,7 @@ public final class ValueSpecialisation {
                     }
                 }
                 case Fact.Scalar(var value) when param.hasUses() && (param.type().isInteger() || param.type().isFloat()) -> {
-                    // At the start of the entry block, so it dominates every use (TP-14).
+                    // At the start of the entry block, so it dominates every use.
                     var entry = function.entry();
                     var b = new IrBuilder(entry);
                     if (!entry.insts().isEmpty()) {

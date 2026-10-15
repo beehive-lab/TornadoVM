@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 
 /**
- * Math optimisations that trade exact IEEE results for speed (optimisation list item O12), applied
+ * Math optimisations that trade exact IEEE results for speed, applied
  * only when {@code tornado.enable.mathOptimizations} is on, as on the Graal path:
  * {@code 1 / sqrt(x)} becomes {@code rsqrt(x)} (a single approximate instruction on the GPU instead
  * of an IEEE square root followed by an IEEE division).

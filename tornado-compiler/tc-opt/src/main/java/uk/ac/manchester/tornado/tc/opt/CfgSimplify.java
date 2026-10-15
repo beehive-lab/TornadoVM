@@ -33,7 +33,7 @@ import uk.ac.manchester.tornado.tc.ir.Opcode;
 import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
 
 /**
- * Control-flow simplification (optimisation list item O4): conditional branches on constants
+ * Control-flow simplification: conditional branches on constants
  * become branches, a block with a single predecessor that branches only to it is merged into that
  * predecessor, and unreachable blocks are removed.
  */

@@ -282,10 +282,10 @@ public class TcCompilerTest {
 
     private static TcCompiler.Compilation review(String kernel, java.util.List<uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact> facts) {
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
-        return TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ReviewKernels", kernel, TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, facts);
+        return TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.RegressionKernels", kernel, TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, facts);
     }
 
-    /** Design review TP-4: sibling @Parallel loops share dimension x (they ran once per thread of each other). */
+    /** Sibling @Parallel loops share dimension x (they ran once per thread of each other). */
     @Test
     public void siblingParallelLoopsShareADimension() {
         var c = review("siblings", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(100), new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(50)));
@@ -295,8 +295,8 @@ public class TcCompilerTest {
         assertEquals(100, c.domain().get(0).upper());
     }
 
-    /** Design review TP-2: a reduction into out[1] is refused, not lowered into the partials. */
-    /** TP-8: a work-group reduction is an IR tree the dialect prints like any loop, sized from TargetCaps. */
+    /** A reduction into out[1] is refused, not lowered into the partials. */
+    /** A work-group reduction is an IR tree the dialect prints like any loop, sized from TargetCaps. */
     @Test
     public void reductionsAreIrTreesSizedByTheTarget() {
         var facts = java.util.List.<uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact>of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(4096),
@@ -327,7 +327,7 @@ public class TcCompilerTest {
         assertEquals("TC-E1011", read.diagnostics().get(0).code());
     }
 
-    /** Design review FE-4: a helper that changes its vector argument is refused (the change was lost). */
+    /** A helper that changes its vector argument is refused (the change was lost). */
     @Test
     public void helperChangingAVectorArgumentIsRefused() {
         var c = review("helperSetter", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(1)));
@@ -335,7 +335,7 @@ public class TcCompilerTest {
         assertEquals("TC-E1012", c.diagnostics().get(0).code());
     }
 
-    /** Design review TP-5: an array chosen at run time is lowered, and its length folds when all candidates agree. */
+    /** An array chosen at run time is lowered, and its length folds when all candidates agree. */
     @Test
     public void arraysThroughMergesAreLoweredAndTheirLengthsFold() {
         var L = new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(10);
@@ -348,7 +348,7 @@ public class TcCompilerTest {
         assertTrue(different.succeeded(), different.diagnostics().toString());
     }
 
-    /** Design review TP-3: in a batch, values see the global index and array indices stay chunk-local, per use. */
+    /** In a batch, values see the global index and array indices stay chunk-local, per use. */
     @Test
     public void batchIndexIsGlobalAsValueAndLocalAsIndex() {
         var c = review("batchShared", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(100),
@@ -358,7 +358,7 @@ public class TcCompilerTest {
                 && c.source().contains("out_data[(int) ((unsigned int) (int) ((unsigned int) k - (unsigned int) 1) - (unsigned int) 1000)] = k;"), c.source());
     }
 
-    /** Design review FE-5 (not reproduced): a vector setter after a branch that defined another reference compiles. */
+    /** Not reproduced as a failure: a vector setter after a branch that defined another reference compiles. */
     @Test
     public void vectorSetterAfterABranchCompiles() {
         var c = review("setterAfterBranch", java.util.List.of(new uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact.Length(2),

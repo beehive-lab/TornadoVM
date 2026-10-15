@@ -45,7 +45,7 @@ import uk.ac.manchester.tornado.tc.ir.analysis.LoopForest;
 import uk.ac.manchester.tornado.tc.ir.analysis.LoopShape;
 
 /**
- * Lowers {@code @Parallel} loops (optimisation list item T2) for GPU targets: every loop whose header
+ * Lowers {@code @Parallel} loops for GPU targets: every loop whose header
  * carries {@code parallel(iv=k)} becomes a grid-stride loop over dimension {@code d}:
  *
  * <pre>
@@ -156,7 +156,7 @@ public final class ParallelLoopLowering {
     }
 
     /**
-     * The launch domain of the lowered loops (optimisation list item T3), read back from the function
+     * The launch domain of the lowered loops, read back from the function
      * attributes {@code domain(dim,offset,step,upper)}; empty when a bound is not constant.
      */
     public static List<Domain> domain(Function function) {

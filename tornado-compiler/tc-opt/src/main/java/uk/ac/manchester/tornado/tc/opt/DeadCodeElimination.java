@@ -28,7 +28,7 @@ import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
 
 /**
- * Dead-code elimination (optimisation list item O5): removes instructions whose result is unused and
+ * Dead-code elimination: removes instructions whose result is unused and
  * that have no side effects (pure operations, loads, array lengths, allocations), and block arguments
  * that no instruction reads, together with the values passed for them.
  */
