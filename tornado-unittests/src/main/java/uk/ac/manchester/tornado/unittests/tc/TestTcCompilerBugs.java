@@ -367,4 +367,64 @@ public class TestTcCompilerBugs extends TornadoTestBase {
             assertEquals(Long.toHexString(doubles[i % 2]), Long.toHexString(out.get(i)), "index " + i);
         }
     }
+
+    // ---------------------------------------------------------------- TC-10
+
+    /** A class and a method whose names are not ASCII. */
+    public static final class Größe {
+        public static void kernelÄ(IntArray a) {
+            for (@Parallel int i = 0; i < a.getSize(); i++) {
+                a.set(i, a.get(i) * 2 + 1);
+            }
+        }
+    }
+
+    /** {@code TestTcCompilerBugs$A$B.m}: its entry name must not be {@code TestTcCompilerBugs$A_B.m}'s. */
+    public static final class A {
+        public static final class B {
+            public static void m(IntArray a) {
+                for (@Parallel int i = 0; i < a.getSize(); i++) {
+                    a.set(i, a.get(i) + 10);
+                }
+            }
+        }
+    }
+
+    public static final class A_B {
+        public static void m(IntArray a) {
+            for (@Parallel int i = 0; i < a.getSize(); i++) {
+                a.set(i, a.get(i) + 20);
+            }
+        }
+    }
+
+    /** TC-10: non-ASCII class and method names give a valid entry point. */
+    @Test
+    public void testNonAsciiKernelName() throws TornadoExecutionPlanException {
+        IntArray a = new IntArray(N);
+        a.init(3);
+        runOnDevice("tc10", new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", Größe::kernelÄ, a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a));
+        for (int i = 0; i < N; i++) {
+            assertEquals(7, a.get(i), "index " + i);
+        }
+    }
+
+    /** TC-10: {@code A$B.m} and {@code A_B.m} in one graph keep apart (they used to share an entry name). */
+    @Test
+    public void testDollarAndUnderscoreKernelNamesDoNotCollide() throws TornadoExecutionPlanException {
+        IntArray x = new IntArray(N);
+        IntArray y = new IntArray(N);
+        runOnDevice("tc10b", new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y) //
+                .task("t0", A.B::m, x) //
+                .task("t1", A_B::m, y) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, x, y));
+        for (int i = 0; i < N; i++) {
+            assertEquals(10, x.get(i), "A$B.m index " + i);
+            assertEquals(20, y.get(i), "A_B.m index " + i);
+        }
+    }
 }

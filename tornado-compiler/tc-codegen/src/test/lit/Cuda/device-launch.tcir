@@ -22,7 +22,7 @@
 ; CHECK-NEXT:    {
 ; CHECK-NEXT:      dim3 _dp_block(1, 1, 1);
 ; CHECK-NEXT:      dim3 _dp_grid(1, 1, 1);
-; CHECK-NEXT:      pkg_Kernels_Inner_sum_dp<<<_dp_grid, _dp_block, 0, cudaStreamTailLaunch>>>(_kernel_context, _constant_region, _local_region, _atomics, a, 2.5f);
+; CHECK-NEXT:      pkg_Kernels_Inner_sum_dp_f2771ac8<<<_dp_grid, _dp_block, 0, cudaStreamTailLaunch>>>(_kernel_context, _constant_region, _local_region, _atomics, a, 2.5f);
 ; CHECK-NEXT:      tc_device_launch_check(_kernel_context, "Kernels$Inner.sum", "? -> Kernels$Inner.sum (device launch, TAIL)", 1, 1, 1, _dp_grid, _dp_block);
 ; CHECK-NEXT:    }
 ; CHECK-NEXT:  }

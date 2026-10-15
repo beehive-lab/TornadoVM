@@ -117,7 +117,7 @@ public final class CEmitter {
 
     /** Its entry point, as {@link #entryName} spells that function name: {@code Owner_method_dp}. */
     public static String deviceKernelEntry(String ownerDotMethod) {
-        return deviceKernelName(ownerDotMethod).replace('.', '_').replace('$', '_');
+        return symbol(deviceKernelName(ownerDotMethod));
     }
 
     /**
@@ -253,9 +253,35 @@ public final class CEmitter {
         }
     }
 
-    /** The entry-point name for a TC function name (dots and dollars become underscores). */
+    /** The entry-point name for a TC function name ({@link #symbol}). */
     public static String entryName(Function function) {
-        return function.name().replace('.', '_').replace('$', '_');
+        return symbol(function.name());
+    }
+
+    /**
+     * A C identifier for a TC function name ({@code Class.method}): the dot becomes {@code _}; any other
+     * character outside {@code [A-Za-z0-9_]} ({@code $} of a nested class, a non-ASCII letter) becomes
+     * {@code _} and adds a suffix from the name's hash, so names that differ only there stay apart
+     * ({@code A$B.m} and {@code A_B.m}). Plain names are unchanged.
+     */
+    public static String symbol(String name) {
+        var sb = new StringBuilder(name.length() + 9);
+        boolean mangled = false;
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch == '.') {
+                sb.append('_');
+            } else if (ch < 128 && (Character.isLetterOrDigit(ch) || ch == '_')) {
+                sb.append(ch);
+            } else {
+                sb.append('_');
+                mangled = true;
+            }
+        }
+        if (mangled) {
+            sb.append('_').append(String.format("%08x", name.hashCode()));
+        }
+        return sb.length() > 0 && Character.isDigit(sb.charAt(0)) ? "k" + sb : sb.toString();
     }
 
     // ---------------------------------------------------------------- kernel

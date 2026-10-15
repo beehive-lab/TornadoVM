@@ -132,4 +132,15 @@ public class NamingTest {
         }
         assertTrue(checked > 10, "the scan found the emitter's spellings");
     }
+
+    /** TC-10: entry names are C identifiers, and names that only differ in mangled characters stay apart. */
+    @Test
+    public void entryNamesAreIdentifiersAndDistinct() {
+        assertEquals("VectorAdd_add", CEmitter.symbol("VectorAdd.add"));
+        var nonAscii = CEmitter.symbol("Größe.kernelÄ");
+        assertTrue(nonAscii.matches("[A-Za-z_][A-Za-z0-9_]*"), nonAscii);
+        assertTrue(!CEmitter.symbol("A$B.m").equals(CEmitter.symbol("A_B.m")), CEmitter.symbol("A$B.m"));
+        assertTrue(!CEmitter.symbol("Gr\u00f6\u00dfe.m").equals(CEmitter.symbol("Gr\u00f6\u00e9e.m")));
+        assertEquals(CEmitter.symbol("A$B.m"), CEmitter.symbol("A$B.m"));
+    }
 }
