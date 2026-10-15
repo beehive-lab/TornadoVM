@@ -40,6 +40,11 @@ on:
         required: false
         type: boolean
         default: false
+      jdks:
+        description: 'JSON list of JDK profiles to deploy (e.g. ["jdk21"] to redo one leg whose coordinates are not on Central yet).'
+        required: false
+        type: string
+        default: '["jdk21", "jdk22plus"]'
 
 jobs:
   deploy:
@@ -53,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [jdk21, jdk22plus]
+        jdk: ${{ fromJSON(inputs.jdks || '["jdk21", "jdk22plus"]') }}
     env:
       MAVEN_HOME: /opt/maven
     steps:
@@ -152,6 +157,11 @@ jobs:
       - name: Import GPG key
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          # Let gpg-agent grow its secure-memory pool instead of failing concurrent signings
+          # with "Cannot allocate memory" (belt and braces alongside the serial deploy below).
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          grep -qx 'auto-expand-secmem' ~/.gnupg/gpg-agent.conf 2>/dev/null || echo 'auto-expand-secmem' >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
         env:
           GPG_TTY: $(tty)
 
@@ -160,7 +170,13 @@ jobs:
         run: |
           # cuda-backend only puts tornado-drivers/cuda in the reactor; -pl keeps the native
           # *-jni shims (CMake, need the CUDA toolkit) out, and they stay in the SDK.
+          # -T 1 overrides .mvn/maven.config's -T1.5C: ~11 modules reach maven-gpg-plugin at
+          # once in a parallel build and gpg-agent fails some with "signing failed: Cannot
+          # allocate memory". The failed module makes Maven skip tornado-drivers-cuda, and the
+          # central-publishing plugin then waits forever for it ("Waiting for other projects
+          # build to finish..."), hiding the real error until the job timeout.
           mvn clean deploy \
+            -T 1 \
             -P${{ matrix.jdk }},cuda-backend,release \
             -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
             -am \
