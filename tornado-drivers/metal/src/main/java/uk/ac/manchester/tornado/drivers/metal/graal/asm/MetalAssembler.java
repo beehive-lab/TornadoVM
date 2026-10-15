@@ -1390,12 +1390,12 @@ public final class MetalAssembler extends Assembler {
         // @formatter:off
 
         public static final MetalOp8 VMOV_SHORT8 = new MetalOp8("(short8)");
-        public static final MetalOp8 VMOV_INT8 = new MetalOp8("(int8)");
-        public static final MetalOp8 VMOV_FLOAT8 = new MetalOp8("(float8)");
+        public static final MetalOp8 VMOV_INT8 = new MetalOp8("(tornado_int8)");
+        public static final MetalOp8 VMOV_FLOAT8 = new MetalOp8("(tornado_float8)");
         public static final MetalOp8 VMOV_BYTE8 = new MetalOp8("(char8)");
         public static final MetalOp8 VMOV_DOUBLE8 = new MetalOp8("(double8)");
 
-        public static final MetalOp8 VMOV_HALF8 = new MetalOp8("(half8)");
+        public static final MetalOp8 VMOV_HALF8 = new MetalOp8("(tornado_half8)");
 
         // @formatter:on
 

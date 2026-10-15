@@ -147,8 +147,8 @@ public class MetalVectorAssign {
 
         @Override
         public void emit(MetalCompilationResultBuilder crb, MetalAssembler asm) {
-            // float8/int8/half8 are custom structs { elem4 lo, hi }, not native Metal types.
-            // Use C++11 aggregate initialization: int8{int4(s0..s3), int4(s4..s7)}
+            // float8/int8/half8 are preamble structs { elem4 lo, hi }, not native Metal types.
+            // Use C++11 aggregate initialization: tornado_int8{int4(s0..s3), int4(s4..s7)}
             String elem = ((MetalKind) getMetalPlatformKind()).getElementKind().toString();
             String vec4 = elem + "4";
             String kind = getMetalPlatformKind().toString();
@@ -214,7 +214,7 @@ public class MetalVectorAssign {
             // Use C++11 nested aggregate initialization.
             String elem = ((MetalKind) getMetalPlatformKind()).getElementKind().toString();
             String vec4 = elem + "4";
-            String vec8 = elem + "8";
+            String vec8 = MetalKind.EXTENDED_VECTOR_PREFIX + elem + "8";
             String kind = getMetalPlatformKind().toString();
             asm.emit(kind + "{" + vec8 + "{" + vec4 + "(");
             asm.emitValue(crb, s0);
