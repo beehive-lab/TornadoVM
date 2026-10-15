@@ -312,13 +312,15 @@ public final class Canonicalizer implements Pass {
                 if (from.equals(Type.F32) && to.equals(Type.I32)) {
                     yield Optional.of((long) Float.floatToRawIntBits(c.floatValue()));
                 }
-                if (from.equals(Type.I32) && to.equals(Type.F32)) {
+                // A NaN stays a bit cast of its integer bits: a float constant is carried as a double,
+                // and widening a signalling NaN quietens it (0x7f800001 would become 0x7fc00001).
+                if (from.equals(Type.I32) && to.equals(Type.F32) && !Float.isNaN(Float.intBitsToFloat((int) c.longValue()))) {
                     yield Optional.of((double) Float.intBitsToFloat((int) c.longValue()));
                 }
                 if (from.equals(Type.F64) && to.equals(Type.I64)) {
                     yield Optional.of(Double.doubleToRawLongBits(c.doubleValue()));
                 }
-                if (from.equals(Type.I64) && to.equals(Type.F64)) {
+                if (from.equals(Type.I64) && to.equals(Type.F64) && !Double.isNaN(Double.longBitsToDouble(c.longValue()))) {
                     yield Optional.of(Double.longBitsToDouble(c.longValue()));
                 }
                 yield Optional.empty();

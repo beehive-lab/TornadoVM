@@ -322,4 +322,49 @@ public class TestTcCompilerBugs extends TornadoTestBase {
         assertFalse(failure.contains("TC-E9003"), failure);
         assertTrue(failure.isEmpty() || failure.contains("TC-E1003"), failure);
     }
+
+    // ---------------------------------------------------------------- TC-9
+
+    public static void floatNanBits(IntArray out) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            int k = i % 4;
+            int f = k == 0 ? Float.floatToRawIntBits(Float.intBitsToFloat(0x7f800001)) // signalling
+                    : k == 1 ? Float.floatToRawIntBits(Float.intBitsToFloat(0x7fc00001)) // quiet, with a payload
+                            : k == 2 ? Float.floatToRawIntBits(Float.intBitsToFloat(0xffc00000)) // negative
+                                    : Float.floatToRawIntBits(Float.intBitsToFloat(0xff800123));
+            out.set(i, f);
+        }
+    }
+
+    public static void doubleNanBits(LongArray out) {
+        for (@Parallel int i = 0; i < out.getSize(); i++) {
+            out.set(i, (i % 2 == 0) ? Double.doubleToRawLongBits(Double.longBitsToDouble(0x7ff0000000000001L)) : Double.doubleToRawLongBits(Double.longBitsToDouble(0x7ff8000000000123L)));
+        }
+    }
+
+    /** TC-9: float NaN constants keep their bits (signalling, payload and sign) through folding and printing. */
+    @Test
+    public void testNanConstantsKeepTheirBits() throws TornadoExecutionPlanException {
+        IntArray out = new IntArray(8);
+        runOnDevice("tc9", new TaskGraph("s0") //
+                .task("t0", TestTcCompilerBugs::floatNanBits, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        int[] floats = { 0x7f800001, 0x7fc00001, 0xffc00000, 0xff800123 };
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals(Integer.toHexString(floats[i % 4]), Integer.toHexString(out.get(i)), "index " + i);
+        }
+    }
+
+    /** TC-9: double NaN constants keep their bits too. */
+    @Test
+    public void testDoubleNanConstantsKeepTheirBits() throws TornadoExecutionPlanException {
+        LongArray out = new LongArray(4);
+        runOnDevice("tc9d", new TaskGraph("s0") //
+                .task("t0", TestTcCompilerBugs::doubleNanBits, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out));
+        long[] doubles = { 0x7ff0000000000001L, 0x7ff8000000000123L };
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals(Long.toHexString(doubles[i % 2]), Long.toHexString(out.get(i)), "index " + i);
+        }
+    }
 }

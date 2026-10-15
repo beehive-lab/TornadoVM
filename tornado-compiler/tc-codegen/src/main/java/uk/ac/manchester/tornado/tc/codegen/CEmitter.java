@@ -1030,9 +1030,10 @@ public final class CEmitter {
     private R floatConstant(double value, Type type) {
         boolean single = !type.equals(Type.F64);
         if (Double.isNaN(value) || Double.isInfinite(value)) {
-            // NaN and infinities from their bits (C has no portable literal for them).
-            var bits = single ? (Double.isNaN(value) ? "0x7fc00000" : value > 0 ? "0x7f800000" : "0xff800000")
-                    : (Double.isNaN(value) ? "0x7ff8000000000000" : value > 0 ? "0x7ff0000000000000" : "0xfff0000000000000") + dialect.longSuffix();
+            // NaN and infinities from their bits (C has no portable literal for them); a NaN keeps its
+            // sign and payload (a constant reaches here as a double, so a float NaN is already quiet).
+            var bits = single ? "0x" + Integer.toHexString(Float.floatToRawIntBits((float) value))
+                    : "0x" + Long.toHexString(Double.doubleToRawLongBits(value)) + dialect.longSuffix();
             var fn = single ? dialect.bitcast(Type.I32, Type.F32, features) : dialect.bitcast(Type.I64, Type.F64, features);
             return new R(fn + "(" + bits + ")", ATOM);
         }
