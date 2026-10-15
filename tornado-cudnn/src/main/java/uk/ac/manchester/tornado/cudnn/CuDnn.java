@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
 /**
- * Factory methods for NVIDIA cuDNN library tasks (FP32, NCHW layout).
+ * Factory methods for NVIDIA cuDNN library tasks (NCHW layout; FP32 unless named FP16).
  *
  * <pre>
  * taskGraph.libraryTask("conv", CuDnn::cudnnConv2d,
@@ -129,6 +129,22 @@ public final class CuDnn {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cudnnConv2d") //
+                .withParameters(new Object[] { input, filter, output, n, c, h, w, k, r, s, pad, stride }) //
+                .withAccess(accesses);
+    }
+
+    /**
+     * {@link #cudnnConv2d} on FP16 tensors: NCHW input and output, KCRS filter, accumulated in FP32
+     * on the tensor cores where the device has them.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dFP16(HalfFloatArray input, HalfFloatArray filter, HalfFloatArray output, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+        Access[] accesses = new Access[12];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[2] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cudnnConv2dFP16") //
                 .withParameters(new Object[] { input, filter, output, n, c, h, w, k, r, s, pad, stride }) //
                 .withAccess(accesses);
     }
