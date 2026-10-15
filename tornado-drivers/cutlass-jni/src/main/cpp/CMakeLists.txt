@@ -37,7 +37,9 @@ endif()
 
 project (TornadoCutlass CXX CUDA)
 
-find_package(JNI REQUIRED)
+# Only the JNI headers are used. Without components FindJNI also requires AWT, which headless JDKs
+# (containers, CI) do not ship; asking for JVM alone needs CMake 3.24 (older versions ignore it).
+find_package(JNI REQUIRED COMPONENTS JVM)
 
 # CUTLASS 3.5.1 requires CUDA 12.0+. On older toolkits its headers fail to
 # compile (e.g. nvcc 11.x + GCC 11 chokes on libstdc++ <functional> with
