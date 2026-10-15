@@ -83,7 +83,8 @@ public class MetalContext implements MetalContextInterface {
     /**
      * @param compileFlags
      *     bitmask of MSL compile options forwarded to {@code MTLCompileOptions}.
-     *     Bit 0 ({@link #METAL_COMPILE_FAST_MATH}) enables fast/relaxed math.
+     *     Bit 0 ({@link #METAL_COMPILE_FAST_MATH}) enables fast/relaxed math; bit 1
+     *     ({@link #METAL_COMPILE_STRICT}) turns it off explicitly (a strict plan).
      */
     long metalCreateProgramWithSource(long contextId, byte[] data, long[] lengths, int compileFlags) throws MetalException {
         return MetalObjects.createProgramWithSource(contextId, data, compileFlags);
@@ -149,10 +150,21 @@ public class MetalContext implements MetalContextInterface {
     /** Bit 0: compile MSL with fast/relaxed math (MTLMathModeFast). Mirrored in {@link MetalObjects}. */
     private static final int METAL_COMPILE_FAST_MATH = 1;
 
+    /** Bit 1: compile MSL with fast math off (a strict-floating-point plan). Mirrored in {@link MetalObjects}. */
+    private static final int METAL_COMPILE_STRICT = 2;
+
     public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext) {
+        return createProgramWithSource(source, lengths, deviceContext, false);
+    }
+
+    /**
+     * {@code strictFloatingPoint}: fast math off whatever {@code tornado.metal.fastmath} says. Without
+     * options Metal compiles with its own default, which has fast math on.
+     */
+    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext, boolean strictFloatingPoint) {
         MetalProgram program = null;
 
-        int compileFlags = TornadoOptions.METAL_FAST_MATH ? METAL_COMPILE_FAST_MATH : 0;
+        int compileFlags = strictFloatingPoint ? METAL_COMPILE_STRICT : TornadoOptions.METAL_FAST_MATH ? METAL_COMPILE_FAST_MATH : 0;
         try {
             program = new MetalProgram(metalCreateProgramWithSource(contextID, source, lengths, compileFlags), deviceContext);
         } catch (MetalException e) {

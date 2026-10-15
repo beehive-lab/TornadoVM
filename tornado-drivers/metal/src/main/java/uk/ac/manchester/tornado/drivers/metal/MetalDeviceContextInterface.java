@@ -77,6 +77,11 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
 
     MetalProgram createProgramWithSource(byte[] source, long[] lengths);
 
+    /** As above; {@code strictFloatingPoint} (a plan's withStrictFloatingPoint()) compiles without fast math. */
+    default MetalProgram createProgramWithSource(byte[] source, long[] lengths, boolean strictFloatingPoint) {
+        return createProgramWithSource(source, lengths);
+    }
+
     MetalProgram createProgramWithBinary(byte[] binary, long[] lengths);
 
     MetalProgram createProgramWithIL(byte[] binary, long[] lengths);

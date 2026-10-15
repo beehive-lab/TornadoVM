@@ -213,6 +213,10 @@ final class MetalDialect implements CDialect {
         var lines = new ArrayList<String>();
         lines.add("#include <metal_stdlib>");
         lines.add("using namespace metal;");
+        if (features.contains(Feature.NO_CONTRACT)) {
+            // A strict plan: a * b + c is not fused into fma (MSL is clang C++, which contracts by default).
+            lines.add("#pragma clang fp contract(off)");
+        }
         // Java's float-to-integer conversions: NaN is 0, out-of-range values saturate. Guarded: a module
         // with several functions prints the preamble once per function.
         lines.add("#ifndef TC_F2I");

@@ -427,4 +427,80 @@ public class TestTcCompilerBugs extends TornadoTestBase {
             assertEquals(20, y.get(i), "A_B.m index " + i);
         }
     }
+
+    // ---------------------------------------------------------------- S-1
+
+    public static void ieeeEdges(FloatArray a, FloatArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            float x = a.get(i);
+            out.set(4 * i, 0.0f + x); // a denormal stays a denormal
+            out.set(4 * i + 1, x - x); // NaN for infinities and NaN
+            out.set(4 * i + 2, x * 0.0f); // NaN for infinities, -0.0 for negatives
+            out.set(4 * i + 3, x / x); // NaN for zero, infinities and NaN
+        }
+    }
+
+    private static FloatArray ieeeInputs() {
+        float[] values = { Float.MIN_VALUE, -Float.MIN_VALUE, 1.0e-40f, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NaN, 0.0f, -3.0f };
+        FloatArray a = new FloatArray(values.length);
+        for (int i = 0; i < values.length; i++) {
+            a.set(i, values[i]);
+        }
+        return a;
+    }
+
+    /**
+     * S-1: under withStrictFloatingPoint() OpenCL builds without -cl-fast-relaxed-math: denormals,
+     * NaNs and signed zeros come out as Java computes them.
+     */
+    @Test
+    public void testStrictFloatingPointKeepsIeeeEdgeCases() throws TornadoExecutionPlanException {
+        FloatArray a = ieeeInputs();
+        FloatArray out = new FloatArray(4 * a.getSize());
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", TestTcCompilerBugs::ieeeEdges, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withStrictFloatingPoint().execute();
+        }
+        FloatArray expected = new FloatArray(out.getSize());
+        ieeeEdges(a, expected);
+        for (int i = 0; i < out.getSize(); i++) {
+            // Java fixes which results are NaN, not the bits of a NaN arithmetic produces (x86 and GPUs differ).
+            if (Float.isNaN(expected.get(i))) {
+                assertTrue(Float.isNaN(out.get(i)), "index " + i + " (input " + a.get(i / 4) + "): " + out.get(i));
+            } else {
+                assertEquals(Integer.toHexString(Float.floatToRawIntBits(expected.get(i))), Integer.toHexString(Float.floatToRawIntBits(out.get(i))), "index " + i + " (input " + a.get(i / 4) + ")");
+            }
+        }
+    }
+
+    public static void divide(DoubleArray a, DoubleArray b, DoubleArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, a.get(i) / b.get(i));
+        }
+    }
+
+    /** S-1: strict double division is correctly rounded ((double) 7 / 3 is 2.3333333333333335). */
+    @Test
+    public void testStrictFloatingPointDivisionIsCorrectlyRounded() throws TornadoExecutionPlanException {
+        DoubleArray a = new DoubleArray(N);
+        DoubleArray b = new DoubleArray(N);
+        for (int i = 0; i < N; i++) {
+            a.set(i, 7 + i);
+            b.set(i, 3);
+        }
+        DoubleArray out = new DoubleArray(N);
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", TestTcCompilerBugs::divide, a, b, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withStrictFloatingPoint().execute();
+        }
+        for (int i = 0; i < N; i++) {
+            assertEquals(Double.doubleToRawLongBits(a.get(i) / b.get(i)), Double.doubleToRawLongBits(out.get(i)), "index " + i);
+        }
+    }
 }

@@ -252,7 +252,7 @@ public class MetalCodeCache {
     public MetalInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {
         logger.info("Installing code for %s into code cache", entryPoint);
 
-        final MetalProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+        final MetalProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length }, meta.isStrictFloatingPoint());
 
         if (METAL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDirectory();

@@ -178,6 +178,11 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     @Override
+    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, boolean strictFloatingPoint) {
+        return context.createProgramWithSource(source, lengths, this, strictFloatingPoint);
+    }
+
+    @Override
     public MetalProgram createProgramWithBinary(byte[] binary, long[] lengths) {
         return context.createProgramWithBinary(device.getDevicePointer(), binary, lengths, this);
     }

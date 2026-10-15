@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.tc.lower.Structurizer;
 
 /**
  * The {@code tc-emit} tool: reads post-ABI TC-SSA, verifies it, structures it and prints target
- * source. {@code tc-emit [--target=cuda|opencl|metal] [--no-line-comments] <file | ->}.
+ * source. {@code tc-emit [--target=cuda|opencl|metal] [--no-line-comments] [--no-contract] <file | ->}.
  */
 public final class EmitTool {
 
@@ -56,6 +56,7 @@ public final class EmitTool {
     public static Result run(List<String> args, String stdin) {
         var target = TargetCaps.CUDA_SM89;
         var lineComments = true;
+        var contract = true;
         String file = null;
         for (var arg : args) {
             switch (arg) {
@@ -63,6 +64,8 @@ public final class EmitTool {
                 case "--target=opencl" -> target = TargetCaps.OPENCL_GENERIC;
                 case "--target=metal" -> target = TargetCaps.METAL_APPLE;
                 case "--no-line-comments" -> lineComments = false;
+                // A plan with withStrictFloatingPoint(): no a * b + c contraction.
+                case "--no-contract" -> contract = false;
                 default -> {
                     if (arg.startsWith("-") && !arg.equals("-")) {
                         return new Result(2, "", "tc-emit: unknown option " + arg + "\n");
@@ -82,7 +85,7 @@ public final class EmitTool {
             }
             var out = new StringBuilder();
             for (var function : module.functions()) {
-                out.append(CEmitter.emit(Structurizer.structure(function), target, lineComments).source()).append('\n');
+                out.append(CEmitter.emit(Structurizer.structure(function), target, lineComments, "?", contract).source()).append('\n');
             }
             return new Result(0, out.toString(), "");
         } catch (IOException e) {
