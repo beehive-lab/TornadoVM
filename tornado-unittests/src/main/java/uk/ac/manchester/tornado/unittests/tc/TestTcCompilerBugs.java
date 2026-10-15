@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -450,8 +451,10 @@ public class TestTcCompilerBugs extends TornadoTestBase {
     }
 
     /**
-     * S-1: under withStrictFloatingPoint() OpenCL builds without -cl-fast-relaxed-math: denormals,
-     * NaNs and signed zeros come out as Java computes them.
+     * S-1: under withStrictFloatingPoint() the backends build without fast math: denormals, NaNs and
+     * signed zeros come out as Java computes them. Apple GPUs flush float subnormals to zero even
+     * then (M3 Pro: 0.0f + Float.MIN_VALUE is +0.0), so on Metal the subnormal inputs are not
+     * compared; NaNs, infinities and signed zeros still are.
      */
     @Test
     public void testStrictFloatingPointKeepsIeeeEdgeCases() throws TornadoExecutionPlanException {
@@ -466,7 +469,12 @@ public class TestTcCompilerBugs extends TornadoTestBase {
         }
         FloatArray expected = new FloatArray(out.getSize());
         ieeeEdges(a, expected);
+        boolean flushesSubnormals = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() == TornadoVMBackendType.METAL;
         for (int i = 0; i < out.getSize(); i++) {
+            float input = a.get(i / 4);
+            if (flushesSubnormals && input != 0.0f && Math.abs(input) < Float.MIN_NORMAL) {
+                continue;
+            }
             // Java fixes which results are NaN, not the bits of a NaN arithmetic produces (x86 and GPUs differ).
             if (Float.isNaN(expected.get(i))) {
                 assertTrue(Float.isNaN(out.get(i)), "index " + i + " (input " + a.get(i / 4) + "): " + out.get(i));
