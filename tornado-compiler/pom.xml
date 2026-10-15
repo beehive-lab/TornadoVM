@@ -29,7 +29,7 @@
         <module>tc-tornado</module>
         <module>tc-runtime</module>
         <module>tc-debug</module>
-        <module>tc-gpu</module>
+        <module>tc-selftest</module>
     </modules>
 
     <build>

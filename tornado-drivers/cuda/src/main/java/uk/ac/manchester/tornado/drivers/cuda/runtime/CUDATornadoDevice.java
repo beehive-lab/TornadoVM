@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
+import uk.ac.manchester.tornado.drivers.common.tc.TcTargetDevice;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
@@ -87,7 +88,7 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 
-public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
+public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport, TcTargetDevice {
 
     private static CUDABackendImpl driver = null;
     private static final Access[] ACCESS_TYPES = Access.values();
@@ -236,7 +237,8 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */
-    private TargetCaps tcTarget() {
+    @Override
+    public TargetCaps tcTarget() {
         if (!(getDeviceContext().getDevice() instanceof CUDADevice d)) {
             return TargetCaps.CUDA_SM89.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER);
         }

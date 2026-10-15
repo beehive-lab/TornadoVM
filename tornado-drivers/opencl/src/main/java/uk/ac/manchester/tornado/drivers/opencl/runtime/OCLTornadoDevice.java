@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
+import uk.ac.manchester.tornado.drivers.common.tc.TcTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLCharArrayWrapper;
@@ -84,7 +85,7 @@ import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
-public class OCLTornadoDevice implements TornadoXPUDevice {
+public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice {
 
     private static OCLBackendImpl driver = null;
     private static final Access[] ACCESS_TYPES = Access.values();
@@ -240,7 +241,8 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
     }
 
     /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */
-    private TargetCaps tcTarget() {
+    @Override
+    public TargetCaps tcTarget() {
         var d = getDeviceContext().getDevice();
         boolean fp16 = d.getDeviceExtensions().contains("cl_khr_fp16");
         // No warp width is assumed (sub-group sizes vary by vendor) and OpenCL 1.2 has no device-side enqueue.

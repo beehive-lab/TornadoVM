@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
+import uk.ac.manchester.tornado.drivers.common.tc.TcTargetDevice;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -86,7 +87,7 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 
-public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport {
+public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport, TcTargetDevice {
 
     private static MetalBackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^Metal (\\d)\\.(\\d).*");
@@ -239,7 +240,8 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     }
 
     /** What TC may assume about this GPU: Apple GPUs have no double precision and 32-wide SIMD groups. */
-    private TargetCaps tcTarget() {
+    @Override
+    public TargetCaps tcTarget() {
         var d = getDeviceContext().getDevice();
         return new TargetCaps(TargetCaps.Dialect.METAL, 0, d.isDeviceDoubleFPSupported(), true, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(),
                 (int) d.getDeviceLocalMemorySize(), 32, false, 0);

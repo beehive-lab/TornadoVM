@@ -48,6 +48,11 @@
             <artifactId>tornado-drivers-common</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tc-selftest</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <profiles>

@@ -86,7 +86,7 @@ checkstyle:
 # JDK profile (jdk21 compiles at 21, jdk22plus at 22) never reach the test classpath; the target is
 # safe to run right after a different profile's build. Override the profile with JDK=jdk22plus
 # (JDK is declared once, near BACKEND, at the top of this file). `test-reflection` is the old name.
-TC_MODULES = tornado-compiler/tc-check,tornado-compiler/tc-ir,tornado-compiler/tc-frontend,tornado-compiler/tc-opt,tornado-compiler/tc-lower,tornado-compiler/tc-codegen,tornado-compiler/tc-tornado,tornado-compiler/tc-runtime,tornado-compiler/tc-debug,tornado-compiler/tc-gpu
+TC_MODULES = tornado-compiler/tc-check,tornado-compiler/tc-ir,tornado-compiler/tc-frontend,tornado-compiler/tc-opt,tornado-compiler/tc-lower,tornado-compiler/tc-codegen,tornado-compiler/tc-tornado,tornado-compiler/tc-runtime,tornado-compiler/tc-debug
 test-nogpu:
 	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime,$(TC_MODULES) -am clean test -DskipTests=false
 

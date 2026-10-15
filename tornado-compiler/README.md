@@ -45,7 +45,7 @@ flowchart LR
 | `tc-runtime` | `TcCompiler.compileJava(...)`: the pipeline, options (`TcOptions`), stage timings, dumps and JFR events. Also `tools/Tc`, the headless `tc` command line. |
 | `tc-debug` | The per-compilation HTML report. |
 | `tc-check` | LLVM-style test tools in Java: FileCheck, a lit runner, and `SourceRules` (the clean-room and hygiene guard). |
-| `tc-gpu` | End-to-end checks on a real device (`DesignTest`), outside the headless build. |
+| `tc-selftest` | `tornado-selftest`: checks TC on the devices of a machine and reports their TC capabilities ([below](#checking-tc-on-a-machine-tornado-selftest)). |
 
 ### Design choices
 
@@ -109,6 +109,54 @@ each test and each launch configuration with an earlier run:
 ```bash
 python3 tornado-compiler/utils/tc-diff.py run --device 1:0 --out ~/tc-diff/new --against ~/tc-diff/old
 ```
+
+## Checking TC on a machine: tornado-selftest
+
+`tornado-selftest` (in the SDK's `bin/`) answers two questions for every device TornadoVM finds:
+what TC compiles for on it, and whether the code TC generates there is correct. It runs about 20
+small kernels per device and compares every result with the same Java method run on the JVM. It
+takes a few seconds and needs no test framework, so it works from any SDK install.
+
+```bash
+tornado-selftest                       # every device
+tornado-selftest -d 1:0 -g tensor-cores # one device (as in tornado --devices), one group
+tornado-selftest --list                # the checks, and what each needs
+tornado-selftest --json report.json    # also write the report as JSON
+```
+
+The first line per device is the target TC compiles for, the same `TargetCaps` the compiler uses
+(see `TcTargetDevice`):
+
+```
+Device 1:0: NVIDIA GeForce RTX 4090 (CUDA)
+  TC target: CUDA sm_89, NVRTC 12.6, fp64 yes, fp16 yes, warp 32, local memory 48 KB, work-group 1024, tensor cores F16+FP8, device launch yes
+  PASS        backend/ir-vector-add           36 ms  65536 elements, 2 per thread
+  ...
+  SKIP        tensor-cores/mma-fp8                   device has no FP8 tensor cores (CUDA sm_89+, NVRTC 12.4+)
+```
+
+| Group | What it checks |
+|---|---|
+| `backend` | Kernels written in TC's IR (`tc-selftest/src/main/resources/selftest`), compiled for the device and run through the prebuilt-task path. The bytecode frontend is not involved. |
+| `core` | `@Parallel` loops (1-D grid-stride, 2-D with scalar bounds), divergent control flow, KernelContext local memory and barriers, `@Reduce`, atomics. |
+| `types` | `long` arithmetic, `double`, `HalfFloat`. |
+| `java` | Where Java and C differ: `MIN_VALUE / -1`, remainders and shifts, float-to-int saturation, `Math.min/max` with NaN and signed zeros, `new` arrays zeroed in loops. |
+| `strict-fp` | A plan with `withStrictFloatingPoint()`: denormals, NaN and signed zeros as on the JVM. |
+| `device`, `tensor-cores` | 32-lane warp sums, device-side launches, F16 and FP8 tensor-core GEMMs, on devices that have them. |
+
+Each check reports **PASS**; **FAIL** with the first element that differs (expected and actual, with
+the float bits); **SKIP** when the device lacks what the check needs; or **UNSUPPORTED** when the
+runtime refuses the kernel for this device (a `TornadoDevice*NotSupported` exception). The exit status
+is 0 when nothing fails, 1 when a check fails, 2 on a usage error.
+
+Reading a failure: if `core` fails and `backend` passes, suspect the bytecode frontend; if both fail,
+suspect code generation, the device compiler or the kernel ABI. `-v` prints the full exception of
+a check that throws. For a bug report about generated code, attach the `--json` report (JVM, OS,
+each device's target and every result) and the kernel's source from `--printKernel`.
+
+To add a check, write the kernel in `Kernels` (or an IR file for a backend check) and a `Check` in
+`Checks.all()` that runs it, runs the same method on the JVM and compares; `Check.needs` names the
+capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to run it.
 
 ## Tools
 

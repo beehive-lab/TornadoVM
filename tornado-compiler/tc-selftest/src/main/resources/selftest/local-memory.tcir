@@ -1,5 +1,6 @@
-; C3 kernel 3: KernelContext block reduction. Each work-group of 256 threads sums its slice of the
-; input in shared memory (tree reduction with barriers) and thread 0 writes the group's sum.
+; tornado-selftest backend/ir-local-memory: a KernelContext block reduction. Each work-group of 256
+; threads sums its slice of the input in shared memory (tree reduction with barriers) and thread 0
+; writes the group's sum.
 kernel @Reduce.blockSum(%in: array<f32>, %out: array<f32>) -> void {
 ^entry:
   %gid = tornado.thread_id.global<dim = 0>() : i32    loc("Reduce.java":40)

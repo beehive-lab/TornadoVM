@@ -9,16 +9,16 @@
         <version>${revision}</version>
     </parent>
 
-    <!-- GPU design tests for TC: kernels compiled by TC and run on a device through TornadoVM's
-         prebuilt-task path. Needs a device, so it is run with the tornado launcher, not surefire:
-         tornado -cp <classpath> uk.ac.manchester.tornado.tc.gpu.DesignTest -->
-    <artifactId>tc-gpu</artifactId>
-    <name>tc-gpu</name>
+    <!-- tornado-selftest: checks TC on this machine's devices (kernels run on a device and compared with
+         the JVM) and reports each device's TC capabilities. Needs a device, so it runs with the SDK
+         launcher (bin/tornado-selftest), not surefire. See tornado-compiler/README.md. -->
+    <artifactId>tc-selftest</artifactId>
+    <name>tc-selftest</name>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tc-debug</artifactId>
+            <artifactId>tornado-drivers-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
