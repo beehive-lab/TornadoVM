@@ -7,6 +7,64 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 7.3.1
+---------------
+15/10/26
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1240 <https://github.com/beehive-lab/TornadoVM/pull/1240>`_: Deploy tornado-mlx and tornado-nccl to Maven Central in the release pipeline
+
+
+TornadoVM 7.3.0
+---------------
+14/10/26
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1237 <https://github.com/beehive-lab/TornadoVM/pull/1237>`_: [mlx] Asynchronous MLX dispatch on Metal and cached-context attention
+- `#1180 <https://github.com/beehive-lab/TornadoVM/pull/1180>`_: [nccl] Add tornado-nccl: NCCL collectives, send/recv, groups and plan-group steps on TornadoVM device buffers
+- `#1128 <https://github.com/beehive-lab/TornadoVM/pull/1128>`_: Keep only the latest execution result by default, with an option to keep all
+- `#1188 <https://github.com/beehive-lab/TornadoVM/pull/1188>`_: [mlx] Apple MLX library tasks on the Metal backend
+- `#1235 <https://github.com/beehive-lab/TornadoVM/pull/1235>`_: Upgrade unit tests to JUnit 6.1.3, and make tornado-test fail on crashed test JVMs and on failures without -V
+- `#1234 <https://github.com/beehive-lab/TornadoVM/pull/1234>`_: Move tornado-benchmarks to beehive-lab/tornadovm-benchmark-suite
+- `#1178 <https://github.com/beehive-lab/TornadoVM/pull/1178>`_: [cuda] Abandon a CUDA-graph capture that fails part-way so later captures on the device work
+- `#1187 <https://github.com/beehive-lab/TornadoVM/pull/1187>`_: [cuda] Follow the calling thread's stream in the CUDA library providers
+- `#1230 <https://github.com/beehive-lab/TornadoVM/pull/1230>`_: [tests] Skip device-specific TestDevices cases and relax TestWarmUp timing bound
+- `#1231 <https://github.com/beehive-lab/TornadoVM/pull/1231>`_: [tests] Fix KernelContext mxm and one-block reduction tests
+- `#1179 <https://github.com/beehive-lab/TornadoVM/pull/1179>`_: [cuda] Give each GPU its own primary context instead of sharing GPU 0's
+- `#1177 <https://github.com/beehive-lab/TornadoVM/pull/1177>`_: [cuda] Capture CUDA graphs in thread-local mode so plans on other threads can keep working
+- `#1185 <https://github.com/beehive-lab/TornadoVM/pull/1185>`_: [cublas] Follow the calling thread's stream instead of the one the handle was created on
+- `#1198 <https://github.com/beehive-lab/TornadoVM/pull/1198>`_: Add 32- and 64-bit word access to ByteArray
+- `#1209 <https://github.com/beehive-lab/TornadoVM/pull/1209>`_: [cuda] Launch CUDA graphs without waiting when they copy nothing to the host
+- `#1213 <https://github.com/beehive-lab/TornadoVM/pull/1213>`_: Import a graph's unnamed consumes from the previous graph when it also consumes by name
+- `#1216 <https://github.com/beehive-lab/TornadoVM/pull/1216>`_: [metal] Encode kernels into shared command buffers and wait only where the host needs a result (6x LLM decode)
+- `#1217 <https://github.com/beehive-lab/TornadoVM/pull/1217>`_: [metal] Resolve the Objective-C message-send handles once instead of on every send
+- `#1225 <https://github.com/beehive-lab/TornadoVM/pull/1225>`_: [graal] Report the backends' DivNode as non-associative so loop reassociation skips nested divisions
+- `#1226 <https://github.com/beehive-lab/TornadoVM/pull/1226>`_: [cuda] Reinterpret the bits in Float.float16ToFloat(short) instead of converting the integer value
+- `#1224 <https://github.com/beehive-lab/TornadoVM/pull/1224>`_: [metal][cuda] Vector-width loads from FloatArray and HalfFloatArray
+- `#1223 <https://github.com/beehive-lab/TornadoVM/pull/1223>`_: [metal] Half-precision, transposed and threadgroup-store SIMD-group matrix primitives
+- `#1222 <https://github.com/beehive-lab/TornadoVM/pull/1222>`_: [cudf] Release SDKs build and ship libtornado-cudf.so
+- `#1219 <https://github.com/beehive-lab/TornadoVM/pull/1219>`_: [cudf] Give the shim's memory pool a release threshold (TORNADO_CUDF_POOL_RELEASE_MB)
+- `#1220 <https://github.com/beehive-lab/TornadoVM/pull/1220>`_: [cudf] readParquetColumns reads evolved schemas: absent columns as nulls, int and float widened
+- `#1215 <https://github.com/beehive-lab/TornadoVM/pull/1215>`_: [cudf] DECIMAL columns read and written as unscaled INT64; FLOAT columns written
+- `#1221 <https://github.com/beehive-lab/TornadoVM/pull/1221>`_: [cudf] writeParquetColumnsWithStrings: STRING columns gathered to the written rows inside the write
+- `#1196 <https://github.com/beehive-lab/TornadoVM/pull/1196>`_: [cuda] Add a 16-byte cp.async copy to KernelContext
+- `#1214 <https://github.com/beehive-lab/TornadoVM/pull/1214>`_: [metal] Report why a compute pipeline could not be created instead of exiting silently
+- `#1201 <https://github.com/beehive-lab/TornadoVM/pull/1201>`_: [cuda] Unroll CUDA Tile k-loops per architecture, with tornado.cuda.tile.unrollKLoop to override
+- `#1211 <https://github.com/beehive-lab/TornadoVM/pull/1211>`_: [cudf] readParquetColumns reads FLOAT32 columns widened to FP64
+- `#1208 <https://github.com/beehive-lab/TornadoVM/pull/1208>`_: [runtime] Sketches built concurrently keep their own argument accesses
+- `#1210 <https://github.com/beehive-lab/TornadoVM/pull/1210>`_: [cuda][metal] Full thread blocks for loop bounds with no usable divisor (up to 99x CUDA, 2.7x Metal)
+- `#1206 <https://github.com/beehive-lab/TornadoVM/pull/1206>`_: [cudf] sortKeys: sort a key set once on the device, probe it with a kernel
+- `#1207 <https://github.com/beehive-lab/TornadoVM/pull/1207>`_: [cudf] sortedOrderLongs, readParquetStringColumns, groupAggregateLongs
+- `#1203 <https://github.com/beehive-lab/TornadoVM/pull/1203>`_: [runtime] Release the device buffers of device-only intermediates when a plan is freed
+- `#1204 <https://github.com/beehive-lab/TornadoVM/pull/1204>`_: [cuda] Wait for the zero-fill of a recycled write-only buffer before handing it out
+- `#1205 <https://github.com/beehive-lab/TornadoVM/pull/1205>`_: [cudf] writeParquetColumns: write device buffers to a Parquet file
+- `#1200 <https://github.com/beehive-lab/TornadoVM/pull/1200>`_: [cudf] Typed, nullable Parquet reads and set membership, for lakehouse merge-on-read
+
+
 TornadoVM 7.2.0
 ---------------
 07/10/26

@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.cudnn.provider;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
@@ -36,7 +38,10 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * plan's stream, a cache of convolution plans (descriptors + algorithm +
  * workspace size) per shape, and a grow-only device workspace. Convolution
  * plans and the workspace are created in {@link #prepare} - before CUDA graph
- * capture starts - so {@link #dispatch} is capture-safe.
+ * capture starts - so {@link #dispatch} is capture-safe. A plan's task graphs
+ * share the context and are captured one after another, so a workspace that
+ * is outgrown stays allocated until the context is destroyed: a graph captured
+ * earlier still uses it.
  */
 public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
 
@@ -48,6 +53,8 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         private final Map<String, Long> sdpaPlanCache = new HashMap<>();
         private long workspacePtr;
         private long workspaceBytes;
+        /** Workspaces outgrown by later plans, kept until the context is destroyed. */
+        private final List<Long> retiredWorkspaces = new ArrayList<>();
 
         private CuDnnContext(long handle, long stream) {
             this.handle = handle;
@@ -57,10 +64,12 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         private void growWorkspace(long required) {
             if (required > workspaceBytes) {
                 if (workspacePtr != 0) {
-                    CuDnnNativeLib.freeDeviceMemory(workspacePtr);
+                    // a CUDA graph captured earlier in this plan may point at it
+                    retiredWorkspaces.add(workspacePtr);
                     workspacePtr = 0;
-                    workspaceBytes = 0;
                 }
+                // whole powers of two: the retired workspaces together stay smaller than the live one
+                required = required <= 1 ? 1 : Long.highestOneBit(required - 1) << 1;
                 long ptr = CuDnnNativeLib.allocateDeviceMemory(required);
                 if (ptr == 0) {
                     throw new TornadoRuntimeException("[ERROR] Unable to allocate cuDNN workspace of " + required + " bytes");
@@ -220,6 +229,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             CuDnnNativeLib.destroySdpaPlan(plan);
         }
         cuDnnContext.sdpaPlanCache.clear();
+        for (long retired : cuDnnContext.retiredWorkspaces) {
+            CuDnnNativeLib.freeDeviceMemory(retired);
+        }
+        cuDnnContext.retiredWorkspaces.clear();
         if (cuDnnContext.workspacePtr != 0) {
             CuDnnNativeLib.freeDeviceMemory(cuDnnContext.workspacePtr);
             cuDnnContext.workspacePtr = 0;
