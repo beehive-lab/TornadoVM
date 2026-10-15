@@ -235,4 +235,42 @@ public class TestTcCompilerBugs extends TornadoTestBase {
         fp8.testGemmFP8Minimal();
         fp8.testGemmFP8E5M2Minimal();
     }
+
+    // ---------------------------------------------------------------- P-1
+
+    public static void scaleAdd(IntArray a, IntArray out, int k) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, a.get(i) * k + i);
+        }
+    }
+
+    /**
+     * P-1: tasks of one method share a compilation only when everything the compiler specialises on is
+     * the same. Tasks 0 and 1 match (one compilation); task 2 has another scalar and task 3 another
+     * array length, so each gets its own code and every result is the method's.
+     */
+    @Test
+    public void testMemoisedCompilationsKeepPerTaskFacts() throws TornadoExecutionPlanException {
+        int[] sizes = { N, N, N, 2 * N };
+        int[] scales = { 3, 3, 5, 3 };
+        IntArray[] in = new IntArray[4];
+        IntArray[] out = new IntArray[4];
+        TaskGraph graph = new TaskGraph("s0");
+        for (int t = 0; t < 4; t++) {
+            in[t] = new IntArray(sizes[t]);
+            for (int i = 0; i < sizes[t]; i++) {
+                in[t].set(i, i - t);
+            }
+            out[t] = new IntArray(sizes[t]);
+            graph.transferToDevice(DataTransferMode.EVERY_EXECUTION, in[t]);
+            graph.task("t" + t, TestTcCompilerBugs::scaleAdd, in[t], out[t], scales[t]);
+            graph.transferToHost(DataTransferMode.EVERY_EXECUTION, out[t]);
+        }
+        runOnDevice("p1", graph);
+        for (int t = 0; t < 4; t++) {
+            IntArray expected = new IntArray(sizes[t]);
+            scaleAdd(in[t], expected, scales[t]);
+            assertSame(expected, out[t]);
+        }
+    }
 }

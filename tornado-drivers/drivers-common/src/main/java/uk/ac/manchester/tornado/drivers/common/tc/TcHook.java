@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -57,14 +58,40 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * diagnostic's category.
  *
  * <p>Options: {@code tornado.tc.verbose=true} (one line per kernel), {@code tornado.tc.stats=true}
- * (summary at exit), and the {@code tornado.tc.*} dump options of {@link TcOptions}.</p>
+ * (summary at exit), {@code tornado.tc.memoize=false} (compile every task, even when an earlier one
+ * had the same method and facts), and the {@code tornado.tc.*} dump options of {@link TcOptions}.</p>
  */
 public final class TcHook {
 
     private static final boolean VERBOSE = Boolean.getBoolean("tornado.tc.verbose");
     private static final boolean STATS = Boolean.getBoolean("tornado.tc.stats");
 
+    private static final boolean MEMOIZE = Boolean.parseBoolean(System.getProperty("tornado.tc.memoize", "true"));
+
     private static final AtomicInteger COMPILED = new AtomicInteger();
+    private static final AtomicInteger REUSED = new AtomicInteger();
+
+    /**
+     * Everything a compilation reads: the method (its class and loader), the target, the options and
+     * the facts TcArguments derives from the task's arguments (lengths, specialised scalars, object
+     * layouts, batches, worker grids). The task id is left out: it reaches the code only through
+     * device-launch labels, and an entry that printed one is reused only for the same task.
+     */
+    private record Key(Method method, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
+    }
+
+    /** What a compilation leaves for later tasks (not its stages). */
+    private record Compiled(String source, String entryName, long nanos, List<uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics,
+            KernelFeatures features, String task, boolean taskInSource) {
+    }
+
+    /** Most recent compilations; a model's layers share one entry per kernel. */
+    private static final Map<Key, Compiled> COMPILATIONS = java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>(64, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<Key, Compiled> eldest) {
+            return size() > 2048;
+        }
+    });
     private static final Map<String, AtomicInteger> REFUSED = new ConcurrentHashMap<>();
 
     static {
@@ -119,10 +146,32 @@ public final class TcHook {
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
-        TcCompiler.Compilation c;
         var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
+        var key = new Key(method, target, options.withTask("?"), List.copyOf(facts));
+        var compiled = MEMOIZE ? COMPILATIONS.get(key) : null;
+        if (compiled != null && (!compiled.taskInSource() || compiled.task().equals(taskId))) {
+            REUSED.incrementAndGet();
+            if (VERBOSE) {
+                System.out.printf("[TC] reused %s (same method and facts as an earlier task)%n", name);
+            }
+        } else {
+            var result = compileNew(name, owner, loader, method.getName(), descriptor, target, options, facts);
+            if (result.isEmpty()) {
+                return Optional.empty();
+            }
+            compiled = result.get();
+            if (MEMOIZE) {
+                COMPILATIONS.put(key, compiled);
+            }
+        }
+        return kernel(name, compiled, facts, numThreads);
+    }
+
+    private static Optional<Compiled> compileNew(String name, Class<?> owner, ClassLoader loader, String methodName, String descriptor, TargetCaps target, TcOptions options,
+            List<ValueSpecialisation.Fact> facts) {
+        TcCompiler.Compilation c;
         try {
-            c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, target, options, facts);
+            c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), methodName, descriptor, target, options, facts);
         } catch (RuntimeException | StackOverflowError e) {
             // An internal TC failure becomes a diagnostic, reported like any other.
             if (VERBOSE) {
@@ -141,6 +190,12 @@ public final class TcHook {
         if (VERBOSE) {
             System.out.printf("[TC] compiled %s in %.2f ms%n", name, c.nanos() / 1e6);
         }
+        boolean taskInSource = c.source().contains(uk.ac.manchester.tornado.tc.codegen.CEmitter.DEVICE_LAUNCH_LABEL);
+        return Optional.of(new Compiled(c.source(), c.entryName(), c.nanos(), c.domain(), c.atomics(), c.features(), options.task(), taskInSource));
+    }
+
+    /** The kernel for one task: the launch domain depends on the task's thread count, not only on the code. */
+    private static Optional<Kernel> kernel(String name, Compiled c, List<ValueSpecialisation.Fact> facts, long numThreads) {
         Optional<DomainTree> domain = Optional.empty();
         if (!c.domain().isEmpty()) {
             var tree = new DomainTree(c.domain().size());
@@ -171,12 +226,12 @@ public final class TcHook {
         }
     }
 
-    private static Optional<Kernel> refuse(String name, String code, String reason) {
+    private static <T> Optional<T> refuse(String name, String code, String reason) {
         return reject(name, new Diagnostic(code, reason, "", Loc.UNKNOWN));
     }
 
     /** TC cannot compile {@code name}: the diagnostic becomes the TornadoVM exception for its category (ErrorCodes). */
-    private static Optional<Kernel> reject(String name, Diagnostic d) {
+    private static <T> Optional<T> reject(String name, Diagnostic d) {
         REFUSED.computeIfAbsent(d.code(), k -> new AtomicInteger()).incrementAndGet();
         var category = ErrorCodes.category(d.code());
         var e = exception(name, d, category);
@@ -231,6 +286,7 @@ public final class TcHook {
     private static void printStats() {
         var reasons = new TreeMap<String, Integer>();
         REFUSED.forEach((k, v) -> reasons.put(k, v.get()));
-        System.out.println("[TC] kernels compiled by TC: " + COMPILED.get() + ", refused: " + reasons.values().stream().mapToInt(Integer::intValue).sum() + " " + reasons);
+        int refused = reasons.values().stream().mapToInt(Integer::intValue).sum();
+        System.out.println("[TC] kernels compiled by TC: " + COMPILED.get() + ", reused: " + REUSED.get() + ", refused: " + refused + " " + reasons);
     }
 }

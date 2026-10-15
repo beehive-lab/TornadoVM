@@ -199,6 +199,12 @@ public final class CEmitter {
     private final CDialect dialect;
     private final Set<CDialect.Feature> features = java.util.EnumSet.noneOf(CDialect.Feature.class);
     private final String task;
+
+    /**
+     * In the label of every device launch, after the task id: the only place the task id reaches the
+     * source (a compilation without it can serve any task).
+     */
+    public static final String DEVICE_LAUNCH_LABEL = " (device launch, ";
     /** Labelled blocks to print as {@code do { ... } while (false)} (dialects without goto). */
     private final Set<String> wrapped;
     /** Labelled blocks found to need wrapping; non-empty means emit again. */
@@ -702,7 +708,7 @@ public final class CEmitter {
         var unsigned = operands.subList(0, 3).stream().map(o -> "(unsigned) " + wrap(expr(o), UNARY)).toList();
         var shortName = child.substring(child.lastIndexOf('.', child.lastIndexOf('.') - 1) + 1);
         // --threadInfo reports the child in the host's "Task info" format, named by the task.
-        var label = cEscape(task + " -> " + shortName + " (device launch, " + mode.toUpperCase(java.util.Locale.ROOT) + ")");
+        var label = cEscape(task + " -> " + shortName + DEVICE_LAUNCH_LABEL + mode.toUpperCase(java.util.Locale.ROOT) + ")");
         var site = new CDialect.Launch(child, mode, e.subList(0, 3), unsigned, e.subList(3, 6), e.subList(6, e.size()), label, shortName);
         line(depth, "{" + comment(loc));
         dialect.deviceLaunch(site, helpers).forEach(l -> line(depth + 1, l));

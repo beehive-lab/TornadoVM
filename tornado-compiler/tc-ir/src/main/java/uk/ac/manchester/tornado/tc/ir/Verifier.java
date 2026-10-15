@@ -59,6 +59,18 @@ public final class Verifier {
     private final Stage stage;
     private final List<Diagnostic> diagnostics = new ArrayList<>();
     private IrPrinter printer;
+
+    /**
+     * The names diagnostics use, assigned on the first diagnostic: printing the function on every
+     * verification (after each pass) cost as much as the passes themselves.
+     */
+    private IrPrinter printer() {
+        if (printer == null) {
+            printer = new IrPrinter(false);
+            printer.printFunction(function);
+        }
+        return printer;
+    }
     private Function function;
     private DominatorTree dominators;
 
@@ -100,30 +112,31 @@ public final class Verifier {
             report("TC-E2117", "function @" + f.name() + " has no blocks", "", Loc.UNKNOWN);
             return;
         }
-        this.printer = new IrPrinter(false);
-        printer.printFunction(f);
+        this.printer = null;
         this.dominators = Analyses.dominators(f);
         var preds = f.predecessors();
         if (!preds.get(f.entry()).isEmpty()) {
-            report("TC-E2116", "the entry block ^" + printer.blockName(f.entry()) + " must not have predecessors", "", Loc.UNKNOWN);
+            report("TC-E2116", "the entry block ^" + printer().blockName(f.entry()) + " must not have predecessors", "", Loc.UNKNOWN);
         }
         if (stage == Stage.POST_ABI) {
             for (var param : f.params()) {
-                checkPostAbiType(param.type(), "parameter %" + printer.name(param), Loc.UNKNOWN);
+                checkPostAbiType(param.type(), () -> "parameter %" + printer().name(param), Loc.UNKNOWN);
             }
             // Block arguments too: a Java-level value carried around a loop is still Java-level.
             for (var block : f.blocks().subList(1, f.blocks().size())) {
                 for (var arg : block.args()) {
-                    checkPostAbiType(arg.type(), "argument %" + printer.name(arg) + " of ^" + printer.blockName(block), Loc.UNKNOWN);
+                    checkPostAbiType(arg.type(), () -> "argument %" + printer().name(arg) + " of ^" + printer().blockName(block), Loc.UNKNOWN);
                 }
             }
         }
         verifyAttributes(f.attributes(), Attribute.Scope.FUNCTION, "function @" + f.name());
         for (var block : f.blocks()) {
-            verifyAttributes(block.attributes(), Attribute.Scope.BLOCK, "block ^" + printer.blockName(block));
+            if (!block.attributes().isEmpty()) {
+                verifyAttributes(block.attributes(), Attribute.Scope.BLOCK, "block ^" + printer().blockName(block));
+            }
             for (var a : block.attributes()) {
                 if (a.name().equals("parallel") && a.values().has("iv") && a.integer("iv") >= block.args().size()) {
-                    report("TC-E2118", "parallel<iv = " + a.integer("iv") + "> names a block argument ^" + printer.blockName(block) + " does not have", "^" + printer.blockName(block), Loc.UNKNOWN);
+                    report("TC-E2118", "parallel<iv = " + a.integer("iv") + "> names a block argument ^" + printer().blockName(block) + " does not have", "^" + printer().blockName(block), Loc.UNKNOWN);
                 }
             }
             verifyBlock(block);
@@ -153,7 +166,7 @@ public final class Verifier {
     private void verifyBlock(Block block) {
         var insts = block.insts();
         if (block.terminator().isEmpty()) {
-            report("TC-E2101", "block ^" + printer.blockName(block) + " does not end with a terminator", "^" + printer.blockName(block), Loc.UNKNOWN);
+            report("TC-E2101", "block ^" + printer().blockName(block) + " does not end with a terminator", "^" + printer().blockName(block), Loc.UNKNOWN);
         }
         for (int i = 0; i < insts.size(); i++) {
             var inst = insts.get(i);
@@ -181,7 +194,7 @@ public final class Verifier {
                 case Inst def -> def.block().orElse(null);
             };
             if (defBlock == null || defBlock.function() != function) {
-                error(inst, "TC-E2110", "operand %" + printer.name(value) + " is not defined in @" + function.name());
+                error(inst, "TC-E2110", "operand %" + printer().name(value) + " is not defined in @" + function.name());
                 continue;
             }
             if (value instanceof Inst def && !def.producesValue()) {
@@ -198,7 +211,7 @@ public final class Verifier {
                 dominated = dominators.dominates(defBlock, block);
             }
             if (!dominated) {
-                error(inst, "TC-E2105", "use of %" + printer.name(value) + " is not dominated by its definition");
+                error(inst, "TC-E2105", "use of %" + printer().name(value) + " is not dominated by its definition");
             }
         }
     }
@@ -209,12 +222,12 @@ public final class Verifier {
             var params = target.args();
             var args = successor.args();
             if (params.size() != args.size()) {
-                error(inst, "TC-E2103", "branch to ^" + printer.blockName(target) + " passes " + args.size() + " argument(s), the block takes " + params.size());
+                error(inst, "TC-E2103", "branch to ^" + printer().blockName(target) + " passes " + args.size() + " argument(s), the block takes " + params.size());
                 continue;
             }
             for (int i = 0; i < args.size(); i++) {
                 if (!args.get(i).type().equals(params.get(i).type())) {
-                    error(inst, "TC-E2104", "argument " + i + " to ^" + printer.blockName(target) + " has type " + args.get(i).type().text() + ", expected " + params.get(i).type().text());
+                    error(inst, "TC-E2104", "argument " + i + " to ^" + printer().blockName(target) + " has type " + args.get(i).type().text() + ", expected " + params.get(i).type().text());
                 }
             }
         }
@@ -432,13 +445,13 @@ public final class Verifier {
             case Opcode.ArrayLength _a -> error(inst, "TC-E2112", "Java-level array length after ABI lowering");
             case Opcode.FieldLoad _f -> error(inst, "TC-E2112", "Java-level field access after ABI lowering");
             case Opcode.FieldStore _f -> error(inst, "TC-E2112", "Java-level field access after ABI lowering");
-            default -> checkPostAbiType(inst.type(), printer.instText(inst), inst.loc());
+            default -> checkPostAbiType(inst.type(), () -> printer().instText(inst), inst.loc());
         }
     }
 
-    private void checkPostAbiType(Type type, String where, Loc loc) {
+    private void checkPostAbiType(Type type, java.util.function.Supplier<String> where, Loc loc) {
         if (type instanceof ArrayType || (type instanceof ObjectType && !ApiTypes.isDeviceValue(type))) {
-            report("TC-E2112", "Java-level type " + type.text() + " after ABI lowering", where, loc);
+            report("TC-E2112", "Java-level type " + type.text() + " after ABI lowering", where.get(), loc);
         }
     }
 
@@ -499,8 +512,8 @@ public final class Verifier {
     }
 
     private void error(Inst inst, String code, String message) {
-        var blockName = inst.block().map(b -> "^" + printer.blockName(b) + ": ").orElse("");
-        diagnostics.add(new Diagnostic(code, message, blockName + printer.instText(inst), inst.loc(), inst.textLine()));
+        var blockName = inst.block().map(b -> "^" + printer().blockName(b) + ": ").orElse("");
+        diagnostics.add(new Diagnostic(code, message, blockName + printer().instText(inst), inst.loc(), inst.textLine()));
     }
 
     private void report(String code, String message, String where, Loc loc) {
