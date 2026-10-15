@@ -71,6 +71,7 @@ public final class SPrinter {
         switch (stmt) {
             case S.Assign(var target, var value, var loc) -> indent(depth).append(target.name()).append(" = ").append(expr(value)).append(";\n");
             case S.Effect(var op, var loc) -> indent(depth).append(expr(op)).append(";\n");
+            case S.ZeroFill(var alloca, var loc) -> indent(depth).append("zero ").append(alloca.name()).append(";\n");
             case S.If(var c, var t, var e) -> {
                 indent(depth).append("if (").append(expr(c)).append(") {\n");
                 stmts(t, depth + 1);

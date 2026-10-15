@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Function;
@@ -357,7 +358,14 @@ public final class Structurizer {
     private List<S.Stmt> blockCode(Block block) {
         var code = new ArrayList<S.Stmt>();
         for (var inst : block.insts()) {
-            if (inst.isTerminator() || isInline(inst) || inst.opcode() instanceof Opcode.Alloca) {
+            if (inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
+                // The declaration's initialiser zeroes it once; an allocation that can run again needs its own.
+                if (space == AddressSpace.PRIVATE && block != function.entry()) {
+                    code.add(new S.ZeroFill(allocaByInst.get(inst), inst.loc()));
+                }
+                continue;
+            }
+            if (inst.isTerminator() || isInline(inst)) {
                 continue;
             }
             var op = new S.Op(inst, inst.operands().stream().map(this::expr).toList());

@@ -119,6 +119,13 @@ public final class S {
     public record Effect(Op op, Loc loc) implements Stmt {
     }
 
+    /**
+     * Zeroes a private array where its {@code new} executes. The declaration is at the top of the
+     * kernel; an allocation inside a loop must start from zero on every iteration, as in Java.
+     */
+    public record ZeroFill(Alloca alloca, Loc loc) implements Stmt {
+    }
+
     public record If(Expr condition, List<Stmt> thenBody, List<Stmt> elseBody) implements Stmt {
     }
 

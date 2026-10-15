@@ -204,6 +204,8 @@ public final class CEmitter {
     /** Labelled blocks found to need wrapping; non-empty means emit again. */
     private final Set<String> toWrap = new HashSet<>();
     private String jumpFlag;
+    /** The index of the loops that zero private arrays allocated inside the kernel's control flow. */
+    private String zeroIndex;
     private int flagJumps;
 
     private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped) {
@@ -259,6 +261,7 @@ public final class CEmitter {
         k.locals().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.allocas().forEach(a -> allocaNames.put(a, cIdentifier(a.name(), used)));
         jumpFlag = cIdentifier("tc_jump", used);
+        zeroIndex = cIdentifier("tc_z", used);
 
         var f = k.source();
         var entry = entryName(f);
@@ -381,6 +384,11 @@ public final class CEmitter {
                 line(depth, "printf(\"tornado[%3d,%3d,%3d]> " + format + "\"" + args + ");" + comment(loc));
             }
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
+            case S.ZeroFill(var alloca, var loc) -> {
+                var a = alloca.kind();
+                var name = allocaNames.get(alloca);
+                line(depth, "for (int " + zeroIndex + " = 0; " + zeroIndex + " < " + a.count() + "; " + zeroIndex + "++) " + name + "[" + zeroIndex + "] = " + zero(a.element()) + ";" + comment(loc));
+            }
             case S.If(var c, var t, var e) -> ifStatement(c, t, e, fallthrough, depth);
             case S.Labelled(var label, var b) when wrapped.contains(label) -> {
                 var inner = new HashSet<>(fallthrough);
@@ -1161,6 +1169,15 @@ public final class CEmitter {
     }
 
     /** The C core's own types; the dialect spells the rest (pointers, half, bfloat16, vectors). */
+    /** A zero of an array element type. */
+    private String zero(Type type) {
+        return switch (type) {
+            case Type.FloatType f -> floatConstant(0.0, type).text;
+            case Type.VectorType(var element, var length) -> dialect.vector(typeName(type), java.util.Collections.nCopies(length, zero(element)));
+            default -> "0";
+        };
+    }
+
     private String typeName(Type type) {
         return switch (type) {
             case IntType(var bits) -> dialect.integerName(bits);
