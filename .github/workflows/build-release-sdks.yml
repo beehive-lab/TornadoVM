@@ -201,12 +201,12 @@ jobs:
         run: |
           if [ ! -x "$VENV_PATH/bin/python3" ]; then
             echo "::error::$VENV_PATH is missing on this runner. Create it once with:"
-            echo "  python3 -m venv $VENV_PATH && $VENV_PATH/bin/pip install --upgrade pip requests tqdm urllib3 wget packaging streamlit psutil"
+            echo "  python3 -m venv $VENV_PATH && $VENV_PATH/bin/pip install --upgrade pip requests tqdm urllib3 packaging psutil"
             exit 1
           fi
           # Put the pre-provisioned venv's python3/pip3 first on PATH so
-          # bin/compile's dependency self-heal (pip3 install requests/urllib3/
-          # wget/packaging/streamlit) lands there instead of failing against
+          # bin/compile's dependency self-heal (pip install requests/tqdm/
+          # urllib3/packaging) lands there instead of failing against
           # Homebrew's externally-managed system Python.
           echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
 
@@ -421,7 +421,7 @@ jobs:
           }
           python -m venv "$env:VENV_PATH"
           & "$env:VENV_PATH\Scripts\python.exe" -m pip install --upgrade pip
-          & "$env:VENV_PATH\Scripts\pip.exe" install requests tqdm urllib3 wget packaging streamlit psutil pyinstaller
+          & "$env:VENV_PATH\Scripts\pip.exe" install requests tqdm urllib3 packaging psutil pyinstaller
           # Put the venv's Scripts\ first on PATH so `python`, `pip3`, and
           # `pyinstaller` all resolve here for every later step (including the
           # nested `python bin\compile` invocations inside the worktree) —
