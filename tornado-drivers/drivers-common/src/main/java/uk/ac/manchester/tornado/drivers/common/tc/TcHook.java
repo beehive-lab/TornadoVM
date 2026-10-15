@@ -59,7 +59,8 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  *
  * <p>Options: {@code tornado.tc.verbose=true} (one line per kernel), {@code tornado.tc.stats=true}
  * (summary at exit), {@code tornado.tc.memoize=false} (compile every task, even when an earlier one
- * had the same method and facts), and the {@code tornado.tc.*} dump options of {@link TcOptions}.</p>
+ * had the same method and facts), {@code tornado.tc.varyingScalars=N} (see {@link #VARYING_SCALARS})
+ * and the {@code tornado.tc.*} dump options of {@link TcOptions}.</p>
  */
 public final class TcHook {
 
@@ -67,6 +68,15 @@ public final class TcHook {
     private static final boolean STATS = Boolean.getBoolean("tornado.tc.stats");
 
     private static final boolean MEMOIZE = Boolean.parseBoolean(System.getProperty("tornado.tc.memoize", "true"));
+
+    /**
+     * A scalar argument that has taken this many different values across the tasks of one kernel
+     * (same method, target, options and other facts) is compiled as a runtime value from then on; 0
+     * specialises every value. A model's layers pass their layer index as a scalar: specialised on
+     * it, each layer's attention was a kernel of its own. Values a kernel needs as constants (a
+     * local array's size) keep it specialised: the generic compilation is refused and not retried.
+     */
+    private static final int VARYING_SCALARS = Integer.getInteger("tornado.tc.varyingScalars", 3);
 
     private static final AtomicInteger COMPILED = new AtomicInteger();
     private static final AtomicInteger REUSED = new AtomicInteger();
@@ -79,6 +89,43 @@ public final class TcHook {
      */
     private record Key(Method method, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
     }
+
+    /** A kernel's tasks with their scalar values left out. */
+    private record Shape(Method method, TargetCaps target, TcOptions options, List<Object> facts) {
+        private static final Object SCALAR = new Object();
+
+        static Shape of(Key key) {
+            return new Shape(key.method(), key.target(), key.options(), key.facts().stream().map(f -> f instanceof ValueSpecialisation.Fact.Scalar ? SCALAR : (Object) f).toList());
+        }
+    }
+
+    /** The scalar values the tasks of one shape have had, and whether its kernel compiles without them. */
+    private static final class Scalars {
+        private final Map<Integer, java.util.Set<Number>> values = new java.util.HashMap<>();
+        /** The launch domain of the first, specialised, compilation: generic code must launch the same. */
+        private List<uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering.Domain> domain;
+        private boolean specialiseAlways;
+
+        /** Records the task's scalar values; returns the positions to compile as runtime values. */
+        synchronized java.util.BitSet observe(List<ValueSpecialisation.Fact> facts) {
+            var varying = new java.util.BitSet();
+            for (int i = 0; i < facts.size(); i++) {
+                if (facts.get(i) instanceof ValueSpecialisation.Fact.Scalar(var value)) {
+                    var seen = values.computeIfAbsent(i, k -> new java.util.HashSet<>());
+                    if (seen.size() < VARYING_SCALARS) {
+                        seen.add(value);
+                    }
+                    if (seen.size() >= VARYING_SCALARS) {
+                        varying.set(i);
+                    }
+                }
+            }
+            return specialiseAlways ? new java.util.BitSet() : varying;
+        }
+    }
+
+    private static final Map<Shape, Scalars> SCALARS = new ConcurrentHashMap<>();
+    private static final AtomicInteger GENERIC = new AtomicInteger();
 
     /** What a compilation leaves for later tasks (not its stages). */
     private record Compiled(String source, String entryName, long nanos, List<uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics,
@@ -148,23 +195,79 @@ public final class TcHook {
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
         var key = new Key(method, target, options.withTask("?"), List.copyOf(facts));
+        var scalars = MEMOIZE && VARYING_SCALARS > 0 ? SCALARS.computeIfAbsent(Shape.of(key), k -> new Scalars()) : null;
+        var varying = scalars != null ? scalars.observe(key.facts()) : new java.util.BitSet();
+        if (!varying.isEmpty()) {
+            var generic = generic(name, owner, loader, descriptor, options, key, varying, scalars, taskId);
+            if (generic.isPresent()) {
+                return kernel(name, generic.get(), facts, numThreads);
+            }
+        }
+        var result = compileOrReuse(name, owner, loader, descriptor, options, key, taskId);
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        if (scalars != null) {
+            synchronized (scalars) {
+                if (scalars.domain == null) {
+                    scalars.domain = result.get().domain();
+                }
+            }
+        }
+        return kernel(name, result.get(), facts, numThreads);
+    }
+
+    /** The memoised compilation for {@code key}, or a new one. */
+    private static Optional<Compiled> compileOrReuse(String name, Class<?> owner, ClassLoader loader, String descriptor, TcOptions options, Key key, String taskId) {
         var compiled = MEMOIZE ? COMPILATIONS.get(key) : null;
         if (compiled != null && (!compiled.taskInSource() || compiled.task().equals(taskId))) {
             REUSED.incrementAndGet();
             if (VERBOSE) {
                 System.out.printf("[TC] reused %s (same method and facts as an earlier task)%n", name);
             }
-        } else {
-            var result = compileNew(name, owner, loader, method.getName(), descriptor, target, options, facts);
-            if (result.isEmpty()) {
+            return Optional.of(compiled);
+        }
+        var result = compileNew(name, owner, loader, key.method().getName(), descriptor, key.target(), options, key.facts());
+        if (result.isPresent() && MEMOIZE) {
+            COMPILATIONS.put(key, result.get());
+        }
+        return result;
+    }
+
+    /**
+     * The kernel compiled with the {@code varying} scalars as runtime values, shared by the tasks that
+     * differ only in them; empty when it does not compile or would launch differently from the
+     * specialised kernel, and the kernel is then specialised on every value.
+     */
+    private static Optional<Compiled> generic(String name, Class<?> owner, ClassLoader loader, String descriptor, TcOptions options, Key key, java.util.BitSet varying,
+            Scalars scalars, String taskId) {
+        var facts = new java.util.ArrayList<>(key.facts());
+        varying.stream().forEach(i -> facts.set(i, new ValueSpecialisation.Fact.Unknown()));
+        var genericKey = new Key(key.method(), key.target(), key.options(), List.copyOf(facts));
+        boolean known = COMPILATIONS.containsKey(genericKey);
+        Optional<Compiled> result;
+        try {
+            result = compileOrReuse(name, owner, loader, descriptor, options, genericKey, taskId);
+        } catch (RuntimeException | Error e) {
+            result = Optional.empty();
+        }
+        synchronized (scalars) {
+            if (result.isEmpty() || (scalars.domain != null && !scalars.domain.equals(result.get().domain()))) {
+                scalars.specialiseAlways = true;
+                COMPILATIONS.remove(genericKey);
+                if (VERBOSE) {
+                    System.out.printf("[TC] %s stays specialised on its scalar arguments%n", name);
+                }
                 return Optional.empty();
             }
-            compiled = result.get();
-            if (MEMOIZE) {
-                COMPILATIONS.put(key, compiled);
+        }
+        if (!known) {
+            GENERIC.incrementAndGet();
+            if (VERBOSE) {
+                System.out.printf("[TC] %s: scalar arguments %s take %d or more values; compiled as runtime values%n", name, varying, VARYING_SCALARS);
             }
         }
-        return kernel(name, compiled, facts, numThreads);
+        return result;
     }
 
     private static Optional<Compiled> compileNew(String name, Class<?> owner, ClassLoader loader, String methodName, String descriptor, TargetCaps target, TcOptions options,
@@ -287,6 +390,6 @@ public final class TcHook {
         var reasons = new TreeMap<String, Integer>();
         REFUSED.forEach((k, v) -> reasons.put(k, v.get()));
         int refused = reasons.values().stream().mapToInt(Integer::intValue).sum();
-        System.out.println("[TC] kernels compiled by TC: " + COMPILED.get() + ", reused: " + REUSED.get() + ", refused: " + refused + " " + reasons);
+        System.out.println("[TC] kernels compiled by TC: " + COMPILED.get() + ", reused: " + REUSED.get() + ", refused: " + refused + " " + reasons + ", generic in varying scalars: " + GENERIC.get());
     }
 }

@@ -31,8 +31,10 @@ import java.util.Set;
  * <li>{@code tornado.tc.dump}: {@code none} (default), {@code all}, or a comma-separated list of
  * stage names to write (for example {@code abi,emit}).</li>
  * <li>{@code tornado.tc.dumpDir}: directory for dumps and reports (default {@code tc-dumps}).</li>
- * <li>{@code tornado.tc.verify}: {@code each} (default) runs the verifier after every IR stage;
- * {@code end} only before emission.</li>
+ * <li>{@code tornado.tc.verify}: {@code end} (default) runs the verifier once, before structuring
+ * and emission; {@code each} after every pass and stage, which names the pass that broke the IR
+ * and costs about 15% of the compile time. {@link #DEFAULTS}, used by TC's own tests and tools,
+ * verifies after each.</li>
  * <li>{@code tornado.tc.only}: compile-and-dump only functions whose name contains this text.</li>
  * <li>{@code tornado.tc.report}: {@code html} writes a self-contained HTML report per compilation.</li>
  * <li>{@code tornado.enable.fma} (the runtime's switch, default on): fused multiply-adds; a plan
@@ -61,7 +63,7 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
             case "all" -> Set.of("all");
             default -> Set.of(dump.split(","));
         };
-        return new TcOptions(stages, Path.of(System.getProperty("tornado.tc.dumpDir", "tc-dumps")), !"end".equals(System.getProperty("tornado.tc.verify", "each")),
+        return new TcOptions(stages, Path.of(System.getProperty("tornado.tc.dumpDir", "tc-dumps")), "each".equals(System.getProperty("tornado.tc.verify", "end")),
                 Optional.ofNullable(System.getProperty("tornado.tc.only")), "html".equals(System.getProperty("tornado.tc.report")),
                 // The runtime's own switch for math optimisations (default on), honoured by TC too.
                 Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")), "?",

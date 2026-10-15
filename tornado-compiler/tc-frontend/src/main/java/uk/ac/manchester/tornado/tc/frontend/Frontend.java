@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.zip.ZipFile;
 
 import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
@@ -223,14 +224,21 @@ public final class Frontend {
     public record MethodRef(String owner, String name, String descriptor) {
     }
 
-    /** The translated function (or the diagnostics explaining why there is none) and the bytecode listing. */
-    public record Result(Optional<Function> function, List<Diagnostic> diagnostics, String bytecode) {
+    /**
+     * The translated function (or the diagnostics explaining why there is none) and the bytecode
+     * listing, printed only when asked for: only dumps and reports show it.
+     */
+    public record Result(Optional<Function> function, List<Diagnostic> diagnostics, Supplier<String> listing) {
         Result(Optional<Function> function, List<Diagnostic> diagnostics) {
-            this(function, diagnostics, "");
+            this(function, diagnostics, () -> "");
         }
 
         public boolean succeeded() {
             return function.isPresent();
+        }
+
+        public String bytecode() {
+            return listing.get();
         }
     }
 
@@ -261,7 +269,7 @@ public final class Frontend {
             // An abstract or native task method: a task built from an interface method reference (k::apply).
             return failure("TC-E1003", "task method " + className + "." + methodName + " has no bytecode (abstract or native): give the task a method with a body");
         }
-        var listing = Disassembler.print(classFile, method.get());
+        Supplier<String> listing = () -> Disassembler.print(classFile, method.get());
         try {
             return new Result(Optional.of(Translator.translate(source, classFile, method.get())), List.of(), listing);
         } catch (Translator.FrontendError e) {
@@ -351,12 +359,12 @@ public final class Frontend {
     public static ModuleResult translateCallee(BytecodeSource source, String owner, String methodName, String descriptor, String name) {
         var bytes = source.classBytes(owner);
         if (bytes.isEmpty()) {
-            return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", "class " + owner.replace('/', '.') + " not found", "", Loc.UNKNOWN)), "");
+            return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", "class " + owner.replace('/', '.') + " not found", "", Loc.UNKNOWN)), () -> "");
         }
         var classFile = ClassFile.parse(bytes.get());
         var method = classFile.method(methodName, descriptor);
         if (method.isEmpty() || method.get().code().isEmpty()) {
-            return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + owner.replace('/', '.') + "." + methodName + descriptor + " has no bytecode", "", Loc.UNKNOWN)), "");
+            return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + owner.replace('/', '.') + "." + methodName + descriptor + " has no bytecode", "", Loc.UNKNOWN)), () -> "");
         }
         var module = new uk.ac.manchester.tornado.tc.ir.IrModule();
         try {
@@ -371,13 +379,16 @@ public final class Frontend {
                 inner.module().get().functions().stream().filter(f -> module.find(f.name()).isEmpty()).forEach(module::add);
             }
         } catch (Translator.FrontendError e) {
-            return new ModuleResult(Optional.empty(), List.of(e.diagnostic), "");
+            return new ModuleResult(Optional.empty(), List.of(e.diagnostic), () -> "");
         }
-        return new ModuleResult(Optional.of(module), List.of(), "");
+        return new ModuleResult(Optional.of(module), List.of(), () -> "");
     }
 
     /** A kernel and every static method it calls, transitively: the kernel is the first function. */
-    public record ModuleResult(Optional<uk.ac.manchester.tornado.tc.ir.IrModule> module, List<Diagnostic> diagnostics, String bytecode) {
+    public record ModuleResult(Optional<uk.ac.manchester.tornado.tc.ir.IrModule> module, List<Diagnostic> diagnostics, Supplier<String> listing) {
+        public String bytecode() {
+            return listing.get();
+        }
     }
 
     /**
@@ -393,7 +404,7 @@ public final class Frontend {
         }
         var kernel = translate(source, className, methodName, descriptor);
         if (kernel.function().isEmpty()) {
-            return new ModuleResult(Optional.empty(), kernel.diagnostics(), kernel.bytecode());
+            return new ModuleResult(Optional.empty(), kernel.diagnostics(), kernel.listing());
         }
         var module = new uk.ac.manchester.tornado.tc.ir.IrModule();
         var work = new java.util.ArrayDeque<java.util.Map.Entry<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef>>();
@@ -405,7 +416,7 @@ public final class Frontend {
         try {
             root = Translator.translate(source, classFile, method, Function.Kind.KERNEL);
         } catch (Translator.FrontendError e) {
-            return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.bytecode());
+            return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.listing());
         }
         module.add(root.function());
         work.addAll(root.callees().entrySet());
@@ -419,7 +430,7 @@ public final class Frontend {
             var bytes = source.classBytes(ref.owner());
             if (bytes.isEmpty()) {
                 var why = "class " + ref.owner().replace('/', '.') + " of called method " + ref.name() + " not found";
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", why, "", Loc.UNKNOWN)), kernel.bytecode());
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", why, "", Loc.UNKNOWN)), kernel.listing());
             }
             var calleeClass = ClassFile.parse(bytes.get());
             var calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
@@ -434,21 +445,21 @@ public final class Frontend {
             }
             if (calleeMethod.isEmpty() || calleeMethod.get().code().isEmpty()) {
                 var why = "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode";
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", why, "", Loc.UNKNOWN)), kernel.bytecode());
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", why, "", Loc.UNKNOWN)), kernel.listing());
             }
             try {
                 var translated = Translator.translateDevice(source, calleeClass, calleeMethod.get(), entry.getKey());
                 module.add(translated.function());
                 work.addAll(translated.callees().entrySet());
             } catch (Translator.FrontendError e) {
-                return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.bytecode());
+                return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.listing());
             }
             if (seen.size() > 64) {
                 var why = "more than 64 distinct callees: recursion or an unbounded call graph";
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", why, "", Loc.UNKNOWN)), kernel.bytecode());
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", why, "", Loc.UNKNOWN)), kernel.listing());
             }
         }
-        return new ModuleResult(Optional.of(module), List.of(), kernel.bytecode());
+        return new ModuleResult(Optional.of(module), List.of(), kernel.listing());
     }
 
     private static Result failure(String code, String message) {

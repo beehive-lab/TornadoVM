@@ -182,7 +182,9 @@ plug in as a `Backend` service.
 | `tornado.tc.dump=all\|<stage>,...` | write the IR after each stage to `tornado.tc.dumpDir` (default `tc-dumps/`) |
 | `tornado.tc.only=<Class.method>` | restrict dumps and reports to one kernel |
 | `tornado.tc.report=html` | a self-contained HTML report per kernel: bytecode, every stage, the source |
-| `tornado.tc.verify=end` | verify the IR once at the end instead of after every stage |
+| `tornado.tc.verify=each` | verify the IR after every pass and stage instead of once at the end (the default); names the pass that broke it |
+| `tornado.tc.memoize=false` | compile every task, even when an earlier one had the same method and facts |
+| `tornado.tc.varyingScalars=<n>` | a scalar argument that takes `n` (default 3) different values across tasks of one kernel is compiled as a runtime value; `0` specialises every value |
 | `--printKernel` (launcher flag) | print the generated source |
 
 ## Further reading
