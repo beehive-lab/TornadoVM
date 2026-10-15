@@ -25,6 +25,7 @@ import shlex
 import signal
 import subprocess
 import sys
+import threading
 import time
 from abc import abstractmethod
 from builtins import staticmethod, isinstance
@@ -730,6 +731,31 @@ def killAllProcesses(pid: int):
         pass
 
 
+def startDraining(p):
+    """ Read the process's stdout and stderr on background threads, so a child that prints more than a
+        pipe holds (~64 KB, e.g. with --printKernel) does not block while a monitor waits for it to exit.
+        Returns a function that waits for the process and returns (out, err) as bytes.
+    """
+    chunks = {"out": [], "err": []}
+
+    def pump(stream, sink):
+        sink.append(stream.read())
+        stream.close()
+
+    threads = [threading.Thread(target=pump, args=(p.stdout, chunks["out"]), daemon=True),
+               threading.Thread(target=pump, args=(p.stderr, chunks["err"]), daemon=True)]
+    for t in threads:
+        t.start()
+
+    def finish():
+        for t in threads:
+            t.join()
+        p.wait()
+        return b"".join(chunks["out"]), b"".join(chunks["err"])
+
+    return finish
+
+
 def runMonitorClass(monitorClass: Optional[Union[str, MonitorClass]], cmd: str, pid: int):
     """ Run the monitor class if specified.
     :param monitorClass: Can be a string used to look up the monitor class in the MONITOR_REGISTRY or an instance of a MonitorClass.
@@ -828,11 +854,12 @@ def runSingleCommand(cmd, args):
 
     start = time.time()
     p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    finish = startDraining(p)
     monitor_status = runMonitorClass(args.monitorClass, cmd, p.pid)
     if not monitor_status:
         print(f"Monitor {args.monitorClass} failed. Killing process {p.pid}")
         killAllProcesses(p.pid)
-    out, err = p.communicate()
+    out, err = finish()
     end = time.time()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
@@ -903,6 +930,7 @@ def processStats(out, stats, failedTests, segFaults, unittest):
 def runCommandWithStats(command, stats, failedTests, segFaults, monitorClass):
     """ Run a command and update the stats dictionary """
     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    finish = startDraining(p)
     monitor_status = runMonitorClass(monitorClass, command, p.pid)
     params = re.search(r'--params\s+"([^"]+)"', command)
     unittest = params.group(1)
@@ -911,7 +939,7 @@ def runCommandWithStats(command, stats, failedTests, segFaults, monitorClass):
         print(f"Monitor {args.monitorClass} failed. Killing process {p.pid}")
         monitor_failed_msg = f"[FAILED] Test: class {command.split(' ')[-1]}"
         killAllProcesses(p.pid)
-    out, err = p.communicate()
+    out, err = finish()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
     if not monitor_status:
