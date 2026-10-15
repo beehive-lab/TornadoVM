@@ -673,6 +673,9 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         // the kernels batched before it are committed and finished first.
         if (ASYNC_LIBRARY_DISPATCH) {
             MetalObjects.flush(queue);
+            // The library returns without waiting for what it encodes, and its command buffers signal
+            // none of this backend's events: record it, so that a later host read or finish waits.
+            MetalObjects.markForeignWork(queue);
         } else {
             MetalObjects.finish(queue);
         }
