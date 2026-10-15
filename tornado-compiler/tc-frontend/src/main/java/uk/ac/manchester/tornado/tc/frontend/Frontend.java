@@ -107,8 +107,33 @@ public final class Frontend {
                         throw new UncheckedIOException(e);
                     }
                 }
-                return Optional.empty();
+                // The JDK's own classes (Float.isNaN, Math.round, ...) are never on a user class path.
+                return jrt(internalName);
             };
+        }
+
+        /** A class of the running JDK, from its jrt:/ image (packages map to the modules holding them). */
+        static Optional<byte[]> jrt(String internalName) {
+            int slash = internalName.lastIndexOf('/');
+            if (slash < 0) {
+                return Optional.empty();
+            }
+            var image = java.nio.file.FileSystems.getFileSystem(java.net.URI.create("jrt:/"));
+            var packageDir = image.getPath("/packages", internalName.substring(0, slash).replace('/', '.'));
+            if (!Files.isDirectory(packageDir)) {
+                return Optional.empty();
+            }
+            try (var modules = Files.list(packageDir)) {
+                for (var module : modules.toList()) {
+                    var file = image.getPath("/modules", module.getFileName().toString(), internalName + ".class");
+                    if (Files.isRegularFile(file)) {
+                        return Optional.of(Files.readAllBytes(file));
+                    }
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return Optional.empty();
         }
 
         /** Class files visible to {@code loader}. */
