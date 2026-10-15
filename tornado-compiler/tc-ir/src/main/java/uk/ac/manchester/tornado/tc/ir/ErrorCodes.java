@@ -103,6 +103,8 @@ public final class ErrorCodes {
             Map.entry("TC-E4014", new Entry(Category.INVALID_KERNEL, "shrink the kernel's local arrays to fit the device's shared memory per work-group")),
             Map.entry("TC-E4015", new Entry(Category.UNSUPPORTED, "warp operations need 32-lane warps on this backend")),
             Map.entry("TC-E4016", new Entry(Category.UNSUPPORTED, "launch the child kernel from the host (a TaskGraph) on this device")),
+            Map.entry("TC-E4017", new Entry(Category.UNSUPPORTED, "tensor cores (mma.sync) and cp.async need an Ampere (sm_80) or newer GPU; use the scalar path on this device")),
+            Map.entry("TC-E4018", new Entry(Category.UNSUPPORTED, "FP8 MMA needs an Ada (sm_89) or newer GPU and CUDA 12.4+; use F16 or BF16 MMA on this device")),
             // Code generation.
             Map.entry("TC-E4001", new Entry(Category.UNSUPPORTED, "this type or operation has no CUDA spelling in TC yet")),
             Map.entry("TC-E4002", new Entry(Category.UNSUPPORTED, "this intrinsic has no CUDA spelling in TC yet")),

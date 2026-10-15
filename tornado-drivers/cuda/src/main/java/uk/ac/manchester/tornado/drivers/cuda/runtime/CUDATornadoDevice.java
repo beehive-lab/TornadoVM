@@ -56,6 +56,7 @@ import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
+import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
 import uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
@@ -241,9 +242,9 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         }
         int cc = d.getComputeCapabilityMajor() * 10 + d.getComputeCapabilityMinor();
         // fp64 on every CUDA device; native fp16 arithmetic from sm_53; device launches from sm_35.
-        // Every NVIDIA GPU so far has 32-lane warps.
+        // Every NVIDIA GPU so far has 32-lane warps. The NVRTC version bounds the PTX ISA (FP8 MMA).
         return new TargetCaps(TargetCaps.Dialect.CUDA, cc, true, cc >= 53, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(), (int) d.getDeviceLocalMemorySize(), 32,
-                cc >= 35);
+                cc >= 35, Math.max(0, CUDAProgram.getNvrtcVersion()));
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {

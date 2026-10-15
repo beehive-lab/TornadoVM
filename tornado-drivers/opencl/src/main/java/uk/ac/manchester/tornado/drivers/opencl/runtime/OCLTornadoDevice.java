@@ -245,7 +245,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice {
         boolean fp16 = d.getDeviceExtensions().contains("cl_khr_fp16");
         // No warp width is assumed (sub-group sizes vary by vendor) and OpenCL 1.2 has no device-side enqueue.
         return new TargetCaps(TargetCaps.Dialect.OPENCL, 0, d.isDeviceDoubleFPSupported(), fp16, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(),
-                (int) d.getDeviceLocalMemorySize(), 0, false);
+                (int) d.getDeviceLocalMemorySize(), 0, false, 0);
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {

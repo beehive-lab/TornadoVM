@@ -242,7 +242,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     private TargetCaps tcTarget() {
         var d = getDeviceContext().getDevice();
         return new TargetCaps(TargetCaps.Dialect.METAL, 0, d.isDeviceDoubleFPSupported(), true, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(),
-                (int) d.getDeviceLocalMemorySize(), 32, false);
+                (int) d.getDeviceLocalMemorySize(), 32, false, 0);
     }
 
     private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {

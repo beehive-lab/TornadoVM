@@ -26,6 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.tc.ir.IrParser;
@@ -75,19 +77,42 @@ public class TcCompilerTest {
     /** Legality refuses what the device's capabilities rule out, before any code is generated. */
     @Test
     public void legalityChecksTheTargetCapabilities() {
-        var noDoubles = new TargetCaps(TargetCaps.Dialect.CUDA, 89, false, true, 16, 1024, 48 * 1024, 32, true);
+        var noDoubles = new TargetCaps(TargetCaps.Dialect.CUDA, 89, false, true, 16, 1024, 48 * 1024, 32, true, 0);
         var doubles = TcCompiler.compile(IrParser.parseFunction(KERNEL.replace("f32", "f64")), noDoubles, TcOptions.DEFAULTS);
         assertFalse(doubles.succeeded());
         assertEquals("TC-E4012", doubles.diagnostics().get(0).code());
         assertTrue(TcCompiler.compile(IrParser.parseFunction(KERNEL), noDoubles, TcOptions.DEFAULTS).succeeded());
 
-        var smallShared = new TargetCaps(TargetCaps.Dialect.CUDA, 89, true, true, 16, 1024, 512, 32, true);
+        var smallShared = new TargetCaps(TargetCaps.Dialect.CUDA, 89, true, true, 16, 1024, 512, 32, true, 0);
         // An unused array is removed before legality, so the check runs on the step itself.
         var withShared = IrParser.parseFunction(KERNEL.replace("^entry:\n", "^entry:\n  %buf = alloca.shared f32[256] : ptr<shared>\n"));
         var shared = uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, smallShared);
         assertEquals("TC-E4014", shared.get(0).code(), shared.toString());
         assertTrue(shared.get(0).message().contains("1024 bytes"), shared.get(0).message());
         assertTrue(uk.ac.manchester.tornado.tc.tornado.Legality.run(withShared, TargetCaps.CUDA_SM89).isEmpty());
+    }
+
+    private static TargetCaps cuda(int cc, int nvrtc) {
+        return new TargetCaps(TargetCaps.Dialect.CUDA, cc, true, true, 16, 1024, 48 * 1024, 32, true, nvrtc);
+    }
+
+    private static List<String> legality(String intrinsic, TargetCaps target) {
+        var f = IrParser.parseFunction("kernel @k() -> void {\n^entry:\n  " + intrinsic + "()\n  ret\n}\n");
+        return uk.ac.manchester.tornado.tc.tornado.Legality.run(f, target).stream().map(d -> d.code()).toList();
+    }
+
+    /** TC-5: tensor cores and cp.async need sm_80; FP8 MMA sm_89 and an NVRTC that emits PTX ISA 8.4. */
+    @Test
+    public void legalityChecksTensorCoreSupport() {
+        assertEquals(List.of("TC-E4017"), legality("tornado.mma.m16n8k16", cuda(75, 12060)));
+        assertEquals(List.of("TC-E4017"), legality("tornado.async_copy.commit", cuda(75, 12060)));
+        assertEquals(List.of(), legality("tornado.mma.m16n8k16", cuda(80, 12060)));
+        assertEquals(List.of("TC-E4018"), legality("tornado.mma.m16n8k32_e4m3", cuda(80, 12060)));
+        assertEquals(List.of("TC-E4018"), legality("tornado.mma.m16n8k32_e5m2", cuda(86, 12060)));
+        assertEquals(List.of("TC-E4018"), legality("tornado.mma.m16n8k32_e4m3", cuda(89, 12003)));
+        assertEquals(List.of(), legality("tornado.mma.m16n8k32_e4m3", cuda(89, 12004)));
+        assertEquals(List.of(), legality("tornado.mma.m16n8k32_e5m2", cuda(90, 0)));
+        assertEquals(List.of(), legality("tornado.mma.m16n8k32_e4m3", TargetCaps.CUDA_SM89));
     }
 
     @Test

@@ -43,6 +43,8 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * <li>TC-E4014: more shared (local) memory than a work-group has;</li>
  * <li>TC-E4015: warp operations, written for 32-lane warps, on another SIMD width;</li>
  * <li>TC-E4016: a device launch where kernels cannot launch kernels;</li>
+ * <li>TC-E4017: tensor-core MMA or {@code cp.async} below CUDA sm_80;</li>
+ * <li>TC-E4018: FP8 tensor-core MMA below sm_89, or with an NVRTC older than 12.4 (PTX ISA 8.4);</li>
  * <li>TC-E4010, TC-E4011: CUDA Tile kernels ({@link TileTyping#checkTarget}).</li>
  * </ul>
  */
@@ -73,6 +75,17 @@ public final class Legality {
         if (!target.deviceLaunch()) {
             insts(function).filter(i -> intrinsic(i, "tornado.device_launch")).findFirst()
                     .ifPresent(i -> problems.add(at(function, i, "TC-E4016", "KernelContext.launch needs kernels that launch kernels (CUDA dynamic parallelism), which this target lacks")));
+        }
+        if (target.dialect() == TargetCaps.Dialect.CUDA) {
+            var mma = insts(function).filter(i -> intrinsic(i, "tornado.mma.") || intrinsic(i, "tornado.async_copy")).findFirst();
+            var fp8 = insts(function).filter(i -> intrinsic(i, "tornado.mma.m16n8k32_e4m3") || intrinsic(i, "tornado.mma.m16n8k32_e5m2")).findFirst();
+            if (!target.mma() && mma.isPresent()) {
+                problems.add(at(function, mma.get(), "TC-E4017", "tensor-core MMA and cp.async need compute capability 8.0 or higher; the device is sm_" + target.computeCapability()));
+            } else if (!target.fp8Mma() && fp8.isPresent()) {
+                problems.add(at(function, fp8.get(), "TC-E4018", target.computeCapability() < 89
+                        ? "FP8 tensor-core MMA needs compute capability 8.9 or higher; the device is sm_" + target.computeCapability()
+                        : "FP8 tensor-core MMA needs PTX ISA 8.4 (NVRTC 12.4 or newer); NVRTC is " + target.nvrtcVersion() / 1000 + "." + target.nvrtcVersion() % 1000));
+            }
         }
         insts(function).filter(i -> intrinsic(i, "tornado.vector.lane_at") || intrinsic(i, "tornado.vector.insert_at")).findFirst()
                 .ifPresent(i -> problems.add(at(function, i, "TC-E1010", "vector lanes can only be accessed at a constant index (a loop over lanes must have a constant trip count to unroll)")));

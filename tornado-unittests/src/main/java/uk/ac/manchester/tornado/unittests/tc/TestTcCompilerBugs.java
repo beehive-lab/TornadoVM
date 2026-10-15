@@ -221,4 +221,18 @@ public class TestTcCompilerBugs extends TornadoTestBase {
             assertEquals(expected.get(i), out.get(i), "index " + i);
         }
     }
+
+    // ---------------------------------------------------------------- TC-5
+
+    /**
+     * TC-5: FP8 tensor-core MMA needs sm_89 and NVRTC 12.4+. Below that the compiler refuses the kernel
+     * with TornadoDeviceMMANotSupported, which the harness reports as unsupported (not a raw ptxas
+     * failure); on sm_89+ the GEMM runs and matches the reference.
+     */
+    @Test
+    public void testFP8MmaIsRefusedOnDevicesWithoutFP8TensorCores() throws TornadoExecutionPlanException {
+        var fp8 = new uk.ac.manchester.tornado.unittests.kernelcontext.matrices.TestMatrixMultiplicationMMAFP8();
+        fp8.testGemmFP8Minimal();
+        fp8.testGemmFP8E5M2Minimal();
+    }
 }

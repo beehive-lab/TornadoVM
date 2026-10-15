@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -191,6 +192,10 @@ public final class TcHook {
         if (d.code().equals("TC-E4012")) {
             // A device without fp64 (Metal; OpenCL without cl_khr_fp64).
             return new TornadoDeviceFP64NotSupported(text);
+        }
+        if (d.code().equals("TC-E4017") || d.code().equals("TC-E4018")) {
+            // Tensor cores the device (or its NVRTC) lacks: what KernelContext.mma* document.
+            return new TornadoDeviceMMANotSupported(text);
         }
         return switch (category) {
             // TornadoInternalError formats its message: pass the text as an argument, not as the format.
