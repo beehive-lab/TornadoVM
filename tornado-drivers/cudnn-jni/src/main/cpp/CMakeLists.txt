@@ -77,13 +77,6 @@ include_directories(
 	$ENV{C_INCLUDE_PATH}
 )
 
-# Only the fused SDPA path still needs a compiled shim: it is built on cudnn-frontend, a
-# header-only C++ graph API with no C ABI, so java.lang.foreign cannot call it. The rest of the
-# cuDNN surface is bound directly from Java (see CuDnnNativeLib), and its former translation
-# unit has been deleted.
-set(SOURCE_FILES "source/tornado-cudnn-sdpa.cpp")
-add_library(tornado-cudnn SHARED ${SOURCE_FILES})
-
 # Prefer $CUDA_PATH and /usr/local/cuda over the CMake-discovered toolkit so
 # headers and library come from the same toolkit the CUDA backend JIT uses
 # (see the matching note in cuda-jni/src/main/cpp/CMakeLists.txt).
@@ -132,6 +125,27 @@ find_library(CUDNN_LIB cudnn
         ${CUDNN_ROOT_LIB_DIRS}
         /usr/lib/x86_64-linux-gnu
 )
+
+# Without cuDNN the build skips this library with a warning, as cudf-jni does without libcudf, so a
+# CUDA machine without cuDNN still builds the CUDA backend; tornado-cudnn then reports the fused
+# SDPA path as unavailable when it is called. With TORNADO_CUDNN_REQUIRED set (release builds), a
+# missing cuDNN fails the build instead of shipping SDKs without libtornado-cudnn.
+if(NOT CUDA_INCLUDE_DIR OR NOT CUDNN_LIB)
+    set(_tornado_cudnn_reason "no cuDNN found (looked for cudnn.h and libcudnn under $ENV{CUDA_PATH}, /usr/local/cuda, the CUDA toolkit and $ENV{CUDNN_ROOT}). Skipping the tornado-cudnn native library (the fused SDPA path will report it at runtime).")
+    if(NOT "$ENV{TORNADO_CUDNN_REQUIRED}" STREQUAL "" AND NOT "$ENV{TORNADO_CUDNN_REQUIRED}" STREQUAL "0")
+        message(FATAL_ERROR "TornadoVM cuDNN: ${_tornado_cudnn_reason} (TORNADO_CUDNN_REQUIRED is set, so this fails the build.)")
+    endif()
+    message(WARNING "TornadoVM cuDNN: ${_tornado_cudnn_reason}")
+    return()
+endif()
+
+# Only the fused SDPA path still needs a compiled shim: it is built on cudnn-frontend, a
+# header-only C++ graph API with no C ABI, so java.lang.foreign cannot call it. The rest of the
+# cuDNN surface is bound directly from Java (see CuDnnNativeLib), and its former translation
+# unit has been deleted.
+set(SOURCE_FILES "source/tornado-cudnn-sdpa.cpp")
+add_library(tornado-cudnn SHARED ${SOURCE_FILES})
+
 
 if(CUDA_INCLUDE_DIR)
     include_directories(${CUDA_INCLUDE_DIR})
