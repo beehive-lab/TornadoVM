@@ -257,6 +257,10 @@ public final class Frontend {
         if (method.isEmpty()) {
             return failure("TC-E1007", "method " + methodName + (descriptor == null ? "" : descriptor) + " not found in " + className);
         }
+        if (method.get().code().isEmpty()) {
+            // An abstract or native task method: a task built from an interface method reference (k::apply).
+            return failure("TC-E1003", "task method " + className + "." + methodName + " has no bytecode (abstract or native): give the task a method with a body");
+        }
         var listing = Disassembler.print(classFile, method.get());
         try {
             return new Result(Optional.of(Translator.translate(source, classFile, method.get())), List.of(), listing);

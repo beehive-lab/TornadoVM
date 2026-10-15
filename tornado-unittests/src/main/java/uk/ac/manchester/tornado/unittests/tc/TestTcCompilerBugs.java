@@ -18,9 +18,12 @@
 package uk.ac.manchester.tornado.unittests.tc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -272,5 +275,51 @@ public class TestTcCompilerBugs extends TornadoTestBase {
             scaleAdd(in[t], expected, scales[t]);
             assertSame(expected, out[t]);
         }
+    }
+
+    // ---------------------------------------------------------------- TC-8
+
+    /** A kernel reached through an interface: the task method is the abstract {@code apply}. */
+    public interface AbstractKernel {
+        void apply(KernelContext context, IntArray a, IntArray b, int n);
+    }
+
+    public static final class CopyKernel implements AbstractKernel {
+        @Override
+        public void apply(KernelContext context, IntArray a, IntArray b, int n) {
+            int i = context.globalIdx;
+            if (i < n) {
+                b.set(i, a.get(i));
+            }
+        }
+    }
+
+    private static String messages(Throwable t) {
+        var sb = new StringBuilder();
+        for (Throwable c = t; c != null; c = c.getCause()) {
+            sb.append(c.getClass().getSimpleName()).append(": ").append(c.getMessage()).append('\n');
+        }
+        return sb.toString();
+    }
+
+    /** TC-8: a task whose method has no bytecode is refused with TC-E1003, not an internal error (TC-E9003). */
+    @Test
+    public void testAbstractTaskMethodIsNotAnInternalError() {
+        AbstractKernel k = new CopyKernel();
+        IntArray a = new IntArray(N);
+        IntArray b = new IntArray(N);
+        KernelContext context = new KernelContext();
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", k::apply, context, a, b, N) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+        String failure = "";
+        try {
+            runOnDevice("tc8", graph);
+        } catch (Throwable t) {
+            failure = messages(t);
+        }
+        assertFalse(failure.contains("TC-E9003"), failure);
+        assertTrue(failure.isEmpty() || failure.contains("TC-E1003"), failure);
     }
 }
