@@ -1,0 +1,40 @@
+; Structural rules: terminators, successor arguments, entry block.
+; RUN: tc-ir --verify-diagnostics %s
+
+; expected-error@* {{TC-E2101: block ^entry does not end with a terminator}}
+device @no_terminator() -> void {
+^entry:
+  %x = const 1 : i32
+}
+
+device @terminator_in_middle() -> void {
+^entry:
+  ret ; expected-error {{TC-E2102: terminator 'ret' must be the last instruction}}
+  %x = const 1 : i32
+  ret
+}
+
+device @wrong_arg_count(%c: i1) -> void {
+^entry:
+  ; expected-error@+1 {{TC-E2103: branch to ^join passes 0 argument(s), the block takes 1}}
+  cond_br %c, ^join, ^other
+^other:
+  %one = const 1 : i32
+  br ^join(%one)
+^join(%v: i32):
+  ret
+}
+
+device @wrong_arg_type() -> void {
+^entry:
+  %f = const 1.0 : f32
+  br ^join(%f) ; expected-error {{TC-E2104: argument 0 to ^join has type f32, expected i32}}
+^join(%v: i32):
+  ret
+}
+
+; expected-error@* {{TC-E2116: the entry block ^entry must not have predecessors}}
+device @entry_has_predecessor() -> void {
+^entry:
+  br ^entry
+}

@@ -120,7 +120,7 @@ public class MetalDevice implements MetalTargetDevice {
         getDeviceMaxWorkItemDimensions();
         getDeviceMaxWorkGroupSize_0();
         getDeviceMaxConstantBufferSize();
-        getDoubleFPConfig();
+        doubleFPConfig = getDoubleFPConfig();
         getDeviceSingleFPConfig();
         getDeviceMemoryBaseAlignment();
         getDeviceMaxWorkItemSizes();
@@ -367,7 +367,7 @@ public class MetalDevice implements MetalTargetDevice {
         return 0; // not supported
     }
 
-    public boolean isDeviceDoubleFPSupported() {
+    public synchronized boolean isDeviceDoubleFPSupported() {
         return false;
     }
 

@@ -57,7 +57,7 @@ def reactor_poms():
     )
     poms = []
     for line in out.split():
-        # beehive-spirv-toolkit and bin/graal-relocate are vendored sub-builds
+        # beehive-spirv-toolkit and anything under bin/ are vendored sub-builds
         # with their own independent version lines - never touch them.
         if line.startswith("beehive-spirv-toolkit/") or line.startswith("bin/"):
             continue

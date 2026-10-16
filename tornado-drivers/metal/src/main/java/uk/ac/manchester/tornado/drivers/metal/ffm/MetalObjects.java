@@ -71,6 +71,7 @@ public final class MetalObjects {
 
     /** Bit 0 of a compile-flags mask enables fast/relaxed math; mirrors MetalContext. */
     private static final int METAL_COMPILE_FAST_MATH = 0x1;
+    private static final int METAL_COMPILE_STRICT = 0x2;
 
     private static final MethodHandle DISPATCH_DATA_CREATE = FFMSupport.downcall(FFMSupport.loadLibrary("/usr/lib/libSystem.B.dylib", "libSystem.dylib"),
             FunctionDescriptor.of(C_LONG, C_POINTER, C_LONG, C_POINTER, C_POINTER), "dispatch_data_create");
@@ -342,10 +343,11 @@ public final class MetalObjects {
         try (Arena arena = Arena.ofConfined(); ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
             long sourceString = ObjCRuntime.newNSString(new String(source, StandardCharsets.UTF_8));
             long options = 0;
-            if ((compileFlags & METAL_COMPILE_FAST_MATH) != 0) {
+            if ((compileFlags & (METAL_COMPILE_FAST_MATH | METAL_COMPILE_STRICT)) != 0) {
                 long optionsClass = ObjCRuntime.objc_getClass("MTLCompileOptions");
                 options = ObjCRuntime.send(ObjCRuntime.send(optionsClass, "alloc"), "init");
-                ObjCRuntime.sendVoid(options, "setFastMathEnabled:", 1);
+                // A strict plan turns fast math off explicitly: MTLCompileOptions defaults to it on.
+                ObjCRuntime.sendVoid(options, "setFastMathEnabled:", (compileFlags & METAL_COMPILE_STRICT) != 0 ? 0 : 1);
             }
             MemorySegment errorSlot = FFMSupport.allocatePointer(arena);
             long library = MetalAPI.newLibraryWithSource(device, sourceString, options, errorSlot);

@@ -1,0 +1,47 @@
+; Constant folding follows Java, not C: wrap-around, MIN/-1, masked shift counts, logical >>>, single-precision float arithmetic (0.3f - 0.2f == 0.10000001f),
+; saturating float-to-int with NaN -> 0, NaN-aware comparisons; division by zero is left alone.
+; RUN: tc-opt --passes=canonicalize --no-loc %s | FileCheck %s
+
+; CHECK-LABEL: device @fold() -> void {
+; CHECK-DAG:  %wrap = const -2147483648 : i32
+; CHECK-DAG:  %minDiv = const -2147483648 : i32
+; CHECK-DAG:  %minRem = const 0 : i32
+; CHECK-DAG:  %shl33 = const 2 : i32
+; CHECK-DAG:  %ushr = const 2147483647 : i32
+; CHECK-DAG:  %sat = const 2147483647 : i32
+; CHECK-DAG:  %nanInt = const 0 : i32
+; CHECK-DAG:  %nanLt = const 0 : i1
+; CHECK-DAG:  %nanUlt = const 1 : i1
+; CHECK-DAG:  %f = const 0.10000001 : f32
+; CHECK:      %byZero = div %one, %zero : i32
+device @fold() -> void {
+^entry:
+  %max = const 2147483647 : i32
+  %one = const 1 : i32
+  %zero = const 0 : i32
+  %min = const -2147483648 : i32
+  %m1 = const -1 : i32
+  %c33 = const 33 : i32
+  %wrap = add %max, %one : i32
+  %minDiv = div %min, %m1 : i32
+  %minRem = rem %min, %m1 : i32
+  %shl33 = shl %one, %c33 : i32
+  %ushr = ushr %m1, %one : i32
+  %big = const 1.0E10 : f32
+  %sat = f2i.sat %big : i32
+  %nan = const nan : f32
+  %nanInt = f2i.sat %nan : i32
+  %nanLt = fcmp.olt %nan, %big : i1
+  %nanUlt = fcmp.ult %nan, %big : i1
+  %a = const 0.3 : f32
+  %b = const 0.2 : f32
+  %f = fsub %a, %b : f32
+  %byZero = div %one, %zero : i32
+  %keep = add %wrap, %minDiv : i32
+  %k2 = add %minRem, %shl33 : i32
+  %k3 = add %ushr, %sat : i32
+  %k4 = add %nanInt, %byZero : i32
+  %kf = fadd %f, %f : f32
+  %kb = select %nanLt, %nanUlt, %nanUlt : i1
+  ret
+}

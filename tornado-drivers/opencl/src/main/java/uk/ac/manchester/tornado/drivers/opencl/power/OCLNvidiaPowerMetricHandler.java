@@ -38,11 +38,13 @@ public class OCLNvidiaPowerMetricHandler implements PowerMetric {
     private final OCLDeviceContext deviceContext;
     private final TornadoLogger logger;
     private long[] oclDevice = new long[1];
+    private volatile boolean initialised;
 
     public OCLNvidiaPowerMetricHandler(OCLDeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         this.logger = new TornadoLogger(this.getClass());
-        initializePowerLibrary();
+        // NVML is loaded on the first power reading: only the profiler asks for one, and loading and
+        // initialising it costs about 100 ms of every application's start-up.
     }
 
     static long clNvmlInit() throws OCLException {
@@ -80,6 +82,13 @@ public class OCLNvidiaPowerMetricHandler implements PowerMetric {
         }
     }
 
+    private synchronized void initialiseOnce() {
+        if (!initialised) {
+            initializePowerLibrary();
+            initialised = true;
+        }
+    }
+
     @Override
     public void initializePowerLibrary() {
         try {
@@ -92,6 +101,9 @@ public class OCLNvidiaPowerMetricHandler implements PowerMetric {
 
     @Override
     public void getPowerUsage(long[] powerUsage) {
+        if (!initialised) {
+            initialiseOnce();
+        }
         try {
             clNvmlDeviceGetPowerUsage(this.oclDevice, powerUsage);
         } catch (OCLException e) {

@@ -1,0 +1,4 @@
+device @f(%v: vec<5 x f32>) -> void {
+^entry:
+  ret
+}

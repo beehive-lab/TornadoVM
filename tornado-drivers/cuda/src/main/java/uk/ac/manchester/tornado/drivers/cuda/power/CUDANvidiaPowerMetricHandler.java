@@ -38,11 +38,13 @@ public class CUDANvidiaPowerMetricHandler implements PowerMetric {
     private final CUDADeviceContext deviceContext;
     private final TornadoLogger logger;
     private long[] nvmlDevice = new long[1];
+    private volatile boolean initialised;
 
     public CUDANvidiaPowerMetricHandler(CUDADeviceContext deviceContext) {
         this.deviceContext = deviceContext;
         this.logger = new TornadoLogger(this.getClass());
-        initializePowerLibrary();
+        // NVML is loaded on the first power reading: only the profiler asks for one, and loading and
+        // initialising it costs about 100 ms of every application's start-up.
     }
 
     static long nvmlInit() throws CUDAException {
@@ -80,6 +82,13 @@ public class CUDANvidiaPowerMetricHandler implements PowerMetric {
         }
     }
 
+    private synchronized void initialiseOnce() {
+        if (!initialised) {
+            initializePowerLibrary();
+            initialised = true;
+        }
+    }
+
     @Override
     public void initializePowerLibrary() {
         try {
@@ -92,6 +101,9 @@ public class CUDANvidiaPowerMetricHandler implements PowerMetric {
 
     @Override
     public void getPowerUsage(long[] powerUsage) {
+        if (!initialised) {
+            initialiseOnce();
+        }
         try {
             nvmlDeviceGetPowerUsage(this.nvmlDevice, powerUsage);
         } catch (CUDAException e) {

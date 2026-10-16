@@ -1,0 +1,27 @@
+; tornado-selftest backend/ir-branches: one element per thread with an if/else diamond whose result
+; merges through a block argument. Java: out[i] = in[i] > 0 ? (float) Math.sqrt(in[i]) * 2 : -in[i]
+kernel @Branchy.compute(%in: array<f32>, %out: array<f32>) -> void {
+^entry:
+  %i = tornado.thread_id.global<dim = 0>() : i32      loc("Branchy.java":30)
+  %n = array.length %in : i32
+  %inside = icmp.slt %i, %n : i1
+  cond_br %inside, ^load, ^done
+^load:
+  %x = array.load %in[%i] : f32                loc("Branchy.java":31)
+  %zero = const 0.0 : f32
+  %pos = fcmp.ogt %x, %zero : i1               loc("Branchy.java":32)
+  cond_br %pos, ^then, ^else
+^then:
+  %r = math.sqrt(%x) : f32                     loc("Branchy.java":33)
+  %two = const 2.0 : f32
+  %d = fmul %r, %two : f32                     loc("Branchy.java":33)
+  br ^join(%d)
+^else:
+  %m = fneg %x : f32                           loc("Branchy.java":35)
+  br ^join(%m)
+^join(%v: f32):
+  array.store %out[%i], %v                     loc("Branchy.java":37)
+  br ^done
+^done:
+  ret
+}

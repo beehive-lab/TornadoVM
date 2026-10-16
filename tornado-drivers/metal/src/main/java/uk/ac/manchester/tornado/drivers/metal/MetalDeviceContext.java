@@ -44,8 +44,6 @@ import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
-import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
 import uk.ac.manchester.tornado.drivers.metal.power.MetalEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalBufferProvider;
@@ -177,6 +175,11 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public MetalProgram createProgramWithSource(byte[] source, long[] lengths) {
         return context.createProgramWithSource(source, lengths, this);
+    }
+
+    @Override
+    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, boolean strictFloatingPoint) {
+        return context.createProgramWithSource(source, lengths, this, strictFloatingPoint);
     }
 
     @Override
@@ -617,10 +620,6 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     public boolean isKernelAvailable(long executionPlanId) {
         MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
         return metalCodeCache.isKernelAvailable();
-    }
-
-    public MetalInstalledCode installCode(long executionPlanId, MetalCompilationResult result) {
-        return installCode(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }
 
     @Override

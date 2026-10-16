@@ -35,8 +35,7 @@ import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLProgram;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
+import uk.ac.manchester.tornado.drivers.opencl.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -197,11 +196,6 @@ public class VirtualOCLDeviceContext implements OCLDeviceContextInterface {
     @Override
     public boolean isKernelAvailable(long executionPlanId) {
         return true;
-    }
-
-    @Override
-    public OCLInstalledCode installCode(long executionPlanId, OCLCompilationResult result) {
-        return null;
     }
 
     @Override

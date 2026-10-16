@@ -10,25 +10,14 @@
     <artifactId>tornado-matrices</artifactId>
     <name>tornado-matrices</name>
     <description>TornadoVM Matrices: A utility package for TornadoVM Matrices collection</description>
+    <properties>
+        <skipTests>false</skipTests>
+    </properties>
     <dependencies>
         <dependency>
-            <groupId>org.ejml</groupId>
-            <artifactId>ejml-simple</artifactId>
-            <version>0.38</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.ejml</groupId>
-                    <artifactId>ejml-cdense</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.ejml</groupId>
-                    <artifactId>ejml-zdense</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.ejml</groupId>
-                    <artifactId>ejml-fdense</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
 		<dependency>
             <groupId>${project.groupId}</groupId>

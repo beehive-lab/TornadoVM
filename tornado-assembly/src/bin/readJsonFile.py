@@ -27,7 +27,7 @@ Usage: ./readJsonFile.py <inputFile.json>
 """
 
 import json
-import numpy as np
+import statistics
 import sys
 
 
@@ -129,8 +129,8 @@ class TornadoVMJsonReader:
         medians = {}
         ## Compute the median for each list
         for k in self.timers.keys():
-            medians[k] = np.median(self.timers[k])
-            mean[k] = np.mean(self.timers[k])
+            medians[k] = statistics.median(self.timers[k])
+            mean[k] = statistics.mean(self.timers[k])
 
         ## Print csv table with the median for the rest
         print(Colors.GREEN + "MEDIANS" + Colors.RESET)

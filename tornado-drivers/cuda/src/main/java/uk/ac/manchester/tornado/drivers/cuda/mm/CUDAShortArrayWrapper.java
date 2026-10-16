@@ -23,10 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.mm;
 
-import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.runtime.common.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
 
 public class CUDAShortArrayWrapper extends CUDAArrayWrapper<short[]> {
 
@@ -60,7 +59,7 @@ public class CUDAShortArrayWrapper extends CUDAArrayWrapper<short[]> {
 
     @Override
     public int getSizeOfType() {
-        return CUDAKind.SHORT.getSizeInBytes();
+        return Short.BYTES;
     }
 
 }

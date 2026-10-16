@@ -24,7 +24,6 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInliningException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -32,11 +31,11 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Test to check if the appropriate exception is thrown by TornadoVM
- * when inner function cannot be inlined.
+ * A kernel whose callee is too large for the old compiler's inlining budget (it threw
+ * {@code TornadoInliningException}). TC inlines it, so the kernel must compile and match the Java
+ * result.
  * <p>
  * How to run?
  * </p>
@@ -191,31 +190,30 @@ public class InliningFail extends TornadoTestBase {
 
     @Test
     public void testInliningError() throws TornadoExecutionPlanException {
-        assertThrows(TornadoInliningException.class, () -> {
-            final int numElements = 4096;
-            FloatArray a = new FloatArray(numElements);
-            FloatArray b = new FloatArray(numElements);
-            FloatArray c = new FloatArray(numElements);
+        final int numElements = 4096;
+        FloatArray a = new FloatArray(numElements);
+        FloatArray b = new FloatArray(numElements);
+        FloatArray c = new FloatArray(numElements);
 
-            IntStream.range(0, numElements).sequential().forEach(i ->
-                a.set(i, (float) Math.random()));
-
-            TaskGraph taskGraph = new TaskGraph("s0") //
-                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
-                    .task("t0", InliningFail::testInlinedFunction, a, b) //
-                    .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            try (TornadoExecutionPlan tornadoExecutor = new TornadoExecutionPlan(immutableTaskGraph)) {
-                tornadoExecutor.execute();
-            }
-
-            testInlinedFunction(a, c);
-
-            for (int i = 0; i < c.getSize(); i++) {
-                assertEquals(b.get(i), c.get(i), 0.01f);
-            }
+        IntStream.range(0, numElements).sequential().forEach(i -> {
+            a.set(i, (float) Math.random());
         });
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a) //
+                .task("t0", InliningFail::testInlinedFunction, a, b) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        try (TornadoExecutionPlan tornadoExecutor = new TornadoExecutionPlan(immutableTaskGraph)) {
+            tornadoExecutor.execute();
+        }
+
+        testInlinedFunction(a, c);
+
+        for (int i = 0; i < c.getSize(); i++) {
+            assertEquals(b.get(i), c.get(i), 0.01f);
+        }
     }
 
 }

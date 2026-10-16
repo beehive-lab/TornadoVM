@@ -37,7 +37,6 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualDeviceDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.virtual.VirtualJSONParser;

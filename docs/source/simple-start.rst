@@ -22,7 +22,7 @@ This is equivalent to:
 .. code-block:: bash
 
   $ tornado --help
-  usage: tornado [-h] [--version] [-version] [--debug] [--threadInfo] [--igv] [--igvLowTier] [--printKernel] [--printBytecodes] [--enableProfiler ENABLE_PROFILER] [--dumpProfiler DUMP_PROFILER] [--printJavaFlags] [--devices] [--ea]
+  usage: tornado [-h] [--version] [-version] [--debug] [--threadInfo] [--printKernel] [--printBytecodes] [--enableProfiler ENABLE_PROFILER] [--dumpProfiler DUMP_PROFILER] [--printJavaFlags] [--devices] [--ea]
                [--module-path MODULE_PATH] [--classpath CLASSPATH] [--jvm JVM_OPTIONS] [-m MODULE_APPLICATION] [-jar JAR_FILE] [--params APPLICATION_PARAMETERS]
                [application]
 
@@ -37,8 +37,6 @@ This is equivalent to:
     -version              Print JVM Version
     --debug               Enable debug mode
     --threadInfo          Print thread deploy information per task on the accelerator
-    --igv                 Debug Compilation Graphs using Ideal Graph Visualizer (IGV)
-    --igvLowTier          Debug Low Tier Compilation Graphs using Ideal Graph Visualizer (IGV)
     --printKernel, -pk    Print generated kernel (OpenCL or CUDA)
     --printBytecodes, -pc
                           Print the generated TornadoVM bytecodes

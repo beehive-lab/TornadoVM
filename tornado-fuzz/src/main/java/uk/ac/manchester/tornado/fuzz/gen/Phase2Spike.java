@@ -33,11 +33,11 @@ import uk.ac.manchester.tornado.fuzz.DeviceSelector;
  * Phase 2 de-risking spike. Generates ONE trivial KernelContext kernel as Java
  * source, compiles it in-process, and runs it on the CUDA backend against a host
  * reference. This validates the load-bearing assumption of the generative phase:
- * that TornadoVM's Graal bytecode reader can JIT a dynamically-compiled class.
+ * that TC's bytecode reader can JIT a dynamically-compiled class.
  *
  * The generated class exposes a {@code task()} factory that returns a method
  * reference to its own static kernel, so the lambda's defining classloader is the
- * child loader that can resolve the kernel (Graal reads the lambda's INVOKESTATIC
+ * child loader that can resolve the kernel (TC reads the lambda's INVOKESTATIC
  * via that loader's constant pool).
  *
  * Run: tornado -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.gen.Phase2Spike

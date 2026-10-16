@@ -1,131 +1,73 @@
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable  
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
-__kernel void maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *arg0, __global uchar *arg1)
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
+
+static inline float java_fmaxf(float a, float b) {
+  if ((as_uint(a) & 0x7fffffffu) > 0x7f800000u || (as_uint(b) & 0x7fffffffu) > 0x7f800000u) return as_float(0x7fc00000);
+  if (a == 0.0f && b == 0.0f) return as_float(as_int(a) & as_int(b));
+  return a > b ? a : b;
+}
+
+__kernel void TestVirtualDeviceKernel_maxReduction(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global unsigned char *input, __global unsigned char *result)
 {
-  ulong ul_0, ul_1, ul_11, ul_36; 
-  int i_3, i_4, i_5, i_6, i_7, i_15, i_16, i_17, i_18, i_21, i_24, i_27, i_28, i_31, i_32, i_37; 
-  long l_8, l_9, l_10, l_33, l_34, l_35; 
-  float f_12, f_23, f_25, f_26, f_30; 
-  uint ui_13, ui_14, ui_19, ui_20; 
-  bool b_22, b_29; 
+  __local float reduce_scratch[1024];
+  long v3, v7, v13;
+  __global float *input_data, *result_data;
+  int i, lid_x, active, half_;
+  float acc, partial;
+  v3 = (long) ((int) get_global_size(0));  // TestVirtualDeviceKernel.java:57
+  input_data = (__global float *) (input + 16L);  // TestVirtualDeviceKernel.java:57
+  i = (int) get_global_id(0);
+  acc = as_float(0xff800000);
+  while (i < 8192) {
+    v7 = (long) i;  // TestVirtualDeviceKernel.java:57
+    v13 = v7 + v3;  // TestVirtualDeviceKernel.java:57
+    i = (int) (v13 > 2147483647L ? 2147483647L : v13);
+    acc = java_fmaxf(acc, input_data[v7]);
+  }
+  lid_x = (int) get_local_id(0);  // TestVirtualDeviceKernel.java:57
+  reduce_scratch[lid_x] = acc;  // TestVirtualDeviceKernel.java:57
+  barrier(CLK_LOCAL_MEM_FENCE);  // TestVirtualDeviceKernel.java:57
+  active = (int) get_local_size(0);
+  while (active > 1) {
+    half_ = (int) ((uint) active + (uint) 1) >> 1;  // TestVirtualDeviceKernel.java:57
+    if (lid_x < (int) ((uint) active - (uint) half_)) {
+      reduce_scratch[lid_x] = java_fmaxf(reduce_scratch[lid_x], reduce_scratch[(int) ((uint) lid_x + (uint) half_)]);  // TestVirtualDeviceKernel.java:57
+    }
+    barrier(CLK_LOCAL_MEM_FENCE);  // TestVirtualDeviceKernel.java:57
+    active = half_;
+  }
+  partial = reduce_scratch[0];  // TestVirtualDeviceKernel.java:57
+  if (lid_x == 0) {
+    result_data = (__global float *) (result + 16L);  // TestVirtualDeviceKernel.java:57
+    result_data[(int) ((uint) ((int) get_group_id(0)) + (uint) 1)] = partial;  // TestVirtualDeviceKernel.java:57
+  }
+}
 
-  // BLOCK 0
-  ul_0  =  (ulong) arg0;
-  ul_1  =  (ulong) arg1;
-  __local float adf_2[1024];
-  i_3  =  get_global_size(0);
-  i_4  =  get_global_id(0);
-  // BLOCK 1 MERGES [0 11 ]
-  i_5  =  i_4;
-  for(;i_5 < 8192;)
-  {
-    // BLOCK 2
-    i_6  =  get_local_id(0);
-    i_7  =  get_local_size(0);
-    l_8  =  (long) i_5;
-    l_9  =  l_8 << 2;
-    l_10  =  l_9 + 16L;
-    ul_11  =  ul_0 + l_10;
-    f_12  =  *((__global float *) ul_11);
-    adf_2[i_6]  =  f_12;
-    ui_13  =  (uint) i_7;
-    ui_14  =  ui_13 >> 31;
-    i_15  =  (int) ui_14;
-    i_16  =  i_15 + i_7;
-    i_17  =  i_16 >> 1;
-    // BLOCK 3 MERGES [2 7 ]
-    i_18  =  i_17;
-    for(;i_18 >= 1;)
-    {
-      // BLOCK 4
-      barrier(CLK_LOCAL_MEM_FENCE);
-      ui_19  =  (uint) i_18;
-      ui_20  =  ui_19 >> 1;
-      i_21  =  (int) ui_20;
-      b_22  =  i_6 < i_18;
-      if(b_22)
-      {
-        // BLOCK 5
-        f_23  =  adf_2[i_6];
-        i_24  =  i_18 + i_6;
-        f_25  =  adf_2[i_24];
-        f_26  =  fmax(f_23, f_25);
-        adf_2[i_6]  =  f_26;
-      }  // B4
-      else
-      {
-        // BLOCK 6
-      }  // B4
-      // BLOCK 7 MERGES [6 5 ]
-      i_27  =  i_21;
-      i_18  =  i_27;
-    }  // B3
-    // BLOCK 8
-    barrier(CLK_GLOBAL_MEM_FENCE);
-    i_28  =  i_3 + i_5;
-    b_29  =  i_6 == 0;
-    if(b_29)
-    {
-      // BLOCK 9
-      f_30  =  adf_2[0];
-      i_31  =  get_group_id(0);
-      i_32  =  i_31 + 1;
-      l_33  =  (long) i_32;
-      l_34  =  l_33 << 2;
-      l_35  =  l_34 + 16L;
-      ul_36  =  ul_1 + l_35;
-      *((__global float *) ul_36)  =  f_30;
-    }  // B8
-    else
-    {
-      // BLOCK 10
-    }  // B8
-    // BLOCK 11 MERGES [10 9 ]
-    i_37  =  i_28;
-    i_5  =  i_37;
-  }  // B1
-  // BLOCK 12
-  return;
-}  //  kernel
+#pragma OPENCL EXTENSION cl_khr_fp64 : enable
+#pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable  
-#pragma OPENCL EXTENSION cl_khr_fp16 : enable  
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable  
-__kernel void rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global uchar *arg0, __private int arg1)
+static inline float java_fmaxf(float a, float b) {
+  if ((as_uint(a) & 0x7fffffffu) > 0x7f800000u || (as_uint(b) & 0x7fffffffu) > 0x7f800000u) return as_float(0x7fc00000);
+  if (a == 0.0f && b == 0.0f) return as_float(as_int(a) & as_int(b));
+  return a > b ? a : b;
+}
+
+__kernel void ReduceFactory_rMax(__global long *_kernel_context, __constant uchar *_constant_region, __local uchar *_local_region, __global int *_atomics, __global unsigned char *array, int size)
 {
-  ulong ul_0, ul_1, ul_3, ul_5, ul_7, ul_9, ul_11, ul_13, ul_15, ul_17; 
-  float f_2, f_4, f_6, f_8, f_10, f_12, f_14, f_16, f_18, f_19, f_20, f_21, f_22, f_23, f_24, f_25, f_26; 
-
-  // BLOCK 0
-  ul_0  =  (ulong) arg0;
-  ul_1  =  ul_0 + 16L;
-  f_2  =  *((__global float *) ul_1);
-  ul_3  =  ul_0 + 20L;
-  f_4  =  *((__global float *) ul_3);
-  ul_5  =  ul_0 + 24L;
-  f_6  =  *((__global float *) ul_5);
-  ul_7  =  ul_0 + 28L;
-  f_8  =  *((__global float *) ul_7);
-  ul_9  =  ul_0 + 32L;
-  f_10  =  *((__global float *) ul_9);
-  ul_11  =  ul_0 + 36L;
-  f_12  =  *((__global float *) ul_11);
-  ul_13  =  ul_0 + 40L;
-  f_14  =  *((__global float *) ul_13);
-  ul_15  =  ul_0 + 44L;
-  f_16  =  *((__global float *) ul_15);
-  ul_17  =  ul_0 + 48L;
-  f_18  =  *((__global float *) ul_17);
-  f_19  =  fmax(f_2, f_4);
-  f_20  =  fmax(f_19, f_6);
-  f_21  =  fmax(f_20, f_8);
-  f_22  =  fmax(f_21, f_10);
-  f_23  =  fmax(f_22, f_12);
-  f_24  =  fmax(f_23, f_14);
-  f_25  =  fmax(f_24, f_16);
-  f_26  =  fmax(f_25, f_18);
-  *((__global float *) ul_1)  =  f_26;
-  return;
-}  //  kernel
+  __global unsigned char *array_data;
+  float acc, acc_1, acc_2, acc_3, acc_4, acc_5, acc_6, acc_7, acc_8;
+  array_data = array + 16L;  // ReduceFactory.java:182
+  acc = *((__global float *) array_data);  // ReduceFactory.java:182
+  acc_1 = java_fmaxf(acc, *((__global float *) (array_data + 4L)));  // ReduceFactory.java:184
+  acc_2 = java_fmaxf(acc_1, *((__global float *) (array_data + 8L)));  // ReduceFactory.java:184
+  acc_3 = java_fmaxf(acc_2, *((__global float *) (array_data + 12L)));  // ReduceFactory.java:184
+  acc_4 = java_fmaxf(acc_3, *((__global float *) (array_data + 16L)));  // ReduceFactory.java:184
+  acc_5 = java_fmaxf(acc_4, *((__global float *) (array_data + 20L)));  // ReduceFactory.java:184
+  acc_6 = java_fmaxf(acc_5, *((__global float *) (array_data + 24L)));  // ReduceFactory.java:184
+  acc_7 = java_fmaxf(acc_6, *((__global float *) (array_data + 28L)));  // ReduceFactory.java:184
+  acc_8 = java_fmaxf(acc_7, *((__global float *) (array_data + 32L)));  // ReduceFactory.java:184
+  *((__global float *) array_data) = acc_8;  // ReduceFactory.java:186
+}
 

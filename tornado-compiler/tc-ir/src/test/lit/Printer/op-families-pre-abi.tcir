@@ -1,0 +1,42 @@
+; Every Java-level (pre-ABI) instruction family round-trips unchanged and verifies.
+; RUN: tc-ir --verify %s | FileCheck %s
+
+; CHECK-LABEL: device @pre(%o: obj<uk.ac.manchester.Point$Inner>, %arr: array<i32>, %x: i32, %f: f64) -> i64 {
+; CHECK:  %q = div %x, %x : i32
+; CHECK:  %u = ushr %x, %x : i32
+; CHECK:  %nx = not %x : i32
+; CHECK:  %neg = fneg %f : f64
+; CHECK:  %le = icmp.ule %x, %x : i1
+; CHECK:  %uno = fcmp.uno %f, %f : i1
+; CHECK:  %sel = select %le, %x, %x : i32
+; CHECK:  %w = sext %x : i64
+; CHECK:  %sat = f2i.sat %f : i32
+; CHECK:  %v = field.load %o, "count" : i32
+; CHECK:  field.store %o, "count", %v
+; CHECK:  %l = call @helper(%x, %w) : i64
+; CHECK:  switch %x [0: ^zero, 7: ^seven] default ^other
+; CHECK:  ret %l
+device @pre(%o: obj<uk.ac.manchester.Point$Inner>, %arr: array<i32>, %x: i32, %f: f64) -> i64 {
+^entry:
+  %q = div %x, %x : i32
+  %u = ushr %x, %x : i32
+  %nx = not %x : i32
+  %neg = fneg %f : f64
+  %le = icmp.ule %x, %x : i1
+  %uno = fcmp.uno %f, %f : i1
+  %sel = select %le, %x, %x : i32
+  %w = sext %x : i64
+  %sat = f2i.sat %f : i32
+  %v = field.load %o, "count" : i32
+  field.store %o, "count", %v
+  %e = array.load %arr[%x] : i32
+  %l = call @helper(%x, %w) : i64
+  switch %x [0: ^zero, 7: ^seven] default ^other
+^zero:
+  br ^other
+^seven:
+  br ^other
+^other:
+  ret %l
+}
+

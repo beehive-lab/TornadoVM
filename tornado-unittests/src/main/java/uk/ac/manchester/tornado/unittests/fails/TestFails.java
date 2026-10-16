@@ -18,6 +18,7 @@
 
 package uk.ac.manchester.tornado.unittests.fails;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,6 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -96,23 +96,27 @@ public class TestFails extends TornadoTestBase {
 
     @Test
     public void test02() {
-        assertThrows(TornadoRuntimeException.class, () -> {
-            // This test fails because the Java method's name to be accelerated corresponds
-            // to an OpenCL token.
+        // The method's name is an OpenCL keyword: the generated kernel gets a qualified name, so it
+        // must compile and run.
 
-            FloatArray x = new FloatArray(100);
-            FloatArray y = new FloatArray(100);
+        FloatArray x = new FloatArray(100);
+        FloatArray y = new FloatArray(100);
+        for (int i = 0; i < x.getSize(); i++) {
+            x.set(i, i + 0.5f);
+        }
 
             TaskGraph taskGraph = new TaskGraph("s0") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, x) //
                     .task("s0", TestFails::kernel, x, y) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 
-            // How to provoke the failure
-            ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-            TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
-            executionPlanPlan.execute();
-        });
+        // How to provoke the failure
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        TornadoExecutionPlan executionPlanPlan = new TornadoExecutionPlan(immutableTaskGraph);
+        executionPlanPlan.execute();
+        for (int i = 0; i < x.getSize(); i++) {
+            assertEquals(x.get(i), y.get(i), 0.0f);
+        }
     }
 
 }

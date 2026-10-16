@@ -1,0 +1,79 @@
+name: "No-GPU tests: TC + runtime [JDK 21-27]"
+
+# The unit tests that need no GPU, on standard GitHub-hosted runners: TC's (the compiler's lit file
+# tests, its API tests and the clean-room source rules) and tornado-api/tornado-runtime's. TC reads
+# class files itself, so running its tests on every host JDK checks it against each JDK's javac and
+# class-file version; the GPU workflows build on one host JDK only. The full build comes first so the
+# modular dependencies are on the module path; the tests themselves touch no device.
+#
+# gpu-ci.yml proves one ARTIFACT runs on every JDK; this proves the jdk22plus profile BUILDS on
+# every JDK. The matrix axis is therefore the host JDK, not the profile.
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+# As in gpu-ci.yml: one live run per branch, and a superseded pull request run is cancelled.
+# These are GitHub-hosted rather than self-hosted, so the cost is not a blocked queue, but seven
+# ubuntu-latest jobs per push adds up and the result of a run against an overwritten commit is
+# read by nobody.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  no-gpu-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The preview-compiled SDK: JDK 21 only.
+          - profile: jdk21
+            setup_java_version: '21'
+          # One profile, every host JDK from the floor up.
+          - profile: jdk22plus
+            setup_java_version: '22'
+          - profile: jdk22plus
+            setup_java_version: '23'
+          - profile: jdk22plus
+            setup_java_version: '24'
+          - profile: jdk22plus
+            setup_java_version: '25'
+          - profile: jdk22plus
+            setup_java_version: '26'
+          - profile: jdk22plus
+            setup_java_version: '27-ea'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.setup_java_version }}
+
+      - name: Report the host JDK under test
+        run: java -version
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ocl-icd-opencl-dev opencl-headers python3-venv
+
+      - name: Build TornadoVM (opencl, ${{ matrix.profile }})
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip tqdm psutil
+          make ${{ matrix.profile }} BACKEND=opencl
+
+      - name: Show the SDK's declared JDK contract
+        run: cat "$(ls -d dist/*/*/)etc/tornado.jdk"
+
+      - name: Run the no-GPU tests (${{ matrix.profile }})
+        run: make test-nogpu JDK=${{ matrix.profile }}

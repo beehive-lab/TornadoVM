@@ -1,0 +1,12 @@
+; Parse errors carry a stable code, the line and column, and say what was expected.
+; RUN: not tc-ir %S/Inputs/undefined-value.tcir 2>&1 | FileCheck %s --check-prefix=UNDEF
+; RUN: not tc-ir %S/Inputs/undefined-block.tcir 2>&1 | FileCheck %s --check-prefix=BLOCK
+; RUN: not tc-ir %S/Inputs/redefined-value.tcir 2>&1 | FileCheck %s --check-prefix=REDEF
+; RUN: not tc-ir %S/Inputs/unknown-op.tcir 2>&1 | FileCheck %s --check-prefix=OP
+; RUN: not tc-ir %S/Inputs/bad-type.tcir 2>&1 | FileCheck %s --check-prefix=TYPE
+
+; UNDEF: line 3: error TC-E2002: undefined value %y
+; BLOCK: line 3: error TC-E2003: undefined block ^nowhere
+; REDEF: line 4: error TC-E2004: value %x is defined twice
+; OP:    line 3: error TC-E2005: unknown operation 'frobnicate' (intrinsics need parentheses: frobnicate(...))
+; TYPE:  line 1: error TC-E2006: unsupported vector length: 5

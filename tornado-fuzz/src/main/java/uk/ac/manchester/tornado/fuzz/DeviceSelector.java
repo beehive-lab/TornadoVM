@@ -53,4 +53,27 @@ public final class DeviceSelector {
         }
         throw new IllegalStateException("No CUDA backend found. Build with `make BACKEND=cuda`. Backends seen: " + available.toString().trim());
     }
+
+    /**
+     * @param backend {@code cuda}, {@code opencl} or {@code metal} (case-insensitive)
+     * @param index the device of that backend
+     * @return that device
+     * @throws IllegalStateException if the backend is not installed or has no such device.
+     */
+    public static TornadoDevice device(String backend, int index) {
+        var runtime = TornadoRuntimeProvider.getTornadoRuntime();
+        StringBuilder available = new StringBuilder();
+        for (int i = 0; i < runtime.getNumBackends(); i++) {
+            TornadoVMBackendType type = runtime.getBackendType(i);
+            available.append(i).append('=').append(type).append(' ');
+            if (type.name().equalsIgnoreCase(backend)) {
+                TornadoBackend b = runtime.getBackend(i);
+                if (index >= b.getNumDevices()) {
+                    throw new IllegalStateException(backend + " has " + b.getNumDevices() + " device(s); device " + index + " requested");
+                }
+                return b.getDevice(index);
+            }
+        }
+        throw new IllegalStateException("No " + backend + " backend. Backends seen: " + available.toString().trim());
+    }
 }

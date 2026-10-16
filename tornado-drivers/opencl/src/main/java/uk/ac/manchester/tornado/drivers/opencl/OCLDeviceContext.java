@@ -42,8 +42,6 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetricHandler;
@@ -616,10 +614,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     public boolean isKernelAvailable(long executionPlanId) {
         OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
         return oclCodeCache.isKernelAvailable();
-    }
-
-    public OCLInstalledCode installCode(long executionPlanId, OCLCompilationResult result) {
-        return installCode(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }
 
     @Override

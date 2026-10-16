@@ -36,19 +36,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaField;
-import jdk.vm.ci.meta.ResolvedJavaType;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
-import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
@@ -56,19 +53,14 @@ import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
-import uk.ac.manchester.tornado.drivers.cuda.graal.lir.CUDAKind;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class CUDAFieldBuffer implements XPUBuffer {
 
-    private final long bytesObjectReference;
-    private final boolean areCoopsEnabled;
-    private final ResolvedJavaType resolvedType;
-    private final ResolvedJavaField[] fields;
+    private final Field[] fields;
     private final FieldBuffer[] wrappedFields;
     private final Class<?> objectType;
     private final int hubOffset;
@@ -87,25 +79,21 @@ public class CUDAFieldBuffer implements XPUBuffer {
         this.logger = new TornadoLogger(this.getClass());
         this.access = access;
 
-        this.areCoopsEnabled = TornadoOptions.coopsUsed();
-        this.bytesObjectReference = areCoopsEnabled ? 4 : 8;
 
         hubOffset = getVMConfig().hubOffset;
         fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
-        resolvedType = (ResolvedJavaType) TornadoCoreRuntime.getTornadoRuntime().getMetaAccess().lookupJavaType(objectType);
 
-        fields = (ResolvedJavaField[]) resolvedType.getInstanceFields(includeSuperClasses);
+        fields = gatherInstanceFields(objectType, includeSuperClasses);
         sortFieldsByOffset();
 
         wrappedFields = new FieldBuffer[fields.length];
 
         for (int index = 0; index < fields.length; index++) {
-            ResolvedJavaField field = fields[index];
-            final Field reflectedField = getField(findDeclaringClass(field), field.getName());
+            final Field reflectedField = fields[index];
             final Class<?> type = reflectedField.getType();
 
             if (DEBUG) {
-                logger.trace("field: name=%s, kind=%s, offset=%d", field.getName(), type.getName(), field.getOffset());
+                logger.trace("field: name=%s, kind=%s, offset=%d", reflectedField.getName(), type.getName(), offsetOf(reflectedField));
             }
 
             XPUBuffer wrappedField = null;
@@ -131,38 +119,38 @@ public class CUDAFieldBuffer implements XPUBuffer {
             } else if (type == FloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.FLOAT.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Float.BYTES);
             } else if (type == ByteArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.CHAR.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Byte.BYTES);
             } else if (type == DoubleArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.DOUBLE.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Double.BYTES);
             } else if (type == IntArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.INT.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Integer.BYTES);
             } else if (type == ShortArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.SHORT.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
             } else if (type == LongArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.LONG.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Long.BYTES);
             } else if (type == HalfFloatArray.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.SHORT.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
             } else if (type == BFloat16Array.class) {
                 Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
                 long size = ((BFloat16Array) objectFromField).getSegmentWithHeader().byteSize();
-                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, CUDAKind.BF16.getSizeInBytes());
+                wrappedField = new CUDAMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
                 wrappedField = new CUDAVectorWrapper(device, object, 0, access);
-            } else if (field.getJavaKind().isObject()) {
+            } else if (!type.isPrimitive()) {
                 // We capture the field by the scope definition of the input
                 // lambda expression
                 wrappedField = new CUDAFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access, includeSuperClasses);
@@ -215,40 +203,28 @@ public class CUDAFieldBuffer implements XPUBuffer {
         bufferId = -1;
     }
 
-    private Field getField(Class<?> type, String name) {
-        Field result = null;
-        try {
-            result = type.getDeclaredField(name);
-            result.setAccessible(true);
-        } catch (NoSuchFieldException | SecurityException e) {
-            if (type.getSuperclass() != null) {
-                result = getField(type.getSuperclass(), name);
-            } else {
-                shouldNotReachHere("unable to get field: class=%s, field=%s", type.getName(), name);
-            }
-        }
-        return result;
+
+
+    private static int offsetOf(Field field) {
+        return FieldLayout.of(field.getDeclaringClass()).offset(field);
+    }
+
+    private static Field[] gatherInstanceFields(Class<?> clazz, boolean includeSuperClasses) {
+        return FieldLayout.of(clazz).fields(includeSuperClasses);
     }
 
     private void writeFieldToBuffer(int index, Field field, Object obj) {
         Class<?> fieldType = field.getType();
         if (fieldType.isPrimitive()) {
             try {
-                PrimitiveSerialiser.put(buffer, field.get(obj));
-            } catch (IllegalArgumentException | IllegalAccessException e) {
+                PrimitiveSerialiser.put(buffer, FieldLayout.get(field, obj));
+            } catch (IllegalArgumentException e) {
                 shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
             }
         } else if (wrappedFields[index] != null) {
-            if (areCoopsEnabled) {
-                // calculate the relative offset
-                long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
-                // Compress it by dividing by 8
-                int compressedOffset = (int) (relativeOffset / 8);
-                // Write compressed value
-                buffer.putInt(compressedOffset);
-            } else {
-                buffer.putInt((int) wrappedFields[index].getBufferOffset());
-            }
+            // A compressed reference: the field's copy relative to this object's, scaled (see FieldLayout).
+            long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
+            buffer.putInt((int) (relativeOffset / FieldLayout.REFERENCE_SCALE));
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
@@ -257,46 +233,34 @@ public class CUDAFieldBuffer implements XPUBuffer {
     private void readFieldFromBuffer(int index, Field field, Object obj) {
         Class<?> fieldType = field.getType();
         if (fieldType.isPrimitive()) {
-            try {
-                if (fieldType == int.class) {
-                    field.setInt(obj, buffer.getInt());
-                } else if (fieldType == long.class) {
-                    field.setLong(obj, buffer.getLong());
-                } else if (fieldType == short.class) {
-                    field.setShort(obj, buffer.getShort());
-                } else if (fieldType == byte.class) {
-                    field.set(obj, buffer.get());
-                } else if (fieldType == float.class) {
-                    field.setFloat(obj, buffer.getFloat());
-                } else if (fieldType == double.class) {
-                    field.setDouble(obj, buffer.getDouble());
-                }
-            } catch (IllegalAccessException e) {
-                shouldNotReachHere("unable to read field: ", e.getMessage());
-            }
-        } else if (wrappedFields[index] != null) {
-            if (areCoopsEnabled) {
-                buffer.getInt();
+            Object value;
+            if (fieldType == int.class) {
+                value = buffer.getInt();
+            } else if (fieldType == long.class) {
+                value = buffer.getLong();
+            } else if (fieldType == short.class) {
+                value = buffer.getShort();
+            } else if (fieldType == byte.class) {
+                value = buffer.get();
+            } else if (fieldType == float.class) {
+                value = buffer.getFloat();
+            } else if (fieldType == double.class) {
+                value = buffer.getDouble();
+            } else if (fieldType == char.class) {
+                value = buffer.getChar();
             } else {
-                buffer.getLong();
+                value = buffer.get() != 0;
             }
+            FieldLayout.set(field, obj, value);
+        } else if (wrappedFields[index] != null) {
+            buffer.getInt();
         } else {
             unimplemented("field type %s", fieldType.getName());
         }
     }
 
     private void sortFieldsByOffset() {
-        // TODO Replace bubble sort with Arrays.sort + comparator
-        for (int i = 0; i < fields.length; i++) {
-            for (int j = 0; j < fields.length; j++) {
-                if (fields[i].getOffset() < fields[j].getOffset()) {
-                    final ResolvedJavaField tmp = fields[j];
-                    fields[j] = fields[i];
-                    fields[i] = tmp;
-                }
-            }
-        }
-
+        Arrays.sort(fields, (a, b) -> Integer.compare(offsetOf(a), offsetOf(b)));
     }
 
     private void serialise(Object object) {
@@ -305,15 +269,14 @@ public class CUDAFieldBuffer implements XPUBuffer {
         buffer.putLong(0);
 
         if (fields.length > 0) {
-            buffer.position(fields[0].getOffset());
+            buffer.position(offsetOf(fields[0]));
             for (int i = 0; i < fields.length; i++) {
-                ResolvedJavaField field = fields[i];
-                Field f = getField(findDeclaringClass(field), field.getName());
+                Field f = fields[i];
                 if (DEBUG) {
-                    logger.trace("writing field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("writing field: name=%s, offset=%d", f.getName(), offsetOf(f));
                 }
 
-                buffer.position(field.getOffset());
+                buffer.position(offsetOf(f));
                 writeFieldToBuffer(i, f, object);
             }
         }
@@ -323,29 +286,17 @@ public class CUDAFieldBuffer implements XPUBuffer {
         buffer.rewind();
 
         if (fields.length > 0) {
-            buffer.position(fields[0].getOffset());
+            buffer.position(offsetOf(fields[0]));
 
             for (int i = 0; i < fields.length; i++) {
-                ResolvedJavaField field = fields[i];
-                Field f = getField(findDeclaringClass(field), field.getName());
-                f.setAccessible(true);
+                Field f = fields[i];
                 if (DEBUG) {
-                    logger.trace("reading field: name=%s, offset=%d", field.getName(), field.getOffset());
+                    logger.trace("reading field: name=%s, offset=%d", f.getName(), offsetOf(f));
                 }
+                buffer.position(offsetOf(f));
                 readFieldFromBuffer(i, f, object);
             }
         }
-    }
-
-    private Class<?> findDeclaringClass(ResolvedJavaField field) {
-        Class<?> objectTypeTemp = objectType;
-        while (objectTypeTemp != null && !objectTypeTemp.getName().equals(field.getDeclaringClass().toJavaName())) {
-            objectTypeTemp = objectTypeTemp.getSuperclass();
-        }
-        if (objectTypeTemp == null) {
-            throw new TornadoRuntimeException(String.format("Cannot find declaring class %s in hierarchy of %s for field %s", field.getDeclaringClass().toJavaName(), objectType.getName(), field.getName()));
-        }
-        return objectTypeTemp;
     }
 
     @Override
@@ -480,20 +431,17 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
     @Override
     public String toString() {
-        return String.format("object wrapper: type=%s, fields=%d\n", resolvedType.getName(), wrappedFields.length);
+        return String.format("object wrapper: type=%s, fields=%d\n", objectType.getName(), wrappedFields.length);
     }
 
     private long getObjectSize() {
         long size = fieldsOffset;
         if (fields.length > 0) {
-            ResolvedJavaField field = fields[fields.length - 1];
-            size = field.getOffset() + ((field.getJavaKind().isObject()) ? bytesObjectReference : field.getJavaKind().getByteCount());
+            Field field = fields[fields.length - 1];
+            size = offsetOf(field) + FieldLayout.sizeOf(field);
         }
-        // when coops are enabled, padding is required to ensure an 8-byte object alignment
-        if (areCoopsEnabled && (size % 8 != 0)) {
-            size = size + (8 - (size % 8));
-        }
-        return size;
+        // Objects are 8-byte aligned.
+        return (size + 7) & ~7L;
     }
 
     @Override

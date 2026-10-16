@@ -1,0 +1,5 @@
+device @f(%x: i32) -> void {
+^entry:
+  %z = add %x, %y : i32
+  ret
+}

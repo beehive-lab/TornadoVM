@@ -23,79 +23,37 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import static tornado.graal.compiler.debug.GraalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.ServiceLoader;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.StreamSupport;
 
-import org.graalvm.collections.EconomicMap;
-import tornado.graal.compiler.core.common.GraalOptions;
-import tornado.graal.compiler.debug.DebugContext;
-import tornado.graal.compiler.hotspot.HotSpotGraalOptionValues;
-import tornado.graal.compiler.lir.constopt.ConstantLoadOptimization;
-import tornado.graal.compiler.lir.phases.PostAllocationOptimizationStage;
-import tornado.graal.compiler.options.OptionKey;
-import tornado.graal.compiler.options.OptionValues;
-import tornado.graal.compiler.printer.GraalDebugHandlersFactory;
 
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.jvmci.TornadoMetaAccessProvider;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSnippetReflectionProvider;
 
 public final class TornadoCoreRuntime implements TornadoRuntime {
 
-    private static final ThreadFactory executorThreadFactory = new ThreadFactory() {
-        private int threadId = 0;
-
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, String.format("TornadoExecutorThread - %d", threadId));
-            thread.setDaemon(true);
-            threadId++;
-            return thread;
-        }
-    };
-    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(TornadoOptions.TORNADO_SKETCHER_THREADS, executorThreadFactory);
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
     private static final JVMMapping JVM = new JVMMapping();
     private static final int DEFAULT_DRIVER = 0;
 
-    private static Lock lock = new ReentrantLock();
     private static final int DEFAULT_BACKEND = 0;
-    private static DebugContext debugContext = null;
-    private static OptionValues options;
 
     private final TornadoVMConfigAccess vmConfig;
-    private final MetaAccessProvider metaAccess;
     private final TornadoAcceleratorBackend[] tornadoVMBackends;
     private int backendCount;
 
     private TornadoCoreRuntime() {
-
-        initOptions();
-        guarantee(!GraalOptions.OmitHotExceptionStacktrace.getValue(options), "error");
-
-        // TornadoVM sources all type/constant metadata from the reflection + Unsafe providers
-        // on every JDK: there is no dependency on a HotSpot JVMCI runtime or host backend
-        // (JVMCI was removed from OpenJDK in JDK 27, openjdk/jdk#30834).
         vmConfig = new TornadoVMConfigAccess();
-        metaAccess = new TornadoMetaAccessProvider();
         tornadoVMBackends = loadBackends();
     }
 
@@ -103,52 +61,25 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         return runtime;
     }
 
-    public static DebugContext getDebugContext() {
-        lock.lock();
-        if (debugContext == null) {
-            debugContext = new DebugContext.Builder(getOptions(), new GraalDebugHandlersFactory(new TornadoSnippetReflectionProvider())).build();
-        }
-        lock.unlock();
-        return debugContext;
-    }
-
-    public static ExecutorService getTornadoExecutor() {
-        return EXECUTOR;
-    }
-
     public static TornadoVMConfigAccess getVMConfig() {
         return runtime.vmConfig;
     }
 
-    public static OptionValues getOptions() {
-        return options;
-    }
-
-    private void initOptions() {
-        EconomicMap<OptionKey<?>, Object> opts = OptionValues.newOptionMap();
-        opts.putAll(HotSpotGraalOptionValues.defaultOptions().getMap());
-
-        opts.put(GraalOptions.OmitHotExceptionStacktrace, false);
-
-        opts.put(GraalOptions.MatchExpressions, true);
-        opts.put(GraalOptions.RemoveNeverExecutedCode, false);
-        opts.put(ConstantLoadOptimization.Options.LIROptConstantLoadOptimization, false);
-        opts.put(PostAllocationOptimizationStage.Options.LIROptRedundantMoveElimination, false);
-        opts.put(GraalOptions.OptConvertDeoptsToGuards, true);
-
-        options = new OptionValues(opts);
-    }
-
     private TornadoAcceleratorBackend[] loadBackends() {
         ServiceLoader<TornadoBackendProvider> loader = ServiceLoader.load(TornadoBackendProvider.class);
-        List<TornadoBackendProvider> providerList = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
+        List<TornadoBackendProvider> installed = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
+        List<TornadoBackendProvider> providerList = installed.stream().filter(TornadoCoreRuntime::isEnabled).toList();
+        if (providerList.isEmpty() && !installed.isEmpty()) {
+            throw new TornadoBackendNotFound("tornado.enabled.backends=" + TornadoOptions.ENABLED_BACKENDS + " selects none of the installed backends: " + installed.stream()
+                    .map(p -> p.getDevicePriority().name().toLowerCase(Locale.ROOT)).toList());
+        }
         TornadoAcceleratorBackend[] tornadoAcceleratorBackends = new TornadoAcceleratorBackend[TornadoBackends.values().length];
         int index = 0;
         for (TornadoBackendProvider provider : providerList) {
             if (TornadoOptions.FULL_DEBUG) {
                 System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
             }
-            TornadoAcceleratorBackend backend = provider.createBackend(options, vmConfig);
+            TornadoAcceleratorBackend backend = provider.createBackend(vmConfig);
             if (backend != null) {
                 tornadoAcceleratorBackends[index] = backend;
                 index++;
@@ -156,6 +87,15 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         }
         backendCount = index;
         return tornadoAcceleratorBackends;
+    }
+
+    private static boolean isEnabled(TornadoBackendProvider provider) {
+        String enabled = TornadoOptions.ENABLED_BACKENDS;
+        if (enabled.isBlank()) {
+            return true;
+        }
+        String name = provider.getDevicePriority().name();
+        return Arrays.stream(enabled.split(",")).map(String::trim).anyMatch(name::equalsIgnoreCase);
     }
 
     @Override
@@ -171,15 +111,6 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     @Override
     public boolean isProfilerEnabled() {
         return TornadoOptions.PROFILER_LOGS_ACCUMULATE() && TornadoOptions.isProfilerEnabled();
-    }
-
-    public MetaAccessProvider getMetaAccess() {
-        // Kernel entry-method resolution goes through the reflection seam (reflection ConstantPool).
-        return metaAccess;
-    }
-
-    public ResolvedJavaMethod resolveMethod(final Method method) {
-        return getMetaAccess().lookupJavaMethod(method);
     }
 
     @Override

@@ -25,8 +25,8 @@ import shlex
 import signal
 import subprocess
 import sys
+import threading
 import time
-import psutil
 from abc import abstractmethod
 from builtins import staticmethod, isinstance
 from typing import Union, Optional
@@ -89,15 +89,16 @@ class OutOfMemoryMonitorClass(MonitorClass):
         """
         max_memory_usage_mb = OutOfMemoryMonitorClass._getMaxMemoryUsageMB(cmd)
         print(f"Monitoring JVM process {pid} for memory usage. Max memory usage is {max_memory_usage_mb} MB.")
-        process = psutil.Process(pid)
-        # The process becomes zombie when it is terminated, but the parent process has not yet read the exit status.
-        while process.is_running() and process.status() != psutil.STATUS_ZOMBIE:
-            # Compute the memory usage of the pid and all the child processes. This is because the JVM
-            # is spawned as a child process of the tornado script.
-            memory_usage = process.memory_info().rss
-            for child in process.children(recursive=True):
-                memory_usage += child.memory_info().rss
-            memory_usage /= 1024 ** 2  # Convert to MB
+        if os.name != "posix" and _psutil() is None:
+            print("Warning: the memory monitor needs `ps` (Linux, macOS) or the psutil package (Windows); not monitoring.")
+            return True
+        while True:
+            # The resident memory of the pid and all its descendants: the JVM is spawned as a child process
+            # of the tornado script. The process becomes a zombie when it ends before its parent reads its status.
+            memory_usage = _treeResidentKB(pid)
+            if memory_usage is None:
+                break
+            memory_usage /= 1024  # Convert to MB
             if memory_usage > max_memory_usage_mb:
                 print(f"JVM process exceeded {max_memory_usage_mb} MB of memory. Got {memory_usage} MB.")
                 return False
@@ -159,6 +160,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalfFloatDotProduct"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestHalf2Packed"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestDoubles"),
+    TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorSlices"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestInts"),
     TestEntry("uk.ac.manchester.tornado.unittests.vectortypes.TestVectorAllocation"),
     TestEntry("uk.ac.manchester.tornado.unittests.prebuilt.PrebuiltTests"),
@@ -229,10 +231,16 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.branching.TestLoopConditions"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestLoops"),
     TestEntry("uk.ac.manchester.tornado.unittests.loops.TestParallelDimensions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.loops.TestGridStrideOverflow"),
+    TestEntry("uk.ac.manchester.tornado.unittests.tc.TestTcCompilerBugs"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIntegers"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsFloats"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsIterationCounts"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsMethodTask"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsDoubles"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsLong"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionWithGridScheduler"),
+    TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsJavaArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.InstanceReduction"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.MultipleReductions"),
     TestEntry("uk.ac.manchester.tornado.unittests.reductions.TestReductionsAutomatic"),
@@ -262,6 +270,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGrid"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridScheduler"),
     TestEntry("uk.ac.manchester.tornado.unittests.grid.TestIrregularGridSizes"),
+    TestEntry("uk.ac.manchester.tornado.unittests.grid.TestGridDataDependentBounds"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.Grids"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestLaunchFailureReporting"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.api.TestCombinedTaskGraph"),
@@ -315,6 +324,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.logic.TestEnumInKernel"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.fields.TestInheritedFields"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fields.TestStaticFinalFields"),
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfiler"),
     TestEntry("uk.ac.manchester.tornado.unittests.profiler.TestProfilerTransferBytes"),
     TestEntry("uk.ac.manchester.tornado.unittests.bitsets.BitSetTests"),
@@ -336,7 +346,6 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.fails.DynamicArrayFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.NonConstantStrideFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.FloatAtomicFail"),
-    TestEntry("uk.ac.manchester.tornado.unittests.fails.BitOpsUnsupportedFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.fails.LocalMemoryFail"),
     TestEntry("uk.ac.manchester.tornado.unittests.parameters.ParameterTests"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.CodeGenTest"),
@@ -346,6 +355,8 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestSignedComparisonsCodegen"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestPrivateArrayZeroInit"),
     TestEntry("uk.ac.manchester.tornado.unittests.codegen.TestFloatBitsAndComparisons"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fuzz.TestFuzzRegressions"),
+    TestEntry("uk.ac.manchester.tornado.unittests.fuzz.TestCudaCodegenRegressions"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomics"),
     TestEntry("uk.ac.manchester.tornado.unittests.atomics.TestAtomicsWithReduction"),
     TestEntry("uk.ac.manchester.tornado.unittests.compute.ComputeTests"),
@@ -552,8 +563,6 @@ __MAIN_TORNADO_JUNIT_MODULE__ = " org.junit.platform.console/"
 __MAIN_TORNADO_JUNIT__ = "org.junit.platform.console.ConsoleLauncher "
 ## The ConsoleLauncher module does not require the tests, so resolve their module explicitly
 __JUNIT_ADD_TESTS_MODULE__ = "--add-modules tornado.unittests "
-__IGV_OPTIONS__ = "-Dgraal.Dump=*:verbose -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true "
-__IGV_LAST_PHASE__ = "-Dgraal.Dump=*:1 -Dgraal.PrintGraph=Network -Dgraal.PrintBackendCFG=true -Dtornado.debug.lowtier=True "
 __PRINT_OPENCL_KERNEL__ = "-Dtornado.printKernel=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
 __TORNADOVM_FULLDEBUG__ = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
@@ -620,11 +629,6 @@ def composeAllOptions(args):
     else:
         options = options + __VERBOSE_OPTION__ + "False "
 
-    if (args.dumpIGVLastTier):
-        options = options + __IGV_LAST_PHASE__
-    elif (args.igv):
-        options = options + __IGV_OPTIONS__
-
     if (args.debugTornado):
         options = options + __DEBUG_TORNADO__
 
@@ -664,11 +668,94 @@ def composeAllOptions(args):
     return options
 
 
+def _psutil():
+    """psutil when it is installed (only Windows needs it, for the memory monitor), else None."""
+    try:
+        import psutil
+        return psutil
+    except ImportError:
+        return None
+
+
+def _processTable():
+    """pid -> (ppid, state, resident KB) for every process, from one `ps` call (Linux and macOS)."""
+    table = {}
+    out = subprocess.run(["ps", "-A", "-o", "pid=,ppid=,stat=,rss="], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True).stdout
+    for line in out.splitlines():
+        fields = line.split()
+        if len(fields) == 4 and fields[0].isdigit() and fields[1].isdigit() and fields[3].isdigit():
+            table[int(fields[0])] = (int(fields[1]), fields[2], int(fields[3]))
+    return table
+
+
+def _descendants(pid: int, table) -> list:
+    children = {}
+    for child, (parent, _, _) in table.items():
+        children.setdefault(parent, []).append(child)
+    found, pending = [], [pid]
+    while pending:
+        for child in children.get(pending.pop(), []):
+            found.append(child)
+            pending.append(child)
+    return found
+
+
+def _treeResidentKB(pid: int):
+    """The resident memory (KB) of pid and its descendants; None once pid has ended (gone or a zombie)."""
+    if os.name != "posix":
+        psutil = _psutil()
+        try:
+            process = psutil.Process(pid)
+            if not process.is_running() or process.status() == psutil.STATUS_ZOMBIE:
+                return None
+            return (process.memory_info().rss + sum(c.memory_info().rss for c in process.children(recursive=True))) // 1024
+        except psutil.NoSuchProcess:
+            return None
+    table = _processTable()
+    if pid not in table or table[pid][1].startswith("Z"):
+        return None
+    return table[pid][2] + sum(table[child][2] for child in _descendants(pid, table))
+
+
 def killAllProcesses(pid: int):
-    parent = psutil.Process(pid)
-    for child in parent.children(recursive=True):
-        child.kill()
-    parent.kill()
+    """Kills pid and every process it started (the JVM runs as a child of the tornado script)."""
+    if os.name != "posix":
+        subprocess.call(["taskkill", "/F", "/T", "/PID", str(pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return
+    for target in reversed(_descendants(pid, _processTable())):
+        try:
+            os.kill(target, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+
+
+def startDraining(p):
+    """ Read the process's stdout and stderr on background threads, so a child that prints more than a
+        pipe holds (~64 KB, e.g. with --printKernel) does not block while a monitor waits for it to exit.
+        Returns a function that waits for the process and returns (out, err) as bytes.
+    """
+    chunks = {"out": [], "err": []}
+
+    def pump(stream, sink):
+        sink.append(stream.read())
+        stream.close()
+
+    threads = [threading.Thread(target=pump, args=(p.stdout, chunks["out"]), daemon=True),
+               threading.Thread(target=pump, args=(p.stderr, chunks["err"]), daemon=True)]
+    for t in threads:
+        t.start()
+
+    def finish():
+        for t in threads:
+            t.join()
+        p.wait()
+        return b"".join(chunks["out"]), b"".join(chunks["err"])
+
+    return finish
 
 
 def runMonitorClass(monitorClass: Optional[Union[str, MonitorClass]], cmd: str, pid: int):
@@ -769,11 +856,12 @@ def runSingleCommand(cmd, args):
 
     start = time.time()
     p = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    finish = startDraining(p)
     monitor_status = runMonitorClass(args.monitorClass, cmd, p.pid)
     if not monitor_status:
         print(f"Monitor {args.monitorClass} failed. Killing process {p.pid}")
         killAllProcesses(p.pid)
-    out, err = p.communicate()
+    out, err = finish()
     end = time.time()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
@@ -844,6 +932,7 @@ def processStats(out, stats, failedTests, segFaults, unittest):
 def runCommandWithStats(command, stats, failedTests, segFaults, monitorClass):
     """ Run a command and update the stats dictionary """
     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    finish = startDraining(p)
     monitor_status = runMonitorClass(monitorClass, command, p.pid)
     params = re.search(r'--params\s+"([^"]+)"', command)
     unittest = params.group(1)
@@ -852,7 +941,7 @@ def runCommandWithStats(command, stats, failedTests, segFaults, monitorClass):
         print(f"Monitor {args.monitorClass} failed. Killing process {p.pid}")
         monitor_failed_msg = f"[FAILED] Test: class {command.split(' ')[-1]}"
         killAllProcesses(p.pid)
-    out, err = p.communicate()
+    out, err = finish()
     out = out.decode('utf-8')
     err = err.decode('utf-8')
     if not monitor_status:
@@ -1066,9 +1155,6 @@ def parseArguments():
                         help="Print OpenCL kernel")
     parser.add_argument('--junit', action="store_true", dest="junit", default=False,
                         help="Run with the JUnit Platform ConsoleLauncher")
-    parser.add_argument('--igv', action="store_true", dest="igv", default=False, help="Dump GraalIR into IGV")
-    parser.add_argument('--igvLowTier', action="store_true", dest="dumpIGVLastTier", default=False,
-                        help="Dump OpenCL Low-TIER GraalIR into IGV")
     parser.add_argument('--printBytecodes', "-pbc", action="store_true", dest="printBytecodes", default=False,
                         help="Print TornadoVM internal bytecodes")
     parser.add_argument('--debug', "-d", action="store_true", dest="debugTornado", default=False,

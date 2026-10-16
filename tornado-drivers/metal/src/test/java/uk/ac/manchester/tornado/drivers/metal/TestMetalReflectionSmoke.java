@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.junit.jupiter.api.Test;
 
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
+import uk.ac.manchester.tornado.drivers.metal.MetalInstalledCode;
 
 public class TestMetalReflectionSmoke {
 
