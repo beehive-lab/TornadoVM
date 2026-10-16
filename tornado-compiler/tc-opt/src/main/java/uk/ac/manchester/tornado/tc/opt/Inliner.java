@@ -28,6 +28,7 @@ import java.util.Map;
 import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Immediates;
 import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.IrModule;
@@ -42,7 +43,13 @@ import uk.ac.manchester.tornado.tc.ir.Value;
  * the caller with its parameters replaced by the call's operands; each {@code ret v} becomes a branch
  * to the continuation block, whose argument replaces the call's result. Repeats until no call is left.
  *
- * <p>Error codes: {@code TC-E3301} callee not in the module, {@code TC-E1009} recursion.</p>
+ * <p>A helper that takes a tensor-core accumulator fragment as {@code float[]} (jitLLM's
+ * {@code addTile(X, acc, ...)}) reads it with array loads; once inlined, their array is the
+ * caller's fragment, a register vector. Each becomes the lane read the frontend emits for
+ * {@code frag[i]} in the kernel itself.</p>
+ *
+ * <p>Error codes: {@code TC-E3301} callee not in the module, {@code TC-E1009} recursion,
+ * {@code TC-E1010} a fragment passed to a helper and read at a non-constant index or written.</p>
  */
 public final class Inliner {
 
@@ -77,11 +84,14 @@ public final class Inliner {
             if (++inlined > MAX_INLINES) {
                 return List.of(new Diagnostic("TC-E1009", "recursion: inlining @" + name + " does not terminate (kernels cannot recurse)", "", call.loc()));
             }
-            inline(kernel, call, callee.get());
+            var problems = inline(kernel, call, callee.get());
+            if (!problems.isEmpty()) {
+                return problems;
+            }
         }
     }
 
-    private static void inline(Function caller, Inst call, Function callee) {
+    private static List<Diagnostic> inline(Function caller, Inst call, Function callee) {
         var block = call.block().orElseThrow();
         var prefix = "inl" + caller.blocks().size() + "." + shortName(callee.name()) + ".";
         var continuation = caller.newBlock(prefix + "ret");
@@ -137,6 +147,31 @@ public final class Inliner {
         }
         call.erase();
         new IrBuilder(block).at(Loc.UNKNOWN).br(blocks.get(callee.entry()), List.of());
+        return fragmentAccesses(List.copyOf(clones.values()));
+    }
+
+    /** The inlined array accesses whose array is now a fragment (a vector): loads become lane reads. */
+    private static List<Diagnostic> fragmentAccesses(List<Inst> clones) {
+        var problems = new ArrayList<Diagnostic>();
+        for (var inst : clones) {
+            boolean load = inst.opcode() instanceof Opcode.ArrayLoad;
+            boolean store = inst.opcode() instanceof Opcode.ArrayStore;
+            if (!(load || store) || !(inst.operand(0).type() instanceof Type.VectorType(var element, var length))) {
+                continue;
+            }
+            if (store) {
+                problems.add(new Diagnostic("TC-E1010", "an MMA fragment passed to a helper cannot be written there; return the new fragment from the helper instead", "",
+                        inst.loc()));
+            } else if (!(inst.operand(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var lane)) || lane < 0 || lane >= length) {
+                problems.add(new Diagnostic("TC-E1010", "fragment elements can only be read at a constant index within the fragment (also in a helper it is passed to)", "",
+                        inst.loc()));
+            } else {
+                var read = IrBuilder.insertingBefore(inst).at(inst.loc()).intrinsic("tornado.vector.lane", Immediates.of("lane", lane), element, List.of(inst.operand(0)));
+                inst.replaceAllUsesWith(read);
+                inst.erase();
+            }
+        }
+        return problems;
     }
 
     private static String shortName(String name) {

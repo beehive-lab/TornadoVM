@@ -283,6 +283,23 @@ public class TcCompilerTest {
         return TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.RegressionKernels", kernel, TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, facts);
     }
 
+    /**
+     * TC-12: an accumulator fragment passed to a helper that indexes it as float[] (jitLLM's
+     * addTile). Inlined, the helper's array loads had the fragment vector as their array (TC-E2107);
+     * they are now the lane reads the frontend emits in the kernel itself.
+     */
+    @Test
+    public void fragmentReadThroughAHelperBecomesLaneReads() {
+        var c = review("fragmentThroughHelper", java.util.List.of());
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        for (var lane : java.util.List.of(".x", ".y", ".z", ".w")) {
+            assertTrue(c.source().contains(lane + ";") || c.source().contains(lane + ")"), lane + " in\n" + c.source());
+        }
+        var written = review("fragmentWrittenInHelper", java.util.List.of());
+        assertFalse(written.succeeded());
+        assertEquals("TC-E1010", written.diagnostics().get(0).code(), written.diagnostics().toString());
+    }
+
     /** Sibling @Parallel loops share dimension x (they ran once per thread of each other). */
     @Test
     public void siblingParallelLoopsShareADimension() {

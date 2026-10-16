@@ -20,6 +20,7 @@
  */
 package uk.ac.manchester.tornado.tc.frontend.kernels;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -105,5 +106,25 @@ public final class RegressionKernels {
         Float4 v = new Float4(1f, 2f, 3f, 4f);
         v.setX(5f);
         out.set(1, v.getX());
+    }
+    // TC-12: an MMA accumulator fragment passed to a helper that reads it as float[] (jitLLM's addTile)
+    private static void addFragment(FloatArray x, float[] acc, int base) {
+        x.set(base, x.get(base) + acc[0]);
+        x.set(base + 1, x.get(base + 1) + acc[1]);
+        x.set(base + 2, x.get(base + 2) + acc[2]);
+        x.set(base + 3, x.get(base + 3) + acc[3]);
+    }
+    public static void fragmentThroughHelper(KernelContext ctx, FloatArray x) {
+        float[] frag = ctx.mmaFragment(1.5f);
+        addFragment(x, frag, ctx.globalIdx * 4);
+    }
+    // A helper writing a fragment it was passed: refused with a diagnostic, not an internal error
+    private static void clearFragment(float[] acc) {
+        acc[0] = 0f;
+    }
+    public static void fragmentWrittenInHelper(KernelContext ctx, FloatArray x) {
+        float[] frag = ctx.mmaFragment(1.5f);
+        clearFragment(frag);
+        addFragment(x, frag, ctx.globalIdx * 4);
     }
 }
