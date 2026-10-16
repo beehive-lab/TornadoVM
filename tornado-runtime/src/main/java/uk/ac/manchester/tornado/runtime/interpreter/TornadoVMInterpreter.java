@@ -111,6 +111,9 @@ public class TornadoVMInterpreter {
     private final List<Object> constants;
     private final List<SchedulableTask> taskExecutionContexts;
     private final List<SchedulableTask> localTaskList;
+    /** {@link #globalToLocalTaskIndex}'s answers, -1 where not yet computed. */
+    private int[] globalToLocal;
+    private int globalToLocalLocalSize;
     private final TornadoExecutionContext graphExecutionContext;
     private final TornadoVMBytecodeResult bytecodeResult;
     private TornadoProfiler timeProfiler;
@@ -1634,8 +1637,23 @@ public class TornadoVMInterpreter {
      *     The global task index to convert.
      * @return The corresponding local task index, or 0 if the task is not found in the local task list.
      */
+    /**
+     * Maps a task's index in the graph to its index among this device's tasks. Called several times per launch, so
+     * the linear {@code indexOf} runs once per task: with hundreds of tasks it was quadratic in the plan size.
+     */
     private int globalToLocalTaskIndex(int taskIndex) {
-        return localTaskList.indexOf(taskExecutionContexts.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(taskExecutionContexts.get(taskIndex));
+        int[] map = globalToLocal;
+        if (map == null || map.length != taskExecutionContexts.size() || globalToLocalLocalSize != localTaskList.size()) {
+            map = new int[taskExecutionContexts.size()];
+            Arrays.fill(map, -1);
+            globalToLocal = map;
+            globalToLocalLocalSize = localTaskList.size();
+        }
+        if (map[taskIndex] < 0) {
+            int local = localTaskList.indexOf(taskExecutionContexts.get(taskIndex));
+            map[taskIndex] = local == -1 ? 0 : local;
+        }
+        return map[taskIndex];
     }
 
     private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
