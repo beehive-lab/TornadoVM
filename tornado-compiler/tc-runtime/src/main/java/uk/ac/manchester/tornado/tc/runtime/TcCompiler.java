@@ -25,6 +25,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -95,6 +97,13 @@ public final class TcCompiler {
         }
     }
 
+    /**
+     * Compilations of each entry that dumped into each directory in this process. A kernel recompiled
+     * for other argument values (a new specialisation) dumps under {@code <entry>~<n>} so it does not
+     * overwrite the dumps of the earlier ones.
+     */
+    private static final ConcurrentHashMap<String, AtomicInteger> DUMPED = new ConcurrentHashMap<>();
+
     private final Function function;
     private final TargetCaps target;
     private final TcOptions options;
@@ -103,6 +112,8 @@ public final class TcCompiler {
     private IrModule module;
     private final List<Stage> stages = new ArrayList<>();
     private CEmitter.Result emitted;
+    /** File-name stem of this compilation's dumps, chosen at its first dump. */
+    private String dumpStem;
 
     private TcCompiler(Function function, TargetCaps target, TcOptions options) {
         this.function = function;
@@ -537,7 +548,12 @@ public final class TcCompiler {
         };
         try {
             var dir = Files.createDirectories(options.dumpDir());
-            Files.writeString(dir.resolve(String.format("%s.%02d-%s.%s", CEmitter.entryName(function), stages.size(), name, extension)), text);
+            if (dumpStem == null) {
+                var entry = CEmitter.entryName(function);
+                int n = DUMPED.computeIfAbsent(dir.toAbsolutePath() + "/" + entry, k -> new AtomicInteger()).incrementAndGet();
+                dumpStem = n == 1 ? entry : entry + "~" + n;
+            }
+            Files.writeString(dir.resolve(String.format("%s.%02d-%s.%s", dumpStem, stages.size(), name, extension)), text);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
