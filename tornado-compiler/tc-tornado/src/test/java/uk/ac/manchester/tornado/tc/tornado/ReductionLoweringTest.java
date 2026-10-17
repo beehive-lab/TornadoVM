@@ -80,6 +80,48 @@ public class ReductionLoweringTest {
         assertEquals(List.of(new ParallelLoopLowering.Domain(0, 0, 1, 4096)), ParallelLoopLowering.domain(function));
     }
 
+    /**
+     * The initial value stored before the loop ({@code out[0] = 0}) is sequential code: run by every thread it was a
+     * write-write race on {@code out[0]} (SentryWard: conflicting accesses with no required ordering, on every
+     * {@code @Reduce} kernel with such a store). It runs on global thread 0 only.
+     */
+    @Test
+    public void initialValueIsStoredByOneThread() {
+        var function = IrParser.parseFunction(SUM);
+        assertTrue(ReductionLowering.run(function, List.of(false, true), 256).isEmpty());
+        assertTrue(Verifier.verify(function).isEmpty(), Verifier.verify(function).toString());
+        var text = new IrPrinter(false).printFunction(function);
+        String initBlock = block(text, "^entry.init:");
+        assertTrue(initBlock.contains("array.store %out[%zero], %fzero"), text);
+        String entry = block(text, "^entry:");
+        assertTrue(entry.contains("tornado.thread_id.global<dim = 0>()") && entry.contains("icmp.eq"), entry);
+        assertTrue(entry.contains("cond_br") && entry.contains("^entry.init") && entry.contains("^entry.after_init"), entry);
+        assertTrue(!entry.contains("array.store %out"), entry);
+    }
+
+    /** The printed block whose label line is {@code label}, up to the next label. */
+    private static String block(String text, String label) {
+        int start = text.indexOf("\n" + label);
+        assertTrue(start >= 0, label + " in\n" + text);
+        int end = text.indexOf("\n^", start + 1);
+        return text.substring(start, end < 0 ? text.length() : end);
+    }
+
+    /** Read back outside the loop, the array keeps the store on every thread: one writer would race with the readers. */
+    @Test
+    public void initialValueReadBackIsNotGuarded() {
+        var readBack = SUM.replace("""
+                ^exit:
+                  ret""", """
+                ^exit:
+                  %r = array.load %out[%zero] : f32
+                  ret""");
+        var function = IrParser.parseFunction(readBack);
+        assertTrue(ReductionLowering.run(function, List.of(false, true), 256).isEmpty());
+        assertTrue(Verifier.verify(function).isEmpty(), Verifier.verify(function).toString());
+        assertTrue(!new IrPrinter(false).printFunction(function).contains("^entry.init:"));
+    }
+
     @Test
     public void chainOfTheSameOperationIsAReduction() {
         // out[0] = (out[0] + x) + 1: the read of out[0] is anywhere along a chain of additions.
