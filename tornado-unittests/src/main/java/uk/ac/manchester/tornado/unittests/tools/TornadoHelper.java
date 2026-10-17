@@ -212,6 +212,9 @@ public class TornadoHelper {
             methodsToTest = suite.methodsToTest;
         } else {
             Method method = TornadoHelper.getMethodForName(klass, methodName);
+            if (method == null) {
+                throw new IllegalArgumentException("No public method " + methodName + " in " + klassName);
+            }
             methodsToTest.add(method);
         }
 
