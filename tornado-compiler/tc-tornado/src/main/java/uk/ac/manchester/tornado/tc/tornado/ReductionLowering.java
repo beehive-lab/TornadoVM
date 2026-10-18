@@ -141,6 +141,18 @@ public final class ReductionLowering {
             return refuse("the reduction loop must start at a constant and count by 1");
         }
         long last = upper.getAsLong();
+        // Stores into a @Reduce array outside the loop (the initial value, out[0] = 0, before it): sequential code
+        // that every thread would run, racing to write the same slot; they run on one thread (guarded below).
+        var initialisers = new ArrayList<Inst>();
+        for (var block : function.blocks()) {
+            if (!loop.body().contains(block)) {
+                for (var inst : block.insts()) {
+                    if (inst.opcode() instanceof Opcode.ArrayStore && targets.contains(inst.operand(0))) {
+                        initialisers.add(inst);
+                    }
+                }
+            }
+        }
         var op = spine.op();
         var loc = store.loc();
         var accType = store.operand(2).type();
@@ -191,7 +203,33 @@ public final class ReductionLowering {
         w.br(join, List.of());
         new IrBuilder(join).atEnd(join).at(loc).br(exitTarget, exitArgs);
         function.addAttribute(Attribute.of("domain", "dim", 0, "offset", start.getAsLong(), "step", 1, "upper", last));
+        // Only when nothing outside the loop reads the array back: another thread would read before thread 0 wrote.
+        boolean readOutside = function.blocks().stream().filter(b -> !loop.body().contains(b)).flatMap(b -> b.insts().stream())
+                .anyMatch(i -> i.opcode() instanceof Opcode.ArrayLoad && targets.contains(i.operand(0)));
+        if (!readOutside) {
+            initialisers.forEach(ReductionLowering::onFirstThread);
+        }
         return List.of();
+    }
+
+    /**
+     * Runs {@code store} on global thread 0 only: its block is split after the store, which moves to a block of its
+     * own, entered when the global index is 0. The block keeps dominating what follows, so later uses stay valid.
+     */
+    private static void onFirstThread(Inst store) {
+        var block = store.block().orElseThrow();
+        var function = block.function();
+        var rest = function.newBlock(block.label() + ".after_init");
+        var write = function.newBlock(block.label() + ".init");
+        var insts = block.insts();
+        for (var tail : List.copyOf(insts.subList(insts.indexOf(store) + 1, insts.size()))) {
+            tail.moveToEnd(rest);
+        }
+        store.moveToEnd(write);
+        new IrBuilder(write).atEnd(write).at(store.loc()).br(rest, List.of());
+        var b = new IrBuilder(block).atEnd(block).at(store.loc());
+        var gid = b.intrinsic("tornado.thread_id.global", Immediates.of("dim", 0), Type.I32, List.of());
+        b.condBr(b.icmp(Opcode.IntPredicate.EQ, gid, b.constInt(Type.I32, 0)), write, List.of(), rest, List.of());
     }
 
     /** The operation's neutral element: 0 (-0.0 for floats), 1, or the extreme of the type for min and max. */
