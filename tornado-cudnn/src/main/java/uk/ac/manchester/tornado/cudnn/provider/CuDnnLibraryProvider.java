@@ -24,6 +24,7 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cudnn.CuDnn;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -122,7 +123,8 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     public void prepare(LibraryTaskDescriptor descriptor, LibraryContext context) {
         Object[] p = descriptor.getParameters();
         switch (descriptor.getFunctionName()) {
-            case "cudnnConv2d" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10], (int) p[11]);
+            case "cudnnConv2d", "cudnnConv2dFP16" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10],
+                    (int) p[11], descriptor.getFunctionName().equals("cudnnConv2dFP16"));
             case "sdpaForward" -> getOrCreateSdpaPlan((CuDnnContext) context, (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (float) p[9], (boolean) p[10]);
             default -> {
                 // simple ops have no per-shape native state
@@ -154,7 +156,8 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                     (int) invocation.getArg(2), (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), //
                     (int) invocation.getArg(6), (int) invocation.getArg(7), //
                     invocation.getDevicePointer(0), invocation.getDevicePointer(1));
-            case "cudnnConv2d" -> conv2d(context, invocation);
+            case "cudnnConv2d" -> conv2d(context, invocation, false);
+            case "cudnnConv2dFP16" -> conv2d(context, invocation, true);
             case "sdpaForward" -> sdpa(context, invocation);
             default -> throw new TornadoRuntimeException("[ERROR] cuDNN function not supported: " + functionName);
         };
@@ -167,11 +170,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     }
 
     /** (input, filter, output, n, c, h, w, k, r, s, pad, stride). */
-    private static int conv2d(CuDnnContext context, LibraryInvocation invocation) {
+    private static int conv2d(CuDnnContext context, LibraryInvocation invocation, boolean half) {
         long plan = getOrCreateConvPlan(context, //
                 (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), //
                 (int) invocation.getArg(7), (int) invocation.getArg(8), (int) invocation.getArg(9), //
-                (int) invocation.getArg(10), (int) invocation.getArg(11));
+                (int) invocation.getArg(10), (int) invocation.getArg(11), half);
         return CuDnnNativeLib.convForward(context.handle, plan, //
                 invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), //
                 context.workspacePtr, context.workspaceBytes);
@@ -187,6 +190,21 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                 context.workspacePtr);
     }
 
+    /**
+     * Whether fused SDPA works at all here, told apart from a shape cuDNN rejects by building a
+     * plan for one it always accepts. Fails before Ampere, and under the stub shim that a CUDA
+     * 11 build links in place of cudnn-frontend.
+     */
+    private static boolean hasSdpaSupport(CuDnnContext context) {
+        final int dim = 64;
+        long probe = CuDnnNativeLib.createSdpaPlan(context.handle, 1, 1, dim, dim, dim, 0.125f, false);
+        if (probe == 0) {
+            return false;
+        }
+        CuDnnNativeLib.destroySdpaPlan(probe);
+        return true;
+    }
+
     private static long getOrCreateSdpaPlan(CuDnnContext context, int b, int h, int sQ, int sKv, int d, float scale, boolean causal) {
         String planKey = b + ":" + h + ":" + sQ + ":" + sKv + ":" + d + ":" + scale + ":" + causal;
         Long plan = context.sdpaPlanCache.get(planKey);
@@ -196,6 +214,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             CuDnnNativeLib.loadSdpaShim();
             plan = CuDnnNativeLib.createSdpaPlan(context.handle, b, h, sQ, sKv, d, scale, causal);
             if (plan == 0) {
+                if (!hasSdpaSupport(context)) {
+                    throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] cuDNN fused SDPA is not available for this device/build " //
+                            + "(requires an Ampere sm_80 or later GPU and libtornado-cudnn built against CUDA 12.0+). Shape: " + planKey);
+                }
                 throw new TornadoRuntimeException("[ERROR] cuDNN SDPA plan creation failed for " + planKey + " (requires Ampere+, head dim multiple of 8, <= 256)");
             }
             context.growWorkspace(CuDnnNativeLib.sdpaPlanWorkspaceBytes(plan));
@@ -204,11 +226,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         return plan;
     }
 
-    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
-        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride;
+    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half) {
+        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride + (half ? ":f16" : ":f32");
         Long plan = context.convPlanCache.get(planKey);
         if (plan == null) {
-            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride);
+            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride, half);
             if (plan == 0) {
                 throw new TornadoRuntimeException("[ERROR] cuDNN convolution plan creation failed for " + planKey);
             }

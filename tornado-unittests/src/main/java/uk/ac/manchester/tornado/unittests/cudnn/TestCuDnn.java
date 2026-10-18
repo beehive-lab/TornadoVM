@@ -259,6 +259,50 @@ public class TestCuDnn extends TornadoTestBase {
         }
     }
 
+    private static void checkConv2dFP16(int n, int c, int h, int w, int k, int r, int s, int pad, int stride) throws TornadoExecutionPlanException {
+        final int outH = (h + 2 * pad - r) / stride + 1;
+        final int outW = (w + 2 * pad - s) / stride + 1;
+
+        HalfFloatArray input = randomHalfArray(n * c * h * w);
+        HalfFloatArray filter = randomHalfArray(k * c * r * s);
+        HalfFloatArray output = new HalfFloatArray(n * k * outH * outW);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter) //
+                .libraryTask("conv", CuDnn::cudnnConv2dFP16, input, filter, output, n, c, h, w, k, r, s, pad, stride) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // the FP32 reference sees the same FP16-rounded inputs
+        FloatArray inputF32 = new FloatArray(input.getSize());
+        for (int i = 0; i < input.getSize(); i++) {
+            inputF32.set(i, input.get(i).getFloat32());
+        }
+        FloatArray filterF32 = new FloatArray(filter.getSize());
+        for (int i = 0; i < filter.getSize(); i++) {
+            filterF32.set(i, filter.get(i).getFloat32());
+        }
+        FloatArray expected = new FloatArray(output.getSize());
+        convJava(inputF32, filterF32, expected, n, c, h, w, k, r, s, pad, stride);
+        for (int i = 0; i < expected.getSize(); i++) {
+            // FP32 accumulation, FP16 output: about 3 significant digits
+            assertEquals(expected.get(i), output.get(i).getFloat32(), 1e-2f * Math.max(1.0f, Math.abs(expected.get(i))));
+        }
+    }
+
+    @Test
+    public void testConv2dFP16() throws TornadoExecutionPlanException {
+        // channel counts that suit the tensor cores, then ones that do not
+        checkConv2dFP16(2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dFP16(2, 3, 16, 16, 4, 3, 3, 1, 1);
+        // a strided 1x1 projection and a 7x7 stem, as in ResNet
+        checkConv2dFP16(2, 64, 14, 14, 128, 1, 1, 0, 2);
+        checkConv2dFP16(1, 3, 32, 32, 64, 7, 7, 3, 2);
+    }
+
     /**
      * CNN-style mixed pipeline: cuDNN convolution -> JIT bias-like task ->
      * cuDNN ReLU -> cuDNN max pooling, all on shared device buffers.

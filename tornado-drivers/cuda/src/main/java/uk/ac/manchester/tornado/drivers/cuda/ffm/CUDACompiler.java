@@ -278,6 +278,12 @@ public final class CUDACompiler {
     }
 
     /**
+     * CUDA 12.0 as NVRTC encodes it (major * 1000 + minor): the first NVRTC that knows the CDP2 launch
+     * streams (cudaStreamTailLaunch, cudaStreamFireAndForget) that device launches use.
+     */
+    public static final int CDP2_VERSION_MIN = 12000;
+
+    /**
      * Whether the source launches a kernel from device code. The CUDA backend emits a device-side
      * launch as a triple-chevron call, which appears nowhere else in generated code; checking the
      * source rather than a compiler flag also covers hand-written (pre-built) CUDA C.

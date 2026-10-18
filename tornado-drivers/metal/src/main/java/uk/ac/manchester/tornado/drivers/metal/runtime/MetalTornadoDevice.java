@@ -645,9 +645,13 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     }
 
     /**
-     * The MTLCommandQueue this execution plan uses on this device. Every Metal kernel and blit
-     * ends in commit + waitUntilCompleted, so work a library encodes on this queue is ordered
-     * after all earlier TornadoVM work.
+     * The MTLCommandQueue this execution plan uses on this device. Kernels are batched into shared
+     * command buffers that are committed without waiting (see
+     * {@code -Dtornado.metal.dispatch.batch} and {@code -Dtornado.metal.dispatch.batchSize}), so
+     * this call first commits the open batch and waits for the queue to finish. Work a library then
+     * encodes on this queue is ordered after all earlier TornadoVM work. With
+     * {@code -Dtornado.mlx.async=true} the batch is committed without waiting, and later host reads
+     * and {@code finish} wait for the library's work instead.
      */
     @Override
     public long getNativeStream(long executionPlanId) {
