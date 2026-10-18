@@ -697,7 +697,7 @@ public final class MyProvider implements TornadoLibraryProvider {
     public String libraryName() { return MyLib.LIBRARY_NAME; }
 
     public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;   // CUDA only
+        return device instanceof TornadoNativeStreamSupport;   // CUDA and Metal
     }
 
     public LibraryContext createContext(TornadoXPUDevice device, long planId) {
@@ -752,7 +752,10 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 - **`LibraryInvocation`** — per-call payload: `getArg(i)`, `getDevicePointer(i)`,
   `isReference(i)`, `getContext()`, `getTuning()`.
 - **`TornadoNativeStreamSupport`** — `getNativeStream(planId)` / `getNativeContext(planId)`,
-  implemented by the CUDA backend device.
+  implemented by the CUDA and Metal backend devices. On CUDA they return the plan's
+  `CUstream` and `CUcontext`; on Metal the plan's `MTLCommandQueue` and the `MTLDevice`
+  that owns it. On Metal, `getNativeStream` first commits and waits for the kernels
+  batched on that queue, so library work encoded on it runs after earlier TornadoVM work.
 
 ---
 
