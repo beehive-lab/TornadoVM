@@ -25,6 +25,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
@@ -108,9 +109,8 @@ public final class FloatArray extends TornadoNativeArray {
      */
     private static FloatArray createSegment(float[] values) {
         FloatArray array = new FloatArray(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
+        // one bulk copy rather than a bounds-checked store per element
+        MemorySegment.copy(values, 0, array.getSegment(), JAVA_FLOAT, 0, values.length);
         return array;
     }
 

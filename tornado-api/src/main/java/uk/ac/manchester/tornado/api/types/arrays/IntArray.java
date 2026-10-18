@@ -24,6 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
@@ -105,9 +106,8 @@ public final class IntArray extends TornadoNativeArray {
      */
     private static IntArray createSegment(int[] values) {
         IntArray array = new IntArray(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
+        // one bulk copy rather than a bounds-checked store per element
+        MemorySegment.copy(values, 0, array.getSegment(), JAVA_INT, 0, values.length);
         return array;
     }
 

@@ -107,9 +107,8 @@ public final class LongArray extends TornadoNativeArray {
      */
     private static LongArray createSegment(long[] values) {
         LongArray array = new LongArray(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
+        // one bulk copy rather than a bounds-checked store per element
+        MemorySegment.copy(values, 0, array.getSegment(), JAVA_LONG, 0, values.length);
         return array;
     }
 

@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 @SegmentElementSize(size = 1)
@@ -102,9 +103,8 @@ public final class Int8Array extends TornadoNativeArray {
      */
     private static Int8Array createSegment(byte[] values) {
         Int8Array array = new Int8Array(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
+        // one bulk copy rather than a bounds-checked store per element
+        MemorySegment.copy(values, 0, array.getSegment(), JAVA_BYTE, 0, values.length);
         return array;
     }
 
