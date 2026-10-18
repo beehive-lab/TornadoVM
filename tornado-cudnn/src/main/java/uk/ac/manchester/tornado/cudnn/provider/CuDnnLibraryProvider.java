@@ -24,6 +24,7 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cudnn.CuDnn;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -189,6 +190,21 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                 context.workspacePtr);
     }
 
+    /**
+     * Whether fused SDPA works at all here, told apart from a shape cuDNN rejects by building a
+     * plan for one it always accepts. Fails before Ampere, and under the stub shim that a CUDA
+     * 11 build links in place of cudnn-frontend.
+     */
+    private static boolean hasSdpaSupport(CuDnnContext context) {
+        final int dim = 64;
+        long probe = CuDnnNativeLib.createSdpaPlan(context.handle, 1, 1, dim, dim, dim, 0.125f, false);
+        if (probe == 0) {
+            return false;
+        }
+        CuDnnNativeLib.destroySdpaPlan(probe);
+        return true;
+    }
+
     private static long getOrCreateSdpaPlan(CuDnnContext context, int b, int h, int sQ, int sKv, int d, float scale, boolean causal) {
         String planKey = b + ":" + h + ":" + sQ + ":" + sKv + ":" + d + ":" + scale + ":" + causal;
         Long plan = context.sdpaPlanCache.get(planKey);
@@ -198,6 +214,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             CuDnnNativeLib.loadSdpaShim();
             plan = CuDnnNativeLib.createSdpaPlan(context.handle, b, h, sQ, sKv, d, scale, causal);
             if (plan == 0) {
+                if (!hasSdpaSupport(context)) {
+                    throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] cuDNN fused SDPA is not available for this device/build " //
+                            + "(requires an Ampere sm_80 or later GPU and libtornado-cudnn built against CUDA 12.0+). Shape: " + planKey);
+                }
                 throw new TornadoRuntimeException("[ERROR] cuDNN SDPA plan creation failed for " + planKey + " (requires Ampere+, head dim multiple of 8, <= 256)");
             }
             context.growWorkspace(CuDnnNativeLib.sdpaPlanWorkspaceBytes(plan));
