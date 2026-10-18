@@ -46,7 +46,7 @@ import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 public class CUDADynamicParallelismSupportPhase extends Phase {
 
     /** CUDA 12.0, encoded as major * 1000 + minor (NVRTC) or major * 1000 + minor * 10 (driver). */
-    private static final int CDP2_VERSION_MIN = 12000;
+    public static final int CDP2_VERSION_MIN = 12000;
     private static final int DP_MAJOR_MIN = 3;
     private static final int DP_MINOR_MIN = 5;
 

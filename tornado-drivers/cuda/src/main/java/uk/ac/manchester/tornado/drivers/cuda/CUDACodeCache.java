@@ -48,7 +48,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceDynamicParallelismNo
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
 import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
+import uk.ac.manchester.tornado.drivers.cuda.graal.phases.CUDADynamicParallelismSupportPhase;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -308,6 +310,13 @@ public class CUDACodeCache {
                 // The kernel launches kernels from the device and the device runtime is missing:
                 // the configuration cannot run it, which is not a compiler error.
                 throw new TornadoDeviceDynamicParallelismNotSupported(log);
+            }
+            int nvrtc = CUDAProgram.getNvrtcVersion();
+            if (nvrtc >= 0 && nvrtc < CUDADynamicParallelismSupportPhase.CDP2_VERSION_MIN && CUDACompiler.usesDeviceLaunch(new String(source, StandardCharsets.UTF_8))) {
+                // A prebuilt kernel bypasses the JIT's version check, and a CUDA 11 NVRTC does not
+                // know the CDP2 launch streams (cudaStreamTailLaunch, cudaStreamFireAndForget).
+                throw new TornadoDeviceDynamicParallelismNotSupported("Launching kernels from the device needs CUDA 12.0 or newer (CUDA Dynamic Parallelism 2); the NVRTC in use is "
+                        + (nvrtc / 1000) + "." + (nvrtc % 1000) + ".\n" + log);
             }
             throw new TornadoBailoutRuntimeException("Error during code compilation with the CUDADriver driver:\n" + log);
         }
