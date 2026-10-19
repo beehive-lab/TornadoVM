@@ -313,6 +313,8 @@ jobs:
           echo "CUDF_HOME=$CUDF_DIR/libcudf" >> "$GITHUB_ENV"
           echo "RMM_HOME=$CUDF_DIR/librmm" >> "$GITHUB_ENV"
           echo "TORNADO_CUDF_REQUIRED=1" >> "$GITHUB_ENV"
+          # cudnn-jni skips itself without cuDNN too; a release must not ship without libtornado-cudnn.
+          echo "TORNADO_CUDNN_REQUIRED=1" >> "$GITHUB_ENV"
 
       - name: Build SDKs
         run: |
