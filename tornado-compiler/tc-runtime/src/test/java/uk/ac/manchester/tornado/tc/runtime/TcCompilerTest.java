@@ -132,6 +132,18 @@ public class TcCompilerTest {
         }
     }
 
+    /** A recompilation (another specialisation) of a kernel keeps the dumps of the earlier ones. */
+    @Test
+    public void recompilationDumpsBesideEarlierOnes() throws Exception {
+        var dir = Files.createTempDirectory("tc-dump");
+        var options = new TcOptions(java.util.Set.of("emit"), dir, true, java.util.Optional.empty(), false);
+        TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, options);
+        TcCompiler.compile(IrParser.parseFunction(KERNEL), TargetCaps.CUDA_SM89, options);
+        try (var files = Files.list(dir)) {
+            assertEquals(java.util.List.of("K_scale.09-emit.cu", "K_scale~2.09-emit.cu"), files.map(p -> p.getFileName().toString()).sorted().toList());
+        }
+    }
+
     @Test
     public void inlinesHelperMethodsAndFoldsThem() {
         var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
