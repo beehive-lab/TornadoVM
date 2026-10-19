@@ -220,7 +220,11 @@ check_opencl_backend() {
 
     # Check for OpenCL ICD loader
     if [ "$OS" == "linux" ]; then
-        if ! ldconfig -p 2>/dev/null | grep -q libOpenCL.so; then
+        # ldconfig lives in /sbin, which is not in a regular user's PATH on Debian
+        local ldconfig_bin
+        ldconfig_bin=$(command -v ldconfig 2>/dev/null || ls /sbin/ldconfig /usr/sbin/ldconfig 2>/dev/null | head -n 1)
+        if ! { [ -n "$ldconfig_bin" ] && "$ldconfig_bin" -p 2>/dev/null | grep -q libOpenCL.so; } \
+            && ! ls /usr/lib/libOpenCL.so* /usr/lib64/libOpenCL.so* /usr/lib/*-linux-gnu/libOpenCL.so* >/dev/null 2>&1; then
             print_warning "OpenCL ICD loader is not installed"
             echo "" >&2
             echo "The OpenCL backend requires OpenCL ICD loader." >&2
