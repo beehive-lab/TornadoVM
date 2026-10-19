@@ -985,8 +985,9 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 g_last_error = "readParquetColumns: column " + std::to_string(columns[c]) + " is beyond the file's " + std::to_string(schema_columns) + " columns";
                 return 6;
             }
-            if (kinds[c] < 0 || kinds[c] > 3) {
-                g_last_error = "readParquetColumns: kind " + std::to_string(kinds[c]) + " is not 0 (INT32), 1 (INT64), 2 (FP64) or 3 (FP32 into FP64)";
+            if (kinds[c] < 0 || kinds[c] > 4) {
+                g_last_error = "readParquetColumns: kind " + std::to_string(kinds[c])
+                        + " is not 0 (INT32), 1 (INT64), 2 (FP64), 3 (FP32 into FP64) or 4 (DECIMAL into INT64)";
                 return 5;
             }
             names.push_back(root.child(columns[c]).name());
@@ -1017,14 +1018,21 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
             const auto col = table.column(c);
             const auto id = col.type().id();
             // Kind 3 is a FLOAT32 column widened, exactly, into the FP64 buffer: it shares that buffer's slots.
-            const int32_t kind = kinds[c] == 3 ? 2 : kinds[c];
+            // Kind 4 is a DECIMAL column of up to 18 digits, its unscaled values in the INT64 buffer:
+            // stored as INT32 (cuDF's DECIMAL32) or INT64 (DECIMAL64), as Parquet writers store them.
             const bool widen_float = kinds[c] == 3;
+            const bool decimal = kinds[c] == 4;
+            const int32_t kind = widen_float ? 2 : decimal ? 1 : kinds[c];
             bool accepted = false;
             switch (kind) {
                 case 0:
                     accepted = id == cudf::type_id::INT32 || id == cudf::type_id::TIMESTAMP_DAYS;
                     break;
                 case 1:
+                    if (decimal) {
+                        accepted = id == cudf::type_id::DECIMAL32 || id == cudf::type_id::DECIMAL64;
+                        break;
+                    }
                     accepted = id == cudf::type_id::INT64 || id == cudf::type_id::TIMESTAMP_SECONDS || id == cudf::type_id::TIMESTAMP_MILLISECONDS
                             || id == cudf::type_id::TIMESTAMP_MICROSECONDS || id == cudf::type_id::TIMESTAMP_NANOSECONDS;
                     break;
@@ -1051,6 +1059,10 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 cudf::column_view source = col;
                 if (widen_float) {
                     widened = cudf::cast(col, cudf::data_type{cudf::type_id::FLOAT64}, view);
+                    source = widened->view();
+                } else if (decimal && id != cudf::type_id::DECIMAL64) {
+                    // A DECIMAL32 widened at the same scale: the unscaled value itself, exactly.
+                    widened = cudf::cast(col, cudf::data_type{cudf::type_id::DECIMAL64, col.type().scale()}, view);
                     source = widened->view();
                 }
                 cudaError_t rc = copy_out(dst, source.head<char>() + static_cast<size_t>(source.offset()) * width[kind], static_cast<size_t>(rows) * width[kind], raw);
@@ -1155,7 +1167,9 @@ int tornado_cudf_contains(void* stream, int32_t kind, const void* set, int32_t m
  *
  * types, one a column, fix both the buffer and the Parquet type, and cross the ABI:
  *   0 INT32, 1 INT64, 2 FP64, 3 DATE (days, from the INT32 buffer), 4 TIMESTAMP in microseconds
- *   (from the INT64 buffer).
+ *   (from the INT64 buffer), 5 FLOAT (from the FP64 buffer, narrowed), 6 DECIMAL of up to 18 digits
+ *   (unscaled values from the INT64 buffer; precision in bits 8-15 of the code, scale in 16-23),
+ *   stored as INT32 up to 9 digits and INT64 above, as Parquet's convention has it.
  * field_ids, one a column, are written as Parquet field ids (-1 for none): a table format that
  * resolves columns by id -- Iceberg -- reads the file back by them. optional, one a column, makes
  * the column nullable, with its validity bytes as the null mask; a required column is written as
@@ -1218,15 +1232,29 @@ int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t c
         const size_t width[3] = {sizeof(int32_t), sizeof(int64_t), sizeof(double)};
         std::vector<cudf::column_view> views;
         std::vector<std::unique_ptr<rmm::device_buffer>> masks;  // owned here until the write returns
+        std::vector<std::unique_ptr<cudf::column>> narrowed;     // FLOAT columns, cast from FP64
+        std::vector<int32_t> precisions(column_count, 0);
         for (int32_t c = 0; c < column_count; c++) {
             int32_t kind;
             cudf::type_id id;
-            switch (types[c]) {
+            int32_t scale = 0;
+            switch (types[c] & 0xff) {
                 case 0: kind = 0; id = cudf::type_id::INT32; break;
                 case 1: kind = 1; id = cudf::type_id::INT64; break;
                 case 2: kind = 2; id = cudf::type_id::FLOAT64; break;
                 case 3: kind = 0; id = cudf::type_id::TIMESTAMP_DAYS; break;
                 case 4: kind = 1; id = cudf::type_id::TIMESTAMP_MICROSECONDS; break;
+                case 5: kind = 2; id = cudf::type_id::FLOAT64; break;  // narrowed below
+                case 6:
+                    kind = 1;
+                    id = cudf::type_id::DECIMAL64;
+                    precisions[c] = (types[c] >> 8) & 0xff;
+                    scale = (types[c] >> 16) & 0xff;
+                    if (precisions[c] < 1 || precisions[c] > 18 || scale > precisions[c]) {
+                        g_last_error = "writeParquetColumns: DECIMAL(" + std::to_string(precisions[c]) + ", " + std::to_string(scale) + ") is not a decimal of up to 18 digits";
+                        return 5;
+                    }
+                    break;
                 default:
                     g_last_error = "writeParquetColumns: unknown type " + std::to_string(types[c]);
                     return 5;
@@ -1251,13 +1279,28 @@ int tornado_cudf_write_parquet_columns(void* stream, const char* path, int32_t c
                 mask = static_cast<const cudf::bitmask_type*>(buffer->data());
                 masks.push_back(std::move(buffer));
             }
-            views.emplace_back(cudf::data_type{id}, static_cast<cudf::size_type>(rows), data, mask, nulls);
+            // cuDF's scale is the power of ten a unit stands for: -2 for two digits after the point.
+            cudf::column_view column(id == cudf::type_id::DECIMAL64 ? cudf::data_type{id, numeric::scale_type{-scale}} : cudf::data_type{id},
+                    static_cast<cudf::size_type>(rows), data, mask, nulls);
+            if ((types[c] & 0xff) == 5) {
+                narrowed.push_back(cudf::cast(column, cudf::data_type{cudf::type_id::FLOAT32}, view));
+                views.push_back(narrowed.back()->view());
+            } else if (id == cudf::type_id::DECIMAL64 && precisions[c] <= 9) {
+                // Up to 9 digits a decimal is stored as INT32 (cuDF's DECIMAL32), as Spark and Iceberg store it.
+                narrowed.push_back(cudf::cast(column, cudf::data_type{cudf::type_id::DECIMAL32, numeric::scale_type{-scale}}, view));
+                views.push_back(narrowed.back()->view());
+            } else {
+                views.push_back(column);
+            }
         }
 
         cudf::table_view table{views};
         cudf::io::table_input_metadata metadata(table);
         for (int32_t c = 0; c < column_count; c++) {
             metadata.column_metadata[c].set_name(column_names[c]).set_nullability(optional[c] != 0);
+            if (precisions[c] > 0) {
+                metadata.column_metadata[c].set_decimal_precision(static_cast<uint8_t>(precisions[c]));
+            }
             if (field_ids[c] >= 0) {
                 metadata.column_metadata[c].set_parquet_field_id(field_ids[c]);
             }

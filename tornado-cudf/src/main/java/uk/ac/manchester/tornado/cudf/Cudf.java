@@ -481,10 +481,37 @@ public final class Cudf {
     public static LibraryTaskDescriptor writeParquetColumns(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types, boolean[] optional,
             long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64, ByteArray inValid, int compression,
             int rowGroupRows) {
+        return writeParquetColumns(pathHolder, names, fieldIds, types, optional, null, null, rowsHolder, deviceRows, stride, inInt32, inInt64, inFloat64, inValid,
+                compression, rowGroupRows);
+    }
+
+    /**
+     * {@link #writeParquetColumns(StringBuilder, String, int[], ParquetColumnType[], boolean[], long[], IntArray, int, IntArray, LongArray, DoubleArray, ByteArray, int,
+     * int)} with the precision (1 to 18) and scale (0 to precision) of each {@link ParquetColumnType#DECIMAL64} column, at its index; other columns' entries are
+     * ignored.
+     */
+    public static LibraryTaskDescriptor writeParquetColumns(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types, boolean[] optional,
+            int[] decimalPrecision, int[] decimalScale, long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64,
+            ByteArray inValid, int compression, int rowGroupRows) {
         if (fieldIds.length != types.length || types.length != optional.length) {
             throw new IllegalArgumentException("writeParquetColumns: field ids, types and optional flags must be the same length");
         }
-        int[] codes = Arrays.stream(types).mapToInt(ParquetColumnType::code).toArray();
+        int[] codes = new int[types.length];
+        for (int i = 0; i < types.length; i++) {
+            codes[i] = types[i].code();
+            if (types[i] == ParquetColumnType.DECIMAL64) {
+                // The shim reads a decimal's precision and scale from the code's upper bytes.
+                if (decimalPrecision == null || decimalScale == null || decimalPrecision.length != types.length || decimalScale.length != types.length) {
+                    throw new IllegalArgumentException("writeParquetColumns: a DECIMAL64 column needs a precision and a scale");
+                }
+                int precision = decimalPrecision[i];
+                int scale = decimalScale[i];
+                if (precision < 1 || precision > 18 || scale < 0 || scale > precision) {
+                    throw new IllegalArgumentException("writeParquetColumns: DECIMAL(" + precision + ", " + scale + ") is not a decimal of up to 18 digits");
+                }
+                codes[i] |= (precision << 8) | (scale << 16);
+            }
+        }
         int[] nullable = new int[optional.length];
         for (int i = 0; i < optional.length; i++) {
             nullable[i] = optional[i] ? 1 : 0;
