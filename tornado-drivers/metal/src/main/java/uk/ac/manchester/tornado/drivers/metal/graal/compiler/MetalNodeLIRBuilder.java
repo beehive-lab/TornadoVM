@@ -59,7 +59,6 @@ import tornado.graal.compiler.nodes.AbstractMergeNode;
 import tornado.graal.compiler.nodes.BeginNode;
 import tornado.graal.compiler.nodes.BreakpointNode;
 import tornado.graal.compiler.nodes.DirectCallTargetNode;
-import tornado.graal.compiler.nodes.EndNode;
 import tornado.graal.compiler.nodes.FixedNode;
 import tornado.graal.compiler.nodes.IfNode;
 import tornado.graal.compiler.nodes.IndirectCallTargetNode;
@@ -566,11 +565,9 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
     public void visitMerge(final AbstractMergeNode mergeNode) {
         Logger.traceBuildLIR(Logger.BACKEND.Metal, "visitMerge: ", mergeNode);
 
-        boolean loopExitMerge = true;
-        for (EndNode end : mergeNode.forwardEnds()) {
-            loopExitMerge &= end.predecessor() instanceof LoopExitNode;
-        }
-
+        // Phis with distinct incoming values are assigned at the end of each predecessor
+        // (see emitNonLoopPhiMoves). A move here would run on every path into the merge and
+        // overwrite the value of whichever predecessor was actually taken.
         for (ValuePhiNode phi : mergeNode.valuePhis()) {
             final ValueNode value = phi.singleValueOrThis();
             if (value != phi) {
@@ -580,11 +577,6 @@ public class MetalNodeLIRBuilder extends NodeLIRBuilder {
                 if (!dest.equals(src)) {
                     append(new MetalLIRStmt.AssignStmt(dest, src));
                 }
-            } else if (loopExitMerge) {
-                AllocatableValue dest = gen.asAllocatable(operandForPhi(phi));
-                Value src = operand(phi.valueAt(1));
-
-                append(new MetalLIRStmt.AssignStmt(dest, src));
             }
         }
     }
