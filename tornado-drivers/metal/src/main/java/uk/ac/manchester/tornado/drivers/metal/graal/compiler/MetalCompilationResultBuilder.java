@@ -243,12 +243,29 @@ public class MetalCompilationResultBuilder extends CompilationResultBuilder {
         compilationResult.setTargetCode(asm.close(true), position);
     }
 
-    void emitLoopBlock(HIRBlock block) {
+    /**
+     * Emits a loop header. When {@code naturalExit} is not null, the header keeps
+     * the {@code for (;;) { if (!(cond)) { ... break; } } } form and the natural
+     * exit block is emitted inside that {@code if}, instead of after the loop
+     * where it would also run after a {@code break}.
+     */
+    void emitLoopBlock(HIRBlock block, HIRBlock naturalExit) {
         final List<LIRInstruction> headerInstructions = lir.getLIRforBlock(block);
-        if (shouldFormatLoopHeader(headerInstructions)) {
+        if (naturalExit != null) {
+            for (LIRInstruction instruction : headerInstructions) {
+                if (instruction instanceof LoopConditionOp loopCondition) {
+                    loopCondition.setExitBlock(naturalExit);
+                }
+            }
+        } else if (shouldFormatLoopHeader(headerInstructions)) {
             formatLoopHeader(headerInstructions);
         }
         emitBlock(block);
+    }
+
+    public void emitLoopExitBlock(HIRBlock block) {
+        emitBlock(block);
+        emitRelocatedInstructions(block);
     }
 
     void emitRelocatedInstructions(HIRBlock block) {

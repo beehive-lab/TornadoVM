@@ -28,7 +28,9 @@ import java.util.Set;
 import tornado.graal.compiler.core.common.cfg.Loop;
 import tornado.graal.compiler.graph.Node;
 import tornado.graal.compiler.graph.iterators.NodeIterable;
+import tornado.graal.compiler.nodes.EndNode;
 import tornado.graal.compiler.nodes.IfNode;
+import tornado.graal.compiler.nodes.LoopBeginNode;
 import tornado.graal.compiler.nodes.cfg.ControlFlowGraph;
 import tornado.graal.compiler.nodes.cfg.HIRBlock;
 import tornado.graal.compiler.nodes.extended.IntegerSwitchNode;
@@ -93,8 +95,11 @@ public final class MetalStructuredControlFlow {
     record IfElse(HIRBlock head, Region thenRegion, Region elseRegion) implements Region {
     }
 
-    /** {@code header} is a loop header; {@code body} is the loop body. */
-    record LoopRegion(HIRBlock header, Region body) implements Region {
+    /**
+     * {@code header} is a loop header; {@code body} is the loop body.
+     * {@code naturalExit}, when not null, is emitted inside the loop's exit test.
+     */
+    record LoopRegion(HIRBlock header, Region body, HIRBlock naturalExit) implements Region {
     }
 
     /** {@code head} ends in an {@link IntegerSwitchNode}. */
@@ -173,8 +178,14 @@ public final class MetalStructuredControlFlow {
             visited.add(b);
             if (b.isLoopHeader()) {
                 HIRBlock cont = loopContinuation(b);
-                items.add(buildLoop(b, stops, visited));
-                b = cont;
+                HIRBlock naturalExit = hasBreakExits(b) && isExitToMerge(cont) ? cont : null;
+                items.add(buildLoop(b, naturalExit, stops, visited));
+                if (naturalExit != null) {
+                    visited.add(naturalExit);
+                    b = sequentialSuccessor(naturalExit);
+                } else {
+                    b = cont;
+                }
             } else if (isUserIf(b)) {
                 HIRBlock follow = computeFollow(b, loop);
                 items.add(buildIf(b, follow, loop, stops, visited));
@@ -191,13 +202,13 @@ public final class MetalStructuredControlFlow {
         return new Seq(items);
     }
 
-    private Region buildLoop(HIRBlock header, Set<HIRBlock> stops, Set<HIRBlock> visited) {
+    private Region buildLoop(HIRBlock header, HIRBlock naturalExit, Set<HIRBlock> stops, Set<HIRBlock> visited) {
         Loop<HIRBlock> loop = header.getLoop();
         Set<HIRBlock> bodyStops = new HashSet<>(stops);
         bodyStops.add(header);
         HIRBlock bodyEntry = loopBodyEntry(header, loop);
         Region body = bodyEntry == null ? new Seq(List.of()) : structure(bodyEntry, loop, bodyStops, new HashSet<>(visited));
-        return new LoopRegion(header, body);
+        return new LoopRegion(header, body, naturalExit);
     }
 
     private Region buildIf(HIRBlock head, HIRBlock follow, Loop<HIRBlock> loop, Set<HIRBlock> stops, Set<HIRBlock> visited) {
@@ -334,6 +345,24 @@ public final class MetalStructuredControlFlow {
         return null;
     }
 
+    /**
+     * Whether the loop can also be left through a {@code break} (any exit other
+     * than the one taken when the loop condition fails).
+     */
+    private static boolean hasBreakExits(HIRBlock header) {
+        return ((LoopBeginNode) header.getBeginNode()).loopExits().count() > 1;
+    }
+
+    /**
+     * Whether the natural exit block only leads into a merge. Its code (the phi
+     * moves of the natural exit, which the {@code break} paths make before their
+     * {@code break}) must then run on that exit alone: emitted after the loop, it
+     * would also run after a {@code break} and overwrite the value set there.
+     */
+    private static boolean isExitToMerge(HIRBlock exit) {
+        return exit != null && exit.getEndNode() instanceof EndNode && exit.getSuccessorCount() == 1;
+    }
+
     // ---------------------------------------------------------------------
     // Emitter
     // ---------------------------------------------------------------------
@@ -356,7 +385,8 @@ public final class MetalStructuredControlFlow {
     }
 
     private void emitLoop(LoopRegion loop) {
-        builder.emitLoopBlock(loop.header()); // emits "init; for(;cond;) {"  (open brace from LoopPostOp)
+        // emits "init; for(;cond;) {" (open brace from LoopPostOp), or "init; for(;;) { if (!(cond)) { exit; break; }"
+        builder.emitLoopBlock(loop.header(), loop.naturalExit());
         emit(loop.body());
         asm.endScope(loop.header().toString());
         builder.emitRelocatedInstructions(loop.header());

@@ -38,6 +38,7 @@ import static uk.ac.manchester.tornado.drivers.metal.graal.asm.MetalAssemblerCon
 import tornado.graal.compiler.lir.LIRInstructionClass;
 import tornado.graal.compiler.lir.LabelRef;
 import tornado.graal.compiler.lir.StandardOp.BlockEndOp;
+import tornado.graal.compiler.nodes.cfg.HIRBlock;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.Constant;
@@ -162,6 +163,13 @@ public class MetalControlFlow {
 
         private boolean generateIfBreakStatement = true;
 
+        /**
+         * The block the loop leaves to when the condition fails. When set, it is
+         * emitted inside the {@code if (!(cond))} before the {@code break}, so that
+         * its code (e.g. the phi moves of the natural exit) only runs on that exit.
+         */
+        private HIRBlock exitBlock;
+
         public LoopConditionOp(Value condition) {
             super(TYPE);
             this.condition = condition;
@@ -169,6 +177,10 @@ public class MetalControlFlow {
 
         public void setGenerateIfBreakStatement(boolean value) {
             this.generateIfBreakStatement = value;
+        }
+
+        public void setExitBlock(HIRBlock exitBlock) {
+            this.exitBlock = exitBlock;
         }
 
         @Override
@@ -198,6 +210,9 @@ public class MetalControlFlow {
                 asm.eol();
 
                 asm.beginScope();
+                if (exitBlock != null) {
+                    crb.emitLoopExitBlock(exitBlock);
+                }
                 asm.indent();
                 asm.emitSymbol(BREAK);
                 asm.delimiter();
