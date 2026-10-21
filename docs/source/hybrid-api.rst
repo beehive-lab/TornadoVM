@@ -20,7 +20,7 @@ Example: CLBlast (OpenCL dense linear algebra)
 ---------------------------------------------
 
 The ``tornado-clblast`` module provides ``CLBlast.sgemm``, ``dgemm``,
-``sgemv``, ``dgemv``, ``saxpy``, ``daxpy``, ``sdot`` and ``ddot``.
+``sgemv``, ``dgemv``, ``saxpy``, ``daxpy``, ``sdot``, ``ddot`` and ``strmm``.
 Install the CLBlast shared library separately and make it discoverable by the
 native loader (``PATH`` on Windows, ``LD_LIBRARY_PATH`` on Linux, or
 ``DYLD_LIBRARY_PATH`` on macOS), or place it on ``java.library.path``.
@@ -55,6 +55,31 @@ on the calling thread and requires in-order execution
 (``tornado.ooo-execution.enable=false``, the default). FP64 routines require
 device support for double precision. Batch processing with ``withBatch`` is
 not supported for library tasks.
+
+STRMM multiplies a general FP32 matrix B by a triangular matrix A, overwriting
+B. ``CLBlastSide`` selects ``B = alpha * op(A) * B`` (``LEFT``) or
+``B = alpha * B * op(A)`` (``RIGHT``). A has order m on the left or n on the
+right, while B always has m rows and n columns. ``CLBlastTriangle`` selects
+the stored triangle of A before transposition. ``CLBlastDiagonal.UNIT``
+assumes a diagonal of ones and ignores its stored values; ``NON_UNIT`` reads
+the diagonal. B is marked ``READ_WRITE`` and its initial contents must be
+available on the device. There is no beta argument or separate output matrix.
+
+.. code:: java
+
+   // Row-major A[m*m] (upper triangular), B[m*n]: B = A * B.
+   TaskGraph triangular = new TaskGraph("clblastTrmm")
+       .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)
+       .libraryTask("trmm", CLBlast::strmm,
+           CLBlastLayout.ROW_MAJOR.value(), CLBlastSide.LEFT.value(),
+           CLBlastTriangle.UPPER.value(), CLBlastTranspose.NO.value(),
+           CLBlastDiagonal.NON_UNIT.value(), m, n, 1.0f, a, m, b, n)
+       .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
+
+The selectors are in ``uk.ac.manchester.tornado.clblast.enums``. Repeated
+executions reuse the updated B when its host-to-device transfer is
+``FIRST_EXECUTION``; use ``EVERY_EXECUTION`` with the intended input contents
+to explicitly reload B on each execution.
 
 The bindings follow the `CLBlast C API
 <https://github.com/CNugteren/CLBlast/blob/master/include/clblast_c.h>`__.
