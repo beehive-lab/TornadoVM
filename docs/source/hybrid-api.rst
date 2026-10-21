@@ -64,6 +64,15 @@ Run the OpenCL integration tests with:
 
    tornado-test -V uk.ac.manchester.tornado.unittests.clblast.TestCLBlast
 
+The integration suite covers both small layout/stride cases and larger
+execution paths: padded 301-by-257-by-513 GEMM across both layouts and all four
+transpose combinations, beta-zero output initialised to NaN, ordering between
+a slow JIT producer and GEMM across sequential host threads, device buffers
+shared between task graphs, and repeated 2048-by-2048 GEMM with deferred
+readback. Large products are checked against CPU references accumulated in
+double precision; the 2048 case checks complete boundary and interior rows.
+These are correctness tests, with no timing thresholds or performance claims.
+
 The binding and provider tests require no GPU or CLBlast installation:
 
 .. code:: bash
