@@ -83,9 +83,10 @@ import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
-public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice {
+public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice, TornadoNativeStreamSupport {
 
     private static OCLBackendImpl driver = null;
     private static final Access[] ACCESS_TYPES = Access.values();
@@ -159,6 +160,18 @@ public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice {
     @Override
     public OCLDeviceContextInterface getDeviceContext() {
         return driver.getDeviceBackend(platformIndex, deviceIndex).getDeviceContext();
+    }
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        ensureLoaded(executionPlanId);
+        return ((OCLDeviceContext) getDeviceContext()).getNativeCommandQueue(executionPlanId);
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        ensureLoaded(executionPlanId);
+        return ((OCLDeviceContext) getDeviceContext()).getPlatformContext().getContextId();
     }
 
     private void disableProfilerOptions() {

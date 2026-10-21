@@ -12,8 +12,9 @@ name: 4 - Deploy Maven Central [auto]
 # cuTile TileContext API), tornado-runtime, tornado-matrices, the CUDA backend
 # tornado-drivers-cuda (which compiles cuTile kernels) with its parent and
 # tornado-drivers-common, the CUDA library bindings tornado-cublas/-cudnn/
-# -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs/-nccl, and the Apple MLX bindings
-# tornado-mlx. The bindings load the NVIDIA (or Apple MLX) libraries
+# -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs/-nccl, the OpenCL CLBlast bindings
+# tornado-clblast, and the Apple MLX bindings tornado-mlx.
+# The bindings load the NVIDIA, CLBlast, or Apple MLX libraries
 # through java.lang.foreign at run time; the native *-jni shims some of them use
 # are built per platform and ship only in the SDK. Each module is still deployed once PER JDK PROFILE
 # under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — the
@@ -161,7 +162,7 @@ jobs:
           mvn clean deploy \
             -T 1 \
             -P${{ matrix.jdk }},cuda-backend,release \
-            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
+            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-clblast,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
             -am \
             -DskipTests \
             --batch-mode

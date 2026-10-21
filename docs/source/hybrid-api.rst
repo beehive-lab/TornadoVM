@@ -5,14 +5,79 @@ Hybrid API: Native Library Tasks
 
 The hybrid API lets a :code:`TaskGraph` mix JIT-compiled Java tasks with calls
 into vendor-optimized native libraries (e.g., NVIDIA cuBLAS, cuFFT, cuDNN,
-and RAPIDS cuDF).
+RAPIDS cuDF, and CLBlast on OpenCL).
 Library tasks share TornadoVM-managed device buffers with regular tasks, so
 data produced by a JIT kernel can feed a library call (and vice versa)
 without extra copies or special memory management, and everything runs on
-the **same CUDA stream** — no host synchronization is introduced between a
+the **same native stream or command queue** — no host synchronization is introduced between a
 JIT task and a library call.
 
-Requires the CUDA backend: :code:`make BACKEND=cuda` (see :ref:`build-from-source`).
+The NVIDIA libraries require the CUDA backend: :code:`make BACKEND=cuda`.
+CLBlast requires the OpenCL backend: :code:`make BACKEND=opencl`
+(see :ref:`build-from-source`).
+
+Example: CLBlast (OpenCL dense linear algebra)
+---------------------------------------------
+
+The ``tornado-clblast`` module provides ``CLBlast.sgemm``, ``dgemm``,
+``sgemv``, ``dgemv``, ``saxpy``, ``daxpy``, ``sdot`` and ``ddot``.
+Install the CLBlast shared library separately and make it discoverable by the
+native loader (``PATH`` on Windows, ``LD_LIBRARY_PATH`` on Linux, or
+``DYLD_LIBRARY_PATH`` on macOS), or place it on ``java.library.path``.
+CLBlast is loaded only when a CLBlast task is used; other OpenCL tasks do not
+require it. The OpenCL SDK includes the Java binding module automatically.
+
+.. code:: java
+
+   import uk.ac.manchester.tornado.clblast.CLBlast;
+   import uk.ac.manchester.tornado.clblast.enums.CLBlastLayout;
+   import uk.ac.manchester.tornado.clblast.enums.CLBlastTranspose;
+
+   // Row-major A[m*k], B[k*n], C[m*n]: C = A * B.
+   TaskGraph graph = new TaskGraph("clblast")
+       .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+       .libraryTask("gemm", CLBlast::sgemm,
+           CLBlastLayout.ROW_MAJOR.value(),
+           CLBlastTranspose.NO.value(), CLBlastTranspose.NO.value(),
+           m, n, k, 1.0f, a, k, b, n, 0.0f, c, n)
+       .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+Both row-major and column-major storage are supported. Leading dimensions and
+vector increments are measured in elements; increments must be positive.
+TornadoVM passes the original ``cl_mem`` buffers with element offsets that
+skip native array headers. Results of DOT remain in a device array and can
+feed another library task or JIT kernel directly.
+
+For GEMM/GEMV with non-zero ``beta``, the output is marked ``READ_WRITE``;
+include it in ``transferToDevice`` when its initial values come from the host.
+AXPY also reads its output. CLBlast uses the execution plan's command queue
+on the calling thread and requires in-order execution
+(``tornado.ooo-execution.enable=false``, the default). FP64 routines require
+device support for double precision. Batch processing with ``withBatch`` is
+not supported for library tasks.
+
+The bindings follow the `CLBlast C API
+<https://github.com/CNugteren/CLBlast/blob/master/include/clblast_c.h>`__.
+Run the OpenCL integration tests with:
+
+.. code:: bash
+
+   tornado-test -V uk.ac.manchester.tornado.unittests.clblast.TestCLBlast
+
+The integration suite covers both small layout/stride cases and larger
+execution paths: padded 301-by-257-by-513 GEMM across both layouts and all four
+transpose combinations, beta-zero output initialised to NaN, ordering between
+a slow JIT producer and GEMM across sequential host threads, device buffers
+shared between task graphs, and repeated 2048-by-2048 GEMM with deferred
+readback. Large products are checked against CPU references accumulated in
+double precision; the 2048 case checks complete boundary and interior rows.
+These are correctness tests, with no timing thresholds or performance claims.
+
+The binding and provider tests require no GPU or CLBlast installation:
+
+.. code:: bash
+
+   mvn -Pjdk21 -pl tornado-clblast -am test -DskipTests=false -Dtest=CLBlastTest,CLBlastBindingsTest -Dsurefire.failIfNoSpecifiedTests=false
 
 Example: cuBLAS (dense linear algebra)
 ---------------------------------------
@@ -228,13 +293,14 @@ a new library requires **no changes to the core runtime**:
    directly.
 
 Backends expose their native stream to providers through
-:code:`TornadoNativeStreamSupport` (implemented by the CUDA backend). Provider
+:code:`TornadoNativeStreamSupport` (implemented by the CUDA, Metal and OpenCL backends). Provider
 :code:`canHandle(device)` rejects devices without native-stream interop.
 
 Scope and roadmap
 -----------------
 
-Implemented today, via the same provider SPI: **cuBLAS** and **cuBLASLt**
+Implemented today, via the same provider SPI: **CLBlast** (OpenCL dense linear
+algebra), **cuBLAS** and **cuBLASLt**
 (dense linear algebra, fused-epilogue GEMM), **cuFFT** (FFTs), **cuDNN**
 (deep-learning primitives, including fused FP16 flash attention), **cuSPARSE**
 (CSR SpMV/SpMM), **CUTLASS** (open-template FP32/FP16/BF16 GEMM with fused

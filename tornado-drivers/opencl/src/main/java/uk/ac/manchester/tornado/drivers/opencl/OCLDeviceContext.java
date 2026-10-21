@@ -24,6 +24,7 @@
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.nio.ByteOrder;
@@ -37,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
@@ -261,6 +263,18 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
+    }
+
+    /**
+     * Queue used by native library tasks on the calling thread. Libraries such as
+     * CLBlast require an in-order queue to order their internal kernel launches.
+     */
+    public long getNativeCommandQueue(long executionPlanId) {
+        OCLCommandQueue queue = getCommandQueue(executionPlanId);
+        if ((queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) != 0) {
+            throw new TornadoRuntimeException("Native OpenCL library tasks require an in-order command queue (set tornado.ooo-execution.enable=false)");
+        }
+        return queue.getCommandQueuePtr();
     }
 
     private OCLCommandQueue getCommandQueue(long executionPlanId) {

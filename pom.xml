@@ -593,6 +593,7 @@
         <module>tornado-assembly</module>
         <module>tornado-api</module>
         <module>tornado-cublas</module>
+        <module>tornado-clblast</module>
         <module>tornado-curand</module>
         <module>tornado-cufft</module>
         <module>tornado-cudnn</module>

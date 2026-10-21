@@ -67,6 +67,7 @@ __CUDA_MODULE__ = "tornado.drivers.cuda"
 __ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
 __FFM_MODULE__ = "tornado.runtime"
 __CUBLAS_MODULE__ = "tornado.cublas"
+__CLBLAST_MODULE__ = "tornado.clblast"
 __CURAND_MODULE__ = "tornado.curand"
 __CUFFT_MODULE__ = "tornado.cufft"
 __CUDNN_MODULE__ = "tornado.cudnn"
@@ -1219,7 +1220,7 @@ class TornadoVMRunnerTool():
         javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "
-            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__
+            tornadoAddModules = tornadoAddModules + "," + __OPENCL_MODULE__ + "," + __CLBLAST_MODULE__
         if ("metal-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + metal + " "
             tornadoAddModules = tornadoAddModules + "," + __METAL_MODULE__ + "," + __MLX_MODULE__
