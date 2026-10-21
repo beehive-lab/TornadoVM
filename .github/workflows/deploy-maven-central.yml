@@ -178,7 +178,7 @@ jobs:
           mvn clean deploy \
             -T 1 \
             -P${{ matrix.jdk }},cuda-backend,release \
-            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
+            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-clblast,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
             -am \
             -DskipTests \
             --batch-mode
