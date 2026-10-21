@@ -27,26 +27,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+
 /**
- * Combines two NVRTC option strings so that the second overrides the first.
+ * Combines two compiler option strings so that the second overrides the first: how a plan's
+ * {@code withCompilerFlags} is added to a backend's default flags, on every backend.
  *
  * <p>
- * NVRTC rejects an option given twice ({@code --use_fast_math (-use_fast_math) defined more than
- * once}), even when both occurrences agree, so the CUDA flags cannot be layered by concatenation:
- * {@code -Dtornado.cuda.compile.profile=fast} with {@code --use_fast_math} in
- * {@code tornado.cuda.compiler.flags} or in {@code withCompilerFlags(CUDA, ...)} fails to compile
- * every kernel. Instead, an option in the overriding string replaces any option of the same name
- * in the base, and everything else from both is kept, base first.
+ * Plain concatenation is not enough. NVRTC rejects an option given twice ({@code --use_fast_math
+ * (-use_fast_math) defined more than once}), even when both occurrences agree, so
+ * {@code -Dtornado.cuda.compile.profile=fast} with {@code --use_fast_math} given again failed to
+ * compile every kernel; and two values for one option ({@code -cl-std=CL2.0} and
+ * {@code -cl-std=CL3.0}) must not both reach the OpenCL compiler. Instead, an option in the
+ * overriding string replaces any option of the same name in the base, and everything else from
+ * both is kept, base first.
  * </p>
  *
  * <p>
  * Names are compared without leading dashes and without an {@code =value}, with NVRTC's short
  * aliases mapped to their long form, so {@code -lineinfo} replaces {@code --generate-line-info}
- * and {@code --fmad=true} replaces {@code --fmad=false}. Options NVRTC accepts more than once
+ * and {@code --fmad=true} replaces {@code --fmad=false}. Options compilers accept more than once
  * (include paths, macro definitions, pre-includes) are never treated as duplicates.
  * </p>
  */
-public final class CudaCompilerFlags {
+public final class CompilerFlags {
 
     /** NVRTC short spellings and the long option each one is an alias of. */
     private static final Map<String, String> ALIASES = Map.of("lineinfo", "generate-line-info", //
@@ -60,7 +64,7 @@ public final class CudaCompilerFlags {
     /** Options that may legitimately appear several times; repeating them is not an override. */
     private static final List<String> REPEATABLE = List.of("I", "include-path", "D", "define-macro", "U", "undefine-macro", "include", "pre-include");
 
-    private CudaCompilerFlags() {
+    private CompilerFlags() {
     }
 
     /**
@@ -90,6 +94,32 @@ public final class CudaCompilerFlags {
         }
         merged.addAll(overriding);
         return String.join(" ", merged);
+    }
+
+    /**
+     * The flags a plan compiles with after {@code withCompilerFlags(backend, explicit)}: the
+     * backend's defaults with {@code explicit} merged in, plus what a strict-floating-point plan
+     * requires of that backend's compiler. Starts again from the defaults, so a second call replaces
+     * the first.
+     *
+     * @param backend
+     *     the backend the flags are for
+     * @param defaults
+     *     that backend's JVM-wide default flags
+     * @param explicit
+     *     the flags given to the plan; may be null or blank
+     * @param strictFloatingPoint
+     *     whether the plan asked for {@code withStrictFloatingPoint()}
+     * @return the merged options, never null
+     */
+    public static String forPlan(TornadoVMBackendType backend, String defaults, String explicit, boolean strictFloatingPoint) {
+        String merged = merge(defaults, explicit);
+        if (strictFloatingPoint && backend == TornadoVMBackendType.CUDA) {
+            // NVRTC must not contract the multiply and add the compiler kept apart. An explicit
+            // --fmad wins, as it does in withStrictFloatingPoint().
+            merged = merge("--fmad=false", merged);
+        }
+        return merged;
     }
 
     /**

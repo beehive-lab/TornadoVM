@@ -85,10 +85,10 @@ public class TornadoOptions {
      * An option set in {@code tornado.cuda.compiler.flags} replaces the profile's option of the same
      * name rather than repeating it, which NVRTC would reject.
      */
-    public static final String DEFAULT_CUDA_COMPILER_FLAGS = defaultCudaCompilerFlags();
+    public static final String DEFAULT_CUDA_COMPILER_FLAGS = defaultCompilerFlags();
 
-    private static String defaultCudaCompilerFlags() {
-        String stated = CudaCompilerFlags.merge(CUDA_COMPILE_PROFILE.getFlags(), getProperty("tornado.cuda.compiler.flags", ""));
+    private static String defaultCompilerFlags() {
+        String stated = CompilerFlags.merge(CUDA_COMPILE_PROFILE.getFlags(), getProperty("tornado.cuda.compiler.flags", ""));
         return (stated + " " + fmaContractionFlag(stated)).trim().replaceAll("\\s+", " ");
     }
 

@@ -112,7 +112,7 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
-import uk.ac.manchester.tornado.runtime.common.CudaCompilerFlags;
+import uk.ac.manchester.tornado.runtime.common.CompilerFlags;
 import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -507,24 +507,26 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     /**
-     * For CUDA, the flags are added to the JVM-wide defaults -- the {@code tornado.cuda.compile.profile}
-     * options, {@code tornado.cuda.compiler.flags}, and the {@code --fmad=false} that
-     * {@code tornado.enable.fma=false} and {@link #withStrictFloatingPoint()} imply -- with an option
-     * given here replacing a default of the same name. Replacing the defaults outright silently
-     * dropped them, and repeating one is an NVRTC error. Each call starts again from the defaults,
-     * so a second call replaces the first. OpenCL takes the flags as given, replacing its defaults;
-     * Metal ignores them, since {@code MTLCompileOptions} has no option string.
+     * The flags are added to the backend's JVM-wide defaults -- for CUDA the
+     * {@code tornado.cuda.compile.profile} options, {@code tornado.cuda.compiler.flags}, and the
+     * {@code --fmad=false} that {@code tornado.enable.fma=false} and {@link #withStrictFloatingPoint()}
+     * imply; for OpenCL {@code tornado.opencl.compiler.flags} -- with an option given here replacing
+     * a default of the same name (see {@link CompilerFlags}). Replacing the defaults outright
+     * silently dropped them, and repeating one is an NVRTC error. Each call starts again from the
+     * defaults, so a second call replaces the first.
      */
     public void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
-        if (backendType == TornadoVMBackendType.CUDA) {
-            String merged = CudaCompilerFlags.merge(TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS, compilerFlags);
-            if (executionContext.meta().isStrictFloatingPoint()) {
-                merged = CudaCompilerFlags.merge("--fmad=false", merged);
-            }
-            executionContext.meta().setCompilerFlags(backendType, merged);
-            return;
-        }
-        executionContext.meta().setCompilerFlags(backendType, compilerFlags);
+        String merged = CompilerFlags.forPlan(backendType, defaultCompilerFlags(backendType), compilerFlags, executionContext.meta().isStrictFloatingPoint());
+        executionContext.meta().setCompilerFlags(backendType, merged);
+    }
+
+    private static String defaultCompilerFlags(TornadoVMBackendType backendType) {
+        return switch (backendType) {
+            case OPENCL -> TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS;
+            case CUDA -> TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS;
+            case METAL -> TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS;
+            default -> "";
+        };
     }
 
     @Override

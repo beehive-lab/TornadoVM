@@ -33,7 +33,7 @@ package uk.ac.manchester.tornado.runtime.common;
  * wanted; {@link #DEFAULT} changes nothing, and flags set explicitly through
  * {@code tornado.cuda.compiler.flags} or {@code withCompilerFlags(CUDA, ...)} are added to the
  * profile's, an explicit option replacing the profile's option of the same name (see
- * {@link CudaCompilerFlags}).
+ * {@link CompilerFlags}).
  * </p>
  */
 public enum CudaCompileProfile {

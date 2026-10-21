@@ -79,6 +79,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
 
+    /** The backends whose kernels are built by a compiler that takes flags. */
+    private static final TornadoVMBackendType[] COMPILED_BACKENDS = { TornadoVMBackendType.OPENCL, TornadoVMBackendType.CUDA, TornadoVMBackendType.METAL };
+
     /**
      * The TornadoVM executor is a list of chain of actions to be performed.
      * Each action can enable/disable runtime features, influence the compiler,
@@ -596,18 +599,24 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Set compiler flags for each backend.
+     * Add compiler flags for one backend to the flags this plan's kernels are built with.
      *
      * <p>
-     * For {@link TornadoVMBackendType#CUDA}, the flags are added to the NVRTC options the JVM was
-     * started with ({@code -Dtornado.cuda.compile.profile}, {@code -Dtornado.cuda.compiler.flags},
-     * and the {@code --fmad=false} implied by {@code -Dtornado.enable.fma=false} or
-     * {@link #withStrictFloatingPoint()}); an option given here replaces one of the same name, e.g.
-     * {@code --fmad=true} replaces {@code --fmad=false}. For {@link TornadoVMBackendType#OPENCL}, the
-     * flags replace the backend's defaults ({@code -cl-mad-enable -cl-fast-relaxed-math -w}, or
-     * {@code -Dtornado.opencl.compiler.flags}). {@link TornadoVMBackendType#METAL} compiles through
-     * {@code MTLCompileOptions}, which takes no option string, so the flags are accepted and ignored;
-     * its math mode comes from {@code -Dtornado.metal.fastmath}. A later call replaces an earlier one.
+     * The flags are merged into the backend's defaults rather than replacing them: an option given
+     * here replaces a default option of the same name ({@code --fmad=true} replaces
+     * {@code --fmad=false}, {@code -cl-std=CL3.0} replaces {@code -cl-std=CL2.0}), and every other
+     * default is kept. The defaults are, for {@link TornadoVMBackendType#CUDA}, the
+     * {@code -Dtornado.cuda.compile.profile} options, {@code -Dtornado.cuda.compiler.flags}, and
+     * the {@code --fmad=false} implied by {@code -Dtornado.enable.fma=false} or
+     * {@link #withStrictFloatingPoint()}; for {@link TornadoVMBackendType#OPENCL},
+     * {@code -Dtornado.opencl.compiler.flags} ({@code -cl-mad-enable -cl-fast-relaxed-math -w}
+     * unless set). To build OpenCL kernels without one of those defaults, change
+     * {@code -Dtornado.opencl.compiler.flags}. {@link TornadoVMBackendType#METAL} compiles through
+     * {@code MTLCompileOptions}, which takes no option string, so its flags are kept but not used.
+     * </p>
+     *
+     * <p>
+     * A later call for the same backend replaces an earlier one.
      * </p>
      *
      * @param backend
@@ -619,6 +628,28 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
+        return new WithCompilerFlags(this, compilerFlags);
+    }
+
+    /**
+     * Add compiler flags for whichever backend this plan's kernels are compiled by, merged into that
+     * backend's defaults as {@link #withCompilerFlags(TornadoVMBackendType, String)} does.
+     *
+     * <p>
+     * The flags are passed as they are to the backend's compiler, so they must be ones it accepts:
+     * NVRTC options for a plan on a CUDA device, OpenCL build options for an OpenCL device. A plan
+     * whose task-graphs run on devices of different backends should name the backend instead.
+     * </p>
+     *
+     * @param compilerFlags
+     *     {@link String}
+     * @since 7.3.2
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withCompilerFlags(String compilerFlags) {
+        for (TornadoVMBackendType backend : COMPILED_BACKENDS) {
+            tornadoExecutor.withCompilerFlags(backend, compilerFlags);
+        }
         return new WithCompilerFlags(this, compilerFlags);
     }
 
