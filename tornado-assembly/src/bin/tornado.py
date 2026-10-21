@@ -69,7 +69,7 @@ __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
 __ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
-__FFM_MODULE__ = "tornado.runtime"
+__FFM_MODULE__ = "tornado.runtime,tornado.api"
 __CUBLAS_MODULE__ = "tornado.cublas"
 __CURAND_MODULE__ = "tornado.curand"
 __CUFFT_MODULE__ = "tornado.cufft"
@@ -1325,7 +1325,8 @@ class TornadoVMRunnerTool():
         # The backends and the library-task providers reach their native libraries through
         # java.lang.foreign rather than a JNI library of their own, and every one of those lookups
         # goes through tornado.runtime. Those are restricted methods, so without this the lookup
-        # fails outright (JDK 21) or warns on every run.
+        # fails outright (JDK 21) or warns on every run. tornado.api allocates the native arrays
+        # that fromArray fills without zero-filling them first (TornadoMemorySegment).
         javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "

@@ -59,12 +59,19 @@ public final class LongArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public LongArray(long numberOfElements) {
+        this(numberOfElements, true);
+    }
+
+    /**
+     * {@code zeroed} false leaves the elements uninitialised, for arrays filled in full straight away.
+     */
+    private LongArray(long numberOfElements, boolean zeroed) {
         this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / LONG_BYTES;
 
         segmentByteSize = (long) numberOfElements * LONG_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
+        segment = zeroed ? new TornadoMemorySegment(segmentByteSize, numberOfElements) : TornadoMemorySegment.uninitialized(segmentByteSize, numberOfElements, arrayHeaderSize);
 
     }
 
@@ -106,8 +113,8 @@ public final class LongArray extends TornadoNativeArray {
      * @return A new {@link LongArray} instance, initialized with values of the on-heap long array.
      */
     private static LongArray createSegment(long[] values) {
-        LongArray array = new LongArray(values.length);
-        // one bulk copy rather than a bounds-checked store per element
+        // every element is written below: no zero-filling first, and one bulk copy
+        LongArray array = new LongArray(values.length, false);
         MemorySegment.copy(values, 0, array.getSegment(), JAVA_LONG, 0, values.length);
         return array;
     }

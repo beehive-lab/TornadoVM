@@ -60,11 +60,18 @@ public final class CharArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public CharArray(long numberOfElements) {
+        this(numberOfElements, true);
+    }
+
+    /**
+     * {@code zeroed} false leaves the elements uninitialised, for arrays filled in full straight away.
+     */
+    private CharArray(long numberOfElements, boolean zeroed) {
         this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / CHAR_BYTES;
         segmentByteSize = (long) numberOfElements * CHAR_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
+        segment = zeroed ? new TornadoMemorySegment(segmentByteSize, numberOfElements) : TornadoMemorySegment.uninitialized(segmentByteSize, numberOfElements, arrayHeaderSize);
     }
 
     /**
@@ -105,8 +112,8 @@ public final class CharArray extends TornadoNativeArray {
      * @return A new {@link CharArray} instance, initialized with values of the on-heap char array.
      */
     private static CharArray createSegment(char[] values) {
-        CharArray array = new CharArray(values.length);
-        // one bulk copy rather than a bounds-checked store per element
+        // every element is written below: no zero-filling first, and one bulk copy
+        CharArray array = new CharArray(values.length, false);
         MemorySegment.copy(values, 0, array.getSegment(), JAVA_CHAR, 0, values.length);
         return array;
     }

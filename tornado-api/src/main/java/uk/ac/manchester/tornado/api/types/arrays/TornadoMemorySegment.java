@@ -18,8 +18,13 @@
 package uk.ac.manchester.tornado.api.types.arrays;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+import java.util.Optional;
 
 /**
  * The {@code TornadoMemorySegment} class provides a high-level interface for managing a {@link MemorySegment} with support for different data types.
@@ -44,6 +49,84 @@ public class TornadoMemorySegment {
     public TornadoMemorySegment(long segmentByteSize, long numElements) {
         this.segment = Arena.ofAuto().allocate(segmentByteSize, 1);
         this.segment.setAtIndex(ValueLayout.JAVA_LONG, 0, numElements);
+    }
+
+    /**
+     * The C library's {@code malloc} and {@code free}, for segments whose contents are written in
+     * full right after allocation; {@code null} when they cannot be bound (no native access granted
+     * to this module), in which case those segments are allocated zero-filled as usual.
+     */
+    private static final MethodHandle MALLOC;
+    private static final MethodHandle FREE;
+
+    static {
+        MethodHandle malloc = null;
+        MethodHandle free = null;
+        try {
+            if (!nativeAccessEnabled()) {
+                throw new IllegalCallerException("no native access for " + TornadoMemorySegment.class.getModule());
+            }
+            Linker linker = Linker.nativeLinker();
+            SymbolLookup libc = linker.defaultLookup();
+            Optional<MemorySegment> mallocSymbol = libc.find("malloc");
+            Optional<MemorySegment> freeSymbol = libc.find("free");
+            if (mallocSymbol.isPresent() && freeSymbol.isPresent()) {
+                malloc = linker.downcallHandle(mallocSymbol.get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+                free = linker.downcallHandle(freeSymbol.get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+            }
+        } catch (IllegalCallerException | UnsupportedOperationException e) {
+            // no native access for this module: fall back to zero-filled allocation
+            malloc = null;
+            free = null;
+        }
+        MALLOC = malloc;
+        FREE = free;
+    }
+
+    /**
+     * Whether this module may call restricted methods, asked up front so that a JVM without
+     * {@code --enable-native-access} for it falls back quietly instead of printing a warning.
+     * {@code Module.isNativeAccessEnabled} exists from JDK 22; on JDK 21 the binding is tried.
+     */
+    private static boolean nativeAccessEnabled() {
+        try {
+            return (boolean) Module.class.getMethod("isNativeAccessEnabled").invoke(TornadoMemorySegment.class.getModule());
+        } catch (ReflectiveOperationException e) {
+            return true;
+        }
+    }
+
+    /**
+     * Allocates a segment of {@code segmentByteSize} bytes whose header ({@code headerBytes}) is zeroed
+     * and holds {@code numElements}, and whose element bytes are left as they come from the allocator:
+     * for arrays that are filled in full straight away ({@code fromArray}), where zero-filling first
+     * would write every byte twice. The memory is freed when the segment is no longer reachable, as for
+     * {@link #TornadoMemorySegment(long, long)}, which is used when {@code malloc} is not available.
+     */
+    static TornadoMemorySegment uninitialized(long segmentByteSize, long numElements, long headerBytes) {
+        if (MALLOC != null) {
+            try {
+                MemorySegment raw = (MemorySegment) MALLOC.invokeExact(segmentByteSize);
+                long address = raw.address();
+                if (address != 0) {
+                    MemorySegment segment = raw.reinterpret(segmentByteSize, Arena.ofAuto(), s -> free(address));
+                    segment.asSlice(0, headerBytes).fill((byte) 0);
+                    segment.setAtIndex(ValueLayout.JAVA_LONG, 0, numElements);
+                    return new TornadoMemorySegment(segment);
+                }
+            } catch (Throwable t) {
+                throw new IllegalStateException("native allocation of " + segmentByteSize + " bytes failed", t);
+            }
+        }
+        return new TornadoMemorySegment(segmentByteSize, numElements);
+    }
+
+    private static void free(long address) {
+        try {
+            FREE.invokeExact(MemorySegment.ofAddress(address));
+        } catch (Throwable t) {
+            throw new IllegalStateException("free failed", t);
+        }
     }
 
     public TornadoMemorySegment(MemorySegment memorySegment) {

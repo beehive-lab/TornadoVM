@@ -60,7 +60,7 @@
 
 # === native access (java.lang.foreign - every backend and library-task provider
 # reaches its native library through tornado.runtime; see FFMSupport) ===
---enable-native-access=tornado.runtime
+--enable-native-access=tornado.runtime,tornado.api
 
 # === opencl-exports ===
 --add-opens java.base/java.lang=tornado.drivers.opencl

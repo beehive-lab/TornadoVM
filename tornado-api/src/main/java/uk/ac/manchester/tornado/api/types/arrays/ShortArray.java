@@ -60,12 +60,19 @@ public final class ShortArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public ShortArray(long numberOfElements) {
+        this(numberOfElements, true);
+    }
+
+    /**
+     * {@code zeroed} false leaves the elements uninitialised, for arrays filled in full straight away.
+     */
+    private ShortArray(long numberOfElements, boolean zeroed) {
         this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         assert arrayHeaderSize >= 4;
         baseIndex = arrayHeaderSize / SHORT_BYTES;
         segmentByteSize = (long) numberOfElements * SHORT_BYTES + arrayHeaderSize;
-        segment = new TornadoMemorySegment(segmentByteSize, numberOfElements);
+        segment = zeroed ? new TornadoMemorySegment(segmentByteSize, numberOfElements) : TornadoMemorySegment.uninitialized(segmentByteSize, numberOfElements, arrayHeaderSize);
     }
 
     /**
@@ -107,8 +114,8 @@ public final class ShortArray extends TornadoNativeArray {
      * @return A new {@link ShortArray} instance, initialized with values of the on-heap short array.
      */
     private static ShortArray createSegment(short[] values) {
-        ShortArray array = new ShortArray(values.length);
-        // one bulk copy rather than a bounds-checked store per element
+        // every element is written below: no zero-filling first, and one bulk copy
+        ShortArray array = new ShortArray(values.length, false);
         MemorySegment.copy(values, 0, array.getSegment(), JAVA_SHORT, 0, values.length);
         return array;
     }
