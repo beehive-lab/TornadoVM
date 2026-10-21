@@ -109,7 +109,7 @@ final class CLBlastNativeLib {
                 // CLBlastNoDoublePrecision: the device has no cl_khr_fp64.
                 throw new TornadoDeviceFP64NotSupported(name + " needs FP64, which this OpenCL device does not support");
             } else if (status == -2045) {
-                // CLBlastNoDoublePrecision: the device has no cl_khr_fp16.
+                // CLBlastNoHalfPrecision: the device has no cl_khr_fp16.
                 throw new TornadoDeviceFP16NotSupported(name + " needs FP16, which this OpenCL device does not support");
             } else if (status != 0) {
                 throw new TornadoRuntimeException(name + " failed with CLBlast status " + status);
