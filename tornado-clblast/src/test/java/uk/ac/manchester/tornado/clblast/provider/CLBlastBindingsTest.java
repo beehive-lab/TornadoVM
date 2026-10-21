@@ -40,6 +40,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
@@ -131,6 +132,20 @@ class CLBlastBindingsTest {
             TornadoRuntimeException error = assertThrows(TornadoRuntimeException.class, () -> library.dispatch(name, invocation(args), QUEUE));
             assertTrue(error.getMessage().contains(name));
             assertTrue(error.getMessage().contains("-1017"));
+        }
+    }
+
+    @Test
+    void reportsMissingFp64AsUnsupported() throws ReflectiveOperationException {
+        try (Arena arena = Arena.ofConfined()) {
+            Capture capture = new Capture();
+            capture.status = -2044;
+            String name = "CLBlastDaxpy";
+            FunctionDescriptor descriptor = FunctionDescriptor.of(C_INT, C_LONG, C_DOUBLE, C_POINTER, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_POINTER, C_POINTER);
+            CLBlastNativeLib library = library(name, descriptor, capture, arena);
+            TornadoDeviceFP64NotSupported error = assertThrows(TornadoDeviceFP64NotSupported.class,
+                    () -> library.dispatch(name, invocation(new Object[] { 3, 1.0d, null, 1, null, 1 }), QUEUE));
+            assertEquals(name + " needs FP64, which this OpenCL device does not support", error.getMessage());
         }
     }
 

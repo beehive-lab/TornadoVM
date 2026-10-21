@@ -30,6 +30,8 @@ import java.lang.invoke.MethodHandle;
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP16NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
@@ -103,7 +105,13 @@ final class CLBlastNativeLib {
                 case "CLBlastSdot", "CLBlastDdot" -> dot(function, invocation, queue, elementBytes);
                 default -> throw new TornadoRuntimeException("CLBlast function unsupported: " + name);
             };
-            if (status != 0) {
+            if (status == -2044) {
+                // CLBlastNoDoublePrecision: the device has no cl_khr_fp64.
+                throw new TornadoDeviceFP64NotSupported(name + " needs FP64, which this OpenCL device does not support");
+            } else if (status == -2045) {
+                // CLBlastNoDoublePrecision: the device has no cl_khr_fp64.
+                throw new TornadoDeviceFP16NotSupported(name + " needs FP16, which this OpenCL device does not support");
+            } else if (status != 0) {
                 throw new TornadoRuntimeException(name + " failed with CLBlast status " + status);
             }
         } catch (RuntimeException | Error e) {
