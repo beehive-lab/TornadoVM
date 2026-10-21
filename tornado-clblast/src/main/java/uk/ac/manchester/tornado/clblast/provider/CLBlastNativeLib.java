@@ -29,7 +29,6 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
@@ -41,9 +40,6 @@ import uk.ac.manchester.tornado.runtime.library.spi.LibraryInvocation;
  * host copy of device data is needed.
  */
 final class CLBlastNativeLib {
-
-    private static final Set<String> REQUIRED_FUNCTIONS = Set.of("CLBlastSgemm", "CLBlastDgemm", "CLBlastSgemv", "CLBlastDgemv",
-            "CLBlastSaxpy", "CLBlastDaxpy", "CLBlastSdot", "CLBlastDdot");
 
     private final Map<String, MethodHandle> functions = new HashMap<>();
 
@@ -59,14 +55,10 @@ final class CLBlastNativeLib {
         }
         bindPrecision(lookup, "S", FFMSupport.C_FLOAT);
         bindPrecision(lookup, "D", FFMSupport.C_DOUBLE);
-        bind(lookup, "CLBlastStrmm",
-                FunctionDescriptor.of(C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, C_LONG, C_LONG, FFMSupport.C_FLOAT,
-                        C_POINTER, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_POINTER, C_POINTER));
     }
 
     boolean isAvailable() {
-        // Additional routines are optional, so a missing symbol cannot disable existing tasks.
-        return functions.keySet().containsAll(REQUIRED_FUNCTIONS);
+        return functions.size() == 8;
     }
 
     private void bindPrecision(SymbolLookup lookup, String precision, ValueLayout scalar) {
@@ -109,7 +101,6 @@ final class CLBlastNativeLib {
                 case "CLBlastSgemv", "CLBlastDgemv" -> gemv(function, invocation, queue, fp64, elementBytes);
                 case "CLBlastSaxpy", "CLBlastDaxpy" -> axpy(function, invocation, queue, fp64, elementBytes);
                 case "CLBlastSdot", "CLBlastDdot" -> dot(function, invocation, queue, elementBytes);
-                case "CLBlastStrmm" -> strmm(function, invocation, queue);
                 default -> throw new TornadoRuntimeException("CLBlast function unsupported: " + name);
             };
             if (status != 0) {
@@ -250,24 +241,6 @@ final class CLBlastNativeLib {
                 buffer(invocation, 4),
                 elementOffset(invocation, 4, elementBytes),
                 size(invocation, 5), queue, MemorySegment.NULL);
-    }
-
-    private static int strmm(MethodHandle function, LibraryInvocation invocation, MemorySegment queue) throws Throwable {
-        return (int) function.invokeExact(
-                integer(invocation, 0),
-                integer(invocation, 1),
-                integer(invocation, 2),
-                integer(invocation, 3),
-                integer(invocation, 4),
-                size(invocation, 5),
-                size(invocation, 6),
-                (float) invocation.getArg(7),
-                buffer(invocation, 8),
-                elementOffset(invocation, 8, Float.BYTES),
-                size(invocation, 9),
-                buffer(invocation, 10),
-                elementOffset(invocation, 10, Float.BYTES),
-                size(invocation, 11), queue, MemorySegment.NULL);
     }
 
     private static int dot(MethodHandle function, LibraryInvocation invocation, MemorySegment queue, int elementBytes) throws Throwable {

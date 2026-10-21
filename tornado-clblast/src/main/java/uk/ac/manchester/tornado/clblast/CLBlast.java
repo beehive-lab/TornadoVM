@@ -78,27 +78,6 @@ public final class CLBlast {
         return descriptor("CLBlastSdot", new Object[] { n, x, incx, y, incy, result }, 5, false);
     }
 
-    /**
-     * Triangular matrix multiplication in single precision, overwriting B:
-     * {@code B = alpha * op(A) * B} for a left-side multiplication, or
-     * {@code B = alpha * B * op(A)} for a right-side multiplication.
-     *
-     * <p>B has m rows and n columns. A is square, of order m on the left or n
-     * on the right. The triangle selector refers to A before transposition;
-     * a unit diagonal is treated as ones without reading its stored values.
-     * Leading dimensions are measured in elements. B is always READ_WRITE,
-     * so transfer its initial contents to the device before the first call.</p>
-     *
-     * @see uk.ac.manchester.tornado.clblast.enums.CLBlastSide
-     * @see uk.ac.manchester.tornado.clblast.enums.CLBlastTriangle
-     * @see uk.ac.manchester.tornado.clblast.enums.CLBlastDiagonal
-     */
-    public static LibraryTaskDescriptor strmm(int layout, int side, int triangle, int transpose, int diagonal,
-            int m, int n, float alpha, FloatArray a, int lda, FloatArray b, int ldb) {
-        return descriptor("CLBlastStrmm",
-                new Object[] { layout, side, triangle, transpose, diagonal, m, n, alpha, a, lda, b, ldb }, 10, true);
-    }
-
     /** Computes {@code C = alpha * op(A) * op(B) + beta * C} in double precision. */
     public static LibraryTaskDescriptor dgemm(int layout, int transA, int transB, int m, int n, int k,
             double alpha, DoubleArray a, int lda, DoubleArray b, int ldb, double beta, DoubleArray c, int ldc) {

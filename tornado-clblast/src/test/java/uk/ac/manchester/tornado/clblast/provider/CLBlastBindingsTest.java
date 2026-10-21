@@ -82,14 +82,10 @@ class CLBlastBindingsTest {
     }
 
     private static CLBlastNativeLib library(String name, FunctionDescriptor descriptor, Capture capture, Arena arena) throws ReflectiveOperationException {
-        MemorySegment stub = stub(descriptor, capture, arena);
-        return new CLBlastNativeLib(symbol -> symbol.equals(name) ? Optional.of(stub) : Optional.empty());
-    }
-
-    private static MemorySegment stub(FunctionDescriptor descriptor, Capture capture, Arena arena) throws ReflectiveOperationException {
         MethodHandle target = MethodHandles.lookup().findVirtual(Capture.class, "call", MethodType.methodType(int.class, Object[].class)).bindTo(capture)
                 .asCollector(Object[].class, descriptor.argumentLayouts().size()).asType(descriptor.toMethodType());
-        return FFMSupport.upcallStub(target, descriptor, arena);
+        MemorySegment stub = FFMSupport.upcallStub(target, descriptor, arena);
+        return new CLBlastNativeLib(symbol -> symbol.equals(name) ? Optional.of(stub) : Optional.empty());
     }
 
     @Test
@@ -135,27 +131,6 @@ class CLBlastBindingsTest {
             TornadoRuntimeException error = assertThrows(TornadoRuntimeException.class, () -> library.dispatch(name, invocation(args), QUEUE));
             assertTrue(error.getMessage().contains(name));
             assertTrue(error.getMessage().contains("-1017"));
-        }
-    }
-
-    @Test
-    void marshalsStrmmThroughItsCAbi() throws ReflectiveOperationException {
-        check("CLBlastStrmm", FunctionDescriptor.of(C_INT, C_INT, C_INT, C_INT, C_INT, C_INT, C_LONG, C_LONG, C_FLOAT,
-                        C_POINTER, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_POINTER, C_POINTER),
-                new Object[] { 101, 142, 122, 112, 132, 2, 3, -0.75f, null, 5, null, 4 },
-                List.of(101, 142, 122, 112, 132, 2L, 3L, -0.75f, 0x1800L, 24L, 5L, 0x1a00L, 28L, 4L, QUEUE, 0L));
-    }
-
-    @Test
-    void optionalStrmmDoesNotDisableExistingRoutines() throws ReflectiveOperationException {
-        try (Arena arena = Arena.ofConfined()) {
-            // Only symbol discovery is tested here; these handles are never called.
-            MemorySegment stub = stub(FunctionDescriptor.of(C_INT), new Capture(), arena);
-            CLBlastNativeLib baseline = new CLBlastNativeLib(name -> name.equals("CLBlastStrmm") ? Optional.empty() : Optional.of(stub));
-            assertTrue(baseline.isAvailable());
-            assertThrows(TornadoRuntimeException.class, () -> baseline.dispatch("CLBlastStrmm", invocation(new Object[12]), QUEUE));
-            CLBlastNativeLib extended = new CLBlastNativeLib(name -> Optional.of(stub));
-            assertTrue(extended.isAvailable());
         }
     }
 

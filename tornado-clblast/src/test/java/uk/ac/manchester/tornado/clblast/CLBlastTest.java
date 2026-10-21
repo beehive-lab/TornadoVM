@@ -32,11 +32,6 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastDiagonal;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastLayout;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastSide;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastTranspose;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastTriangle;
 import uk.ac.manchester.tornado.clblast.provider.CLBlastLibraryProvider;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
@@ -66,24 +61,6 @@ class CLBlastTest {
         assertEquals(Access.WRITE_ONLY, dot.getAccess()[5]);
         assertEquals(Access.READ_ONLY, dot.getAccess()[1]);
         assertEquals(Access.READ_ONLY, dot.getAccess()[3]);
-    }
-
-    @Test
-    void strmmReadsAndOverwritesB() {
-        LibraryTaskDescriptor task = CLBlast.strmm(CLBlastLayout.ROW_MAJOR.value(), CLBlastSide.LEFT.value(),
-                CLBlastTriangle.UPPER.value(), CLBlastTranspose.NO.value(), CLBlastDiagonal.NON_UNIT.value(),
-                3, 2, 1.5f, null, 3, null, 2);
-        assertEquals(CLBlast.LIBRARY_NAME, task.getLibraryName());
-        assertEquals("CLBlastStrmm", task.getFunctionName());
-        assertEquals(12, task.getParameters().length);
-        assertEquals(Access.READ_ONLY, task.getAccess()[8]);
-        assertEquals(Access.READ_WRITE, task.getAccess()[10]);
-        assertEquals(141, CLBlastSide.LEFT.value());
-        assertEquals(142, CLBlastSide.RIGHT.value());
-        assertEquals(121, CLBlastTriangle.UPPER.value());
-        assertEquals(122, CLBlastTriangle.LOWER.value());
-        assertEquals(131, CLBlastDiagonal.NON_UNIT.value());
-        assertEquals(132, CLBlastDiagonal.UNIT.value());
     }
 
     @Test

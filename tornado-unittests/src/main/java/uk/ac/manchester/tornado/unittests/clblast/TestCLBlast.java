@@ -35,11 +35,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.clblast.CLBlast;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastDiagonal;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastLayout;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastSide;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastTranspose;
-import uk.ac.manchester.tornado.clblast.enums.CLBlastTriangle;
 import uk.ac.manchester.tornado.clblast.provider.CLBlastLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
@@ -124,97 +119,6 @@ public class TestCLBlast extends TornadoTestBase {
                     sum += a.get(inner + row * k) * b.get(inner + col * k);
                 }
                 assertEquals(sum, c.get(row + col * m), 1e-9);
-            }
-        }
-    }
-
-    @Test
-    public void strmmLayoutsSidesTrianglesTransposesAndDiagonals() throws TornadoExecutionPlanException {
-        for (CLBlastLayout layout : CLBlastLayout.values()) {
-            for (CLBlastSide side : CLBlastSide.values()) {
-                for (CLBlastTriangle triangle : CLBlastTriangle.values()) {
-                    for (CLBlastTranspose transpose : CLBlastTranspose.values()) {
-                        for (CLBlastDiagonal diagonal : CLBlastDiagonal.values()) {
-                            checkStrmm(layout, side, triangle, transpose, diagonal);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static int matrixIndex(CLBlastLayout layout, int row, int col, int ld) {
-        return layout == ROW_MAJOR ? row * ld + col : col * ld + row;
-    }
-
-    private static float triangularElement(FloatArray a, int lda, CLBlastLayout layout, CLBlastTriangle triangle,
-            CLBlastTranspose transpose, CLBlastDiagonal diagonal, int row, int col) {
-        int storedRow = transpose == NO ? row : col;
-        int storedCol = transpose == NO ? col : row;
-        if (storedRow == storedCol && diagonal == CLBlastDiagonal.UNIT) {
-            return 1;
-        }
-        if ((triangle == CLBlastTriangle.UPPER && storedRow > storedCol) || (triangle == CLBlastTriangle.LOWER && storedRow < storedCol)) {
-            return 0;
-        }
-        return a.get(matrixIndex(layout, storedRow, storedCol, lda));
-    }
-
-    private static void checkStrmm(CLBlastLayout layout, CLBlastSide side, CLBlastTriangle triangle,
-            CLBlastTranspose transpose, CLBlastDiagonal diagonal) throws TornadoExecutionPlanException {
-        int m = 3;
-        int n = 2;
-        int order = side == CLBlastSide.LEFT ? m : n;
-        int lda = order + 2;
-        int ldb = (layout == ROW_MAJOR ? n : m) + 1;
-        FloatArray a = new FloatArray(order * lda);
-        FloatArray b = new FloatArray((layout == ROW_MAJOR ? m : n) * ldb);
-        // Poison the unused triangle, unit diagonal and A padding to detect accidental reads.
-        a.init(Float.NaN);
-        b.init(-777f);
-        for (int row = 0; row < order; row++) {
-            for (int col = 0; col < order; col++) {
-                boolean stored = triangle == CLBlastTriangle.UPPER ? row <= col : row >= col;
-                if (stored && (row != col || diagonal == CLBlastDiagonal.NON_UNIT)) {
-                    a.set(matrixIndex(layout, row, col, lda), 0.5f * (row + 1) + col);
-                }
-            }
-        }
-        for (int row = 0; row < m; row++) {
-            for (int col = 0; col < n; col++) {
-                b.set(matrixIndex(layout, row, col, ldb), 3 * row + col + 1.25f);
-            }
-        }
-        float alpha = -0.75f;
-        TaskGraph graph = new TaskGraph("clblastStrmm")
-                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, b)
-                .libraryTask("trmm", CLBlast::strmm, layout.value(), side.value(), triangle.value(), transpose.value(), diagonal.value(),
-                        m, n, alpha, a, lda, b, ldb)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, b);
-        String description = layout + "/" + side + "/" + triangle + "/" + transpose + "/" + diagonal;
-        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
-            for (int run = 0; run < 2; run++) {
-                float[] expected = new float[b.getSize()];
-                for (int i = 0; i < expected.length; i++) {
-                    expected[i] = b.get(i);
-                }
-                for (int row = 0; row < m; row++) {
-                    for (int col = 0; col < n; col++) {
-                        float sum = 0;
-                        for (int inner = 0; inner < order; inner++) {
-                            if (side == CLBlastSide.LEFT) {
-                                sum += triangularElement(a, lda, layout, triangle, transpose, diagonal, row, inner) * b.get(matrixIndex(layout, inner, col, ldb));
-                            } else {
-                                sum += b.get(matrixIndex(layout, row, inner, ldb)) * triangularElement(a, lda, layout, triangle, transpose, diagonal, inner, col);
-                            }
-                        }
-                        expected[matrixIndex(layout, row, col, ldb)] = alpha * sum;
-                    }
-                }
-                plan.execute();
-                for (int i = 0; i < expected.length; i++) {
-                    assertEquals(expected[i], b.get(i), 1e-4f, description + " run=" + run + " index=" + i);
-                }
             }
         }
     }
