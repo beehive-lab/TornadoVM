@@ -123,8 +123,8 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     public void prepare(LibraryTaskDescriptor descriptor, LibraryContext context) {
         Object[] p = descriptor.getParameters();
         switch (descriptor.getFunctionName()) {
-            case "cudnnConv2d", "cudnnConv2dFP16" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10],
-                    (int) p[11], descriptor.getFunctionName().equals("cudnnConv2dFP16"));
+            case "cudnnConv2d", "cudnnConv2dFP16", "cudnnConv2dNHWC", "cudnnConv2dNHWCFP16" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7],
+                    (int) p[8], (int) p[9], (int) p[10], (int) p[11], descriptor.getFunctionName().endsWith("FP16"), descriptor.getFunctionName().contains("NHWC"));
             case "sdpaForward" -> getOrCreateSdpaPlan((CuDnnContext) context, (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (float) p[9], (boolean) p[10]);
             default -> {
                 // simple ops have no per-shape native state
@@ -156,8 +156,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                     (int) invocation.getArg(2), (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), //
                     (int) invocation.getArg(6), (int) invocation.getArg(7), //
                     invocation.getDevicePointer(0), invocation.getDevicePointer(1));
-            case "cudnnConv2d" -> conv2d(context, invocation, false);
-            case "cudnnConv2dFP16" -> conv2d(context, invocation, true);
+            case "cudnnConv2d" -> conv2d(context, invocation, false, false);
+            case "cudnnConv2dFP16" -> conv2d(context, invocation, true, false);
+            case "cudnnConv2dNHWC" -> conv2d(context, invocation, false, true);
+            case "cudnnConv2dNHWCFP16" -> conv2d(context, invocation, true, true);
             case "sdpaForward" -> sdpa(context, invocation);
             default -> throw new TornadoRuntimeException("[ERROR] cuDNN function not supported: " + functionName);
         };
@@ -170,11 +172,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     }
 
     /** (input, filter, output, n, c, h, w, k, r, s, pad, stride). */
-    private static int conv2d(CuDnnContext context, LibraryInvocation invocation, boolean half) {
+    private static int conv2d(CuDnnContext context, LibraryInvocation invocation, boolean half, boolean nhwc) {
         long plan = getOrCreateConvPlan(context, //
                 (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), //
                 (int) invocation.getArg(7), (int) invocation.getArg(8), (int) invocation.getArg(9), //
-                (int) invocation.getArg(10), (int) invocation.getArg(11), half);
+                (int) invocation.getArg(10), (int) invocation.getArg(11), half, nhwc);
         return CuDnnNativeLib.convForward(context.handle, plan, //
                 invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), //
                 context.workspacePtr, context.workspaceBytes);
@@ -226,11 +228,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         return plan;
     }
 
-    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half) {
-        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride + (half ? ":f16" : ":f32");
+    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc) {
+        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride + (half ? ":f16" : ":f32") + (nhwc ? ":nhwc" : ":nchw");
         Long plan = context.convPlanCache.get(planKey);
         if (plan == null) {
-            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride, half);
+            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride, half, nhwc);
             if (plan == 0) {
                 throw new TornadoRuntimeException("[ERROR] cuDNN convolution plan creation failed for " + planKey);
             }

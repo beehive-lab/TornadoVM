@@ -23,7 +23,7 @@ import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 
 /**
- * Factory methods for NVIDIA cuDNN library tasks (NCHW layout; FP32 unless named FP16).
+ * Factory methods for NVIDIA cuDNN library tasks (NCHW layout unless named NHWC; FP32 unless named FP16).
  *
  * <pre>
  * taskGraph.libraryTask("conv", CuDnn::cudnnConv2d,
@@ -145,6 +145,40 @@ public final class CuDnn {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cudnnConv2dFP16") //
+                .withParameters(new Object[] { input, filter, output, n, c, h, w, k, r, s, pad, stride }) //
+                .withAccess(accesses);
+    }
+
+    /**
+     * {@link #cudnnConv2d} on channels-last tensors: input NHWC (memory order {@code n, h, w, c}),
+     * filter KRSC ({@code k, r, s, c}), output NHWC {@code (n, (h+2*pad-r)/stride+1,
+     * (w+2*pad-s)/stride+1, k)}. The sizes are passed as for {@link #cudnnConv2d}.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dNHWC(FloatArray input, FloatArray filter, FloatArray output, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+        Access[] accesses = new Access[12];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[2] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cudnnConv2dNHWC") //
+                .withParameters(new Object[] { input, filter, output, n, c, h, w, k, r, s, pad, stride }) //
+                .withAccess(accesses);
+    }
+
+    /**
+     * {@link #cudnnConv2dNHWC} on FP16 tensors, accumulated in FP32 on the tensor cores where the
+     * device has them: the layout tensor cores read without a transpose, so usually the fastest
+     * FP16 convolution.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dNHWCFP16(HalfFloatArray input, HalfFloatArray filter, HalfFloatArray output, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+        Access[] accesses = new Access[12];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[2] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cudnnConv2dNHWCFP16") //
                 .withParameters(new Object[] { input, filter, output, n, c, h, w, k, r, s, pad, stride }) //
                 .withAccess(accesses);
     }

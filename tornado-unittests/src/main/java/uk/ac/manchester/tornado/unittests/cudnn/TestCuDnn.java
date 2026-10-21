@@ -304,6 +304,108 @@ public class TestCuDnn extends TornadoTestBase {
     }
 
     /**
+     * A channels-last convolution against the NCHW reference: the inputs are made NCHW and KCRS,
+     * passed as NHWC and KRSC, and the NHWC output is compared element by element.
+     */
+    private static void checkConv2dNHWC(boolean half, int n, int c, int h, int w, int k, int r, int s, int pad, int stride) throws TornadoExecutionPlanException {
+        final int outH = (h + 2 * pad - r) / stride + 1;
+        final int outW = (w + 2 * pad - s) / stride + 1;
+        FloatArray input = half ? toFloat(randomHalfArray(n * c * h * w)) : randomArray(n * c * h * w);
+        FloatArray filter = half ? toFloat(randomHalfArray(k * c * r * s)) : randomArray(k * c * r * s);
+        FloatArray inputLast = new FloatArray(input.getSize());
+        for (int in = 0; in < n; in++) {
+            for (int ic = 0; ic < c; ic++) {
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        inputLast.set(((in * h + y) * w + x) * c + ic, input.get(((in * c + ic) * h + y) * w + x));
+                    }
+                }
+            }
+        }
+        FloatArray filterLast = new FloatArray(filter.getSize());
+        for (int ok = 0; ok < k; ok++) {
+            for (int ic = 0; ic < c; ic++) {
+                for (int fr = 0; fr < r; fr++) {
+                    for (int fs = 0; fs < s; fs++) {
+                        filterLast.set(((ok * r + fr) * s + fs) * c + ic, filter.get(((ok * c + ic) * r + fr) * s + fs));
+                    }
+                }
+            }
+        }
+        FloatArray outputLast;
+        if (half) {
+            HalfFloatArray x = toHalf(inputLast);
+            HalfFloatArray f = toHalf(filterLast);
+            HalfFloatArray y = new HalfFloatArray(n * k * outH * outW);
+            TaskGraph taskGraph = new TaskGraph("g") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, f) //
+                    .libraryTask("conv", CuDnn::cudnnConv2dNHWCFP16, x, f, y, n, c, h, w, k, r, s, pad, stride) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+            outputLast = toFloat(y);
+        } else {
+            outputLast = new FloatArray(n * k * outH * outW);
+            TaskGraph taskGraph = new TaskGraph("g") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputLast, filterLast) //
+                    .libraryTask("conv", CuDnn::cudnnConv2dNHWC, inputLast, filterLast, outputLast, n, c, h, w, k, r, s, pad, stride) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outputLast);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+        }
+        FloatArray expected = new FloatArray(n * k * outH * outW);
+        convJava(input, filter, expected, n, c, h, w, k, r, s, pad, stride);
+        // FP16 output keeps about 3 significant digits; FP32 may run as TF32 on Ampere and later
+        float tolerance = half ? 1e-2f : 5e-3f;
+        for (int in = 0; in < n; in++) {
+            for (int ok = 0; ok < k; ok++) {
+                for (int oh = 0; oh < outH; oh++) {
+                    for (int ow = 0; ow < outW; ow++) {
+                        float e = expected.get(((in * k + ok) * outH + oh) * outW + ow);
+                        float a = outputLast.get(((in * outH + oh) * outW + ow) * k + ok);
+                        assertEquals(e, a, tolerance * Math.max(1.0f, Math.abs(e)));
+                    }
+                }
+            }
+        }
+    }
+
+    private static FloatArray toFloat(HalfFloatArray a) {
+        FloatArray f = new FloatArray(a.getSize());
+        for (int i = 0; i < a.getSize(); i++) {
+            f.set(i, a.get(i).getFloat32());
+        }
+        return f;
+    }
+
+    private static HalfFloatArray toHalf(FloatArray a) {
+        HalfFloatArray h = new HalfFloatArray(a.getSize());
+        for (int i = 0; i < a.getSize(); i++) {
+            h.set(i, new HalfFloat(a.get(i)));
+        }
+        return h;
+    }
+
+    @Test
+    public void testConv2dNHWC() throws TornadoExecutionPlanException {
+        checkConv2dNHWC(false, 2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dNHWC(false, 2, 3, 16, 16, 4, 3, 3, 1, 1);
+        checkConv2dNHWC(false, 2, 64, 14, 14, 128, 1, 1, 0, 2);
+    }
+
+    @Test
+    public void testConv2dNHWCFP16() throws TornadoExecutionPlanException {
+        // channel counts that suit the tensor cores, then ones that do not
+        checkConv2dNHWC(true, 2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dNHWC(true, 2, 3, 16, 16, 4, 3, 3, 1, 1);
+        // a strided 1x1 projection and a 7x7 stem, as in ResNet
+        checkConv2dNHWC(true, 2, 64, 14, 14, 128, 1, 1, 0, 2);
+        checkConv2dNHWC(true, 1, 3, 32, 32, 64, 7, 7, 3, 2);
+    }
+
+    /**
      * CNN-style mixed pipeline: cuDNN convolution -> JIT bias-like task ->
      * cuDNN ReLU -> cuDNN max pooling, all on shared device buffers.
      */
