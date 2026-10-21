@@ -34,6 +34,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <developers>
+        <developer>
+            <id>beehive-lab</id>
+            <name>Beehive Lab</name>
+            <email>info@tornadovm.org</email>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/beehive-lab/tornadovm.git</connection>
+        <developerConnection>scm:git:https://github.com/beehive-lab/tornadovm.git</developerConnection>
+        <url>https://github.com/beehive-lab/tornadovm</url>
+    </scm>
     <build>
         <plugins>
             <plugin>
