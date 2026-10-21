@@ -49,6 +49,7 @@ final class CuDnnNativeLib {
     private static final int CUDNN_STATUS_SUCCESS = 0;
     private static final int CUDNN_STATUS_INTERNAL_ERROR = 4;
     private static final int CUDNN_TENSOR_NCHW = 0;
+    private static final int CUDNN_TENSOR_NHWC = 1;
     private static final int CUDNN_DATA_FLOAT = 0;
     private static final int CUDNN_DATA_HALF = 2;
     private static final int CUDNN_TENSOR_OP_MATH = 1;
@@ -422,13 +423,14 @@ final class CuDnnNativeLib {
     /**
      * Builds the descriptors for a 2D cross-correlation (the deep-learning convention): input NCHW
      * {@code (n,c,h,w)}, filter KCRS {@code (k,c,r,s)}, square pad and stride, and queries the
-     * workspace size. Returns 0 on failure.
+     * workspace size. With {@code nhwc} the input and output are channels-last, NHWC, and the filter
+     * KRSC. Returns 0 on failure.
      *
      * <p>
-     * FP32 uses the IMPLICIT_PRECOMP_GEMM algorithm. FP16 tensors accumulate in FP32 with tensor-core
-     * maths, and take the algorithm cuDNN's heuristics rank first.
+     * FP32 NCHW uses the IMPLICIT_PRECOMP_GEMM algorithm. FP16 tensors accumulate in FP32 with
+     * tensor-core maths; FP16 and NHWC take the algorithm cuDNN's heuristics rank first.
      */
-    static long createConvPlan(long handle, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half) {
+    static long createConvPlan(long handle, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc) {
         if (CREATE_TENSOR_DESCRIPTOR == null) {
             return 0;
         }
@@ -446,9 +448,11 @@ final class CuDnnNativeLib {
                 return 0;
             }
             int dataType = half ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
-            int status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(inputDesc, CUDNN_TENSOR_NCHW, dataType, n, c, h, w);
+            // the dimensions are given as (n, c, h, w) and (k, c, r, s) in either format
+            int format = nhwc ? CUDNN_TENSOR_NHWC : CUDNN_TENSOR_NCHW;
+            int status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(inputDesc, format, dataType, n, c, h, w);
             if (status == CUDNN_STATUS_SUCCESS) {
-                status = (int) SET_FILTER_4D_DESCRIPTOR.invokeExact(filterDesc, dataType, CUDNN_TENSOR_NCHW, k, c, r, s);
+                status = (int) SET_FILTER_4D_DESCRIPTOR.invokeExact(filterDesc, dataType, format, k, c, r, s);
             }
             if (status == CUDNN_STATUS_SUCCESS) {
                 // the compute type stays FP32 for FP16 tensors: FP32 accumulation
@@ -463,10 +467,10 @@ final class CuDnnNativeLib {
                         dims.asSlice(8, Integer.BYTES), dims.asSlice(12, Integer.BYTES));
             }
             if (status == CUDNN_STATUS_SUCCESS) {
-                status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(outputDesc, CUDNN_TENSOR_NCHW, dataType, dims.get(C_INT, 0), dims.get(C_INT, 4), dims.get(C_INT, 8), dims.get(C_INT, 12));
+                status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(outputDesc, format, dataType, dims.get(C_INT, 0), dims.get(C_INT, 4), dims.get(C_INT, 8), dims.get(C_INT, 12));
             }
             int algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
-            if (status == CUDNN_STATUS_SUCCESS && half) {
+            if (status == CUDNN_STATUS_SUCCESS && (half || nhwc)) {
                 algo = heuristicAlgorithm(arena, handle, inputDesc, filterDesc, convDesc, outputDesc);
                 if (algo < 0) {
                     return 0;
@@ -495,7 +499,7 @@ final class CuDnnNativeLib {
         }
     }
 
-        /**
+    /**
      * The first algorithm cuDNN's heuristics return that supports the descriptors; its math type is
      * set on {@code convDesc}. Returns -1 when none does.
      */
@@ -516,7 +520,7 @@ final class CuDnnNativeLib {
         return -1;
     }
 
-static long convPlanWorkspaceBytes(long planPtr) {
+    static long convPlanWorkspaceBytes(long planPtr) {
         ConvPlan plan = CONV_PLANS.get(planPtr);
         return plan == null ? 0 : plan.workspaceBytes;
     }

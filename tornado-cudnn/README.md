@@ -34,6 +34,8 @@ NVIDIA apt repository).
 | `cudnnRelu` / `cudnnSigmoid` / `cudnnTanh` `(in, out, size)` | `cudnnActivationForward` | Element-wise activations |
 | `cudnnMaxPool2d(in, out, n, c, h, w, window, stride)` | `cudnnPoolingForward` (MAX) | Square-window max pooling, no padding |
 | `cudnnConv2d(in, filter, out, n, c, h, w, k, r, s, pad, stride)` | `cudnnConvolutionForward` (IMPLICIT_PRECOMP_GEMM) | 2D cross-correlation, input NCHW, filter KCRS, square pad/stride |
+| `cudnnConv2dFP16(...)` | `cudnnConvolutionForward` (heuristic algorithm, tensor-core maths) | as `cudnnConv2d` on **FP16** `HalfFloatArray`, FP32 accumulation |
+| `cudnnConv2dNHWC(...)`, `cudnnConv2dNHWCFP16(...)` | `cudnnConvolutionForward` (heuristic algorithm) | channels-last: input and output NHWC, filter KRSC; same size arguments as `cudnnConv2d` |
 | `sdpaForward(q, k, v, o, b, h, sQ, sKv, d, scale, causal)` | graph API fused SDPA (flash attention) via cudnn-frontend | **FP16** `HalfFloatArray`, packed BHSD, FP32 accumulate, inference; optional causal mask; d multiple of 8, <= 256, Ampere+ |
 
 Convolution descriptors, the algorithm, and the (grow-only) device workspace are
