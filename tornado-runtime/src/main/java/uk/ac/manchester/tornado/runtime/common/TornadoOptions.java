@@ -80,12 +80,13 @@ public class TornadoOptions {
 
     /**
      * Default CUDA (NVRTC) Compiler Flags. Passed to NVRTC when compiling the generated CUDA C source.
-     * The profile's flags come first so that anything set explicitly here wins.
+     * An option set in {@code tornado.cuda.compiler.flags} replaces the profile's option of the same
+     * name rather than repeating it, which NVRTC would reject.
      */
-    public static final String DEFAULT_CUDA_COMPILER_FLAGS = defaultCudaCompilerFlags();
+    public static final String DEFAULT_CUDA_COMPILER_FLAGS = defaultCompilerFlags();
 
-    private static String defaultCudaCompilerFlags() {
-        String stated = (CUDA_COMPILE_PROFILE.getFlags() + " " + getProperty("tornado.cuda.compiler.flags", "")).trim();
+    private static String defaultCompilerFlags() {
+        String stated = CompilerFlags.merge(CUDA_COMPILE_PROFILE.getFlags(), getProperty("tornado.cuda.compiler.flags", ""));
         return (stated + " " + fmaContractionFlag(stated)).trim().replaceAll("\\s+", " ");
     }
 
