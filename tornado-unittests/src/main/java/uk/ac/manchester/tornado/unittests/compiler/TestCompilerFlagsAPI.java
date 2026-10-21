@@ -180,6 +180,49 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
         assertTrue(differs, "fast-math changed nothing, so the flag never reached the compiler for " + backend());
     }
 
+    private static void multiplyAdd(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) * b.get(i) + c.get(i));
+        }
+    }
+
+    /**
+     * CUDA flags given to the plan are added to the defaults rather than replacing them.
+     *
+     * <p>
+     * {@code withStrictFloatingPoint()} puts {@code --fmad=false} into the plan's NVRTC options. A
+     * later {@code withCompilerFlags(CUDA, "--use_fast_math")} used to overwrite them, dropping it,
+     * and fast-math lets NVRTC contract {@code a*b+c} into one fused, single-rounding instruction,
+     * so the result no longer matched the host's two roundings.
+     */
+    @Test
+    public void testCudaFlagsKeepStrictFloatingPoint() throws Exception {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray c = new FloatArray(SIZE);
+        float[] expected = new float[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            // 1 + i*2^-23, squared, minus 1: the low bits of the product are what fusion keeps.
+            float x = 1.0f + (i + 1) * Math.ulp(1.0f);
+            a.set(i, x);
+            b.set(i, x);
+            c.set(i, -1.0f);
+            expected[i] = x * x + -1.0f;
+        }
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestCompilerFlagsAPI::multiplyAdd, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withStrictFloatingPoint().withCompilerFlags(TornadoVMBackendType.CUDA, "--use_fast_math").execute();
+        }
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(Float.floatToRawIntBits(expected[i]), Float.floatToRawIntBits(c.get(i)), "element " + i + " was fused");
+        }
+    }
+
     /** And a flag the compiler does accept still produces the right answer. */
     @Test
     public void testAcceptedCompilerFlagStillCompilesAndRuns() throws Exception {

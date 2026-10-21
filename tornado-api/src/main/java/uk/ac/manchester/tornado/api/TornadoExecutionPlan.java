@@ -597,7 +597,19 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     /**
      * Set compiler flags for each backend.
-     * 
+     *
+     * <p>
+     * For {@link TornadoVMBackendType#CUDA}, the flags are added to the NVRTC options the JVM was
+     * started with ({@code -Dtornado.cuda.compile.profile}, {@code -Dtornado.cuda.compiler.flags},
+     * and the {@code --fmad=false} implied by {@code -Dtornado.enable.fma=false} or
+     * {@link #withStrictFloatingPoint()}); an option given here replaces one of the same name, e.g.
+     * {@code --fmad=true} replaces {@code --fmad=false}. For {@link TornadoVMBackendType#OPENCL}, the
+     * flags replace the backend's defaults ({@code -cl-mad-enable -cl-fast-relaxed-math -w}, or
+     * {@code -Dtornado.opencl.compiler.flags}). {@link TornadoVMBackendType#METAL} compiles through
+     * {@code MTLCompileOptions}, which takes no option string, so the flags are accepted and ignored;
+     * its math mode comes from {@code -Dtornado.metal.fastmath}. A later call replaces an earlier one.
+     * </p>
+     *
      * @param backend
      *     {@link TornadoVMBackendType}
      * @param compilerFlags
