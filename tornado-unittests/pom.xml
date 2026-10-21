@@ -38,6 +38,11 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-clblast</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-curand</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>

@@ -82,9 +82,10 @@ public final class LibraryInvocation {
 
     /**
      * The backend's native buffer object for a reference argument: the device
-     * allocation on CUDA, the MTLBuffer on Metal. Providers that bind buffers
+     * allocation on CUDA, the MTLBuffer on Metal, or cl_mem on OpenCL. Providers that bind buffers
      * rather than raw addresses (e.g. Metal compute encoders) combine it with
-     * {@link #getNativeOffset(int)}.
+     * {@link #getNativeOffset(int)}. OpenCL providers must use this handle rather
+     * than adding an offset to {@link #getDevicePointer(int)}; cl_mem is opaque.
      */
     public long getNativeBuffer(int index) {
         return nativeBuffers[index];

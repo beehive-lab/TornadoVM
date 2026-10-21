@@ -5,6 +5,7 @@ open module tornado.unittests {
     requires transitive tornado.api;
     requires tornado.runtime;
     requires tornado.cublas;
+    requires tornado.clblast;
     requires tornado.curand;
     requires tornado.cufft;
     requires tornado.nccl;
@@ -27,6 +28,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.branching;
     exports uk.ac.manchester.tornado.unittests.common;
     exports uk.ac.manchester.tornado.unittests.cublas;
+    exports uk.ac.manchester.tornado.unittests.clblast;
     exports uk.ac.manchester.tornado.unittests.curand;
     exports uk.ac.manchester.tornado.unittests.nvtx;
     exports uk.ac.manchester.tornado.unittests.cufft;

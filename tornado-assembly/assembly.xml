@@ -176,6 +176,7 @@
                 <include>io.github.beehive-lab:tornado-examples</include>
                 <include>io.github.beehive-lab:tornado-unittests</include>
                 <include>io.github.beehive-lab:tornado-cublas</include>
+                <include>io.github.beehive-lab:tornado-clblast</include>
                 <include>io.github.beehive-lab:tornado-curand</include>
                 <include>io.github.beehive-lab:tornado-cufft</include>
                 <include>io.github.beehive-lab:tornado-cudnn</include>
