@@ -390,13 +390,18 @@ public class MetalDevice implements MetalTargetDevice {
     private static final long FP_CORRECTLY_ROUNDED_DIVIDE_SQRT = 1 << 6;
 
     private long getDeviceSingleFPConfig() {
-        // Metal devices behave as IEEE 754 single-precision compliant
+        // Metal devices behave as IEEE 754 single-precision compliant, except that Apple GPUs flush
+        // float subnormals to zero even with fast math off (M3 Pro: 0.0f + Float.MIN_VALUE is +0.0)
         // took bitfields from https://registry.khronos.org/OpenCL/sdk/3.0/docs/man/html/metalGetDeviceInfo.html
-        return FP_DENORM |
-            FP_INF_NAN |
+        return FP_INF_NAN |
             FP_ROUND_TO_NEAREST |
             FP_FMA |
             FP_CORRECTLY_ROUNDED_DIVIDE_SQRT;
+    }
+
+    @Override
+    public boolean isDeviceSingleFPDenormSupported() {
+        return (getDeviceSingleFPConfig() & FP_DENORM) != 0;
     }
 
     public int getDeviceAddressBits() {

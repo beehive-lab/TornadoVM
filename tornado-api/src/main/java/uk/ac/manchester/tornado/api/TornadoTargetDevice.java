@@ -41,4 +41,12 @@ public interface TornadoTargetDevice {
 
     String getDeviceInfo();
 
+    /**
+     * Whether float arithmetic keeps subnormals rather than flushing them to zero (OpenCL's
+     * CL_FP_DENORM in CL_DEVICE_SINGLE_FP_CONFIG).
+     */
+    default boolean isDeviceSingleFPDenormSupported() {
+        return true;
+    }
+
 }

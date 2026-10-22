@@ -386,11 +386,19 @@ final class Checks {
         var expected = new FloatArray(4 * EDGES.length);
         Kernels.ieeeEdges(in, expected);
         String[] ops = { "0 + x", "x - x", "x * 0", "x / x" };
+        // Apple GPUs flush float subnormals to zero even without fast math, and say so.
+        boolean flushesSubnormals = !device.getPhysicalDevice().isDeviceSingleFPDenormSupported();
+        int compared = 0;
         for (int i = 0; i < out.getSize(); i++) {
+            float x = EDGES[i / 4];
+            if (flushesSubnormals && x != 0.0f && Math.abs(x) < Float.MIN_NORMAL) {
+                continue;
+            }
             // Java fixes which results are NaN, not the bits of a NaN arithmetic produces.
-            same(expected.get(i), out.get(i), ops[i % 4] + " for x = " + EDGES[i / 4]);
+            same(expected.get(i), out.get(i), ops[i % 4] + " for x = " + x);
+            compared++;
         }
-        return EDGES.length + " edge values x 4 operations";
+        return compared / 4 + " edge values x 4 operations" + (flushesSubnormals ? " (subnormals skipped: the device flushes them)" : "");
     }
 
     // ---------------------------------------------------------------- device features
