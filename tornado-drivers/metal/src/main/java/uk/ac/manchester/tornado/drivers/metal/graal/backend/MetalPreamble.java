@@ -59,9 +59,10 @@ package uk.ac.manchester.tornado.drivers.metal.graal.backend;
  *       {@code thread} address spaces are required because MSL enforces strict
  *       address-space segregation — a function taking {@code device T*} cannot
  *       accept a {@code thread T*}.</li>
- *   <li><b>float8 / float16 / int8 / int16 / half8 / half16</b>: MSL 2.2
- *       defines vectors only for n=2,3,4. The names float8 etc. are reserved
- *       as incomplete types; the structs complete them. Arithmetic operators
+ *   <li><b>tornado_float8 / tornado_float16 / tornado_int8 / tornado_int16 /
+ *       tornado_half8 / tornado_half16</b>: MSL 2.2 defines vectors only for
+ *       n=2,3,4, and newer Metal headers declare {@code metal::float8} etc.,
+ *       so TornadoVM uses its own struct names. Arithmetic operators
  *       are then added so the types behave like native vector types. The
  *       vload8/16 and vstore8/16 overloads build on these.</li>
  *   <li><b>atomicMul_Tornado_Int</b>: MSL has no native atomic-multiply
@@ -184,67 +185,67 @@ public final class MetalPreamble {
         "inline void    vstore2(short2  v, uint n, thread short*  p) { ((thread short2* )p)[n] = v; }\n" +
         "inline void    vstore4(short4  v, uint n, thread short*  p) { ((thread short4* )p)[n] = v; }\n";
 
-    // ── Extended vector types: float8/16, int8/16, half8/16 + vload8/16/vstore8/16 ──
-    // MSL 2.2 defines vectors only for n=2,3,4. The names float8 etc. are
-    // reserved as incomplete; these structs complete them.
+    // ── Extended vector types: tornado_float8/16, tornado_int8/16, tornado_half8/16 + vload8/16/vstore8/16 ──
+    // MSL 2.2 defines vectors only for n=2,3,4. Newer Metal headers declare
+    // metal::float8 etc., so TornadoVM uses its own tornado_* struct names.
     private static final String EXTENDED_VECTORS =
-        "struct __Reserved_Name__Do_not_use_float8  { float4 lo, hi; };\n" +
-        "struct __Reserved_Name__Do_not_use_float16 { float8 lo, hi; };\n" +
-        "struct __Reserved_Name__Do_not_use_int8    { int4   lo, hi; };\n" +
-        "struct __Reserved_Name__Do_not_use_int16   { int8   lo, hi; };\n" +
-        "struct __Reserved_Name__Do_not_use_half8   { half4  lo, hi; };\n" +
-        "struct __Reserved_Name__Do_not_use_half16  { half8  lo, hi; };\n" +
+        "struct tornado_float8  { float4 lo, hi; };\n" +
+        "struct tornado_float16 { tornado_float8 lo, hi; };\n" +
+        "struct tornado_int8    { int4   lo, hi; };\n" +
+        "struct tornado_int16   { tornado_int8   lo, hi; };\n" +
+        "struct tornado_half8   { half4  lo, hi; };\n" +
+        "struct tornado_half16  { tornado_half8  lo, hi; };\n" +
         // Arithmetic operators for extended vector types
-        "inline float8   operator+(float8   a,float8   b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
-        "inline float8   operator-(float8   a,float8   b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
-        "inline float8   operator*(float8   a,float8   b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
-        "inline float8   operator/(float8   a,float8   b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
-        "inline float16  operator+(float16  a,float16  b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
-        "inline float16  operator-(float16  a,float16  b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
-        "inline float16  operator*(float16  a,float16  b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
-        "inline float16  operator/(float16  a,float16  b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
-        "inline int8     operator+(int8     a,int8     b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
-        "inline int8     operator-(int8     a,int8     b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
-        "inline int8     operator*(int8     a,int8     b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
-        "inline int8     operator/(int8     a,int8     b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
-        "inline int16    operator+(int16    a,int16    b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
-        "inline int16    operator-(int16    a,int16    b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
-        "inline int16    operator*(int16    a,int16    b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
-        "inline int16    operator/(int16    a,int16    b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
-        "inline half8    operator+(half8    a,half8    b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
-        "inline half8    operator-(half8    a,half8    b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
-        "inline half8    operator*(half8    a,half8    b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
-        "inline half8    operator/(half8    a,half8    b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
-        "inline half16   operator+(half16   a,half16   b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
-        "inline half16   operator-(half16   a,half16   b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
-        "inline half16   operator*(half16   a,half16   b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
-        "inline half16   operator/(half16   a,half16   b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
+        "inline tornado_float8   operator+(tornado_float8   a,tornado_float8   b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
+        "inline tornado_float8   operator-(tornado_float8   a,tornado_float8   b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
+        "inline tornado_float8   operator*(tornado_float8   a,tornado_float8   b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
+        "inline tornado_float8   operator/(tornado_float8   a,tornado_float8   b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
+        "inline tornado_float16  operator+(tornado_float16  a,tornado_float16  b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
+        "inline tornado_float16  operator-(tornado_float16  a,tornado_float16  b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
+        "inline tornado_float16  operator*(tornado_float16  a,tornado_float16  b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
+        "inline tornado_float16  operator/(tornado_float16  a,tornado_float16  b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
+        "inline tornado_int8     operator+(tornado_int8     a,tornado_int8     b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
+        "inline tornado_int8     operator-(tornado_int8     a,tornado_int8     b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
+        "inline tornado_int8     operator*(tornado_int8     a,tornado_int8     b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
+        "inline tornado_int8     operator/(tornado_int8     a,tornado_int8     b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
+        "inline tornado_int16    operator+(tornado_int16    a,tornado_int16    b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
+        "inline tornado_int16    operator-(tornado_int16    a,tornado_int16    b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
+        "inline tornado_int16    operator*(tornado_int16    a,tornado_int16    b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
+        "inline tornado_int16    operator/(tornado_int16    a,tornado_int16    b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
+        "inline tornado_half8    operator+(tornado_half8    a,tornado_half8    b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
+        "inline tornado_half8    operator-(tornado_half8    a,tornado_half8    b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
+        "inline tornado_half8    operator*(tornado_half8    a,tornado_half8    b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
+        "inline tornado_half8    operator/(tornado_half8    a,tornado_half8    b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
+        "inline tornado_half16   operator+(tornado_half16   a,tornado_half16   b){return{a.lo+b.lo,a.hi+b.hi};}\n" +
+        "inline tornado_half16   operator-(tornado_half16   a,tornado_half16   b){return{a.lo-b.lo,a.hi-b.hi};}\n" +
+        "inline tornado_half16   operator*(tornado_half16   a,tornado_half16   b){return{a.lo*b.lo,a.hi*b.hi};}\n" +
+        "inline tornado_half16   operator/(tornado_half16   a,tornado_half16   b){return{a.lo/b.lo,a.hi/b.hi};}\n" +
         // vload8/vstore8/vload16/vstore16 — device address space
-        "inline float8  vload8 (uint n,const device float* p){const device float4* q=(const device float4*)p+n*2;return{q[0],q[1]};}\n" +
-        "inline void    vstore8(float8  v,uint n,device float* p){device float4* q=(device float4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
-        "inline float16 vload16(uint n,const device float* p){float8 lo=vload8(0,p+n*16);float8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
-        "inline void    vstore16(float16 v,uint n,device float* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
-        "inline int8    vload8 (uint n,const device int* p){const device int4* q=(const device int4*)p+n*2;return{q[0],q[1]};}\n" +
-        "inline void    vstore8(int8    v,uint n,device int* p){device int4* q=(device int4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
-        "inline int16   vload16(uint n,const device int* p){int8 lo=vload8(0,p+n*16);int8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
-        "inline void    vstore16(int16 v,uint n,device int* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
-        "inline half8   vload8 (uint n,const device half* p){const device half4* q=(const device half4*)p+n*2;return{q[0],q[1]};}\n" +
-        "inline void    vstore8(half8  v,uint n,device half* p){device half4* q=(device half4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
-        "inline half16  vload16(uint n,const device half* p){half8 lo=vload8(0,p+n*16);half8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
-        "inline void    vstore16(half16 v,uint n,device half* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
+        "inline tornado_float8  vload8 (uint n,const device float* p){const device float4* q=(const device float4*)p+n*2;return{q[0],q[1]};}\n" +
+        "inline void    vstore8(tornado_float8  v,uint n,device float* p){device float4* q=(device float4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
+        "inline tornado_float16 vload16(uint n,const device float* p){tornado_float8 lo=vload8(0,p+n*16);tornado_float8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
+        "inline void    vstore16(tornado_float16 v,uint n,device float* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
+        "inline tornado_int8    vload8 (uint n,const device int* p){const device int4* q=(const device int4*)p+n*2;return{q[0],q[1]};}\n" +
+        "inline void    vstore8(tornado_int8    v,uint n,device int* p){device int4* q=(device int4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
+        "inline tornado_int16   vload16(uint n,const device int* p){tornado_int8 lo=vload8(0,p+n*16);tornado_int8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
+        "inline void    vstore16(tornado_int16 v,uint n,device int* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
+        "inline tornado_half8   vload8 (uint n,const device half* p){const device half4* q=(const device half4*)p+n*2;return{q[0],q[1]};}\n" +
+        "inline void    vstore8(tornado_half8  v,uint n,device half* p){device half4* q=(device half4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
+        "inline tornado_half16  vload16(uint n,const device half* p){tornado_half8 lo=vload8(0,p+n*16);tornado_half8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
+        "inline void    vstore16(tornado_half16 v,uint n,device half* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
         // vload8/vstore8/vload16/vstore16 — thread address space
-        "inline float8  vload8 (uint n,const thread float* p){const thread float4* q=(const thread float4*)p+n*2;return{q[0],q[1]};}\n" +
-        "inline void    vstore8(float8  v,uint n,thread float* p){thread float4* q=(thread float4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
-        "inline float16 vload16(uint n,const thread float* p){float8 lo=vload8(0,p+n*16);float8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
-        "inline void    vstore16(float16 v,uint n,thread float* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
-        "inline int8    vload8 (uint n,const thread int* p){const thread int4* q=(const thread int4*)p+n*2;return{q[0],q[1]};}\n" +
-        "inline void    vstore8(int8    v,uint n,thread int* p){thread int4* q=(thread int4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
-        "inline int16   vload16(uint n,const thread int* p){int8 lo=vload8(0,p+n*16);int8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
-        "inline void    vstore16(int16 v,uint n,thread int* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
-        "inline half8   vload8 (uint n,const thread half* p){const thread half4* q=(const thread half4*)p+n*2;return{q[0],q[1]};}\n" +
-        "inline void    vstore8(half8  v,uint n,thread half* p){thread half4* q=(thread half4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
-        "inline half16  vload16(uint n,const thread half* p){half8 lo=vload8(0,p+n*16);half8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
-        "inline void    vstore16(half16 v,uint n,thread half* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n";
+        "inline tornado_float8  vload8 (uint n,const thread float* p){const thread float4* q=(const thread float4*)p+n*2;return{q[0],q[1]};}\n" +
+        "inline void    vstore8(tornado_float8  v,uint n,thread float* p){thread float4* q=(thread float4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
+        "inline tornado_float16 vload16(uint n,const thread float* p){tornado_float8 lo=vload8(0,p+n*16);tornado_float8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
+        "inline void    vstore16(tornado_float16 v,uint n,thread float* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
+        "inline tornado_int8    vload8 (uint n,const thread int* p){const thread int4* q=(const thread int4*)p+n*2;return{q[0],q[1]};}\n" +
+        "inline void    vstore8(tornado_int8    v,uint n,thread int* p){thread int4* q=(thread int4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
+        "inline tornado_int16   vload16(uint n,const thread int* p){tornado_int8 lo=vload8(0,p+n*16);tornado_int8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
+        "inline void    vstore16(tornado_int16 v,uint n,thread int* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n" +
+        "inline tornado_half8   vload8 (uint n,const thread half* p){const thread half4* q=(const thread half4*)p+n*2;return{q[0],q[1]};}\n" +
+        "inline void    vstore8(tornado_half8  v,uint n,thread half* p){thread half4* q=(thread half4*)p+n*2;q[0]=v.lo;q[1]=v.hi;}\n" +
+        "inline tornado_half16  vload16(uint n,const thread half* p){tornado_half8 lo=vload8(0,p+n*16);tornado_half8 hi=vload8(0,p+n*16+8);return{lo,hi};}\n" +
+        "inline void    vstore16(tornado_half16 v,uint n,thread half* p){vstore8(v.lo,0,p+n*16);vstore8(v.hi,0,p+n*16+8);}\n";
 
     // Integer atomic multiply (MSL has no native atomic-mul intrinsic)
     private static final String ATOMIC_MUL_INT =
@@ -271,7 +272,7 @@ public final class MetalPreamble {
             new Section(SIGNUM, "signum_f"), //
             new Section(ATOMIC_ADD_FLOAT, "tornado_atomic_add_float"), //
             new Section(VLOAD_STORE_2_3_4, "vload2", "vload3", "vload4", "vstore2", "vstore3", "vstore4"), //
-            new Section(EXTENDED_VECTORS, "float8", "float16", "int8", "int16", "half8", "half16", "vload8", "vload16", "vstore8", "vstore16"), //
+            new Section(EXTENDED_VECTORS, "tornado_float8", "tornado_float16", "tornado_int8", "tornado_int16", "tornado_half8", "tornado_half16", "vload8", "vload16", "vstore8", "vstore16"), //
             new Section(ATOMIC_MUL_INT, "atomicMul_Tornado_Int"), //
     };
 

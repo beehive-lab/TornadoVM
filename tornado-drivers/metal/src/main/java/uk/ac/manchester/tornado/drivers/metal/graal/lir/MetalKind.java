@@ -203,6 +203,9 @@ public enum MetalKind implements PlatformKind {
     INTEGER_ATOMIC_JAVA(4, java.util.concurrent.atomic.AtomicInteger.class);
     // @formatter:on
 
+    /** Prefix of the MSL struct names that implement float8/16, int8/16 and half8/16 (see {@code MetalPreamble}). */
+    public static final String EXTENDED_VECTOR_PREFIX = "tornado_";
+
     private final int size;
     private final int vectorLength;
     private final MetalKind kind;
@@ -503,6 +506,9 @@ public enum MetalKind implements PlatformKind {
             return "simdgroup_float8x8";
         } else if (this == MetalKind.SIMDGROUP_HALF8X8) {
             return "simdgroup_half8x8";
+        } else if (this == FLOAT8 || this == FLOAT16 || this == INT8 || this == INT16 || this == HALF8 || this == HALF16) {
+            // 8/16-wide vectors are preamble structs; newer Metal headers declare metal::float8 etc., so avoid those names.
+            return EXTENDED_VECTOR_PREFIX + name().toLowerCase();
         } else {
             return name().toLowerCase();
         }
