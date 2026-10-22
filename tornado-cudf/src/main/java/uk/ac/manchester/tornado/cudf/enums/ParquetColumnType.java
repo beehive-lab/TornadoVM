@@ -48,7 +48,12 @@ public enum ParquetColumnType {
      * scale given with it (see {@code Cudf.writeParquetColumns}): stored as INT32 up to 9 digits and
      * INT64 above, as Parquet's convention, Spark and Iceberg have it.
      */
-    DECIMAL64(6);
+    DECIMAL64(6),
+    /**
+     * STRING (UTF-8), from the offsets, bytes and validity of a string read, gathered to the written
+     * rows; only through {@code Cudf.writeParquetColumnsWithStrings}.
+     */
+    STRING(7);
 
     private final int code;
 

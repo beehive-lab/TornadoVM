@@ -613,6 +613,72 @@ public class TestCudfColumns extends TornadoTestBase {
         }
     }
 
+    /**
+     * STRING columns written from a read's offsets and bytes, gathered on the device to the rows a
+     * map picks -- in any order, nulls kept -- next to a numeric column, then read back: what a
+     * compaction writes for its live rows.
+     */
+    @Test
+    public void testWriteParquetColumnsWithStringsGathered() throws TornadoExecutionPlanException, IOException {
+        assumeTrue(Cudf.isStringColumnsAvailable() && Cudf.isWriterAvailable());
+        Path strings = Files.createTempFile("tornado-cudf-strings", ".parquet");
+        strings.toFile().deleteOnExit();
+        try (InputStream in = TestCudfColumns.class.getResourceAsStream("strings.parquet")) {
+            Files.copy(in, strings, StandardCopyOption.REPLACE_EXISTING);
+        }
+        Path out = Files.createTempFile("tornado-cudf-write-strings", ".parquet");
+        out.toFile().deleteOnExit();
+        String[] names = { "é0", null, "2", "xyz3", "Ωmega4", null, "ab6", "7", "xyz8", null };
+        int readRows = 20;
+        int stride = 24;
+        long charsStride = 256;
+        // Every other read row, last first.
+        int kept = 10;
+        IntArray map = new IntArray(kept);
+        LongArray positions = new LongArray(stride);
+        for (int j = 0; j < kept; j++) {
+            map.set(j, readRows - 1 - 2 * j);
+            positions.set(j, readRows - 1 - 2 * j);
+        }
+        IntArray offsets = new IntArray(2 * (stride + 1));
+        ByteArray chars = new ByteArray(2 * charsStride);
+        ByteArray valid = new ByteArray(3L * stride);
+        LongArray backPositions = new LongArray(kept);
+        IntArray backOffsets = new IntArray(2 * (kept + 1));
+        ByteArray backChars = new ByteArray(2 * charsStride);
+        ByteArray backValid = new ByteArray(3L * kept);
+        ParquetColumnType[] types = { ParquetColumnType.INT64, ParquetColumnType.STRING, ParquetColumnType.STRING };
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, map, positions) //
+                .libraryTask("read", Cudf::readParquetStringColumns, new StringBuilder(strings + "\n" + strings), new int[] { 0, 1 }, new long[] { readRows }, stride,
+                        offsets, chars, charsStride, valid, 1) //
+                .libraryTask("write", Cudf::writeParquetColumnsWithStrings, new StringBuilder(out.toString()), "pos\nflag\nname", new int[] { 1, 2, 3 }, types,
+                        new boolean[] { false, false, true }, new int[] { 0, 1, 2 }, new long[] { kept }, new IntArray(1), stride, new IntArray(1), positions,
+                        new DoubleArray(1), new ByteArray(1), offsets, chars, valid, map, new long[] { 2, 0, charsStride, readRows }) //
+                .libraryTask("rereadNumbers", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0 }, new CudfType[] { CudfType.INT64 },
+                        new long[] { kept }, kept, new IntArray(1), backPositions, new DoubleArray(1), new ByteArray(1), false) //
+                .libraryTask("rereadStrings", Cudf::readParquetStringColumns, new StringBuilder(out.toString()), new int[] { 1, 2 }, new long[] { kept }, kept,
+                        backOffsets, backChars, charsStride, backValid, 1) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, backPositions, backOffsets, backChars, backValid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int j = 0; j < kept; j++) {
+            int read = readRows - 1 - 2 * j;
+            int r = read % 10;
+            assertEquals("pos " + j, read, backPositions.get(j));
+            String flag = new String(slice(backChars, 0, backOffsets.get(j), backOffsets.get(j + 1)), java.nio.charset.StandardCharsets.UTF_8);
+            assertEquals("flag " + j, String.valueOf("RANRANRANR".charAt(r)), flag);
+            boolean present = names[r] != null;
+            assertEquals("name valid " + j, present ? 1 : 0, backValid.get(2 * kept + j));
+            if (present) {
+                int from = backOffsets.get(kept + 1 + j);
+                int to = backOffsets.get(kept + 1 + j + 1);
+                assertEquals("name " + j, names[r], new String(slice(backChars, charsStride, from, to), java.nio.charset.StandardCharsets.UTF_8));
+            }
+        }
+    }
+
     private static byte[] slice(ByteArray chars, long base, int from, int to) {
         byte[] bytes = new byte[to - from];
         for (int b = from; b < to; b++) {

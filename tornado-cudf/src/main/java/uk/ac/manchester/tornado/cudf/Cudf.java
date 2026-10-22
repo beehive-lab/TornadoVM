@@ -532,6 +532,62 @@ public final class Cudf {
                 .withAccess(access);
     }
 
+    /**
+     * {@link #writeParquetColumns} with {@link ParquetColumnType#STRING} columns too: a compaction's
+     * live rows, numeric and string, written in the plan that found them.
+     *
+     * <p>The numeric columns are laid out as for {@link #writeParquetColumns}, already in the rows to
+     * write. The string columns are as {@link #readParquetStringColumns} read them -- per string
+     * column k, {@code readRows + 1} offsets at {@code k * (stride + 1)} and its bytes at
+     * {@code k * charsStride} -- with one validity byte a read row in {@code stringValid}, and
+     * {@code gatherMap} holds for each written row the read row it takes (what
+     * {@link #selectedIndices} writes): cuDF gathers the strings inside the write.
+     *
+     * @param columnDetail per column: a {@link ParquetColumnType#DECIMAL64}'s precision * 256 +
+     *     scale; a {@link ParquetColumnType#STRING}'s validity slot in {@code stringValid}, at
+     *     {@code slot * stride}; ignored otherwise
+     * @param settings read when the task runs: {compression (0 none, 1 Snappy, 2 ZSTD), rows a row
+     *     group (0 for libcudf's default), {@code charsStride}, the rows the string columns were read
+     *     for}
+     */
+    public static LibraryTaskDescriptor writeParquetColumnsWithStrings(StringBuilder pathHolder, String names, int[] fieldIds, ParquetColumnType[] types,
+            boolean[] optional, int[] columnDetail, long[] rowsHolder, IntArray deviceRows, int stride, IntArray inInt32, LongArray inInt64, DoubleArray inFloat64,
+            ByteArray inValid, IntArray stringOffsets, ByteArray stringChars, ByteArray stringValid, IntArray gatherMap, long[] settings) {
+        if (fieldIds.length != types.length || types.length != optional.length || columnDetail.length != types.length) {
+            throw new IllegalArgumentException("writeParquetColumnsWithStrings: field ids, types, optional flags and details must be the same length");
+        }
+        if (settings.length != 4) {
+            throw new IllegalArgumentException("writeParquetColumnsWithStrings: settings are {compression, rowGroupRows, charsStride, readRows}");
+        }
+        int[] codes = new int[types.length];
+        int[] nullable = new int[optional.length];
+        for (int i = 0; i < types.length; i++) {
+            codes[i] = types[i].code();
+            nullable[i] = optional[i] ? 1 : 0;
+            if (types[i] == ParquetColumnType.DECIMAL64) {
+                int precision = columnDetail[i] >>> 8;
+                int scale = columnDetail[i] & 0xff;
+                if (precision < 1 || precision > 18 || scale > precision) {
+                    throw new IllegalArgumentException("writeParquetColumnsWithStrings: DECIMAL(" + precision + ", " + scale + ") is not a decimal of up to 18 digits");
+                }
+                codes[i] |= (precision << 8) | (scale << 16);
+            } else if (types[i] == ParquetColumnType.STRING) {
+                if (columnDetail[i] < 0 || columnDetail[i] > 0xffff) {
+                    throw new IllegalArgumentException("writeParquetColumnsWithStrings: validity slot " + columnDetail[i] + " out of range");
+                }
+                codes[i] |= columnDetail[i] << 8;
+            }
+        }
+        Access[] access = new Access[18];
+        Arrays.fill(access, Access.READ_ONLY);
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("writeParquetColumnsWithStrings") //
+                .withParameters(new Object[] { pathHolder, names, fieldIds, codes, nullable, rowsHolder, deviceRows, (long) stride, inInt32, inInt64, inFloat64, inValid,
+                        stringOffsets, stringChars, stringValid, gatherMap, settings }) //
+                .withAccess(access);
+    }
+
     /** Whether the shim on this machine exports {@link #writeParquetColumns}. */
     public static boolean isWriterAvailable() {
         return CudfNativeLib.isWriterAvailable();
