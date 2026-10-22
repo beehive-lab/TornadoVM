@@ -130,11 +130,21 @@ jobs:
       - name: Update docs/source/conf.py
         run: |
           if [ -f docs/source/conf.py ]; then
-            # conf.py uses "vX.Y.Z" format with double quotes
-            sed -i 's|release = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
-            sed -i 's|version = "v[0-9]\+\.[0-9]\+\.[0-9]\+"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
+            # conf.py uses "vX.Y.Z" format with double quotes. Replace whatever the
+            # current value is, not only a bare "vX.Y.Z": the 5.2.0 release left
+            # "v5.2.0-jdk21" behind, which a strict X.Y.Z pattern never matched, so
+            # every later release silently kept the stale docs version.
+            sed -i -E 's|^release = "[^"]*"|release = "v${{ env.VERSION }}"|' docs/source/conf.py
+            sed -i -E 's|^version = "[^"]*"|version = "v${{ env.VERSION }}"|' docs/source/conf.py
+            for key in release version; do
+              if ! grep -qx "${key} = \"v${VERSION}\"" docs/source/conf.py; then
+                echo "❌ docs/source/conf.py: '${key}' was not set to v${VERSION}"
+                grep -E "^(version|release) =" docs/source/conf.py
+                exit 1
+              fi
+            done
             echo "✅ Updated docs/source/conf.py"
-            grep -E "(version|release) =" docs/source/conf.py
+            grep -E "^(version|release) =" docs/source/conf.py
           fi
 
       - name: Update docs/source/installation.rst
