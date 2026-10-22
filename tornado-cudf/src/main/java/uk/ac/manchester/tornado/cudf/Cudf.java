@@ -406,9 +406,15 @@ public final class Cudf {
      * have no file for it.
      *
      * <p>An array for a type the read does not use still has to be an array; a one-element one
-     * does. Columns are refused, not cast, when the file's type is not the one requested.
+     * does. Columns are refused, not cast, when the file's type is not the one requested, except
+     * for the exact widenings a table's schema evolution allows: an INT32 column read as
+     * {@link CudfType#INT64} and a FLOAT column read as {@link CudfType#FLOAT64}.
      *
-     * @param columns schema indices of the columns to read, in the order the outputs are packed
+     * <p>A column index of -1 is a column the file does not have (one a table added later): it reads
+     * as all nulls, so validity must be requested.
+     *
+     * @param columns schema indices of the columns to read, in the order the outputs are packed, -1
+     *     for a column the file does not have
      * @param types the type each column is read as
      * @param rowsHolder {@code rowsHolder[0]} is the number of rows the range holds
      */

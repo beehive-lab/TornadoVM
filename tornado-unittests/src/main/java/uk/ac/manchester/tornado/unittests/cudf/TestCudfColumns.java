@@ -706,7 +706,63 @@ public class TestCudfColumns extends TornadoTestBase {
     /** An INT32 column requested as INT64 is refused, not widened. */
     @Test
     public void testReadParquetColumnsRefusesTypeMismatch() {
-        assertRefused(new int[] { K }, new CudfType[] { CudfType.INT64 }, true, "does not cast");
+        assertRefused(new int[] { V }, new CudfType[] { CudfType.INT64 }, true, "does not cast");
+    }
+
+    /**
+     * What a table's schema evolution leaves in its older files, read on the device: an INT32 column
+     * read as INT64 (int promoted to long) and a FLOAT32 column read as FP64 (float to double),
+     * both widened exactly, and columns the file does not have (index -1, added later) read as all
+     * nulls, in the same read as the columns it has.
+     */
+    @Test
+    public void testReadParquetColumnsSchemaEvolution() throws TornadoExecutionPlanException, IOException {
+        LongArray longs = new LongArray(3L * ROWS);
+        DoubleArray doubles = new DoubleArray(ROWS);
+        ByteArray valid = new ByteArray(4L * ROWS);
+        for (int i = 0; i < 3 * ROWS; i++) {
+            longs.set(i, 99);
+        }
+        TaskGraph graph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(fixture.toString()), 0, 0, new int[] { K, -1, ID, -1 },
+                        new CudfType[] { CudfType.INT64, CudfType.INT64, CudfType.INT64, CudfType.FLOAT64 }, new long[] { ROWS }, ROWS, new IntArray(1), longs, doubles,
+                        valid, true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, longs, doubles, valid);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < ROWS; i++) {
+            assertEquals("k widened " + i, i % 3, longs.get(i));
+            assertEquals("k valid " + i, 1, valid.get(i));
+            assertEquals("absent long valid " + i, 0, valid.get(ROWS + i));
+            assertEquals("absent long " + i, 0, longs.get(ROWS + i));
+            assertEquals("id " + i, id(i), longs.get(2 * ROWS + i));
+            assertEquals("absent double valid " + i, 0, valid.get(3 * ROWS + i));
+        }
+
+        Path floats = Files.createTempFile("tornado-cudf-floats", ".parquet");
+        floats.toFile().deleteOnExit();
+        try (InputStream in = TestCudfColumns.class.getResourceAsStream("floats.parquet")) {
+            Files.copy(in, floats, StandardCopyOption.REPLACE_EXISTING);
+        }
+        DoubleArray widened = new DoubleArray(ROWS);
+        TaskGraph floatGraph = new TaskGraph("cudf") //
+                .libraryTask("read", Cudf::readParquetColumns, new StringBuilder(floats.toString()), 0, 0, new int[] { 0 }, new CudfType[] { CudfType.FLOAT64 },
+                        new long[] { ROWS }, ROWS, new IntArray(1), new LongArray(1), widened, new ByteArray(ROWS), true) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, widened);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(floatGraph.snapshot())) {
+            plan.execute();
+        }
+        float[] f = { 1.5f, -2.25f, 3.4028235e38f, 1.17549435e-38f, 0.0f, -0.0f, 16777217.0f, (float) (-1.0 / 3), 1e-3f, 42.0f };
+        for (int i = 0; i < ROWS; i++) {
+            assertEquals("float widened " + i, Double.doubleToRawLongBits(f[i]), Double.doubleToRawLongBits(widened.get(i)));
+        }
+    }
+
+    /** An absent column reads as nulls, which a read without validity cannot express. */
+    @Test
+    public void testReadParquetColumnsAbsentNeedsValidity() {
+        assertRefused(new int[] { ID, -1 }, new CudfType[] { CudfType.INT64, CudfType.INT64 }, false, "needs validity");
     }
 
     private static void assertRefused(int[] columns, CudfType[] types, boolean nullable, String reason) {
