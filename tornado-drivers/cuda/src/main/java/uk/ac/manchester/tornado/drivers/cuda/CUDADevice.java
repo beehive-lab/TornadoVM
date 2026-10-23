@@ -639,7 +639,7 @@ public class CUDADevice implements CUDATargetDevice {
         return isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN;
     }
 
-    public String getVersion() {
+    public synchronized String getVersion() {
         if (version != null) {
             return version;
         }
@@ -652,7 +652,7 @@ public class CUDADevice implements CUDATargetDevice {
         return version;
     }
 
-    private void queryOpenCLAPI(int value) {
+    private synchronized void queryOpenCLAPI(int value) {
         Arrays.fill(buffer.array(), (byte) 0);
         buffer.clear();
         clGetDeviceInfo(devicePtr, value, buffer.array());
