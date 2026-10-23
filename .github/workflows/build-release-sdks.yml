@@ -41,6 +41,11 @@ on:
         required: false
         type: boolean
         default: true
+      include_linux_arm:
+        description: 'Run the Linux arm64 build job (CUDA backend only).'
+        required: false
+        type: boolean
+        default: true
       upload_to_release:
         description: 'Upload built archives to the v<version> GitHub Release (must already exist).'
         required: false
@@ -76,6 +81,7 @@ jobs:
       include_macos: ${{ steps.derive.outputs.include_macos }}
       include_linux: ${{ steps.derive.outputs.include_linux }}
       include_windows: ${{ steps.derive.outputs.include_windows }}
+      include_linux_arm: ${{ steps.derive.outputs.include_linux_arm }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
       draft_release_test: ${{ steps.derive.outputs.draft_release_test }}
       marker_tag: ${{ steps.gate.outputs.marker_tag }}
@@ -93,6 +99,7 @@ jobs:
           INCLUDE_MACOS="${{ inputs.include_macos }}"
           INCLUDE_LINUX="${{ inputs.include_linux }}"
           INCLUDE_WIN="${{ inputs.include_windows }}"
+          INCLUDE_LINUX_ARM="${{ inputs.include_linux_arm }}"
           UPLOAD="${{ inputs.upload_to_release }}"
           if [ "${{ inputs.draft_release_test }}" = "true" ]; then
             echo "Draft release (test): forcing upload_to_release=false (still building for real, nothing gets uploaded/un-drafted/published)."
@@ -103,9 +110,10 @@ jobs:
           echo "include_macos=$INCLUDE_MACOS" >> "$GITHUB_OUTPUT"
           echo "include_linux=$INCLUDE_LINUX" >> "$GITHUB_OUTPUT"
           echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
+          echo "include_linux_arm=$INCLUDE_LINUX_ARM" >> "$GITHUB_OUTPUT"
           echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
           echo "draft_release_test=${{ inputs.draft_release_test }}" >> "$GITHUB_OUTPUT"
-          echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN upload=$UPLOAD"
+          echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN include_linux_arm=$INCLUDE_LINUX_ARM upload=$UPLOAD"
 
       - name: Gate on Release existing / already built
         id: gate
@@ -361,6 +369,124 @@ jobs:
           echo "Draft release (test): removing built archives from this runner — nothing was uploaded."
           rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
 
+  build-linux-arm:
+    needs: preflight
+    if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux_arm == 'true'
+    name: Linux arm64 (jdk21+jdk22plus × cuda)
+    # Only the CUDA SDK is built here (BUILDS["linux-aarch64"] in scripts/build-release-sdks.py).
+    runs-on: [self-hosted, Linux, ARM64, sdk-builder]
+    timeout-minutes: 240
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
+      VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
+      DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
+      JDK21_HOME: /opt/jdks/21.0.12-tem
+      # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
+      # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
+      # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
+      JDK22PLUS_HOME: /opt/jdks/25.0.4.1+1-tem
+      RELEASE_ARCHIVES_DIR: /opt/release-archives
+      PLATFORM_DIR: linux-aarch64
+      VENV_PATH: ${{ github.workspace }}/venv-build-sdks
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify build script is present
+        run: |
+          if [ ! -f scripts/build-release-sdks.py ]; then
+            echo "::error::scripts/build-release-sdks.py is missing on the dispatched branch."
+            exit 1
+          fi
+
+      - name: Prepare output directory
+        run: |
+          mkdir -p "$RELEASE_ARCHIVES_DIR"
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+      - name: Setup Python venv
+        run: |
+          python3 -m venv "$VENV_PATH"
+          # shellcheck disable=SC1091
+          source "$VENV_PATH/bin/activate"
+          pip install --upgrade pip tqdm psutil
+          # Make the venv interpreter the default for subsequent steps
+          echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
+
+      - name: Fetch libcudf for the cuDF shim
+        # libcudf has no C API, so the cuda and full SDKs carry libtornado-cudf.so, a small C++ shim
+        # built against libcudf's headers. RAPIDS ships headers and library in its pip wheels. With
+        # TORNADO_CUDF_REQUIRED set, a missing libcudf fails the build instead of shipping SDKs
+        # without the shim (7.1.0 and 7.2.0 shipped an empty tornado-drivers-cudf-jni-libs.jar).
+        env:
+          CUDF_VERSION: "26.8.*"
+        run: |
+          CUDF_DIR="$RUNNER_TEMP/libcudf"
+          rm -rf "$CUDF_DIR"
+          mkdir -p "$CUDF_DIR/wheels"
+          python3 -m pip download --quiet --timeout 120 --retries 10 --only-binary=:all: --python-version 3.12 \
+            --platform manylinux_2_28_aarch64 --platform manylinux_2_27_aarch64 \
+            --platform manylinux_2_17_aarch64 --platform manylinux2014_aarch64 \
+            --extra-index-url https://pypi.nvidia.com -d "$CUDF_DIR/wheels" "libcudf-cu12==$CUDF_VERSION"
+          for wheel in "$CUDF_DIR"/wheels/*.whl; do
+            python3 -m zipfile -e "$wheel" "$CUDF_DIR"
+          done
+          rm -rf "$CUDF_DIR/wheels"
+          echo "CUDF_HOME=$CUDF_DIR/libcudf" >> "$GITHUB_ENV"
+          echo "RMM_HOME=$CUDF_DIR/librmm" >> "$GITHUB_ENV"
+          echo "TORNADO_CUDF_REQUIRED=1" >> "$GITHUB_ENV"
+          # cudnn-jni skips itself without cuDNN too; a release must not ship without libtornado-cudnn.
+          echo "TORNADO_CUDNN_REQUIRED=1" >> "$GITHUB_ENV"
+
+      - name: Build SDKs
+        run: |
+          python3 scripts/build-release-sdks.py \
+            --version "$VERSION_TAG" \
+            --output-dir "$RELEASE_ARCHIVES_DIR" \
+            --draft-release-test "$DRAFT_RELEASE_TEST" \
+            --jdk21-home "$JDK21_HOME" \
+            --jdk22plus-home "$JDK22PLUS_HOME"
+
+      - name: Check the CUDA SDKs carry the cuDF shim
+        run: |
+          missing=0
+          while IFS= read -r archive; do
+            if ! tar -tzf "$archive" | grep -q '/lib/libtornado-cudf\.so$'; then
+              echo "::error::$archive has no lib/libtornado-cudf.so"
+              missing=1
+            fi
+          done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' -name '*cuda*')
+          exit $missing
+
+      - name: List produced archives
+        run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
+
+      - name: Upload archives to Release
+        if: needs.preflight.outputs.upload_to_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          uploaded=0
+          src_dir="$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+          while IFS= read -r archive; do
+            fname=$(basename "$archive")
+            echo "→ $fname  →  release $VERSION_TAG"
+            gh release upload "$VERSION_TAG" "$archive" --clobber --repo "${{ github.repository }}"
+            uploaded=$((uploaded + 1))
+          done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
+          echo "Uploaded $uploaded archive(s) from Linux arm64."
+
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        run: |
+          echo "Draft release (test): removing built archives from this runner — nothing was uploaded."
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
   build-windows:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_windows == 'true'
@@ -472,13 +598,14 @@ jobs:
 
   publish-releases:
     name: Un-draft Release and dispatch SDKMAN publish
-    needs: [preflight, build-macos, build-linux, build-windows]
+    needs: [preflight, build-macos, build-linux, build-linux-arm, build-windows]
     if: |
       always() &&
       needs.preflight.outputs.proceed == 'true' &&
       needs.preflight.outputs.upload_to_release == 'true' &&
       needs.build-macos.result == 'success' &&
       needs.build-linux.result == 'success' &&
+      (needs.build-linux-arm.result == 'success' || needs.build-linux-arm.result == 'skipped') &&
       (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped')
     runs-on: [self-hosted, Linux, x64]
     permissions:
@@ -510,7 +637,7 @@ jobs:
 
   mark-version-built:
     name: Mark this version as built
-    needs: [preflight, build-macos, build-linux, build-windows]
+    needs: [preflight, build-macos, build-linux, build-linux-arm, build-windows]
     # Only mark it once every requested platform actually succeeded (a
     # platform job shows 'skipped' only when its include_* flag was false,
     # since this job itself requires proceed == 'true'). On a partial/full
@@ -525,6 +652,7 @@ jobs:
       needs.preflight.outputs.marker_tag != '' &&
       (needs.build-macos.result == 'success' || needs.build-macos.result == 'skipped') &&
       (needs.build-linux.result == 'success' || needs.build-linux.result == 'skipped') &&
+      (needs.build-linux-arm.result == 'success' || needs.build-linux-arm.result == 'skipped') &&
       (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped')
     runs-on: [self-hosted, Linux, x64]
     permissions:
