@@ -9,11 +9,20 @@ name: "No-GPU tests: TC + runtime [JDK 21-27]"
 # gpu-ci.yml proves one ARTIFACT runs on every JDK; this proves the jdk22plus profile BUILDS on
 # every JDK. The matrix axis is therefore the host JDK, not the profile.
 
+# Pull requests to develop only, as in gpu-ci.yml: merges run no tests, and documentation-only
+# changes are skipped (keep the paths-ignore list in step with gpu-ci.yml).
 on:
-  push:
-    branches: [master, develop]
   pull_request:
+    branches: [develop]
     types: [opened, synchronize, reopened]
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.rst'
+      - 'docs/**'
+      - '.claude/**'
+      - '**/LICENSE*'
+      - '**/NOTICE*'
+      - '**/THIRD_PARTY_NOTICES*'
   workflow_dispatch:
 
 # As in gpu-ci.yml: one live run per branch, and a superseded pull request run is cancelled.

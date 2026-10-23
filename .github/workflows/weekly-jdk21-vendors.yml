@@ -1,8 +1,11 @@
-name: "Nightly: JDK 21 vendors [CUDA, OpenCL]"
+name: "Weekly: JDK 21 vendors [CUDA, OpenCL]"
 
+# Builds and fast-tests TornadoVM on each vendor's JDK 21 distribution. Weekly rather than nightly
+# so it does not compete with gpu-ci.yml's nightly run (00:00 UTC) for the Linux runners.
 on:
   schedule:
-    - cron: '0 1 * * *'
+    # Sunday 06:00 UTC. GitHub reads this from the default branch (master); the run tests develop.
+    - cron: '0 6 * * 0'
   workflow_dispatch:
 
 jobs:
@@ -41,6 +44,9 @@ jobs:
     steps:
       - name: Checkout TornadoVM
         uses: actions/checkout@v4
+        with:
+          # A schedule always fires on the default branch (master); the weekly run is for develop.
+          ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
       - name: Setup environment
         run: |
