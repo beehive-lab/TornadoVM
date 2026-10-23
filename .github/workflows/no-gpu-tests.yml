@@ -10,19 +10,28 @@ name: "No-GPU tests: TC + runtime [JDK 21-27]"
 # every JDK. The matrix axis is therefore the host JDK, not the profile.
 
 # Pull requests to develop only, as in gpu-ci.yml: merges run no tests, and documentation-only
-# changes are skipped (keep the paths-ignore list in step with gpu-ci.yml).
+# and non-CI-workflow-only changes are skipped (keep the paths list in step with gpu-ci.yml).
 on:
   pull_request:
     branches: [develop]
     types: [opened, synchronize, reopened]
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.rst'
-      - 'docs/**'
-      - '.claude/**'
-      - '**/LICENSE*'
-      - '**/NOTICE*'
-      - '**/THIRD_PARTY_NOTICES*'
+    # `paths` rather than `paths-ignore` so the CI's own workflows can be re-included: in a
+    # `paths` list a later pattern overrides an earlier one.
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!docs/**'
+      - '!.claude/**'
+      - '!**/LICENSE*'
+      - '!**/NOTICE*'
+      - '!**/THIRD_PARTY_NOTICES*'
+      # Release/publishing workflows, issue and PR templates: nothing a build or test reads.
+      - '!.github/**'
+      # ...except the workflows that make up this CI, so a change to them is exercised.
+      - '.github/workflows/gpu-ci.yml'
+      - '.github/workflows/gpu-ci-platform.yml'
+      - '.github/workflows/no-gpu-tests.yml'
   workflow_dispatch:
 
 # As in gpu-ci.yml: one live run per branch, and a superseded pull request run is cancelled.

@@ -17,7 +17,7 @@ name: "GPU CI [build each SDK once, test on JDK 21 and 25]"
 # Scope per event (see the plan job, which computes all of it):
 #   pull request to develop   fast tests (--quickPass) on the default device, Linux and macOS,
 #                             all backends, jdk21 SDK on JDK 21 and jdk22plus SDK on JDK 25.
-#                             Skipped when the change touches documentation only.
+#                             Skipped when the change touches documentation or non-CI workflows only.
 #   schedule (nightly)        the same legs against develop, but the full test suite on EVERY
 #                             device each backend reports. 00:00 UTC.
 #   workflow_dispatch         fast or full (the `full` input) against the chosen branch.
@@ -30,17 +30,26 @@ on:
     # No `labeled`/`unlabeled`: a label change says nothing about the code, and every run is
     # about an hour of the self-hosted runners.
     types: [opened, synchronize, reopened]
-    # A change to documentation only cannot break a build or a test, so it does not occupy the
-    # runners. Keep this list in step with no-gpu-tests.yml. *.txt is deliberately absent:
-    # CMakeLists.txt and bin/*.txt are build inputs.
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.rst'
-      - 'docs/**'
-      - '.claude/**'
-      - '**/LICENSE*'
-      - '**/NOTICE*'
-      - '**/THIRD_PARTY_NOTICES*'
+    # A change to documentation or to the non-CI workflows only cannot break a build or a test,
+    # so it does not occupy the runners. Keep this list in step with no-gpu-tests.yml. *.txt is
+    # deliberately absent: CMakeLists.txt and bin/*.txt are build inputs.
+    # `paths` rather than `paths-ignore` so the CI's own workflows can be re-included: in a
+    # `paths` list a later pattern overrides an earlier one.
+    paths:
+      - '**'
+      - '!**/*.md'
+      - '!**/*.rst'
+      - '!docs/**'
+      - '!.claude/**'
+      - '!**/LICENSE*'
+      - '!**/NOTICE*'
+      - '!**/THIRD_PARTY_NOTICES*'
+      # Release/publishing workflows, issue and PR templates: nothing a build or test reads.
+      - '!.github/**'
+      # ...except the workflows that make up this CI, so a change to them is exercised.
+      - '.github/workflows/gpu-ci.yml'
+      - '.github/workflows/gpu-ci-platform.yml'
+      - '.github/workflows/no-gpu-tests.yml'
   workflow_dispatch:
     inputs:
       full:
