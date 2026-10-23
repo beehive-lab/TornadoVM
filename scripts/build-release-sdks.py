@@ -44,6 +44,7 @@ SDKs built per platform (jdk21 + jdk22plus profiles x backend, via sdkman
 Temurin or an explicit --jdk21-home/--jdk22plus-home override):
   - macOS   : opencl, metal
   - Linux   : opencl, cuda, full
+  - Linux aarch64 : cuda
   - Windows : opencl, cuda   (--jdk21-home/--jdk22plus-home required)
 
 "full" means opencl+cuda combined into a single archive.
@@ -237,6 +238,8 @@ def resolve_jdk_home(profile, build_major, override):
 # On macOS/Linux the Makefile target is:  make sdk BACKEND=<value>
 # On Windows it is:  nmake /f Makefile.mak sdk BACKEND=<value>
 # opencl+cuda is labelled "full" automatically by bin/compile.
+# A "<platform>-<arch>" key (arch as in the output dir name) overrides the
+# per-platform entry for that architecture only.
 BUILDS = {
     "macos": [
         "opencl",
@@ -246,6 +249,9 @@ BUILDS = {
         "opencl",
         "cuda",
         "opencl,cuda",
+    ],
+    "linux-aarch64": [
+        "cuda",
     ],
     "windows": [
         "opencl",
@@ -1165,7 +1171,8 @@ def main():
         error("No JDK homes could be resolved. Nothing to build.")
         sys.exit(1)
 
-    backends_for_platform = BUILDS[current_platform]
+    backends_for_platform = BUILDS.get(f"{current_platform}-{arch}", BUILDS[current_platform])
+    info(f"Backends : {', '.join(backends_for_platform)}")
     results = []  # list of (label, success)
 
     repo_root = os.getcwd()
