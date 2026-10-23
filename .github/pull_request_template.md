@@ -25,11 +25,6 @@ $ make tests
 ## If the changes are also applicable to the CUDA backend: 
 ## Pass unittests using the CUDA backend
 $ make BACKEND=cuda
-$ make tests 
-
-## If the changes are also applicable to the CUDA backend:
-## Pass unittests using the CUDA backend
-$ make BACKEND=cuda
 $ make tests
 ```
 
