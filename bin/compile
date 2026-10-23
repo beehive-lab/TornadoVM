@@ -621,6 +621,25 @@ def package_sdk_archives():
         warn(f"To generate the tornado-argfile, run: tornado --generate-argfile")
     print()
 
+    # Top-level SDK subdirectories that hold runtime state rather than build output: "var" is
+    # TornadoVM's own cache (e.g. var/cuda-codecache, populated the moment any program or test
+    # runs against this SDK). Packaging it is wrong even when it works -- it makes the archive
+    # depend on whatever happened to run locally -- and it is also a source of exactly the crash
+    # this guards against: a test run left cache files being written or evicted concurrently with
+    # packaging, and tarfile's recursive walk stats every file it lists before deciding whether to
+    # keep it, so one that disappears between the two raises FileNotFoundError and aborts the
+    # whole build. Skipping the directory outright avoids the race instead of just tolerating it.
+    RUNTIME_STATE_DIRS = {"var"}
+
+    def exclude_runtime_state(tarinfo):
+        # filter() runs on a directory's own TarInfo before tarfile recurses into it (see
+        # tarfile.TarFile.add), so returning None here for "sdk_name/var" skips listing and
+        # stat-ing its contents entirely, rather than merely omitting them after the fact.
+        parts = Path(tarinfo.name).parts
+        if len(parts) >= 2 and parts[1] in RUNTIME_STATE_DIRS:
+            return None
+        return tarinfo
+
     # Change to the dist directory to create archives with correct structure
     original_dir = os.getcwd()
     os.chdir(dist_dir)
@@ -634,7 +653,7 @@ def package_sdk_archives():
         tar_filename = f"{outer_dir_name}.tar.gz"
         with tarfile.open(tar_filename, "w:gz") as tar:
             # Add from outer_dir/sdk_name, archive as sdk_name/
-            tar.add(os.path.join(outer_dir_name, sdk_name), arcname=sdk_name)
+            tar.add(os.path.join(outer_dir_name, sdk_name), arcname=sdk_name, filter=exclude_runtime_state)
         ok(f"Created {tar_filename}")
 
         # ZIP
@@ -642,6 +661,10 @@ def package_sdk_archives():
         with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
             sdk_dir_to_archive = os.path.join(outer_dir_name, sdk_name)
             for root, dirs, files in os.walk(sdk_dir_to_archive):
+                if root == sdk_dir_to_archive:
+                    # Prune before os.walk descends, so these subtrees are never listed or
+                    # stat-ed at all -- same reasoning as exclude_runtime_state above.
+                    dirs[:] = [d for d in dirs if d not in RUNTIME_STATE_DIRS]
                 for file in files:
                     file_path = os.path.join(root, file)
                     # Calculate relative path from outer_dir_name/sdk_name to archive as sdk_name/
