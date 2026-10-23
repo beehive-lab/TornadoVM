@@ -17,49 +17,45 @@
 # limitations under the License.
 #
 
+import importlib
 import subprocess
+import sys
+
+# The modules the build and installer scripts import: requests, tqdm and urllib3 (pull_graal_jars.py,
+# tornadovm-installer) and packaging (tornadovm-installer).
+REQUIRED_MODULES = ["requests", "tqdm", "urllib3", "packaging"]
+
+
+def _missing(modules):
+    missing = []
+    for module in modules:
+        try:
+            importlib.import_module(module)
+        except ImportError:
+            missing.append(module)
+    return missing
 
 
 def check_python_dependencies():
     """
-    Check the required dependencies for the installation of TornadoVM.
+    Check the required dependencies for the installation of TornadoVM, installing missing ones with
+    pip. pip's output is shown: a Python that refuses user installs (PEP 668, "externally managed",
+    as on Ubuntu 24.04 and Debian 12) says so, and the build stops with what to run instead.
     """
-    
-    try:
-        import requests
-    except:
-        subprocess.call(["pip3", "install", "requests"], stderr=subprocess.DEVNULL)
-        import requests
-    
-    try:
-        import tqdm
-    except:
-        subprocess.call(["pip3", "install", "tqdm"], stderr=subprocess.DEVNULL)
-        import tqdm
-    
-    try:
-        import urllib3
-    except:
-        subprocess.call(["pip3", "install", "urllib3"], stderr=subprocess.DEVNULL)
-        import urllib3
-    
-    try:
-        import wget
-    except:
-        subprocess.call(["pip3", "install", "wget"], stderr=subprocess.DEVNULL)
-        import wget
-
-    try:
-        import packaging
-    except:
-        subprocess.call(["pip3", "install", "packaging"], stderr=subprocess.DEVNULL)
-        import packaging
-
-    try:
-        import streamlit
-    except:
-        subprocess.call(["pip3", "install", "streamlit"], stderr=subprocess.DEVNULL)
-        import streamlit
-
+    missing = _missing(REQUIRED_MODULES)
+    if not missing:
+        return 0
+    print("Installing the Python modules TornadoVM's build needs: " + " ".join(missing), flush=True)
+    # Into the active virtual environment if there is one, else the user's site-packages.
+    in_venv = sys.prefix != sys.base_prefix
+    subprocess.call([sys.executable, "-m", "pip", "install"] + ([] if in_venv else ["--user"]) + missing)
+    importlib.invalidate_caches()
+    still_missing = _missing(missing)
+    if still_missing:
+        names = " ".join(still_missing)
+        sys.exit("\n[ERROR] TornadoVM's build needs the Python modules: " + names + "\n"
+                 "pip could not install them (see its message above). Install them with one of:\n"
+                 "  python3 -m venv ~/.venv-tornadovm && . ~/.venv-tornadovm/bin/activate && pip install " + names + "\n"
+                 "  sudo apt install " + " ".join("python3-" + m for m in still_missing) + "\n"
+                 "  python3 -m pip install --user --break-system-packages " + names + "\n")
     return 0
-    
