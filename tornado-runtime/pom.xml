@@ -13,8 +13,8 @@
     <description>TornadoVM Runtime: A dynamic execution engine for heterogeneous acceleration of managed languages</description>
     <licenses>
         <license>
-            <name>GNU General Public License, Version 2</name>
-            <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html</url>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
             <distribution>repo</distribution>
         </license>
     </licenses>

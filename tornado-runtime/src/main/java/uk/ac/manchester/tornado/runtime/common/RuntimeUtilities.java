@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2013-2020, 2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.runtime.common;
@@ -41,6 +38,7 @@ import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.utils.TornadoAPIUtils;
 
 public final class RuntimeUtilities {
 
@@ -72,23 +70,16 @@ public final class RuntimeUtilities {
     }
 
     /**
-     * Convert byte sizes into human-readable format Based on code from.
+     * A byte count in human-readable form; see {@link TornadoAPIUtils#humanReadableByteCount}.
      *
      * @param bytes
+     *     number of bytes
      * @param si
-     * @return humanReadableByteCount
-     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *     -byte-size-into-human-readable-format-in-java >Reference to
-     *     StackOverflow</a>
+     *     units (true if 1000, false if 1024).
+     * @return the formatted size
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
-        final int unit = si ? 1000 : 1024;
-        if (bytes < unit) {
-            return bytes + " B";
-        }
-        final int exp = (int) (Math.log(bytes) / Math.log(unit));
-        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+        return TornadoAPIUtils.humanReadableByteCount(bytes, si);
     }
 
     public static String humanReadableFreq(int freq) {

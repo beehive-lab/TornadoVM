@@ -1,4 +1,21 @@
 /*
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * The University of Manchester.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+/*
  * metalc: compiles Metal Shading Language files with -[MTLDevice newLibraryWithSource:options:error:]
  * on the Mac's GPU, the call the TornadoVM Metal driver makes at run time (default options, so fast
  * math as there). Used by the TC lit tests the way clbuild checks the OpenCL ones, and on a whole
