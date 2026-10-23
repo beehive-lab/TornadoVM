@@ -175,7 +175,7 @@ Library bindings are discovered via Java `ServiceLoader`, bind the calls through
 
 ## Fast start-up: Project Leyden and GraalVM native image
 
-TornadoVM has no JVMCI or Graal dependency: its kernel compiler, TC, is plain Java. So TornadoVM
+TornadoVM's compiler, TC is writen in modern Java, so
 applications can use a **Project Leyden AOT cache** (JDK 25+), **AppCDS**, or be built into a
 **GraalVM native image** (GraalVM for JDK 25+). Saxpy on an RTX 4090 starts in about 0.3 s from
 an AOT cache or as a native image with only the CUDA backend loaded, instead of 0.6 s.
