@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.kotlin.unittests.api
 
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import uk.ac.manchester.tornado.api.KernelContext
 import uk.ac.manchester.tornado.api.enums.DataTransferMode
 import uk.ac.manchester.tornado.kotlin.api.TFloatArray

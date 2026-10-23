@@ -19,7 +19,7 @@
  * TornadoVM unit tests written in Kotlin. Open so that JUnit can instantiate the test classes.
  */
 open module tornado.kotlin.unittests {
-    requires junit;
+    requires org.junit.jupiter.api;
     requires tornado.cublas;
     requires tornado.kotlin.api;
     requires tornado.runtime;

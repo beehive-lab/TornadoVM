@@ -17,8 +17,8 @@
  */
 package uk.ac.manchester.tornado.kotlin.unittests.loops
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import uk.ac.manchester.tornado.api.annotations.Reduce
 import uk.ac.manchester.tornado.api.enums.DataTransferMode
 import uk.ac.manchester.tornado.api.math.TornadoMath
