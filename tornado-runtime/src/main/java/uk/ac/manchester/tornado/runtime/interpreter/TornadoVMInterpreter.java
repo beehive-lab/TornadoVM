@@ -30,6 +30,8 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -54,6 +56,7 @@ import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
+import uk.ac.manchester.tornado.runtime.common.ColoursTerminal;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
@@ -143,6 +146,9 @@ public class TornadoVMInterpreter {
     private boolean executionGraphEnabled = true;
 
     private TornadoLogger logger = new TornadoLogger(this.getClass());
+
+    /** Tasks already warned about running a {@link KernelContext} kernel without a worker grid. */
+    private static final Set<String> KERNEL_CONTEXT_WITHOUT_GRID = ConcurrentHashMap.newKeySet();
 
     /**
      * It constructs a new TornadoVMInterpreter object.
@@ -1371,6 +1377,9 @@ public class TornadoVMInterpreter {
             } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
 
                 if (isHostOnlyContext(objects.get(argIndex))) {
+                    if (objects.get(argIndex) instanceof KernelContext && threadDeploy.isEmpty()) {
+                        warnKernelContextWithoutGrid(task.getId());
+                    }
                     // Mark a kernel context
                     stackFrame.addCallArgument(new KernelStackFrame.KernelContextArgument(), false);
                     continue;
@@ -1589,6 +1598,20 @@ public class TornadoVMInterpreter {
 
     private XPUDeviceBufferState resolveObjectState(int index) {
         return dataObjectStates[index].getDeviceBufferState(interpreterDevice);
+    }
+
+    /**
+     * A {@link KernelContext} kernel launched without a worker grid runs on a single thread: every
+     * thread index it reads is 0, so a kernel written for one thread a row or element processes one
+     * of them and leaves the rest of its output untouched, with no error. This is almost always a
+     * grid missing from the execution plan's {@link GridScheduler}, often a task added or renamed
+     * after the grids were set up, so it is reported once a task.
+     */
+    private static void warnKernelContextWithoutGrid(String taskId) {
+        if (KERNEL_CONTEXT_WITHOUT_GRID.add(taskId)) {
+            System.out.println(ColoursTerminal.RED + "WARNING: task " + taskId + " takes a KernelContext but the execution plan has no WorkerGrid for it, so it runs on one thread. "
+                    + "Add one with GridScheduler.addWorkerGrid(\"" + taskId + "\", ...) and TornadoExecutionPlan.withGridScheduler." + ColoursTerminal.RESET);
+        }
     }
 
     /**

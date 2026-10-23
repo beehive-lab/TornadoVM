@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.Test;
 
@@ -240,6 +241,37 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
 
         for (int i = 0; i < size; i++) {
             assertEquals(cJava.get(i), cTornado.get(i));
+        }
+    }
+
+    /**
+     * A KernelContext task with no worker grid in the execution plan runs on one thread: only
+     * element 0 is computed. The runtime prints a warning naming the task (once a task), since this
+     * is almost always a grid missing from the plan's GridScheduler.
+     */
+    @Test
+    public void vectorAddKernelContextWithoutGrid() throws TornadoExecutionPlanException {
+        final int size = 16;
+        IntArray a = new IntArray(size);
+        IntArray b = new IntArray(size);
+        IntArray c = new IntArray(size);
+        a.init(10);
+        b.init(20);
+        c.init(-1);
+        KernelContext context = new KernelContext();
+
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestVectorAdditionKernelContext::vectorAdd, context, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.execute();
+        }
+
+        assertEquals(30, c.get(0));
+        for (int i = 1; i < size; i++) {
+            assertNotEquals(30, c.get(i));
         }
     }
 }
