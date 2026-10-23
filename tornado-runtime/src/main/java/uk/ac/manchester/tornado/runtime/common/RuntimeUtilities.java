@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.utils.TornadoAPIUtils;
 
 public final class RuntimeUtilities {
 
@@ -69,23 +70,16 @@ public final class RuntimeUtilities {
     }
 
     /**
-     * Convert byte sizes into human-readable format Based on code from.
+     * A byte count in human-readable form; see {@link TornadoAPIUtils#humanReadableByteCount}.
      *
      * @param bytes
+     *     number of bytes
      * @param si
-     * @return humanReadableByteCount
-     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *     -byte-size-into-human-readable-format-in-java >Reference to
-     *     StackOverflow</a>
+     *     units (true if 1000, false if 1024).
+     * @return the formatted size
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
-        final int unit = si ? 1000 : 1024;
-        if (bytes < unit) {
-            return bytes + " B";
-        }
-        final int exp = (int) (Math.log(bytes) / Math.log(unit));
-        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+        return TornadoAPIUtils.humanReadableByteCount(bytes, si);
     }
 
     public static String humanReadableFreq(int freq) {

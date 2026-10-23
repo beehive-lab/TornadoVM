@@ -50,27 +50,30 @@ public final class TornadoAPIUtils {
     }
 
     /**
-     * Conversion from byte sizes into human readable format<br>
-     * Based on code from http://stackoverflow.com/questions/3758606/how-to-convert
-     * -byte-size-into-human-readable-format-in-java.
-     * <p>
+     * A byte count with one decimal and a unit prefix: {@code "1.5 MB"} in SI units (powers of 1000),
+     * {@code "1.4 MiB"} in binary units (powers of 1024). Counts below one unit stay in bytes
+     * ({@code "512 B"}).
      *
      * @param bytes
      *     number of bytes
      * @param si
      *     units (true if 1000, false if 1024).
      *
-     * @return humanReadableByteCount
+     * @return the formatted size
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
-        final int unit = si ? 1000 : 1024;
-        if (bytes < unit) {
+        final int base = si ? 1000 : 1024;
+        if (bytes < base) {
             return bytes + " B";
         }
-        final int exp = (int) (Math.log(bytes) / Math.log(unit));
-        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-
-        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+        final String prefixes = si ? "kMGTPE" : "KMGTPE";
+        double value = bytes;
+        int prefix = -1;
+        while (value >= base && prefix < prefixes.length() - 1) {
+            value /= base;
+            prefix++;
+        }
+        return String.format("%.1f %c%sB", value, prefixes.charAt(prefix), si ? "" : "i");
     }
 
     public static String humanReadableFreq(int freq) {
