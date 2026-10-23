@@ -62,7 +62,10 @@ public final class CUDADriverAPI {
     public static final int CUDA_ERROR_NOT_SUPPORTED = 801;
 
     /** CUctx_flags: yield the CPU while waiting for the GPU. */
+    public static final int CU_CTX_SCHED_AUTO = 0x00;
+    public static final int CU_CTX_SCHED_SPIN = 0x01;
     public static final int CU_CTX_SCHED_YIELD = 0x02;
+    public static final int CU_CTX_SCHED_BLOCKING_SYNC = 0x04;
 
     /** CUdevice_attribute values the backend queries. */
     public static final int CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1;

@@ -134,6 +134,21 @@ public class CUDAPlatform implements TornadoPlatformInterface {
     }
 
     /**
+     * How a host thread waits for the device: {@code tornado.cuda.sched} = {@code yield} (the
+     * default), {@code spin}, {@code blocking} or {@code auto}. A waiting thread that spins or
+     * yields keeps a core busy for as long as the device works; {@code blocking} puts it to sleep
+     * until the device signals, which frees the host when many streams wait at once.
+     */
+    static int schedulingFlags() {
+        return switch (System.getProperty("tornado.cuda.sched", "yield")) {
+            case "spin" -> CUDADriverAPI.CU_CTX_SCHED_SPIN;
+            case "blocking" -> CUDADriverAPI.CU_CTX_SCHED_BLOCKING_SYNC;
+            case "auto" -> CUDADriverAPI.CU_CTX_SCHED_AUTO;
+            default -> CUDADriverAPI.CU_CTX_SCHED_YIELD;
+        };
+    }
+
+    /**
      * Retains the primary context of one device and returns the handle the Java layer addresses it
      * by. The primary context is the one the CUDA runtime, and so cuBLAS, cuDNN or NCCL, use for
      * that device, which lets device pointers and streams cross between TornadoVM and those
@@ -145,7 +160,7 @@ public class CUDAPlatform implements TornadoPlatformInterface {
         if (device == null) {
             return 0;
         }
-        CUDADriverAPI.cuDevicePrimaryCtxSetFlags(device.device(), CUDADriverAPI.CU_CTX_SCHED_YIELD);
+        CUDADriverAPI.cuDevicePrimaryCtxSetFlags(device.device(), schedulingFlags());
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment context = FFMSupport.allocatePointer(arena);
             int result = CUDADriverAPI.cuDevicePrimaryCtxRetain(context, device.device());
