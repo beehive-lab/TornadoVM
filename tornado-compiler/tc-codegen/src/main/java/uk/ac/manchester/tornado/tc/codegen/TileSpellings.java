@@ -32,7 +32,9 @@ import uk.ac.manchester.tornado.tc.ir.analysis.Constants;
  * TileContext kernel. Tiles have static types ({@code ct::tile<float, ct::shape<64, 64>>}); views
  * are {@code ct::partition_view}s over {@code ct::tensor_span}s and are only ever declared with
  * {@code auto}. FP8 has no arithmetic in CUDA Tile: operands widen to float and results round back
- * after every operation, so chained operations see the API's FP8 values.
+ * after every operation, so chained operations see the API's FP8 values. Scalar FP8 conversions are
+ * {@code __host__ __device__} and not callable from a {@code __tile_global__} function, so FP8 only
+ * ever converts through {@code ct::element_cast} on tiles.
  */
 final class TileSpellings {
 
@@ -205,8 +207,12 @@ final class TileSpellings {
             }
             case "tile.scale" -> {
                 var d = type.dtype();
-                var factor = "(" + cpp(d) + ") " + ops.get(1);
-                return result(d, operand(d, ops.get(0)) + " * " + (fp8(d) ? "(float) (" + factor + ")" : factor));
+                if (fp8(d)) {
+                    // The factor rounds to FP8 like any other operand, through a float tile.
+                    var factor = "ct::full<" + tileType(new TileType("F32", type.shape(), false)) + ">((float) (" + ops.get(1) + "))";
+                    return result(d, operand(d, ops.get(0)) + " * " + operand(d, result(d, factor)));
+                }
+                return ops.get(0) + " * (" + cpp(d) + ") " + ops.get(1);
             }
             case "tile.cast" -> {
                 return "ct::element_cast<" + cpp(type.dtype()) + ">(" + ops.get(0) + ")";
@@ -231,10 +237,14 @@ final class TileSpellings {
             return op.startsWith("logical") ? expression : result(d, expression);
         }
         if (name.startsWith("tile.compare.")) {
-            return ops.get(0) + " " + required(OPERATORS, name.substring("tile.compare.".length()), "comparison") + " " + ops.get(1);
+            var d = tile(values.get(0)).dtype();
+            return operand(d, ops.get(0)) + " " + required(OPERATORS, name.substring("tile.compare.".length()), "comparison") + " " + operand(d, ops.get(1));
         }
         if (name.startsWith("tile.compare_scalar.")) {
-            return ops.get(0) + " " + required(OPERATORS, name.substring("tile.compare_scalar.".length()), "comparison") + " (" + cpp(tile(values.get(0)).dtype()) + ") " + ops.get(1);
+            // FP8 tiles have no comparison operators: compare in float against the unrounded scalar.
+            var d = tile(values.get(0)).dtype();
+            return operand(d, ops.get(0)) + " " + required(OPERATORS, name.substring("tile.compare_scalar.".length()), "comparison") + " (" + (fp8(d) ? "float" : cpp(d)) + ") "
+                    + ops.get(1);
         }
         if (name.startsWith("tile.unary.")) {
             var op = name.substring("tile.unary.".length());
