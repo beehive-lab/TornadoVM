@@ -20,35 +20,40 @@ the drivers.
 Measurements:
 - **Workload:** saxpy on 2^20 floats on an RTX 4090. The process compiles one kernel, runs it once
   and exits.
-- **Time:** wall time of the whole process, median of 10 cold runs (Linux, CUDA 12.6 driver).
+- **Time:** wall time of the whole process, median of 10 cold runs (Linux, NVIDIA driver 610.57,
+  CUDA 13.3), measured on `develop` on 2026-10-23.
 - **Default:** two backends installed (OpenCL and CUDA); the run uses CUDA.
+- **Set-up:** the `java` rows use the argfile prepared in Step 0.
 
 | Mode | JDK 21 (`jdk21` SDK) | JDK 25 | JDK 26 | JDK 27-ea |
 |---|---:|---:|---:|---:|
-| `java @argfile` | 673 ms | 645 ms | 649 ms | 657 ms |
-| + `-Dtornado.enabled.backends=cuda` | 505 ms | 474 ms | 497 ms | 513 ms |
-| + AppCDS archive | 610 ms | 547 ms | 545 ms | 560 ms |
-| + AppCDS + `enabled.backends=cuda` | **429 ms** | | | |
-| + Leyden AOT cache | — | 463 ms | 461 ms | 468 ms |
-| + AOT cache + `enabled.backends=cuda` | — | **325 ms** | **314 ms** | **316 ms** |
-| `tornado` launcher (Python), for comparison | 758 ms | 715 ms | | |
-| `tornado --aotCache` | — | 548 ms | | |
+| `java @argfile` | 652 ms | 616 ms | 619 ms | 638 ms |
+| + `-Dtornado.enabled.backends=cuda` | 495 ms | 465 ms | 467 ms | 483 ms |
+| + AppCDS archive | 572 ms | 519 ms | 527 ms | 532 ms |
+| + AppCDS + `enabled.backends=cuda` | **405 ms** | 370 ms | 378 ms | 381 ms |
+| + Leyden AOT cache | — | 455 ms | 452 ms | 449 ms |
+| + AOT cache + `enabled.backends=cuda` | — | **310 ms** | **309 ms** | **301 ms** |
+| `tornado` launcher (Python), for comparison | 734 ms | 695 ms | | |
+| `tornado --aotCache`¹ | — | 637 ms | | |
+
+¹ The launcher always puts the whole SDK module directory on the module path, so its cache loses
+the module graph (see Step 0). The argfile row with the same cache is 455 ms.
 
 GraalVM native image (GraalVM CE for JDK 25), the whole application as one 32 MB executable:
 
 | Native image | Time |
 |---|---:|
-| `./saxpy -Dtornado.backend=1` (CUDA, both backends initialised) | 445 ms |
-| `./saxpy -Dtornado.enabled.backends=cuda` | **291 ms** |
-| `./saxpy` (OpenCL, the default backend) | 296 ms |
+| `./saxpy -Dtornado.backend=1` (CUDA, both backends initialised) | 471 ms |
+| `./saxpy -Dtornado.enabled.backends=cuda` | **324 ms** |
+| `./saxpy` (OpenCL, the default backend) | 334 ms |
 
 TC's own compile time for the kernel:
 
 | Mode | TC compile time |
 |---|---:|
-| JVM | about 40 ms |
-| AOT cache | about 18 ms |
-| Native image | about 1.5 ms |
+| JVM | about 30 ms |
+| AOT cache | about 11 ms |
+| Native image | about 0.9 ms |
 
 The rest of each run is the JVM, the drivers and the GPU. Creating a CUDA context alone takes about
 50 ms, and the driver takes 35–60 ms at exit to tear contexts down.
@@ -57,7 +62,7 @@ The rest of each run is the JVM, the drivers and the GPU. Creating a CUDA contex
 
 | Your setup | Use |
 |---|---|
-| Any JDK, a machine with more than one backend installed | `-Dtornado.enabled.backends=<backend>`: no build step, saves 130–170 ms |
+| Any JDK, a machine with more than one backend installed | `-Dtornado.enabled.backends=<backend>`: no build step, saves about 150 ms |
 | JDK 25 or newer | the Leyden AOT cache: one training run, saves another 150 ms |
 | JDK 21 | AppCDS |
 | Smallest start-up and no JDK at run time | a GraalVM native image |
@@ -98,7 +103,7 @@ tornado --generate-argfile                # writes $TORNADOVM_HOME/tornado-argfi
 java @$TORNADOVM_HOME/tornado-argfile -cp app.jar com.example.Main
 ```
 
-The argfile has about 12 flag lines and is the same on every JDK the SDK supports. For a
+The argfile has 11 flag lines and is the same on every JDK the SDK supports. For a
 `jdk22plus` SDK with OpenCL and CUDA it reads:
 
 ```
@@ -118,16 +123,31 @@ The argfile has about 12 flag lines and is the same on every JDK the SDK support
 The `jdk21` argfile also has `--enable-preview`. No `-XX:+EnableJVMCI`, `--patch-module` or
 `--upgrade-module-path` is needed on any JDK.
 
-**Take `.` off the module path** when you use an AOT cache or AppCDS:
+**Give the module path only the runtime's modules** when you use an AOT cache or AppCDS. Two
+things on the default module path get in the way:
+
+- **`.`**: both caches require the class and module paths to match the training run, and an AOT
+  cache refuses non-empty directories on them. `.` also makes the JVM treat any jar in the current
+  directory as a module. If you run from a directory holding your application jar, that fails with
+  `FindException: Unable to derive module descriptor`.
+- **The SDK's test and example modules.** `share/java/tornado` also holds `tornado-unittests` and
+  `tornado-examples`. `tornado.unittests` provides a `TornadoLibraryProvider`, so service binding
+  resolves it in every application, and with it the incubator module `jdk.incubator.vector` (the
+  `WARNING: Using incubator modules` line). With an incubator module in the boot layer, the JDK does
+  not store the module graph in an AOT cache: saxpy then starts in 558 ms from its cache instead
+  of 455 ms (JDK 25, CUDA).
+
+Point the argfile at a directory that holds every SDK module except those two:
 
 ```bash
-sed -i 's#--module-path \.:#--module-path #' $TORNADOVM_HOME/tornado-argfile
+mkdir -p ~/.tornado-app-modules
+for j in $TORNADOVM_HOME/share/java/tornado/*.jar; do
+  case $(basename $j) in tornado-unittests-*|tornado-examples-*) ;; *) ln -sf $j ~/.tornado-app-modules/ ;; esac
+done
+sed -i "s#^--module-path .*#--module-path $HOME/.tornado-app-modules#" $TORNADOVM_HOME/tornado-argfile
 ```
 
-Both caches require the class and module paths to match the training run, and an AOT cache refuses
-non-empty directories on them. `.` also makes the JVM treat any jar in the current directory as a
-module. If you run from a directory holding your application jar, that fails with
-`FindException: Unable to derive module descriptor`.
+Redo this after rebuilding or updating the SDK: the jar names carry the version.
 
 ## Step 1: load only the backend you use
 
@@ -164,12 +184,13 @@ tornado --aotCache app.aot --classpath app.jar com.example.Main    # later runs 
 ```
 
 The launcher passes `-XX:AOTCacheOutput=app.aot` when the file does not exist and
-`-XX:AOTCache=app.aot` when it does. It also leaves `.` off the module path.
+`-XX:AOTCache=app.aot` when it does. It also leaves `.` off the module path, but it keeps the test
+modules on it (Step 0), so for the full gain use the argfile.
 
 **With the argfile:**
 
 ```bash
-sed -i 's#--module-path \.:#--module-path #' $TORNADOVM_HOME/tornado-argfile
+# uses the argfile prepared in Step 0
 
 # training run (JDK 25+: one step); give it a workload that compiles and launches the kernels
 java @$TORNADOVM_HOME/tornado-argfile -Dtornado.enabled.backends=cuda \
@@ -186,8 +207,9 @@ java @$TORNADOVM_HOME/tornado-argfile -Dtornado.enabled.backends=cuda \
   of classes are refused.
 - **Retrain after changing the application or the SDK.** A cache that doesn't match is ignored, so
   start-up falls back to normal, unless you add `-XX:AOTMode=on` to make a mismatch an error.
-- **Check that the cache is used:** add `-Xlog:aot`. A cache in use logs `Opened AOT cache app.aot`
-  and `full module graph: enabled`.
+- **Check that the cache is used:** add `-Xlog:aot`. A cache in use logs `Opened AOT cache app.aot`.
+  It should also log `full module graph: enabled`; `disabled` means the test modules are on the
+  module path (Step 0).
 - **Train once per backend selection.** A cache trained with `enabled.backends=cuda` holds CUDA's
   classes, not OpenCL's.
 - **On JDK 24 the cache needs two steps** (JEP 483: `-XX:AOTMode=record -XX:AOTConfiguration=app.conf`,
@@ -201,7 +223,7 @@ but not lambdas, linked call sites or profiles. It works on every JDK the SDKs s
 the option for the `jdk21` SDK.
 
 ```bash
-sed -i 's#--module-path \.:#--module-path #' $TORNADOVM_HOME/tornado-argfile
+# uses the argfile prepared in Step 0
 
 # dump the classes a run loads, at exit
 java @$TORNADOVM_HOME/tornado-argfile -Dtornado.enabled.backends=cuda \
@@ -241,7 +263,7 @@ tornado-native-image -cp app.jar -o app com.example.Main [args for the tracing r
 ./app -Dtornado.tc.verbose=true                           # TornadoVM and TC options work as on the JVM
 ```
 
-The build of saxpy takes about 17 s (2.3 GB of memory), tracing included. It runs two steps:
+The build of saxpy takes about 16 s (2.5 GB of memory at peak), tracing included. It runs two steps:
 
 1. **Tracing.** The application runs on the GraalVM JVM once per installed backend
    (`-Dtornado.backend=N`), with the native-image agent recording the reflection, resources and FFM
@@ -274,9 +296,10 @@ $GRAALVM_HOME/bin/native-image --no-fallback -H:+UnlockExperimentalVMOptions \
   `tornado.cufft`, ...), add it with `TORNADOVM_EXTRA_MODULES=tornado.cublas tornado-native-image ...`.
 - **The device libraries** (`libcuda`, `libnvrtc`, the OpenCL ICD, Metal) are loaded at run time,
   exactly as on the JVM. The executable needs the same drivers installed, not the SDK.
-- **Kernels are compiled at run time.** TC reads the kernels' class files from resources that
-  `tornado-native-image` includes. A kernel the tracing runs never compiled may still work, but
-  trace every kernel to be safe.
+- **Kernels are compiled at run time.** TC reads the kernels' class files from the image, and the
+  image holds only what the tracing runs used. A kernel the tracing runs never compiled fails at run
+  time (`ClassNotFoundException` for its class), and so does a code path they never ran
+  (`MissingForeignRegistrationError` for an FFM downcall). Trace every kernel and code path.
 - **Not yet covered:** applications that call the JNI-based libraries (cuDNN, cuDF, CUTLASS), and
   Windows.
 
@@ -291,7 +314,7 @@ tc emit --target cuda   --cp app.jar --stats com.example.Kernels saxpy
 ```
 
 `build-tc-native` builds it as a native image, `$TORNADOVM_HOME/bin/tc-native`, which `tc` then
-uses. A cold `tc emit` drops from about 0.19 s to 0.02 s, with byte-identical output:
+uses. A cold `tc emit` drops from about 0.15 s to 0.01 s, with byte-identical output:
 
 ```bash
 GRAALVM_HOME=/path/to/graalvm-jdk-25 build-tc-native       # jdk22plus SDK
@@ -307,6 +330,7 @@ GRAALVM_HOME=/path/to/graalvm-jdk-21 build-tc-native       # jdk21 SDK (built wi
 |---|---|
 | `FindException: Unable to derive module descriptor for ./app.jar` | `.` is on the module path and the current directory holds a jar: take `.` off the argfile's module path, or run from another directory |
 | `--aotCache needs JDK 25 or newer` | the `jdk21` SDK or JDK 22–24: use AppCDS |
+| `-Xlog:aot` shows `full module graph: disabled`, or `WARNING: Using incubator modules: jdk.incubator.vector` | the SDK's test modules are on the module path: give it only the runtime's modules (Step 0) |
 | AOT cache silently not used | different JDK, flags or class path from the training run, or classes in a directory: check with `-Xlog:aot`, force with `-XX:AOTMode=on` |
 | `UnsupportedClassVersionError` with the `jdk21` SDK | the application was compiled for a newer release: `javac --enable-preview --release 21` |
 | `class file ... uses preview features of Java SE 21` | compile against the `jdk21` SDK with `--enable-preview` |

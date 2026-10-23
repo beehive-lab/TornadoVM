@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds `tc` (the headless kernel compiler) as a GraalVM native image: $TORNADOVM_HOME/bin/tc-native,
-# which bin/tc then runs. A cold compile drops from ~230 ms (JVM start included) to ~25 ms.
+# which bin/tc then runs. A cold compile drops from ~150 ms (JVM start included) to ~15 ms.
 #   GRAALVM_HOME=<GraalVM for JDK 25+> build-tc-native
 # A jdk21 SDK (compiled with --enable-preview) needs a GraalVM for JDK 21 instead.
 set -euo pipefail
