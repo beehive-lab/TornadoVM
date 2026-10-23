@@ -255,6 +255,33 @@ jobs:
           gh api repos/beehive-lab/tornadovm-site/dispatches \
             -f event_type=tornadovm-release
 
+      # `mvn deploy` with autoPublish=true returns once the bundle is uploaded and
+      # validated, but Central takes anywhere from ~10 minutes to a couple of hours to
+      # actually publish it and sync it to repo.maven.apache.org. The downstream bump
+      # workflows resolve the new coordinate straight away, so dispatching them before
+      # it is live makes them fail. Poll the exact coordinates they consume first.
+      - name: Wait for the release to be resolvable from Maven Central
+        env:
+          VERSION: ${{ steps.vars.outputs.version }}
+        run: |
+          set -euo pipefail
+          BASE="https://repo.maven.apache.org/maven2/io/github/beehive-lab"
+          DEADLINE=$(( $(date +%s) + 3 * 3600 ))
+          for jdk in jdk21 jdk22plus; do
+            for artifact in tornado-api tornado-runtime tornado-matrices tornado-drivers-cuda; do
+              URL="${BASE}/${artifact}/${VERSION}-${jdk}/${artifact}-${VERSION}-${jdk}.pom"
+              until curl -fsSI -o /dev/null "$URL"; do
+                if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+                  echo "::error::${artifact}:${VERSION}-${jdk} is still not on Maven Central after 3h: $URL"
+                  exit 1
+                fi
+                echo "Waiting for ${artifact}:${VERSION}-${jdk} on Maven Central..."
+                sleep 120
+              done
+              echo "✅ ${artifact}:${VERSION}-${jdk} is available."
+            done
+          done
+
       # Downstream projects that vendor a pinned TornadoVM Maven Central coordinate
       # (the tornadovm.base.version property in their pom.xml). Each repo's own
       # bump-tornadovm-version.yml listens for this event, bumps that property,
