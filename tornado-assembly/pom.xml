@@ -191,11 +191,6 @@
                 </dependency>
                 <dependency>
                     <groupId>${project.groupId}</groupId>
-                    <artifactId>tornado-kotlin-benchmarks</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-kotlin-examples</artifactId>
                     <version>${project.version}</version>
                 </dependency>

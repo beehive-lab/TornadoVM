@@ -11,7 +11,7 @@
     <artifactId>tornado-kotlin</artifactId>
     <packaging>pom</packaging>
     <name>tornado-kotlin</name>
-    <description>TornadoVM Kotlin support: Kotlin API, examples, benchmarks and unit tests</description>
+    <description>TornadoVM Kotlin support: Kotlin API, examples and unit tests</description>
 
     <properties>
         <kotlin.version>2.4.20</kotlin.version>
@@ -24,7 +24,6 @@
         <module>tornado-kotlin-api</module>
         <module>tornado-kotlin-examples</module>
         <module>tornado-kotlin-unittests</module>
-        <module>tornado-kotlin-benchmarks</module>
     </modules>
 
     <dependencies>

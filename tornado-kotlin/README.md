@@ -21,7 +21,6 @@ built and added to the SDK's `share/java/tornado`, together with `kotlin-stdlib`
 |---|---|---|
 | `tornado-kotlin-api` | `tornado.kotlin.api` | Kotlin API over `tornado-api` |
 | `tornado-kotlin-examples` | `tornado.kotlin.examples` | Runnable examples |
-| `tornado-kotlin-benchmarks` | `tornado.kotlin.benchmarks` | Kotlin ports of seven Java benchmarks, on the `tornado-benchmarks` harness |
 | `tornado-kotlin-unittests` | `tornado.kotlin.unittests` | Kotlin unit tests, run through `tornado-test` |
 
 ## Using the API
@@ -117,22 +116,6 @@ tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.Vect
 tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.MatrixMultiplication [size]
 tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.Reduction
 ```
-
-## Benchmarks
-
-saxpy, sgemm, blackscholes, nbody, mandelbrot, dft and montecarlo, ported statement by statement
-from the Java benchmarks (`parallelFor` in place of `@Parallel`). They use the Java harness, so
-they print the same `Performance: bm=...` lines, with `bm=kotlin-<name>-...`.
-
-```bash
-tornado-benchmarks.py --kotlin                                  # all, default sizes
-tornado-benchmarks.py --kotlin --benchmark sgemm                # one benchmark
-tornado-benchmarks.py --kotlin --compareJava --skipSerial       # Kotlin vs Java kernels on each device
-tornado -m tornado.kotlin.benchmarks/uk.ac.manchester.tornado.kotlin.benchmarks.KotlinBenchmarkRunner saxpy 101 16777216
-```
-
-`--compareJava` (`-Dtornado.kotlin.benchmarks.compareJava=True`) runs the Java benchmark of the
-same name, with the same arguments, after each Kotlin one.
 
 ## Hybrid API (library tasks)
 

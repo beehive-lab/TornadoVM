@@ -5,7 +5,7 @@ Kotlin
 
 TornadoVM compiles JVM bytecode, so kernels written in Kotlin run on the same backends (OpenCL,
 CUDA, Metal) as Java kernels. The ``tornado-kotlin`` modules add a Kotlin API on top of the Java
-one, together with examples, benchmarks and unit tests.
+one, together with examples and unit tests.
 
 Kotlin support is opt-in: the default build does not use the Kotlin toolchain, and the runtime
 support only applies to classes compiled by kotlinc.
@@ -33,9 +33,6 @@ built and added to the SDK's ``share/java/tornado`` together with ``kotlin-stdli
    * - ``tornado-kotlin-examples``
      - ``tornado.kotlin.examples``
      - Runnable examples
-   * - ``tornado-kotlin-benchmarks``
-     - ``tornado.kotlin.benchmarks``
-     - Kotlin ports of seven Java benchmarks
    * - ``tornado-kotlin-unittests``
      - ``tornado.kotlin.unittests``
      - Unit tests, run through ``tornado-test``
@@ -209,8 +206,8 @@ runs a tile kernel on the JVM. Tile tasks need the CUDA backend; the examples ``
 ``TileMatrixMultiply`` and ``TileSoftmax`` (package ``uk.ac.manchester.tornado.kotlin.examples.tile``)
 fall back to the JVM elsewhere.
 
-Examples, benchmarks and tests
-******************************
+Examples and tests
+******************
 
 .. code-block:: bash
 
@@ -218,12 +215,8 @@ Examples, benchmarks and tests
    tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.MatrixMultiplication
    tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.Reduction
 
-   tornado-benchmarks.py --kotlin                              # saxpy, sgemm, blackscholes, nbody,
-                                                               # mandelbrot, dft, montecarlo
-   tornado-benchmarks.py --kotlin --compareJava --skipSerial   # Kotlin vs Java kernels per device
-
    tornado-test --kotlin -V
 
-The Kotlin benchmarks are statement-by-statement ports of the Java ones, and generate the same
-kernel code: on an Apple M4 Pro (OpenCL and Metal) their run times are within a few percent of
-the Java benchmarks.
+The Kotlin ports of the Java benchmarks (saxpy, sgemm, blackscholes, nbody, mandelbrot, dft and
+montecarlo) live in `tornadovm-benchmark-suite <https://github.com/beehive-lab/tornadovm-benchmark-suite>`_,
+together with the Java benchmarks.
