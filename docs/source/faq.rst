@@ -12,7 +12,7 @@ financial applications, computational photography, natural language processing a
 2. Can I use TornadoVM in a commercial application?
 ---------------------------------------------------
 
-Absolutely yes! TornadoVM employs several licenses as shown `here <https://github.com/beehive-lab/TornadoVM#licenses-per-module>`__. The **Tornado-API** module that your application links against is **Apache 2.0**, and hence it can be freely used in any application. The runtime and drivers are **GPLv2 with Classpath Exception** (the same license as OpenJDK itself), which does not impose copyleft obligations on your application.
+Absolutely yes! TornadoVM is licensed under the `Apache License, Version 2.0 <https://github.com/beehive-lab/TornadoVM#license>`__ — the API, runtime, compiler and drivers alike — so it can be freely used in any application.
 
 3. How can I use it?
 --------------------

@@ -22,9 +22,6 @@
             <!-- License file in root directory -->
             <includes>
                 <include>LICENSE_APACHE2</include>
-                <include>LICENSE_GPLv2CE</include>
-                <include>LICENSE_GPLv2</include>
-                <include>LICENSE_MIT</include>
                 <include>THIRD_PARTY_NOTICES</include>
             </includes>
             <outputDirectory>./</outputDirectory>

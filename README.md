@@ -271,7 +271,7 @@ On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and 
 <details>
 <summary><b>What's the licensing situation for commercial use?</b></summary>
 
-The parts your application links against — **Tornado-API** and all the modules you code with — are **Apache 2.0**. The runtime and drivers are **GPLv2 with Classpath Exception**, the same license as OpenJDK itself: it does not impose copyleft obligations on your application, exactly as running on OpenJDK doesn't. Full per-module breakdown [below](#licenses-per-module).
+All of TornadoVM — the API, runtime, compiler and drivers — is licensed under **Apache 2.0**, so it can be used freely in commercial and open-source applications. See [License](#license).
 </details>
 
 <details>
@@ -326,14 +326,9 @@ If you use **TornadoVM ≥ 0.2** in research, please cite:
 
 For **Tornado 0.1** (initial release), cite [Clarkson et al., ManLang '18](https://doi.org/10.1145/3237009.3237016).
 
-## Licenses per module
+## License
 
-Link the **Tornado-API** (Apache 2.0) into your application.
-
-| Modules | License |
-|---|---|
-| Tornado-API, Tornado-Assembly, Tornado-scripts, Tornado-Annotation, Tornado-Unittests, Tornado-Examples, Tornado-Matrices, Tornado-Drivers-OpenCL-Headers | [Apache 2.0](LICENSE_APACHE2) |
-| Tornado-Runtime, Tornado-Drivers | [GPLv2 with Classpath Exception](LICENSE_GPLv2CE) |
+TornadoVM is licensed under the [Apache License, Version 2.0](LICENSE_APACHE2). Third-party components bundled in the native libraries are listed in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
 
 ## Acknowledgments
 
