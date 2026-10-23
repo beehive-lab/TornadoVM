@@ -4,21 +4,19 @@
  *
  * Copyright (c) 2013-2020, 2023-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
@@ -29,7 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -66,6 +63,18 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     private boolean threadInfoEnabled;
     private boolean printKernel;
+
+    /**
+     * Whether this task must round floating-point arithmetic the way the host does.
+     *
+     * <p>
+     * Not read from a system property, deliberately. The whole point of the switch is that it is a
+     * property of one execution plan rather than of the JVM: a caller whose query needs the device
+     * and the host to agree can ask for it, and a caller who does not care keeps the faster
+     * arithmetic. A JVM-wide option cannot express that, and one read into a {@code static final}
+     * cannot even be verified to have taken effect.
+     */
+    private boolean strictFloatingPoint;
     private boolean resetThreads;
 
     private final boolean isOpenclGpuBlockXDefined;
@@ -86,7 +95,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     private TornadoProfiler profiler;
 
-    private ResolvedJavaMethod graph;
+    private Object graph;
     private boolean useGridScheduler;
     private final ConcurrentHashMap<TornadoVMBackendType, String> compilerOptionsPerBackend;
 
@@ -166,6 +175,12 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     private int getDeviceIndex(int driverIndex, TornadoDevice device) {
         TornadoAcceleratorBackend backend = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex);
         int totalNumDevices = backend.getNumDevices();
+        // Identical GPUs share platform and device names: match the device itself first.
+        for (int deviceIndex = 0; deviceIndex < totalNumDevices; deviceIndex++) {
+            if (backend.getDevice(deviceIndex).equals(device)) {
+                return deviceIndex;
+            }
+        }
         for (int deviceIndex = 0; deviceIndex < totalNumDevices; deviceIndex++) {
             if (hasSamePlatformName(backend, device, deviceIndex) && hasSameDeviceName(backend, device, deviceIndex)) {
                 return deviceIndex;
@@ -213,6 +228,16 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     public boolean isDebug() {
         return TornadoOptions.DEBUG;
+    }
+
+    @Override
+    public boolean isStrictFloatingPoint() {
+        return strictFloatingPoint;
+    }
+
+    @Override
+    public void setStrictFloatingPoint(boolean strict) {
+        this.strictFloatingPoint = strict;
     }
 
     public String getCompilerFlags(TornadoVMBackendType backendType) {
@@ -344,9 +369,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     @Override
     public void setCompiledGraph(Object graph) {
-        if (graph instanceof ResolvedJavaMethod) {
-            this.graph = (ResolvedJavaMethod) graph;
-        }
+        this.graph = graph;
     }
 
     @Override

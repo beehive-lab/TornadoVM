@@ -2,6 +2,10 @@
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
+ * Portions of this file are derived from NVIDIA TileGym (https://github.com/NVIDIA/TileGym),
+ * Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Used under the MIT License; see THIRD_PARTY_NOTICES.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +21,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -71,7 +75,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
     /** See {@link TestTileAttention} for why this is not {@code -inf}. */
     private static final float NEGATIVE_LIMIT = -1.0e30f;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -349,7 +353,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
 
         double[] expected = reference(q, k, v, queryRows, kvRows, scale, Double.NEGATIVE_INFINITY, 0.0);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 
@@ -398,7 +402,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
 
         double[] expected = reference(q, k, v, queryRows, kvRows, scale, sinkValue, 0.0);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 
@@ -433,7 +437,7 @@ public class TestTileAttentionVariants extends TornadoTestBase {
 
         double[] expected = reference(q, k, v, queryRows, kvRows, scale, Double.NEGATIVE_INFINITY, softCap);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 

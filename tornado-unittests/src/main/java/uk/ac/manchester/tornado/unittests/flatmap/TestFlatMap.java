@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.flatmap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -62,9 +62,8 @@ public class TestFlatMap extends TornadoTestBase {
         FloatArray seq = new FloatArray(SIZE * SIZE);
 
         Random r = new Random();
-        IntStream.range(0, input.getSize()).forEach(i -> {
-            input.set(i, 50 + r.nextInt(100));
-        });
+        IntStream.range(0, input.getSize()).forEach(i ->
+            input.set(i, 50 + r.nextInt(100)));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input) //

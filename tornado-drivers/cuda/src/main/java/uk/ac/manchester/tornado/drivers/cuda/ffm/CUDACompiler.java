@@ -5,19 +5,18 @@
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 package uk.ac.manchester.tornado.drivers.cuda.ffm;
 
@@ -170,9 +169,11 @@ public final class CUDACompiler {
             }
             archKnown = true;
 
-            // Identical source for the same architecture yields an identical image, so reuse a
-            // previously compiled one rather than invoking NVRTC again.
-            String cacheKey = arch + "\n" + program.source;
+            // Reuse a previously compiled image for the same source, architecture and options.
+            // The options must be in the key: without them the first compilation of a source wins
+            // for the lifetime of the JVM and later requests are served it whatever flags they
+            // asked for, which made withCompilerFlags() a no-op after the first call.
+            String cacheKey = arch + "\n" + String.join(" ", options) + "\n" + program.source;
             byte[] cached = IMAGE_CACHE.get(cacheKey);
             if (cached != null) {
                 program.binary = cached;
@@ -274,6 +275,12 @@ public final class CUDACompiler {
         program.buildStatus = CUDAHandles.Program.BUILD_SUCCESS;
         return true;
     }
+
+    /**
+     * CUDA 12.0 as NVRTC encodes it (major * 1000 + minor): the first NVRTC that knows the CDP2 launch
+     * streams (cudaStreamTailLaunch, cudaStreamFireAndForget) that device launches use.
+     */
+    public static final int CDP2_VERSION_MIN = 12000;
 
     /**
      * Whether the source launches a kernel from device code. The CUDA backend emits a device-side

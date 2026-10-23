@@ -157,6 +157,9 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags);
 
+    /** Require the host's floating-point rounding for every task in this graph. */
+    void withStrictFloatingPoint();
+
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc);
 
     void updateObjectAccess();

@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.metal.mm;
@@ -26,7 +23,9 @@ package uk.ac.manchester.tornado.drivers.metal.mm;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -70,6 +69,16 @@ public class MetalKernelStackFrame extends MetalByteBuffer implements KernelStac
     @Override
     public List<CallArgument> getCallArguments() {
         return callArguments;
+    }
+
+    /**
+     * The frame's slots as they are now, positioned at their end, for binding by value: a dispatch
+     * bound to this copy reads the values it was launched with, whatever the frame holds later.
+     */
+    public ByteBuffer contents() {
+        ByteBuffer copy = ByteBuffer.wrap(Arrays.copyOf(buffer.array(), RESERVED_SLOTS << 3)).order(buffer.order());
+        copy.position(RESERVED_SLOTS << 3);
+        return copy;
     }
 
     @Override

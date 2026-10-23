@@ -4,23 +4,21 @@
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * Authors: Michalis Papadimitriou
+ *
  */
 
 package uk.ac.manchester.tornado.runtime.profiler;
@@ -28,16 +26,14 @@ package uk.ac.manchester.tornado.runtime.profiler;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import tornado.graal.compiler.nodes.StructuredGraph;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.Tornado;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
+
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public final class FeatureExtractionUtilities {
@@ -48,36 +44,32 @@ public final class FeatureExtractionUtilities {
     private FeatureExtractionUtilities() {
     }
 
-    public static void emitFeatureProfileJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, StructuredGraph graph, TornadoDeviceContext deviceContext) {
-        String name = graph.name.split("-")[1];
-
-        if (!name.equals(LOOKUP_BUFFER_ADDRESS_NAME)) {
-            HashMap<String, HashMap<String, Integer>> task = new HashMap<>();
-            String fullName = getBaseClass(graph.method().getDeclaringClass().toClassName()) + "." + name;
-            task.put(fullName, encodeFeatureMap(entry));
-            JsonHandler jsonHandler = new JsonHandler();
-            String json = jsonHandler.createJSon(encodeFeatureMap(entry), fullName, deviceContext);
-            if (!FEATURES_DIRECTORY.isEmpty()) {
-                File fileLog = new File(FEATURES_DIRECTORY);
-                try {
-                    try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
-                        file.write(json);
-                        file.write("\n");
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                System.out.println(json);
+    /**
+     * Writes the features of kernel {@code name} ({@code Class.method}) compiled for {@code deviceContext}
+     * as JSON: appended to {@code tornado.features.dump.dir} when set, else printed; and sent to
+     * {@code tornado.dump.to.ip} when set.
+     */
+    public static void emitFeatureProfileJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name, TornadoDeviceContext deviceContext) {
+        if (name.endsWith("." + LOOKUP_BUFFER_ADDRESS_NAME)) {
+            return;
+        }
+        String json = new JsonHandler().createJSon(encodeFeatureMap(entry), name, deviceContext);
+        if (!FEATURES_DIRECTORY.isEmpty()) {
+            File fileLog = new File(FEATURES_DIRECTORY);
+            try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
+                file.write(json);
+                file.write("\n");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
-                TornadoVMClient tornadoVMClient = new TornadoVMClient();
-                try {
-                    tornadoVMClient.sentLogOverSocket(json);
-                } catch (IOException e) {
-                    System.out.println(e);
-                }
+        } else {
+            System.out.println(json);
+        }
+        if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
+            try {
+                new TornadoVMClient().sentLogOverSocket(json);
+            } catch (IOException e) {
+                System.out.println(e);
             }
         }
     }

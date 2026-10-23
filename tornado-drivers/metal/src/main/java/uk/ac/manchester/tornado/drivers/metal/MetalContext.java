@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.metal;
@@ -83,7 +80,8 @@ public class MetalContext implements MetalContextInterface {
     /**
      * @param compileFlags
      *     bitmask of MSL compile options forwarded to {@code MTLCompileOptions}.
-     *     Bit 0 ({@link #METAL_COMPILE_FAST_MATH}) enables fast/relaxed math.
+     *     Bit 0 ({@link #METAL_COMPILE_FAST_MATH}) enables fast/relaxed math; bit 1
+     *     ({@link #METAL_COMPILE_STRICT}) turns it off explicitly (a strict plan).
      */
     long metalCreateProgramWithSource(long contextId, byte[] data, long[] lengths, int compileFlags) throws MetalException {
         return MetalObjects.createProgramWithSource(contextId, data, compileFlags);
@@ -149,10 +147,21 @@ public class MetalContext implements MetalContextInterface {
     /** Bit 0: compile MSL with fast/relaxed math (MTLMathModeFast). Mirrored in {@link MetalObjects}. */
     private static final int METAL_COMPILE_FAST_MATH = 1;
 
+    /** Bit 1: compile MSL with fast math off (a strict-floating-point plan). Mirrored in {@link MetalObjects}. */
+    private static final int METAL_COMPILE_STRICT = 2;
+
     public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext) {
+        return createProgramWithSource(source, lengths, deviceContext, false);
+    }
+
+    /**
+     * {@code strictFloatingPoint}: fast math off whatever {@code tornado.metal.fastmath} says. Without
+     * options Metal compiles with its own default, which has fast math on.
+     */
+    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext, boolean strictFloatingPoint) {
         MetalProgram program = null;
 
-        int compileFlags = TornadoOptions.METAL_FAST_MATH ? METAL_COMPILE_FAST_MATH : 0;
+        int compileFlags = strictFloatingPoint ? METAL_COMPILE_STRICT : TornadoOptions.METAL_FAST_MATH ? METAL_COMPILE_FAST_MATH : 0;
         try {
             program = new MetalProgram(metalCreateProgramWithSource(contextID, source, lengths, compileFlags), deviceContext);
         } catch (MetalException e) {

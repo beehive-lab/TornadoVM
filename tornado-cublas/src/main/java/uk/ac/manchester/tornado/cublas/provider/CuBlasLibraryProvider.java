@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.cublas.provider;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
@@ -49,11 +50,14 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CuBlasContext implements LibraryContext {
         private final long handle;
+        /** The stream the handle is bound to. */
+        private long stream;
         private long workspacePtr;
         private long workspaceBytes;
 
-        private CuBlasContext(long handle) {
+        private CuBlasContext(long handle, long stream) {
             this.handle = handle;
+            this.stream = stream;
         }
     }
 
@@ -104,8 +108,8 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        // Only the CUDA backend exposes its native stream for library interop
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override
@@ -117,7 +121,7 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] cublasCreate failed");
         }
         CuBlasNativeLib.checkStatus(CuBlasNativeLib.cublasSetStream(handle, stream), "cublasSetStream");
-        return new CuBlasContext(handle);
+        return new CuBlasContext(handle, stream);
     }
 
     /**
@@ -140,6 +144,15 @@ public final class CuBlasLibraryProvider implements TornadoLibraryProvider {
         }
         CuBlasContext context = (CuBlasContext) invocation.getContext();
         CuBlasOptions options = (invocation.getTuning() instanceof CuBlasOptions cuBlasOptions) ? cuBlasOptions : null;
+
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            CuBlasNativeLib.checkStatus(CuBlasNativeLib.cublasSetStream(context.handle, stream), "cublasSetStream");
+            context.stream = stream;
+        }
 
         applyOptions(context, options);
         try {

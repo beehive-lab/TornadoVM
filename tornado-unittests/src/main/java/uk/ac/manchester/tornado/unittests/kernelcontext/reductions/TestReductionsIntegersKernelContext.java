@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -118,6 +118,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         for (int i = 0; i < 256; i++) {
             localA[i] = 2;
         }
+        // Every thread writes the whole array: they must all finish before any reads it.
+        context.localBarrier();
 
         b.set(idx, localA[localIdx]);
     }
@@ -133,6 +135,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         for (int i = 0; i < localGroupSize; i++) {
             localA[i] = 2;
         }
+        // Every thread writes the whole array: they must all finish before any reads it.
+        context.localBarrier();
 
         b.set(idx, localA[localIdx]);
     }

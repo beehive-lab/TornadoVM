@@ -63,11 +63,53 @@ public abstract sealed class TornadoNativeArray //
     }
 
     /**
+     * Checks that a native array can hold the given number of elements.
+     *
+     * @return The number of elements.
+     */
+    static long checkNumElements(long numElements) {
+        if (numElements < 0) {
+            throw new IllegalArgumentException(format("Invalid number of elements (%d): the number of elements cannot be negative", numElements));
+        }
+        return numElements;
+    }
+
+    /**
+     * Computes the number of elements stored in a region of {@code byteSize} bytes, checking that the size is a multiple of the element size.
+     *
+     * @return The number of elements.
+     */
+    static long toNumElements(long byteSize, long elementSize) {
+        ensureMultipleOfElementSize(byteSize, elementSize);
+        return checkNumElements(byteSize / elementSize);
+    }
+
+    /**
+     * Narrows an element count to an {@code int} for the {@code int}-sized API, failing instead of truncating when the count does not fit.
+     */
+    static int toIntSize(long numElements) {
+        if (numElements > Integer.MAX_VALUE) {
+            throw new IllegalStateException(format("The array has %d elements, more than an int can hold: use getSizeLong()", numElements));
+        }
+        return (int) numElements;
+    }
+
+    /**
      * Returns the number of elements stored in the native array.
      *
      * @return The number of elements of the native data array.
+     * @throws IllegalStateException
+     *         if the array has more than {@link Integer#MAX_VALUE} elements; use {@link #getSizeLong()} for those.
      */
     public abstract int getSize();
+
+    /**
+     * Returns the number of elements stored in the native array as a {@code long}. Unlike {@link #getSize()}, this works for arrays with more than
+     * {@link Integer#MAX_VALUE} elements.
+     *
+     * @return The number of elements of the native data array.
+     */
+    public abstract long getSizeLong();
 
     /**
      * Returns the underlying {@link MemorySegment} of the native array, without the Tornado Array header.

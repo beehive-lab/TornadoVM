@@ -17,10 +17,14 @@
  */
 package uk.ac.manchester.tornado.cudnn.provider;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cudnn.CuDnn;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -35,28 +39,38 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * plan's stream, a cache of convolution plans (descriptors + algorithm +
  * workspace size) per shape, and a grow-only device workspace. Convolution
  * plans and the workspace are created in {@link #prepare} - before CUDA graph
- * capture starts - so {@link #dispatch} is capture-safe.
+ * capture starts - so {@link #dispatch} is capture-safe. A plan's task graphs
+ * share the context and are captured one after another, so a workspace that
+ * is outgrown stays allocated until the context is destroyed: a graph captured
+ * earlier still uses it.
  */
 public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CuDnnContext implements LibraryContext {
         private final long handle;
+        /** The stream the handle is bound to. */
+        private long stream;
         private final Map<String, Long> convPlanCache = new HashMap<>();
         private final Map<String, Long> sdpaPlanCache = new HashMap<>();
         private long workspacePtr;
         private long workspaceBytes;
+        /** Workspaces outgrown by later plans, kept until the context is destroyed. */
+        private final List<Long> retiredWorkspaces = new ArrayList<>();
 
-        private CuDnnContext(long handle) {
+        private CuDnnContext(long handle, long stream) {
             this.handle = handle;
+            this.stream = stream;
         }
 
         private void growWorkspace(long required) {
             if (required > workspaceBytes) {
                 if (workspacePtr != 0) {
-                    CuDnnNativeLib.freeDeviceMemory(workspacePtr);
+                    // a CUDA graph captured earlier in this plan may point at it
+                    retiredWorkspaces.add(workspacePtr);
                     workspacePtr = 0;
-                    workspaceBytes = 0;
                 }
+                // whole powers of two: the retired workspaces together stay smaller than the live one
+                required = required <= 1 ? 1 : Long.highestOneBit(required - 1) << 1;
                 long ptr = CuDnnNativeLib.allocateDeviceMemory(required);
                 if (ptr == 0) {
                     throw new TornadoRuntimeException("[ERROR] Unable to allocate cuDNN workspace of " + required + " bytes");
@@ -89,7 +103,8 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override
@@ -101,14 +116,15 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             throw new TornadoRuntimeException("[ERROR] cudnnCreate failed");
         }
         CuDnnNativeLib.checkStatus(CuDnnNativeLib.cudnnSetStream(handle, stream), "cudnnSetStream");
-        return new CuDnnContext(handle);
+        return new CuDnnContext(handle, stream);
     }
 
     @Override
     public void prepare(LibraryTaskDescriptor descriptor, LibraryContext context) {
         Object[] p = descriptor.getParameters();
         switch (descriptor.getFunctionName()) {
-            case "cudnnConv2d" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10], (int) p[11]);
+            case "cudnnConv2d", "cudnnConv2dFP16", "cudnnConv2dNHWC", "cudnnConv2dNHWCFP16" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7],
+                    (int) p[8], (int) p[9], (int) p[10], (int) p[11], descriptor.getFunctionName().endsWith("FP16"), descriptor.getFunctionName().contains("NHWC"));
             case "sdpaForward" -> getOrCreateSdpaPlan((CuDnnContext) context, (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (float) p[9], (boolean) p[10]);
             default -> {
                 // simple ops have no per-shape native state
@@ -119,6 +135,14 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     @Override
     public void dispatch(String functionName, LibraryInvocation invocation) {
         CuDnnContext context = (CuDnnContext) invocation.getContext();
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            CuDnnNativeLib.checkStatus(CuDnnNativeLib.cudnnSetStream(context.handle, stream), "cudnnSetStream");
+            context.stream = stream;
+        }
         int status = switch (functionName) {
             // (input, output, rows, cols): per-row softmax as (n=rows, c=cols, 1, 1)
             case "cudnnSoftmax" -> CuDnnNativeLib.softmaxForward(context.handle, //
@@ -132,7 +156,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                     (int) invocation.getArg(2), (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), //
                     (int) invocation.getArg(6), (int) invocation.getArg(7), //
                     invocation.getDevicePointer(0), invocation.getDevicePointer(1));
-            case "cudnnConv2d" -> conv2d(context, invocation);
+            case "cudnnConv2d" -> conv2d(context, invocation, false, false);
+            case "cudnnConv2dFP16" -> conv2d(context, invocation, true, false);
+            case "cudnnConv2dNHWC" -> conv2d(context, invocation, false, true);
+            case "cudnnConv2dNHWCFP16" -> conv2d(context, invocation, true, true);
             case "sdpaForward" -> sdpa(context, invocation);
             default -> throw new TornadoRuntimeException("[ERROR] cuDNN function not supported: " + functionName);
         };
@@ -145,11 +172,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     }
 
     /** (input, filter, output, n, c, h, w, k, r, s, pad, stride). */
-    private static int conv2d(CuDnnContext context, LibraryInvocation invocation) {
+    private static int conv2d(CuDnnContext context, LibraryInvocation invocation, boolean half, boolean nhwc) {
         long plan = getOrCreateConvPlan(context, //
                 (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), //
                 (int) invocation.getArg(7), (int) invocation.getArg(8), (int) invocation.getArg(9), //
-                (int) invocation.getArg(10), (int) invocation.getArg(11));
+                (int) invocation.getArg(10), (int) invocation.getArg(11), half, nhwc);
         return CuDnnNativeLib.convForward(context.handle, plan, //
                 invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), //
                 context.workspacePtr, context.workspaceBytes);
@@ -165,6 +192,21 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                 context.workspacePtr);
     }
 
+    /**
+     * Whether fused SDPA works at all here, told apart from a shape cuDNN rejects by building a
+     * plan for one it always accepts. Fails before Ampere, and under the stub shim that a CUDA
+     * 11 build links in place of cudnn-frontend.
+     */
+    private static boolean hasSdpaSupport(CuDnnContext context) {
+        final int dim = 64;
+        long probe = CuDnnNativeLib.createSdpaPlan(context.handle, 1, 1, dim, dim, dim, 0.125f, false);
+        if (probe == 0) {
+            return false;
+        }
+        CuDnnNativeLib.destroySdpaPlan(probe);
+        return true;
+    }
+
     private static long getOrCreateSdpaPlan(CuDnnContext context, int b, int h, int sQ, int sKv, int d, float scale, boolean causal) {
         String planKey = b + ":" + h + ":" + sQ + ":" + sKv + ":" + d + ":" + scale + ":" + causal;
         Long plan = context.sdpaPlanCache.get(planKey);
@@ -174,6 +216,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             CuDnnNativeLib.loadSdpaShim();
             plan = CuDnnNativeLib.createSdpaPlan(context.handle, b, h, sQ, sKv, d, scale, causal);
             if (plan == 0) {
+                if (!hasSdpaSupport(context)) {
+                    throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] cuDNN fused SDPA is not available for this device/build " //
+                            + "(requires an Ampere sm_80 or later GPU and libtornado-cudnn built against CUDA 12.0+). Shape: " + planKey);
+                }
                 throw new TornadoRuntimeException("[ERROR] cuDNN SDPA plan creation failed for " + planKey + " (requires Ampere+, head dim multiple of 8, <= 256)");
             }
             context.growWorkspace(CuDnnNativeLib.sdpaPlanWorkspaceBytes(plan));
@@ -182,11 +228,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         return plan;
     }
 
-    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
-        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride;
+    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc) {
+        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride + (half ? ":f16" : ":f32") + (nhwc ? ":nhwc" : ":nchw");
         Long plan = context.convPlanCache.get(planKey);
         if (plan == null) {
-            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride);
+            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride, half, nhwc);
             if (plan == 0) {
                 throw new TornadoRuntimeException("[ERROR] cuDNN convolution plan creation failed for " + planKey);
             }
@@ -207,6 +253,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             CuDnnNativeLib.destroySdpaPlan(plan);
         }
         cuDnnContext.sdpaPlanCache.clear();
+        for (long retired : cuDnnContext.retiredWorkspaces) {
+            CuDnnNativeLib.freeDeviceMemory(retired);
+        }
+        cuDnnContext.retiredWorkspaces.clear();
         if (cuDnnContext.workspacePtr != 0) {
             CuDnnNativeLib.freeDeviceMemory(cuDnnContext.workspacePtr);
             cuDnnContext.workspacePtr = 0;

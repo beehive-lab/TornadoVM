@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.cuda;
@@ -33,8 +30,9 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.runtime.common.JavaKind;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
@@ -243,8 +241,14 @@ public class CUDACommandQueue extends CommandQueue {
      * bracket a timed operation.
      */
     private static long recordEvent(CUDAHandles.Queue queue) throws CUDAException {
+        // An event can only be recorded on a stream of the context it was created in.
+        CUDADriverAPI.cuCtxSetCurrent(queue.context());
         long event = createEvent(eventFlags(), "cuEventCreate");
-        queue.markPending();
+        // A marker alone is no work to wait for. With asynchronous graph launches it must not
+        // re-arm the drain, or the flush after every execution waits for the graph just launched.
+        if (!ASYNC_GRAPH_LAUNCH) {
+            queue.markPending();
+        }
         int result = CUDADriverAPI.cuEventRecord(event, queue.stream());
         if (result != CUDADriverAPI.CUDA_SUCCESS) {
             CUDADriverAPI.cuEventDestroy(event);
@@ -285,8 +289,13 @@ public class CUDACommandQueue extends CommandQueue {
      * Records the completion event for an operation opened with {@link #beginEvent} and returns the
      * handle carrying both. This event doubles as the operation's dependency handle, for
      * {@code cuStreamWaitEvent} and status queries, so it is always created.
+     *
+     * @param dispatchStart
+     *     {@code System.nanoTime()} taken just before the driver call that issued the operation; the
+     *     time since then is kept as the event's driver dispatch time when timing is on.
      */
-    private static long endEvent(long start, CUDAHandles.Queue queue) throws CUDAException {
+    private static long endEvent(long start, CUDAHandles.Queue queue, long dispatchStart) throws CUDAException {
+        long dispatchTime = timingEnabled ? System.nanoTime() - dispatchStart : 0;
         long end;
         try {
             end = createEvent(eventFlags(), "cuEventCreate(end)");
@@ -302,7 +311,7 @@ public class CUDACommandQueue extends CommandQueue {
             CUDADriverAPI.cuEventDestroy(end);
             throw new CUDAException(CUDADriverAPI.describe("cuEventRecord(end)", result));
         }
-        return CUDAHandles.register(new CUDAHandles.Event(end, start));
+        return CUDAHandles.register(new CUDAHandles.Event(end, start, dispatchTime));
     }
 
     private static void destroyEvent(long event) {
@@ -456,9 +465,10 @@ public class CUDACommandQueue extends CommandQueue {
             waitEvents(queue, events);
             long start = beginEvent(queue);
             queue.markPending();
+            long dispatchStart = System.nanoTime();
             int result = CUDADriverAPI.cuLaunchKernel(kernel.function, grid[0], grid[1], grid[2], block[0], block[1], block[2], 0, queue.stream(), kernelParameters(arena, kernel),
                     MemorySegment.NULL);
-            long launchEvent = endEvent(start, queue);
+            long launchEvent = endEvent(start, queue, dispatchStart);
             // A failed launch leaves the kernel's outputs untouched. Surfacing it makes the caller
             // bail out instead of returning stale buffers as a valid result.
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
@@ -510,13 +520,14 @@ public class CUDACommandQueue extends CommandQueue {
             waitEvents(queue, events);
             long start = beginEvent(queue);
             queue.markPending();
+            long dispatchStart = System.nanoTime();
             int result = CUDADriverAPI.cuMemcpyHtoDAsync(devicePointer + deviceOffset, hostPointer + hostOffset, numBytes, queue.stream());
             // Record the completion event BEFORE draining, not after. Recording afterwards puts
             // fresh work on the stream and re-arms `pending`, so the flush that follows an
             // execution synchronises an otherwise idle stream. With this order the drain covers the
             // event record too and the stream is genuinely clear afterwards. The event still marks
             // the end of the copy either way -- it is recorded on the stream after it.
-            long event = endEvent(start, queue);
+            long event = endEvent(start, queue, dispatchStart);
             result = syncIfNeeded(queue, result, syncAfter);
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
                 discardEvent(event);
@@ -537,13 +548,17 @@ public class CUDACommandQueue extends CommandQueue {
             waitEvents(queue, events);
             long start = beginEvent(queue);
             queue.markPending();
+            if (isCapturing(queue)) {
+                HOST_COPY_CAPTURES.add(queue.stream());
+            }
+            long dispatchStart = System.nanoTime();
             int result = CUDADriverAPI.cuMemcpyDtoHAsync(hostPointer + hostOffset, devicePointer + deviceOffset, numBytes, queue.stream());
             // Record the completion event BEFORE draining, not after. Recording afterwards puts
             // fresh work on the stream and re-arms `pending`, so the flush that follows an
             // execution synchronises an otherwise idle stream. With this order the drain covers the
             // event record too and the stream is genuinely clear afterwards. The event still marks
             // the end of the copy either way -- it is recorded on the stream after it.
-            long event = endEvent(start, queue);
+            long event = endEvent(start, queue, dispatchStart);
             result = syncIfNeeded(queue, result, syncAfter);
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
                 discardEvent(event);
@@ -892,22 +907,47 @@ public class CUDACommandQueue extends CommandQueue {
         return getContextPointer(commandQueuePtr);
     }
 
-    /** CU_STREAM_CAPTURE_MODE_GLOBAL. */
-    private static final int CU_STREAM_CAPTURE_MODE_GLOBAL = 0;
+    /**
+     * CU_STREAM_CAPTURE_MODE_THREAD_LOCAL: while this stream is capturing, potentially unsafe calls
+     * (allocation, synchronous memset, graph instantiation, ...) are refused on the capturing thread
+     * only. In global mode they were refused on every thread of the process, so two plans capturing
+     * on two threads at the same time failed at random: one plan's {@code cuGraphInstantiate} or
+     * buffer allocation hit {@code CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED} because of the other's
+     * capture.
+     */
+    private static final int CU_STREAM_CAPTURE_MODE_THREAD_LOCAL = 1;
 
     /** True while this queue's stream is recording operations into a CUDA graph. */
     private boolean capturing = false;
+
+    /**
+     * With {@code tornado.cuda.graph.asyncLaunch}, a graph that copies nothing back to the host is
+     * launched without waiting for it, so the next launch on the stream overlaps its execution.
+     */
+    private static final boolean ASYNC_GRAPH_LAUNCH = Boolean.getBoolean("tornado.cuda.graph.asyncLaunch");
+
+    /** Streams whose capture in progress has recorded a device-to-host copy. */
+    private static final Set<Long> HOST_COPY_CAPTURES = ConcurrentHashMap.newKeySet();
+
+    /** The instantiated graphs of this queue that copy to the host. */
+    private final Set<Long> hostCopyGraphs = ConcurrentHashMap.newKeySet();
+
+    private long streamOf() {
+        CUDAHandles.Queue queue = CUDAHandles.resolve(commandQueuePtr, CUDAHandles.Queue.class);
+        return queue == null ? 0 : queue.stream();
+    }
 
     /**
      * Begins recording all subsequent operations submitted to this queue's
      * stream into a CUDA graph.
      */
     public void beginGraphCapture() {
-        long result = cuStreamBeginCapture(commandQueuePtr, CU_STREAM_CAPTURE_MODE_GLOBAL);
+        long result = cuStreamBeginCapture(commandQueuePtr, CU_STREAM_CAPTURE_MODE_THREAD_LOCAL);
         if (result != 0) {
             throw new TornadoBailoutRuntimeException("cuStreamBeginCapture failed. CUresult=" + result);
         }
         capturing = true;
+        HOST_COPY_CAPTURES.remove(streamOf());
     }
 
     /**
@@ -918,6 +958,7 @@ public class CUDACommandQueue extends CommandQueue {
      */
     public long endGraphCaptureAndInstantiate() {
         capturing = false;
+        boolean copiesToHost = HOST_COPY_CAPTURES.remove(streamOf());
         long graphHandle = cuStreamEndCapture(commandQueuePtr);
         if (graphHandle == 0) {
             throw new TornadoBailoutRuntimeException("cuStreamEndCapture returned a null graph");
@@ -927,7 +968,25 @@ public class CUDACommandQueue extends CommandQueue {
         if (graphExecHandle == 0) {
             throw new TornadoBailoutRuntimeException("cuGraphInstantiate failed");
         }
+        if (copiesToHost) {
+            hostCopyGraphs.add(graphExecHandle);
+        }
         return graphExecHandle;
+    }
+
+    /**
+     * Abandons a capture that failed part-way: ends it if the stream is still capturing and throws
+     * the partial graph away, so that the stream can be used again.
+     */
+    public void abortGraphCapture() {
+        if (!capturing) {
+            return;
+        }
+        capturing = false;
+        long graphHandle = cuStreamEndCapture(commandQueuePtr);
+        if (graphHandle != 0) {
+            cuGraphDestroy(graphHandle);
+        }
     }
 
     public boolean isCapturing() {
@@ -937,9 +996,22 @@ public class CUDACommandQueue extends CommandQueue {
     /**
      * Launches a previously instantiated graph on this queue's stream and
      * blocks until completion so that captured device-to-host copies are
-     * visible to the host once this call returns.
+     * visible to the host once this call returns. With
+     * {@code tornado.cuda.graph.asyncLaunch}, a graph that copies nothing to
+     * the host returns as soon as it is launched.
      */
     public void launchGraph(long graphExecHandle) {
+        if (ASYNC_GRAPH_LAUNCH && !hostCopyGraphs.contains(graphExecHandle)) {
+            // Not marked pending: the stream orders it before anything enqueued later, and a
+            // later copy to the host drains the stream with it.
+            CUDAHandles.Queue queue = CUDAHandles.resolve(commandQueuePtr, CUDAHandles.Queue.class);
+            CUDADriverAPI.cuCtxSetCurrent(queue.context());
+            long result = CUDADriverAPI.cuGraphLaunch(graphExecHandle, queue.stream());
+            if (result != 0) {
+                throw new TornadoBailoutRuntimeException("cuGraphLaunch failed. CUresult=" + result);
+            }
+            return;
+        }
         long result = cuGraphLaunch(graphExecHandle, commandQueuePtr);
         if (result != 0) {
             throw new TornadoBailoutRuntimeException("cuGraphLaunch failed. CUresult=" + result);
@@ -948,6 +1020,7 @@ public class CUDACommandQueue extends CommandQueue {
     }
 
     public void destroyGraph(long graphExecHandle) {
+        hostCopyGraphs.remove(graphExecHandle);
         cuGraphExecDestroy(graphExecHandle);
     }
 

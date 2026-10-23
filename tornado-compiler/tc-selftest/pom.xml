@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado-compiler</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <!-- tornado-selftest: checks TC on this machine's devices (kernels run on a device and compared with
+         the JVM) and reports each device's TC capabilities. Needs a device, so it runs with the SDK
+         launcher (bin/tornado-selftest), not surefire. See tornado-compiler/README.md. -->
+    <artifactId>tc-selftest</artifactId>
+    <name>tc-selftest</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-drivers-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tornado-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

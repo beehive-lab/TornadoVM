@@ -22,6 +22,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 public interface XPUBuffer {
 
@@ -40,6 +41,26 @@ public interface XPUBuffer {
     void setBuffer(XPUBufferWrapper bufferWrapper);
 
     long getBufferOffset();
+
+    /**
+     * Address of the first data element, as handed to native library providers
+     * ({@code LibraryInvocation.getDevicePointer}). The default is the buffer handle plus the
+     * array header, which is the device pointer past the header on backends whose handle is a
+     * device address (CUDA). Backends whose handle is an object (Metal: an MTLBuffer) override
+     * this to return a usable address.
+     */
+    default long libraryAddress() {
+        return toBuffer() + TornadoNativeArray.ARRAY_HEADER;
+    }
+
+    /**
+     * Byte offset of the first data element inside the native buffer returned by
+     * {@link #toBuffer()} ({@code LibraryInvocation.getNativeOffset}), for providers that bind
+     * the buffer object itself, e.g. {@code setBuffer(encoder, buffer, offset, index)} on Metal.
+     */
+    default long libraryOffset() {
+        return getBufferOffset() + TornadoNativeArray.ARRAY_HEADER;
+    }
 
     void read(long executionPlanId, Object reference);
 

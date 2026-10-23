@@ -42,9 +42,12 @@ Useful denominators: divide `cuLaunchKernel` count by the number of executions t
 
 ## 3. Steady-state per-execution cost — the benchmark runner
 
+The runner lives in [tornadovm-benchmark-suite](https://github.com/beehive-lab/tornadovm-benchmark-suite); build it there with `mvn package`, then from that checkout:
+
 ```bash
-tornado --jvm="-Dtornado.benchmarks.skipserial=True" \
-  -m tornado.benchmarks/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner \
+tornado --module-path target/tornadovm-benchmark-suite.jar:target/lib \
+  --jvm="-Dtornado.benchmarks.skipserial=True" \
+  -m tornado.benchmark.suite/uk.ac.manchester.tornado.benchmarks.BenchmarkRunner \
   --params="saxpy 100000 512"
 ```
 

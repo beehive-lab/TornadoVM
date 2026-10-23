@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -78,7 +78,7 @@ public class TestTileStridedViews extends TornadoTestBase {
 
     private static final int NIBBLE = 0x0F;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -161,7 +161,7 @@ public class TestTileStridedViews extends TornadoTestBase {
 
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns; column++) {
-                assertEquals("(" + row + "," + column + ")", padded.get(row * pitch + column) * 2.0f, out.get(row * columns + column), 1e-6);
+                assertEquals(padded.get(row * pitch + column) * 2.0f, out.get(row * columns + column), 1e-6, "(" + row + "," + column + ")");
             }
         }
     }
@@ -183,7 +183,7 @@ public class TestTileStridedViews extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out), rows);
 
         for (int i = 0; i < rows * 16; i++) {
-            assertEquals("element " + i, values.get(offset + i), out.get(i), 1e-6);
+            assertEquals(values.get(offset + i), out.get(i), 1e-6, "element " + i);
         }
     }
 
@@ -221,8 +221,8 @@ public class TestTileStridedViews extends TornadoTestBase {
             for (int j = 0; j < NIBBLE_BYTES; j++) {
                 float low = ((nibbles[block][j] & NIBBLE) - 8.0f) * scale;
                 float high = (((nibbles[block][j] >> 4) & NIBBLE) - 8.0f) * scale;
-                assertEquals("block " + block + " weight " + j, low, out.get(block * WEIGHTS + j), 1e-3);
-                assertEquals("block " + block + " weight " + (j + NIBBLE_BYTES), high, out.get(block * WEIGHTS + NIBBLE_BYTES + j), 1e-3);
+                assertEquals(low, out.get(block * WEIGHTS + j), 1e-3, "block " + block + " weight " + j);
+                assertEquals(high, out.get(block * WEIGHTS + NIBBLE_BYTES + j), 1e-3, "block " + block + " weight " + (j + NIBBLE_BYTES));
             }
         }
     }

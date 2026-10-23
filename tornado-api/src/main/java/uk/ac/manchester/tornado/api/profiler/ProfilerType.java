@@ -38,19 +38,20 @@ public enum ProfilerType {
     TOTAL_COPY_OUT_SIZE_BYTES("CopyOut-Size-(Bytes)"),
     TASK_COMPILE_DRIVER_TIME("Task-Compile-Driver"),
     TASK_COMPILE_GRAAL_TIME("Task-Compile-Graal"),
+    /** Time TC (the Graal-free compiler, -Dtornado.compiler=tc) spent on a task, including attempts it refused. */
+    TASK_COMPILE_TC_TIME("Task-Compile-TC"),
 
     TASK_CODE_GENERATION_TIME("Task-Code-Generation"),
     TASK_KERNEL_TIME("Task-Kernel"),
     TOTAL_BYTE_CODE_GENERATION("Total-Bytecode-Gen"),
     TOTAL_DRIVER_COMPILE_TIME("Total-Driver-Compilation-Time"),
     TOTAL_GRAAL_COMPILE_TIME("Total-Graal-Compilation-Time"),
+    TOTAL_TC_COMPILE_TIME("Total-TC-Compilation-Time"),
 
     TOTAL_CODE_GENERATION_TIME("Total-Task-Code-Generation-Time"),
     TOTAL_KERNEL_TIME("Kernel-Time"),
     TOTAL_TASK_GRAPH_TIME("TS-Total-Time"),
     POWER_USAGE_mW("Task-Power-Usage-(mW)"),
-    SYSTEM_POWER_CONSUMPTION_W("System-Power-Consumption-(W)"),
-    SYSTEM_VOLTAGE_V("System-Voltage-(V)"),
     SYSTEM_CURRENT_A("System-Current-(A)"),
     BACKEND("Backend");
     // @formatter:on

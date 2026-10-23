@@ -6,21 +6,18 @@
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.cuda;
@@ -34,8 +31,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import tornado.graal.compiler.options.OptionValues;
-import tornado.graal.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -43,9 +38,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAHotSpotBackendFactory;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDASuitesProvider;
-import uk.ac.manchester.tornado.drivers.cuda.graal.backend.CUDABackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -58,30 +50,30 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
             CUDADeviceType.CL_DEVICE_TYPE_CPU, //
             CUDADeviceType.CL_DEVICE_TYPE_ACCELERATOR, //
             CUDADeviceType.CL_DEVICE_TYPE_CUSTOM);
-    private final CUDABackend[][] backends;
+    private final CUDADeviceBackend[][] backends;
     private final List<CUDAContextInterface> contexts;
-    private CUDABackend[] flatBackends;
+    private CUDADeviceBackend[] flatBackends;
     private volatile List<TornadoDevice> devices;
     private final TornadoLogger logger;
 
-    public CUDABackendImpl(final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    public CUDABackendImpl(TornadoVMConfigAccess vmConfig) {
         final int numPlatforms = CUDADriver.getNumPlatforms();
 
         if (numPlatforms < 1) {
             throw new TornadoBailoutRuntimeException("[WARNING] No CUDADriver platforms found. Deoptimizing to sequential execution.");
         }
 
-        backends = new CUDABackend[numPlatforms][];
+        backends = new CUDADeviceBackend[numPlatforms][];
         contexts = new ArrayList<>();
         logger = new TornadoLogger(this.getClass());
-        discoverDevices(options, vmConfig);
+        discoverDevices(vmConfig);
         flatBackends = flattenBackends(backends);
         flatBackends = orderFlattenBackends();
 
     }
 
-    private CUDABackend[] flattenBackends(CUDABackend[][] backends) {
-        CUDABackend[] flatBackendList = new CUDABackend[getNumDevices()];
+    private CUDADeviceBackend[] flattenBackends(CUDADeviceBackend[][] backends) {
+        CUDADeviceBackend[] flatBackendList = new CUDADeviceBackend[getNumDevices()];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
             for (int j = 0; j < getNumDevices(i); j++, index++) {
@@ -98,26 +90,26 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
      * @return An array of CUDADriver backends ordered according to the device type
      *     ordering.
      */
-    private CUDABackend[] orderFlattenBackends() {
-        List<CUDABackend> backendList = new ArrayList<>();
-        EnumMap<CUDADeviceType, List<CUDABackend>> deviceTypeMap = new EnumMap<>(CUDADeviceType.class);
+    private CUDADeviceBackend[] orderFlattenBackends() {
+        List<CUDADeviceBackend> backendList = new ArrayList<>();
+        EnumMap<CUDADeviceType, List<CUDADeviceBackend>> deviceTypeMap = new EnumMap<>(CUDADeviceType.class);
 
         // Populate deviceTypeMap with backends for each device type
-        for (CUDABackend backend : flatBackends) {
+        for (CUDADeviceBackend backend : flatBackends) {
             CUDADeviceType deviceType = backend.getDeviceContext().getDevice().getDeviceType();
-            List<CUDABackend> backendListForDeviceType = deviceTypeMap.computeIfAbsent(deviceType, k -> new ArrayList<>());
+            List<CUDADeviceBackend> backendListForDeviceType = deviceTypeMap.computeIfAbsent(deviceType, k -> new ArrayList<>());
             backendListForDeviceType.add(backend);
         }
 
         // Add backends to backendList in the order specified by deviceTypeOrdering
         for (CUDADeviceType deviceType : CUDABackendImpl.DEVICE_TYPE_LIST) {
-            List<CUDABackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
+            List<CUDADeviceBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
             if (backendListForDeviceType != null) {
                 backendList.addAll(backendListForDeviceType);
             }
         }
 
-        Map<CUDADeviceType, List<CUDABackend>> groupedByDeviceType = backendList.stream().collect(Collectors.groupingBy(backend -> backend.getDeviceContext().getDevice().getDeviceType()));
+        Map<CUDADeviceType, List<CUDADeviceBackend>> groupedByDeviceType = backendList.stream().collect(Collectors.groupingBy(backend -> backend.getDeviceContext().getDevice().getDeviceType()));
 
         // Sort each sublist by size in descending order
         groupedByDeviceType.forEach((deviceType, sublist) -> Collections.sort(sublist, (backend1, backend2) -> {
@@ -127,12 +119,12 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
         }));
 
         // Create a list to hold the sorted backends
-        List<CUDABackend> sortedBackends = new ArrayList<>();
+        List<CUDADeviceBackend> sortedBackends = new ArrayList<>();
 
         // Iterate through 'CUDADriver.DEVICE_TYPE_LIST' and add backends in the
         // specified order
         for (CUDADeviceType deviceType : CUDABackendImpl.DEVICE_TYPE_LIST) {
-            List<CUDABackend> backendsOfType = groupedByDeviceType.get(deviceType);
+            List<CUDADeviceBackend> backendsOfType = groupedByDeviceType.get(deviceType);
             if (backendsOfType != null) {
                 sortedBackends.addAll(backendsOfType);
             }
@@ -141,7 +133,7 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
         // Update 'backendList' with the sorted backends
         backendList = sortedBackends;
 
-        return backendList.toArray(new CUDABackend[0]);
+        return backendList.toArray(new CUDADeviceBackend[0]);
     }
 
     @Override
@@ -185,8 +177,8 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
         return IntStream.range(0, getNumPlatforms()).map(this::getNumDevices).sum();
     }
 
-    private CUDABackend checkAndInitBackend(final int platform, final int device) {
-        final CUDABackend backend = backends[platform][device];
+    private CUDADeviceBackend checkAndInitBackend(final int platform, final int device) {
+        final CUDADeviceBackend backend = backends[platform][device];
         if (!backend.isInitialised()) {
             backend.init();
         }
@@ -195,52 +187,49 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
     }
 
     private void swapDefaultDevice(final int device) {
-        CUDABackend tmp = flatBackends[0];
+        CUDADeviceBackend tmp = flatBackends[0];
         flatBackends[0] = flatBackends[device];
         flatBackends[device] = tmp;
-        CUDABackend backend = flatBackends[0];
+        CUDADeviceBackend backend = flatBackends[0];
 
         if (!backend.isInitialised()) {
             backend.init();
         }
     }
 
-    private CUDABackend createCUDAJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final CUDAContextInterface context,
+    private CUDADeviceBackend createCUDAJITCompiler(TornadoVMConfigAccess vmConfig, final CUDAContextInterface context,
             final int deviceIndex) {
         final CUDATargetDevice device = context.devices().get(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
-        return CUDAHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device);
+        var deviceContext = (CUDADeviceContextInterface) context.createDeviceContext(device.getIndex());
+        return new CUDADeviceBackend(deviceContext);
     }
 
-    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void installDevices(int platformIndex, TornadoPlatformInterface platform, TornadoVMConfigAccess vmConfig) {
         logger.info("CUDADriver[%d]: Platform %s", platformIndex, platform.getName());
         final CUDAContextInterface context = platform.createContext();
         assert context != null : "CUDADriver context is null";
         contexts.add(context);
         final int numDevices = context.getNumDevices();
         logger.info("CUDADriver[%d]: Has %d devices...", platformIndex, numDevices);
-        backends[platformIndex] = new CUDABackend[numDevices];
+        backends[platformIndex] = new CUDADeviceBackend[numDevices];
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
             final CUDATargetDevice device = context.devices().get(deviceIndex);
             logger.info("CUDADriver[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][deviceIndex] = createCUDAJITCompiler(options, vmConfig, context, deviceIndex);
+            backends[platformIndex][deviceIndex] = createCUDAJITCompiler(vmConfig, context, deviceIndex);
         }
     }
 
-    private void discoverDevices(final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void discoverDevices(TornadoVMConfigAccess vmConfig) {
         IntStream.range(0, CUDADriver.getNumPlatforms()).forEach(i -> {
             final TornadoPlatformInterface platform = CUDADriver.getPlatform(i);
-            installDevices(i, platform, options, vmConfig);
+            installDevices(i, platform, vmConfig);
         });
     }
 
-    public CUDABackend getBackend(int platform, int device) {
+    /** A device: its context and memory. */
+    public CUDADeviceBackend getDeviceBackend(int platform, int device) {
         return checkAndInitBackend(platform, device);
-    }
-
-    @Override
-    public CUDABackend getDefaultBackend() {
-        return checkAndInitBackend(0, 0);
     }
 
     public int getNumDevices(int platform) {
@@ -258,16 +247,6 @@ public final class CUDABackendImpl implements TornadoAcceleratorBackend {
 
     public CUDAContextInterface getPlatformContext(final int index) {
         return (index < contexts.size()) ? contexts.get(index) : contexts.get(0);
-    }
-
-    @Override
-    public Providers getProviders() {
-        return getDefaultBackend().getProviders();
-    }
-
-    @Override
-    public CUDASuitesProvider getSuitesProvider() {
-        return getDefaultBackend().getTornadoSuites();
     }
 
     @Override

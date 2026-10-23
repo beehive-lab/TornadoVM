@@ -2,6 +2,10 @@
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
+ * Portions of this file are derived from NVIDIA TileGym (https://github.com/NVIDIA/TileGym),
+ * Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Used under the MIT License; see THIRD_PARTY_NOTICES.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +21,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -82,7 +86,7 @@ public class TestTileRecurrence extends TornadoTestBase {
     /** Value width, and the state's second dimension. */
     private static final int VALUES = 32;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -281,11 +285,11 @@ public class TestTileRecurrence extends TornadoTestBase {
         }
 
         for (int i = 0; i < steps * VALUES; i++) {
-            assertEquals("output " + i, expectedOut[i], out.get(i), 1e-3);
+            assertEquals(expectedOut[i], out.get(i), 1e-3, "output " + i);
         }
         for (int key = 0; key < KEYS; key++) {
             for (int value = 0; value < VALUES; value++) {
-                assertEquals("state (" + key + "," + value + ")", state[key][value], finalState.get(key * VALUES + value), 1e-3);
+                assertEquals(state[key][value], finalState.get(key * VALUES + value), 1e-3, "state (" + key + "," + value + ")");
             }
         }
     }

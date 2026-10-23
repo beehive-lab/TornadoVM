@@ -5,19 +5,18 @@
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 package uk.ac.manchester.tornado.drivers.cuda.ffm;
 
@@ -110,10 +109,11 @@ public final class CUDADriverAPI {
     private static final MethodHandle CU_DEVICE_TOTAL_MEM;
     private static final MethodHandle CU_DEVICE_GET_ATTRIBUTE;
 
-    private static final MethodHandle CU_CTX_CREATE;
-    private static final MethodHandle CU_CTX_DESTROY;
     private static final MethodHandle CU_CTX_SET_CURRENT;
     private static final MethodHandle CU_CTX_SYNCHRONIZE;
+    private static final MethodHandle CU_DEVICE_PRIMARY_CTX_RETAIN;
+    private static final MethodHandle CU_DEVICE_PRIMARY_CTX_RELEASE;
+    private static final MethodHandle CU_DEVICE_PRIMARY_CTX_SET_FLAGS;
 
     private static final MethodHandle CU_STREAM_CREATE;
     private static final MethodHandle CU_STREAM_DESTROY;
@@ -171,10 +171,11 @@ public final class CUDADriverAPI {
             CU_DEVICE_GET_NAME = null;
             CU_DEVICE_TOTAL_MEM = null;
             CU_DEVICE_GET_ATTRIBUTE = null;
-            CU_CTX_CREATE = null;
-            CU_CTX_DESTROY = null;
             CU_CTX_SET_CURRENT = null;
             CU_CTX_SYNCHRONIZE = null;
+            CU_DEVICE_PRIMARY_CTX_RETAIN = null;
+            CU_DEVICE_PRIMARY_CTX_RELEASE = null;
+            CU_DEVICE_PRIMARY_CTX_SET_FLAGS = null;
             CU_STREAM_CREATE = null;
             CU_STREAM_DESTROY = null;
             CU_STREAM_SYNCHRONIZE = null;
@@ -226,12 +227,11 @@ public final class CUDADriverAPI {
             CU_DEVICE_TOTAL_MEM = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), "cuDeviceTotalMem_v2", "cuDeviceTotalMem");
             CU_DEVICE_GET_ATTRIBUTE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_INT), "cuDeviceGetAttribute");
 
-            // cuCtxCreate_v4 takes an extra CUctxCreateParams* in slot 2; the backend never uses
-            // execution affinity or CIG, so the _v2 shape is the one bound here.
-            CU_CTX_CREATE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_INT), "cuCtxCreate_v2", "cuCtxCreate");
-            CU_CTX_DESTROY = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuCtxDestroy_v2", "cuCtxDestroy");
             CU_CTX_SET_CURRENT = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuCtxSetCurrent");
             CU_CTX_SYNCHRONIZE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT), "cuCtxSynchronize");
+            CU_DEVICE_PRIMARY_CTX_RETAIN = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), "cuDevicePrimaryCtxRetain");
+            CU_DEVICE_PRIMARY_CTX_RELEASE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_INT), "cuDevicePrimaryCtxRelease_v2", "cuDevicePrimaryCtxRelease");
+            CU_DEVICE_PRIMARY_CTX_SET_FLAGS = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_INT, C_INT), "cuDevicePrimaryCtxSetFlags_v2", "cuDevicePrimaryCtxSetFlags");
 
             CU_STREAM_CREATE = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), "cuStreamCreate");
             CU_STREAM_DESTROY = downcall(LIBCUDA, FunctionDescriptor.of(C_INT, C_LONG), "cuStreamDestroy_v2", "cuStreamDestroy");
@@ -372,22 +372,6 @@ public final class CUDADriverAPI {
         }
     }
 
-    public static int cuCtxCreate(MemorySegment context, int flags, int device) {
-        try {
-            return (int) CU_CTX_CREATE.invokeExact(context, flags, device);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-    }
-
-    public static int cuCtxDestroy(long context) {
-        try {
-            return (int) CU_CTX_DESTROY.invokeExact(context);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
-    }
-
     public static int cuCtxSetCurrent(long context) {
         try {
             return (int) CU_CTX_SET_CURRENT.invokeExact(context);
@@ -399,6 +383,30 @@ public final class CUDADriverAPI {
     public static int cuCtxSynchronize() {
         try {
             return (int) CU_CTX_SYNCHRONIZE.invokeExact();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuDevicePrimaryCtxRetain(MemorySegment context, int device) {
+        try {
+            return (int) CU_DEVICE_PRIMARY_CTX_RETAIN.invokeExact(context, device);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuDevicePrimaryCtxRelease(int device) {
+        try {
+            return (int) CU_DEVICE_PRIMARY_CTX_RELEASE.invokeExact(device);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public static int cuDevicePrimaryCtxSetFlags(int device, int flags) {
+        try {
+            return (int) CU_DEVICE_PRIMARY_CTX_SET_FLAGS.invokeExact(device, flags);
         } catch (Throwable t) {
             throw rethrow(t);
         }

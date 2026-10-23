@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.local.memory;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -36,7 +36,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * How to run?
@@ -409,8 +409,8 @@ public class TestSwizzledLocalArrays extends TornadoTestBase {
             for (int e = 0; e < tileElements; e++) {
                 int globalIdx = t * tileElements + e;
                 int srcGlobalIdx = t * tileElements + (tileElements - 1 - e);
-                assertEquals("Mismatch at globalIdx=" + globalIdx,
-                        input.get(srcGlobalIdx), output.get(globalIdx));
+                assertEquals(input.get(srcGlobalIdx),
+                        output.get(globalIdx), "Mismatch at globalIdx=" + globalIdx);
             }
         }
     }

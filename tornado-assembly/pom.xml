@@ -25,11 +25,6 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-annotation</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-matrices</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -45,17 +40,17 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tornado-benchmarks</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>tornado-unittests</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tornado-drivers-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tc-selftest</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
@@ -72,6 +67,11 @@
                     <artifactId>tornado-drivers-opencl</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-clblast</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
 
@@ -84,6 +84,11 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-drivers-metal</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-mlx</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
@@ -113,6 +118,11 @@
                 <dependency>
                     <groupId>${project.groupId}</groupId>
                     <artifactId>tornado-cufft</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-nccl</artifactId>
                     <version>${project.version}</version>
                 </dependency>
                 <dependency>

@@ -4,33 +4,27 @@
  *
  * Copyright (c) 2013-2020, 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 /**
@@ -185,7 +179,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
     void setAtomicRegion(XPUBuffer bufferAtomics);
 
     /**
-     * It returns from the sketch of a task whether the loop index is written in the output buffer.
+     * Whether a task's kernel writes its loop index into an output buffer (batched execution).
      * 
      * @param task
      *     {@link SchedulableTask}
@@ -193,9 +187,7 @@ public interface TornadoXPUDevice extends TornadoDevice {
      */
     default boolean loopIndexInWrite(SchedulableTask task) {
         if (task instanceof CompilableTask executable) {
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-            final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-            return sketch.getBatchWriteThreadIndex();
+            return KernelAccess.writesLoopIndex(executable.getMethod());
         } else {
             return false;
         }
@@ -296,6 +288,17 @@ public interface TornadoXPUDevice extends TornadoDevice {
      * @param executionGraphHandle the handle to destroy
      */
     default void destroyExecutionGraph(long executionGraphHandle) {
+        // no-op by default
+    }
+
+    /**
+     * Abandon the capture of an execution graph after the execution failed inside the capture
+     * region: the device stream stops capturing and nothing recorded for the failed capture is
+     * kept, so later captures on this device are not affected.
+     *
+     * @param executionPlanId the execution plan that owns the device stream
+     */
+    default void abortExecutionGraphCapture(long executionPlanId) {
         // no-op by default
     }
 

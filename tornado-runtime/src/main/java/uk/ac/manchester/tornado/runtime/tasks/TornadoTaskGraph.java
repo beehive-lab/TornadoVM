@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2013-2020, 2023-2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.runtime.tasks;
@@ -41,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,10 +48,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import tornado.graal.compiler.graph.Graph;
-import tornado.graal.compiler.phases.util.Providers;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.tile.TileContext;
@@ -106,31 +101,27 @@ import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
+import uk.ac.manchester.tornado.runtime.common.CompilerFlags;
 import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
+import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
-import uk.ac.manchester.tornado.runtime.graal.compiler.TornadoSuitesProvider;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraphBuilder;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeBuilder;
 import uk.ac.manchester.tornado.runtime.profiler.EmptyProfiler;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.SketchRequest;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
  * Implementation of the Tornado API for running on heterogeneous devices.
@@ -181,7 +172,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private List<StreamingObject> inputModesObjects; // List of objects with its data transfer mode (IN)
     private List<StreamingObject> outputModeObjects; // List of objects with its data transfer mode (OUT)
     private StringBuilder bufferLogProfiler = new StringBuilder();
-    private Graph compilationGraph;
 
     /**
      * Options for new reductions - experimental.
@@ -364,7 +354,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.executionContext.withProfiler(timeProfiler);
 
         // The graph object is used when rewriting task-graphs (e.g., reductions)
-        newTaskGraph.compilationGraph = this.compilationGraph;
 
         return newTaskGraph;
     }
@@ -477,6 +466,11 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         checkGridSchedulerNames();
     }
 
+    /** The grid scheduler set on this graph, or null: the reduction rewrite carries it over. */
+    GridScheduler getGridScheduler() {
+        return gridScheduler;
+    }
+
     @Override
     public long getCurrentDeviceMemoryUsage() {
         return executionContext.getCurrentDeviceMemoryUsage();
@@ -488,8 +482,66 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    /**
+     * Both halves of it, together, which is the reason this exists as one call.
+     *
+     * <p>
+     * The meta flag suppresses the compiler's fusion phase for this task; the NVRTC option stops
+     * the backend compiler contracting the separated multiply and add back together. Either alone
+     * leaves the device fusing, so a caller must not be able to ask for one of them.
+     */
+    public void withStrictFloatingPoint() {
+        executionContext.meta().setStrictFloatingPoint(true);
+        String existing = executionContext.meta().getCompilerFlags(TornadoVMBackendType.CUDA);
+        if (existing == null || !existing.contains("-fmad")) {
+            String combined = (existing == null || existing.isBlank()) ? "--fmad=false" : existing + " --fmad=false";
+            executionContext.meta().setCompilerFlags(TornadoVMBackendType.CUDA, combined);
+        }
+        // OpenCL: the default options relax IEEE semantics (-cl-fast-relaxed-math lets the compiler
+        // reassociate, so (2^52 + x) - 2^52 folds to x) and fuse (-cl-mad-enable). Strict drops both and
+        // asks for correctly rounded float division and sqrt (OpenCL allows 2.5 and 3 ulp: x / x is then
+        // not always 1).
+        String opencl = executionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL);
+        if (opencl != null) {
+            executionContext.meta().setCompilerFlags(TornadoVMBackendType.OPENCL, strictOpenCLFlags(opencl));
+        }
+    }
+
+    /** OpenCL build options without the IEEE relaxations, with correctly rounded float division and sqrt. */
+    public static String strictOpenCLFlags(String flags) {
+        String strict = flags.replace("-cl-fast-relaxed-math", "").replace("-cl-mad-enable", "").replaceAll("\\s+", " ").trim();
+        if (!strict.contains("-cl-fp32-correctly-rounded-divide-sqrt")) {
+            strict = (strict + " -cl-fp32-correctly-rounded-divide-sqrt").trim();
+        }
+        return strict;
+    }
+
+    /**
+     * The flags are added to the backend's JVM-wide defaults -- for CUDA the
+     * {@code tornado.cuda.compile.profile} options, {@code tornado.cuda.compiler.flags}, and the
+     * {@code --fmad=false} that {@code tornado.enable.fma=false} and {@link #withStrictFloatingPoint()}
+     * imply; for OpenCL {@code tornado.opencl.compiler.flags} -- with an option given here replacing
+     * a default of the same name (see {@link CompilerFlags}). Replacing the defaults outright
+     * silently dropped them, and repeating one is an NVRTC error. Each call starts again from the
+     * defaults, so a second call replaces the first.
+     */
     public void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
-        executionContext.meta().setCompilerFlags(backendType, compilerFlags);
+        boolean strict = executionContext.meta().isStrictFloatingPoint();
+        String merged = CompilerFlags.forPlan(backendType, defaultCompilerFlags(backendType), compilerFlags, strict);
+        if (strict && backendType == TornadoVMBackendType.OPENCL) {
+            // The merge brings the relaxed OpenCL defaults back; a strict plan builds without them.
+            merged = strictOpenCLFlags(merged);
+        }
+        executionContext.meta().setCompilerFlags(backendType, merged);
+    }
+
+    private static String defaultCompilerFlags(TornadoVMBackendType backendType) {
+        return switch (backendType) {
+            case OPENCL -> TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS;
+            case CUDA -> TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS;
+            case METAL -> TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS;
+            default -> "";
+        };
     }
 
     @Override
@@ -612,13 +664,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         meta().setDevice(device);
 
-        // Make sure that a sketch is available for the device.
+        // Recompile for the new device unless its code is cached.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
             task.meta().setDevice(device);
             if (task instanceof CompilableTask compilableTask) {
-                ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-                if (!meta().getXPUDevice().getDeviceContext().isCached(executionPlanId, method.getName(), compilableTask)) {
+                if (!meta().getXPUDevice().getDeviceContext().isCached(executionPlanId, compilableTask.getMethod().getName(), compilableTask)) {
                     updateInner(i, executionContext.getTask(i));
                 }
             }
@@ -672,23 +723,30 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         if (objectsToSync == null) {
             if (aliasedByName) {
-                // every consumed object was already resolved through its named producer
-                return;
-            }
-            // Empty consumeFromDevice (no explicit source task-graph name): the objects to
-            // synchronise from the previously executed task-graph are exactly the ones marked
-            // as consumed/on-device. The graph's own persisted *outputs* must NOT be included:
-            // they are produced by this graph, so flagging them as persisted (see
-            // TornadoVMInterpreter#isPersistentObject) would make the interpreter skip their
-            // allocation and dereference a null device buffer. Each consumed object is also
-            // registered individually (not as a nested list) so that a reused task-graph does
-            // not end up with an ArrayList among its device objects.
-            objectsToSync = new ArrayList<>();
-            for (LocalObjectState localState : executionContext.getObjectStates()) {
-                if (localState.isOnDevice()) {
-                    Object consumedObject = localState.getObject();
-                    objectsToSync.add(consumedObject);
-                    executionContext.addPersistedObject(graphSrc.taskGraphName, consumedObject);
+                // The objects consumed by name are resolved; the ones consumed without a producer
+                // name (registered under this graph's own name) still come from the previously
+                // executed graph, as they do in a graph that names no producer at all.
+                List<Object> unnamed = executionContext.getPersistedTaskToObjectsMap().get(taskGraphName);
+                if (unnamed == null) {
+                    return;
+                }
+                objectsToSync = new ArrayList<>(unnamed);
+            } else {
+                // Empty consumeFromDevice (no explicit source task-graph name): the objects to
+                // synchronise from the previously executed task-graph are exactly the ones marked
+                // as consumed/on-device. The graph's own persisted *outputs* must NOT be included:
+                // they are produced by this graph, so flagging them as persisted (see
+                // TornadoVMInterpreter#isPersistentObject) would make the interpreter skip their
+                // allocation and dereference a null device buffer. Each consumed object is also
+                // registered individually (not as a nested list) so that a reused task-graph does
+                // not end up with an ArrayList among its device objects.
+                objectsToSync = new ArrayList<>();
+                for (LocalObjectState localState : executionContext.getObjectStates()) {
+                    if (localState.isOnDevice()) {
+                        Object consumedObject = localState.getObject();
+                        objectsToSync.add(consumedObject);
+                        executionContext.addPersistedObject(graphSrc.taskGraphName, consumedObject);
+                    }
                 }
             }
         }
@@ -777,15 +835,14 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         TornadoDevice oldDevice = meta().getXPUDevice();
 
-        // Make sure that a sketch is available for the device.
+        // Recompile for the new device unless its code is cached.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
             SchedulableTask task = executionContext.getTask(i);
             String name = task.getId();
             if (name.equals(taskName)) {
                 task.meta().setDevice(device);
                 if (task instanceof CompilableTask) {
-                    ResolvedJavaMethod method = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(((CompilableTask) task).getMethod());
-                    if (!task.getDevice().getDeviceContext().isCached(executionPlanId, method.getName(), task)) {
+                    if (!task.getDevice().getDeviceContext().isCached(executionPlanId, ((CompilableTask) task).getMethod().getName(), task)) {
                         updateInner(i, task);
                     }
                 }
@@ -816,42 +873,19 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void updateInner(int index, SchedulableTask task) {
-        int driverIndex = task.meta().getBackendIndex();
-        Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
-        TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
-
         executionContext.setTask(index, task);
-
-        if (task instanceof CompilableTask compilableTask) {
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            final TaskDataContext taskMetaData = compilableTask.meta();
-            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
-
-            Sketch sketchGraph = TornadoSketcher.lookup(resolvedMethod, taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex());
-            this.compilationGraph = sketchGraph.getGraph();
-        }
     }
 
     @Override
     public void addInner(SchedulableTask task) {
-        int driverIndex = task.meta().getBackendIndex();
-        Providers providers = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getProviders();
-        TornadoSuitesProvider suites = TornadoCoreRuntime.getTornadoRuntime().getBackend(driverIndex).getSuitesProvider();
-
         int index = executionContext.addTask(task);
 
         if (task instanceof CompilableTask compilableTask) {
             checkForMemorySegmentAsTaskParameter(compilableTask);
-
-            final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(compilableTask.getMethod());
-            final TaskDataContext taskMetaData = compilableTask.meta();
-            new SketchRequest(resolvedMethod, providers, suites.getGraphBuilderSuite(), suites.getSketchTier(), taskMetaData.getBackendIndex(), taskMetaData.getDeviceIndex()).run();
-
-            Sketch lookup = TornadoSketcher.lookup(resolvedMethod, compilableTask.meta().getBackendIndex(), compilableTask.meta().getDeviceIndex());
-            this.compilationGraph = lookup.getGraph();
-            this.accesses = lookup.getArgumentsAccess();
+            // How the kernel reads and writes its parameters, from TC (KernelAccess).
+            this.accesses = KernelAccess.of(compilableTask.getMethod(), compilableTask.meta().getArgumentsAccess().length);
         } else {
-            // Pre-built and library tasks carry explicit accesses (no sketch)
+            // Pre-built and library tasks carry explicit accesses
             this.accesses = task.getArgumentsAccess();
         }
 
@@ -869,8 +903,15 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         int i = 0;
 
         for (final Object arg : args) {
-            index = executionContext.insertVariable(arg, accesses[i]);
-            if (arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
+            // A library task's text argument -- a path or a pattern, often a mutable holder such as
+            // a StringBuilder so one plan can name a different file every execution -- is read by
+            // the provider on the host and never by the device. It is passed like a constant, by
+            // reference to the Java object, instead of being serialised into a device buffer:
+            // that serialisation is sized when first done, so a holder that later grows overflows
+            // it, and it cannot represent the holder's byte[] at all.
+            final boolean hostOnly = task instanceof LibraryTask && arg instanceof CharSequence;
+            index = hostOnly ? executionContext.insertConstant(arg) : executionContext.insertVariable(arg, accesses[i]);
+            if (hostOnly || arg.getClass().isPrimitive() || RuntimeUtilities.isBoxedPrimitiveClass(arg.getClass())) {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_PRIM.index());
             } else {
                 hlBuffer.put(TornadoGraphBitcodes.LOAD_REF.index());
@@ -1113,7 +1154,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void prepareForDataTransfers(ExecutorFrame executionPackage) {
         setupProfiler();
-        getDevice().getDeviceContext().setResetToFalse();
+        getDevice().getDeviceContext().setResetToFalse(executionPackage.getExecutionPlanId());
         timeProfiler.clean();
 
         compileComputeGraphToTornadoVMBytecode();
@@ -1348,7 +1389,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void withPreCompilation(ExecutorFrame executionPackage) {
         setupProfiler();
-        getDevice().getDeviceContext().setResetToFalse();
+        getDevice().getDeviceContext().setResetToFalse(executionPackage.getExecutionPlanId());
         timeProfiler.clean();
 
         compileComputeGraphToTornadoVMBytecode();
@@ -1361,7 +1402,38 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    /**
+     * The access of every object this graph streams in or out, keyed by identity. A consumer graph
+     * looks up each object it consumes in its producer's lists on every execution, and a linear
+     * scan of those lists costs a plan with many shared buffers milliseconds per execution. Rebuilt
+     * when either list has changed size; the lists are unmodifiable once the graph is snapshotted.
+     */
+    private IdentityHashMap<Object, Access> objectAccessByIdentity;
+    private int objectAccessInputs = -1;
+    private int objectAccessOutputs = -1;
+
     private Access getObjectAccess(Object object) {
+        if (objectAccessByIdentity == null || objectAccessInputs != inputModesObjects.size() || objectAccessOutputs != outputModeObjects.size()) {
+            IdentityHashMap<Object, Access> map = new IdentityHashMap<>();
+            for (StreamingObject inputStreamObject : inputModesObjects) {
+                map.put(inputStreamObject.object, Access.READ_ONLY);
+            }
+            for (StreamingObject outputStreamObject : outputModeObjects) {
+                map.merge(outputStreamObject.object, Access.WRITE_ONLY, (previous, write) -> previous == Access.READ_ONLY ? Access.READ_WRITE : previous);
+            }
+            objectAccessByIdentity = map;
+            objectAccessInputs = inputModesObjects.size();
+            objectAccessOutputs = outputModeObjects.size();
+        }
+        Access access = objectAccessByIdentity.get(object);
+        if (access != null) {
+            return access;
+        }
+        return getObjectAccessByEquality(object);
+    }
+
+    /** The original lookup by {@code equals}, for an object that is not the same instance. */
+    private Access getObjectAccessByEquality(Object object) {
         boolean isRead = false;
         boolean isWrite = false;
         for (StreamingObject inputStreamObject : inputModesObjects) {
@@ -1385,7 +1457,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         } else {
             return Access.NONE;
         }
-
     }
 
     private void reuseDeviceBufferObject(Object object) {
@@ -1447,7 +1518,27 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         vm.destroyExecutionGraphs();
         LibraryRegistry.destroyContexts(executionPlanId);
         freeIOObjects();
+        freeIntermediateObjects();
         meta().getXPUDevice().getDeviceContext().reset(executionPlanId);
+    }
+
+    /**
+     * Releases the device buffers of the objects the tasks use that were never declared to cross
+     * to or from the host: an intermediate one task writes and another reads, on the device only.
+     * {@link #freeIOObjects()} only knows the declared ones, so these used to stay allocated -- in
+     * device memory and against {@code tornado.device.memory} -- after the plan was closed.
+     * Objects shared with another graph through {@code persistOnDevice}/{@code consumeFromDevice}
+     * are declared, and so are left to that mechanism.
+     */
+    private void freeIntermediateObjects() {
+        List<Object> persisted = executionContext.getPersistedObjects();
+        for (Object object : new ArrayList<>(executionContext.getObjects())) {
+            if (object == null || argumentsLookUp.contains(object) || persisted.contains(object)) {
+                continue;
+            }
+            Access access = executionContext.getObjectsAccesses().getOrDefault(object, Access.READ_WRITE);
+            freeDeviceMemoryObject(object, access);
+        }
     }
 
     private void freeDeviceMemoryObject(Object object, Access access) {
@@ -1653,7 +1744,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void rewriteTaskForReduceSkeleton(MetaReduceCodeAnalysis analysisTaskSchedule) {
-        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, inputModesObjects, streamOutObjects, outputModeObjects, compilationGraph, this);
+        reduceTaskGraph = new ReduceTaskGraph(this.getId(), taskPackages, streamInObjects, inputModesObjects, streamOutObjects, outputModeObjects, this);
         reduceTaskGraph.scheduleWithReduction(analysisTaskSchedule);
         reduceExpressionRewritten = true;
     }
@@ -1661,9 +1752,6 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private TornadoTaskGraphInterface reduceAnalysis() {
         TornadoTaskGraphInterface abstractTaskGraph = null;
         if (analysisTaskGraph == null && !reduceAnalysis) {
-            // CodeAnalysis.buildHighLevelGraalGraph is JDK-neutral: on the JVMCI-absent path (JDK 27+) it uses
-            // the TornadoVM backend's reflection providers instead of HotSpotJVMCIRuntime, so @Reduce analysis
-            // works there too.
             analysisTaskGraph = ReduceCodeAnalysis.analyzeTaskGraph(taskPackages);
             reduceAnalysis = true;
             if (analysisTaskGraph != null && analysisTaskGraph.isValid()) {
@@ -1705,8 +1793,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         for (TaskPackage task : taskPackages) {
             Object[] taskParameters = task.getTaskParameters();
-            // Note: the first element in the object list is a lambda expression (computation)
-            for (int i = 1; i < (taskParameters.length - 1); i++) {
+            // A lambda task's first element is the lambda (the computation); a method task has none.
+            for (int i = task.isMethodTask() ? 0 : 1; i < (taskParameters.length - 1); i++) {
                 Object parameter = taskParameters[i];
                 if (isArgumentIgnorable(parameter)) {
                     continue;
@@ -2159,12 +2247,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public long getCompileTime() {
-        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + getProfilerValue(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
+        return getTornadoCompilerTime() + getProfilerValue(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
     }
 
     @Override
     public long getTornadoCompilerTime() {
-        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
+        // TOTAL_GRAAL_COMPILE_TIME is kept for the profiler's output format; only TC records compile time now.
+        return getProfilerValue(ProfilerType.TOTAL_GRAAL_COMPILE_TIME) + getProfilerValue(ProfilerType.TOTAL_TC_COMPILE_TIME);
     }
 
     @Override
@@ -2228,6 +2317,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             case COPY_IN_TIME -> timeProfiler.getTimer(ProfilerType.COPY_IN_TIME);
             case TOTAL_DRIVER_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_DRIVER_COMPILE_TIME);
             case TOTAL_GRAAL_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_GRAAL_COMPILE_TIME);
+            case TOTAL_TC_COMPILE_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_TC_COMPILE_TIME);
             case TOTAL_TASK_GRAPH_TIME -> timeProfiler.getTimer(ProfilerType.TOTAL_TASK_GRAPH_TIME);
             case TOTAL_COPY_IN_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_IN_SIZE_BYTES);
             case TOTAL_COPY_OUT_SIZE_BYTES -> timeProfiler.getSize(ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES);

@@ -4,32 +4,33 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Portions of this file are derived from NVIDIA cuda-samples
+ * (https://github.com/NVIDIA/cuda-samples), Copyright (c) 2022, NVIDIA CORPORATION.
+ * All rights reserved. Used under the BSD 3-Clause License; see THIRD_PARTY_NOTICES.
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.DeviceKernel;
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -141,10 +142,10 @@ public class TestCudaSamplesDynamicParallelism extends TornadoTestBase {
             int count = 2 * (int) Math.pow(4, depth);
             for (int index = 0; index < count; index++) {
                 int uid = levelOffset(depth) + index;
-                assertEquals("depth of block " + uid, depth, records.get(uid * 3));
+                assertEquals(depth, records.get(uid * 3), "depth of block " + uid);
                 int expectedParent = depth == 0 ? -1 : levelOffset(depth - 1) + index / 4;
-                assertEquals("parent of block " + uid, expectedParent, records.get(uid * 3 + 1));
-                assertEquals("launching thread of block " + uid, depth == 0 ? 0 : (index % 4) / 2, records.get(uid * 3 + 2));
+                assertEquals(expectedParent, records.get(uid * 3 + 1), "parent of block " + uid);
+                assertEquals(depth == 0 ? 0 : (index % 4) / 2, records.get(uid * 3 + 2), "launching thread of block " + uid);
             }
         }
     }
@@ -233,7 +234,7 @@ public class TestCudaSamplesDynamicParallelism extends TornadoTestBase {
             plan.withGridScheduler(grid("qsort.cdp", 1, 1)).execute();
         }
         for (int i = 0; i < numItems; i++) {
-            assertEquals("item " + i, expected[i], data.get(i));
+            assertEquals(expected[i], data.get(i), "item " + i);
         }
     }
 
@@ -316,15 +317,15 @@ public class TestCudaSamplesDynamicParallelism extends TornadoTestBase {
             float spanY = cp[5] - cp[1];
             float curvature = (float) (Math.sqrt(midX * midX + midY * midY) / Math.sqrt(spanX * spanX + spanY * spanY));
             int nTess = Math.min(Math.max((int) (curvature * 16.0f), 4), MAX_TESSELLATION);
-            assertEquals("tessellation of line " + l, nTess, nVertices.get(l));
+            assertEquals(nTess, nVertices.get(l), "tessellation of line " + l);
             for (int i = 0; i < nTess; i++) {
                 float u = (float) i / (float) (nTess - 1);
                 float omu = 1.0f - u;
                 float x = omu * omu * cp[0] + 2 * u * omu * cp[2] + u * u * cp[4];
                 float y = omu * omu * cp[1] + 2 * u * omu * cp[3] + u * u * cp[5];
                 int out = (l * MAX_TESSELLATION + i) * 2;
-                assertEquals("x of vertex " + i + " of line " + l, x, vertexPos.get(out), 1e-5f);
-                assertEquals("y of vertex " + i + " of line " + l, y, vertexPos.get(out + 1), 1e-5f);
+                assertEquals(x, vertexPos.get(out), 1e-5f, "x of vertex " + i + " of line " + l);
+                assertEquals(y, vertexPos.get(out + 1), 1e-5f, "y of vertex " + i + " of line " + l);
             }
         }
     }
@@ -584,7 +585,7 @@ public class TestCudaSamplesDynamicParallelism extends TornadoTestBase {
             plan.withGridScheduler(grid("quadtree.cdp", QT_THREADS, QT_THREADS)).execute();
         }
 
-        assertTrue("quadtree is not well formed", checkQuadtree(bbox, begin, end, points, numPoints, 0, 0, maxDepth, minPointsPerNode));
+        assertTrue(checkQuadtree(bbox, begin, end, points, numPoints, 0, 0, maxDepth, minPointsPerNode), "quadtree is not well formed");
         // The points in buffer 0 are a permutation of the input.
         float[] sorted = new float[numPoints];
         for (int i = 0; i < numPoints; i++) {
@@ -593,7 +594,7 @@ public class TestCudaSamplesDynamicParallelism extends TornadoTestBase {
         Arrays.sort(sorted);
         Arrays.sort(xs);
         for (int i = 0; i < numPoints; i++) {
-            assertEquals("x-coordinate " + i, xs[i], sorted[i], 0.0f);
+            assertEquals(xs[i], sorted[i], 0.0f, "x-coordinate " + i);
         }
     }
 }

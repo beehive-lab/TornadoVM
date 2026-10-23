@@ -9,13 +9,13 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 
 On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN, cuDF) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
-[![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
+[![GPU CI](https://github.com/beehive-lab/TornadoVM/actions/workflows/gpu-ci.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/gpu-ci.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Install with SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
 [![Slack](https://img.shields.io/badge/chat-Slack-4A154B?logo=slack)](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
 
-**Latest release:** TornadoVM 7.0.1 (JDK 21 - JDK 27) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
+**Latest release:** TornadoVM 7.3.1 (JDK 21 - JDK 27) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -143,7 +143,7 @@ On NVIDIA hardware, TornadoVM is an open-source on-ramp to the whole CUDA softwa
 
 | Capability | What it gives Java developers |
 |---|---|
-| **CUDA backend** | Java bytecode → Graal IR → **CUDA PTX → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
+| **CUDA backend** | Java bytecode → TC → **CUDA C++ → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
 | **cuBLAS / cuBLASLt** library tasks | SGEMV, SGEMM, strided-batched, TF32 and FP16 GemmEx on Tensor Cores, and cuBLASLt with plan caching and fused `BIAS` / `GELU_BIAS` epilogues — one library task replaces a GEMM plus a separate activation kernel. |
 | **cuFFT** library tasks | C2C, R2C / C2R, and Z2Z transforms (1D and 2D) with capture-safe plan caching; FFT-filter pipelines mix with JIT kernels in one graph. |
 | **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
@@ -170,6 +170,22 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 
 Library bindings are discovered via Java `ServiceLoader`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
 
+
+---
+
+## Fast start-up: Project Leyden and GraalVM native image
+
+TornadoVM's compiler, TC is writen in modern Java, so
+applications can use a **Project Leyden AOT cache** (JDK 25+), **AppCDS**, or be built into a
+**GraalVM native image** (GraalVM for JDK 25+). Saxpy on an RTX 4090 starts in about 0.3 s from
+an AOT cache or as a native image with only the CUDA backend loaded, instead of 0.6 s.
+
+```bash
+tornado --aotCache app.aot --classpath app.jar com.example.Main   # Leyden: the first run writes the cache
+tornado-native-image -cp app.jar -o app com.example.Main          # GraalVM native image: ./app
+```
+
+Commands, JDK requirements and measurements: [LEYDEN_GRAALVM_NATIVE_IMAGE.md](LEYDEN_GRAALVM_NATIVE_IMAGE.md).
 
 ---
 
@@ -207,10 +223,10 @@ Pick a backend-specific build if you prefer a smaller install. Candidate version
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `7.0.1-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| CUDA | `7.0.1-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN/cuDF library tasks** |
-| Metal 🆕 | `7.0.1-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
-| All backends | `7.0.1-full` | Everything above |
+| OpenCL *(default)* | `7.3.1-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| CUDA | `7.3.1-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN/cuDF library tasks** |
+| Metal 🆕 | `7.3.1-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
+| All backends | `7.3.1-full` | Everything above |
 
 Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 
@@ -225,12 +241,12 @@ tornado --devices
 ```bash
 # Unix (Linux/macOS)
 java @$TORNADOVM_HOME/tornado-argfile \
-  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-7.0.1.jar \
+  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-7.3.1.jar \
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 # Windows 10+
 java @%TORNADOVM_HOME%\tornado-argfile ^
-  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-7.0.1.jar ^
+  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-7.3.1.jar ^
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 ```
 
@@ -247,12 +263,12 @@ Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` versio
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>7.0.1-jdk21</version>
+    <version>7.3.1-jdk21</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>7.0.1-jdk21</version>
+    <version>7.3.1-jdk21</version>
   </dependency>
 </dependencies>
 ```
@@ -271,7 +287,7 @@ On NVIDIA hardware TornadoVM JIT-compiles your Java kernels to **CUDA PTX** and 
 <details>
 <summary><b>What's the licensing situation for commercial use?</b></summary>
 
-The parts your application links against — **Tornado-API** and all the modules you code with — are **Apache 2.0**. The runtime and drivers are **GPLv2 with Classpath Exception**, the same license as OpenJDK itself: it does not impose copyleft obligations on your application, exactly as running on OpenJDK doesn't. Full per-module breakdown [below](#licenses-per-module).
+All of TornadoVM — the API, runtime, compiler and drivers — is licensed under **Apache 2.0**, so it can be used freely in commercial and open-source applications. See [License](#license).
 </details>
 
 <details>
@@ -326,14 +342,9 @@ If you use **TornadoVM ≥ 0.2** in research, please cite:
 
 For **Tornado 0.1** (initial release), cite [Clarkson et al., ManLang '18](https://doi.org/10.1145/3237009.3237016).
 
-## Licenses per module
+## License
 
-Link the **Tornado-API** (Apache 2.0) into your application.
-
-| Modules | License |
-|---|---|
-| Tornado-API, Tornado-Assembly, Tornado-scripts, Tornado-Annotation, Tornado-Unittests, Tornado-Benchmarks, Tornado-Examples, Tornado-Matrices, Tornado-Drivers-OpenCL-Headers | [Apache 2.0](LICENSE_APACHE2) |
-| Tornado-Runtime, Tornado-Drivers | [GPLv2 with Classpath Exception](LICENSE_GPLv2CE) |
+TornadoVM is licensed under the [Apache License, Version 2.0](LICENSE_APACHE2). Third-party components bundled in the native libraries are listed in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
 
 ## Acknowledgments
 

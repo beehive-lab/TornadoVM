@@ -4,21 +4,19 @@
  *
  * Copyright (c) 2023, 2024, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 package uk.ac.manchester.tornado.drivers.cuda.mm;
 
@@ -89,6 +87,13 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
 
     /** Base address of the host segment this wrapper holds pinned, or 0 when not pinned. */
     private long pinnedHostPointer;
+
+    /** Whether the owning task-graph transfers this buffer on every execution (set before allocate). */
+    private boolean transferredEveryExecution;
+
+    public void setTransferredEveryExecution(boolean transferredEveryExecution) {
+        this.transferredEveryExecution = transferredEveryExecution;
+    }
 
     public CUDAMemorySegmentWrapper(long bufferSize, CUDADeviceContext deviceContext, long batchSize, Access access, int sizeOfType) {
         this.deviceContext = deviceContext;
@@ -252,26 +257,28 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
             bufferId = bufferIdBase;
         }
 
-        // Pin the full host segment so async H2D/D2H transfers DMA directly (no driver
-        // staging copy, true transfer/compute overlap). Ownership, aliasing and pin
-        // caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
-        // stale-pin safe). Any hold from a previous allocate is released first, so the
-        // refcount stays balanced across alloc/free cycles.
+        // Pin the full host segment of a buffer the task-graph transfers on every execution, so its
+        // async H2D/D2H transfers DMA directly (no driver staging copy, true transfer/compute overlap).
+        // Pinning happens here, at allocation, so it precedes any CUDA graph capture of the transfers.
+        // Buffers uploaded once or never transferred stay pageable (see PIN_ALL_BUFFERS). Ownership,
+        // aliasing and pin caching are handled by the central CUDAPinnedMemoryRegistry (refcounted,
+        // stale-pin safe). Any hold from a previous allocate is released first, so the refcount stays
+        // balanced across alloc/free cycles.
         // For large read-only segments served by the staged-transfer ring, skip the whole-segment
         // pin: registering synchronously pages in and pins the entire (possibly cold, mmap'd)
         // segment - exactly the upfront cost the staging ring exists to avoid - and the ring's
         // own pinned slots already make the chunked H2D DMA async.
+        if (segment != null && pinnedHostPointer != 0) {
+            deviceContext.getPlatformContext().getPinnedMemoryRegistry().unpin(pinnedHostPointer);
+            pinnedHostPointer = 0;
+        }
+        boolean pin = CUDAPinnedMemoryRegistry.PIN_ALL_BUFFERS || transferredEveryExecution;
         if (useStagedTransfer() && access == Access.READ_ONLY) {
             if (TornadoOptions.FULL_DEBUG) {
                 new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
             }
-        } else if (segment != null) {
-            CUDAPinnedMemoryRegistry pinRegistry = deviceContext.getPlatformContext().getPinnedMemoryRegistry();
-            if (pinnedHostPointer != 0) {
-                pinRegistry.unpin(pinnedHostPointer);
-                pinnedHostPointer = 0;
-            }
-            if (pinRegistry.pin(segment, segment.byteSize())) {
+        } else if (segment != null && pin) {
+            if (deviceContext.getPlatformContext().getPinnedMemoryRegistry().pin(segment, segment.byteSize())) {
                 pinnedHostPointer = segment.address();
             }
         }

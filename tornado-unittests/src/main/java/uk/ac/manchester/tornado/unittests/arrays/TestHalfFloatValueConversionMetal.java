@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -191,7 +191,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
 
         for (int i = 0; i < SIZE; i++) {
             float expected = Float.float16ToFloat(Float.floatToFloat16(in.get(i) * 2.0f));
-            assertEquals("out[" + i + "]", expected, out.get(i).getFloat32(), 0.0f);
+            assertEquals(expected, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -207,7 +207,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
         execute(tg, "va");
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("bits[" + i + "]", Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i));
+            assertEquals(Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i), "bits[" + i + "]");
         }
     }
 
@@ -223,7 +223,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
         execute(tg, "vl");
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("bits[" + i + "]", Float.floatToFloat16(in.get(i)) & 0xFFFF, out.get(i));
+            assertEquals(Float.floatToFloat16(in.get(i)) & 0xFFFF, out.get(i), "bits[" + i + "]");
         }
     }
 
@@ -241,7 +241,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
         for (int i = 0; i < SIZE; i++) {
             // The device rounds through half precision, so the oracle does too: an exact comparison.
             float expected = Float.float16ToFloat(Float.floatToFloat16(in.get(i) * 2.0f));
-            assertEquals("out[" + i + "]", expected, out.get(i), 0.0f);
+            assertEquals(expected, out.get(i), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -262,7 +262,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
         for (int slot = 0; slot < SIZE; slot++) {
             int col = (slot / Q8_BLOCK_QUANTS) * 2;
             int k = slot % Q8_BLOCK_QUANTS;
-            assertEquals("packed[" + slot + "]", packQ8HalvesHost(weights, col, k, blocksPerRow), out.get(slot));
+            assertEquals(packQ8HalvesHost(weights, col, k, blocksPerRow), out.get(slot), "packed[" + slot + "]");
         }
     }
 
@@ -280,7 +280,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("bits[" + i + "]", Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i));
+            assertEquals(Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i), "bits[" + i + "]");
         }
     }
 
@@ -300,7 +300,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
         for (int i = 0; i < SIZE; i++) {
             int expected = (Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF) //
                     | ((Float.floatToFloat16(in.get(i) * 4.0f) & 0xFFFF) << 16);
-            assertEquals("packed[" + i + "]", expected, out.get(i));
+            assertEquals(expected, out.get(i), "packed[" + i + "]");
         }
     }
 
@@ -416,7 +416,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
         executeOver(tg, "bh", n);
 
         for (int i = 0; i < n; i++) {
-            assertEquals("bits[" + i + "] of " + NUMERIC_CASES[i], Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, out.get(i));
+            assertEquals(Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, out.get(i), "bits[" + i + "] of " + NUMERIC_CASES[i]);
         }
     }
 
@@ -439,7 +439,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
 
         for (int i = 0; i < n; i++) {
             assertNumeric(i, NUMERIC_CASES[i], numeric.get(i));
-            assertEquals("bits[" + i + "] of " + NUMERIC_CASES[i], Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, bits.get(i));
+            assertEquals(Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, bits.get(i), "bits[" + i + "] of " + NUMERIC_CASES[i]);
         }
     }
 
@@ -462,7 +462,7 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
 
         for (int i = 0; i < n; i++) {
             assertNumeric(i, NUMERIC_CASES[i], numeric.get(i));
-            assertEquals("bits[" + i + "] of " + NUMERIC_CASES[i], Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, bits.get(i));
+            assertEquals(Float.floatToFloat16(NUMERIC_CASES[i]) & 0xFFFF, bits.get(i), "bits[" + i + "] of " + NUMERIC_CASES[i]);
         }
     }
 
@@ -473,8 +473,8 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
      */
     private static void assertNumeric(int i, float value, float actual) {
         float expected = Float.float16ToFloat(Float.floatToFloat16(value));
-        assertEquals(String.format("out[%d] for half %s: expected %s, got %s", i, value, expected, actual), //
-                Float.floatToRawIntBits(expected), Float.floatToRawIntBits(actual));
+        assertEquals(Float.floatToRawIntBits(expected), //
+                Float.floatToRawIntBits(actual), String.format("out[%d] for half %s: expected %s, got %s", i, value, expected, actual));
     }
 
     private static HalfFloatArray numericHalves() {
@@ -630,8 +630,8 @@ public class TestHalfFloatValueConversionMetal extends TornadoTestBase {
             if (isQuietNaN(expected) && isQuietNaN(actual)) {
                 continue;
             }
-            assertEquals(String.format("half(%s): expected 0x%04X, got 0x%04X", IEEE_CASES[i], expected, actual), //
-                    expected, actual);
+            assertEquals(expected, //
+                    actual, String.format("half(%s): expected 0x%04X, got 0x%04X", IEEE_CASES[i], expected, actual));
         }
     }
 

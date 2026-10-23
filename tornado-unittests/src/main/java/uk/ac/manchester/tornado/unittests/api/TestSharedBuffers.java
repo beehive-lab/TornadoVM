@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -640,7 +640,7 @@ public class TestSharedBuffers extends TornadoTestBase {
                 }
             }
 
-            assertTrue("Output array should have non-zero values", hasNonZeroOutput);
+            assertTrue(hasNonZeroOutput, "Output array should have non-zero values");
         }
     }
 
@@ -709,7 +709,7 @@ public class TestSharedBuffers extends TornadoTestBase {
                 }
             }
 
-            assertTrue("Output array should have non-zero values", hasNonZeroOutput);
+            assertTrue(hasNonZeroOutput, "Output array should have non-zero values");
         }
     }
 
@@ -758,6 +758,52 @@ public class TestSharedBuffers extends TornadoTestBase {
             for (int i = 0; i < numElements; i++) {
                 assertEquals(2, output.get(i));
                 assertEquals(-7, persisted.get(i));
+            }
+        }
+    }
+
+    public static void addOne(KernelContext context, IntArray a) {
+        int i = context.globalIdx;
+        if (i < a.getSize()) {
+            a.set(i, a.get(i) + 1);
+        }
+    }
+
+    /**
+     * A plan of three graphs chained with consumeFromDevice without a producer name, run with
+     * {@code execute()} on the whole plan rather than graph by graph: each graph must see the
+     * previous graph's result.
+     */
+    @Test
+    public void testWholePlanExecuteChainsEmptyConsume() throws TornadoExecutionPlanException {
+        IntArray a = new IntArray(numElements);
+        a.init(0);
+
+        TaskGraph g0 = new TaskGraph("g0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a) //
+                .task("t", TestSharedBuffers::addOne, new KernelContext(), a) //
+                .persistOnDevice(a);
+        TaskGraph g1 = new TaskGraph("g1") //
+                .consumeFromDevice(a) //
+                .task("t", TestSharedBuffers::addOne, new KernelContext(), a) //
+                .persistOnDevice(a);
+        TaskGraph g2 = new TaskGraph("g2") //
+                .consumeFromDevice(a) //
+                .task("t", TestSharedBuffers::addOne, new KernelContext(), a) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, a);
+
+        WorkerGrid worker = new WorkerGrid1D(numElements);
+        worker.setLocalWork(numElements, 1, 1);
+        GridScheduler scheduler = new GridScheduler();
+        scheduler.addWorkerGrid("g0.t", worker);
+        scheduler.addWorkerGrid("g1.t", worker);
+        scheduler.addWorkerGrid("g2.t", worker);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(g0.snapshot(), g1.snapshot(), g2.snapshot())) {
+            executionPlan.withGridScheduler(scheduler).execute();
+
+            for (int i = 0; i < a.getSize(); i++) {
+                assertEquals(3, a.get(i));
             }
         }
     }

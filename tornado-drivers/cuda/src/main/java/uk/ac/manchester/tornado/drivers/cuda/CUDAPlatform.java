@@ -4,32 +4,27 @@
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAPlatformInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
@@ -139,23 +134,23 @@ public class CUDAPlatform implements TornadoPlatformInterface {
     }
 
     /**
-     * CUDA contexts are per-device, so a context is created for the first device in the array. The
-     * per-device split that OpenCL allows is handled at the Java level (one CUDADeviceContext per
-     * device) and each pins this context with {@code cuCtxSetCurrent}.
+     * Retains the primary context of one device and returns the handle the Java layer addresses it
+     * by. The primary context is the one the CUDA runtime, and so cuBLAS, cuDNN or NCCL, use for
+     * that device, which lets device pointers and streams cross between TornadoVM and those
+     * libraries. Scheduling is set to yield first; the driver ignores the request when another user
+     * already made the context active with other flags.
      */
-    long clCreateContext(long platform, long[] devices) throws CUDAException {
-        if (devices.length == 0) {
-            return 0;
-        }
-        CUDAHandles.Device device = CUDAHandles.resolve(devices[0], CUDAHandles.Device.class);
+    static long retainPrimaryContext(long deviceId) throws CUDAException {
+        CUDAHandles.Device device = CUDAHandles.resolve(deviceId, CUDAHandles.Device.class);
         if (device == null) {
             return 0;
         }
+        CUDADriverAPI.cuDevicePrimaryCtxSetFlags(device.device(), CUDADriverAPI.CU_CTX_SCHED_YIELD);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment context = FFMSupport.allocatePointer(arena);
-            int result = CUDADriverAPI.cuCtxCreate(context, CUDADriverAPI.CU_CTX_SCHED_YIELD, device.device());
+            int result = CUDADriverAPI.cuDevicePrimaryCtxRetain(context, device.device());
             if (result != CUDADriverAPI.CUDA_SUCCESS) {
-                throw new CUDAException(CUDADriverAPI.describe("cuCtxCreate", result));
+                throw new CUDAException(CUDADriverAPI.describe("cuDevicePrimaryCtxRetain", result));
             }
             long contextPointer = context.get(FFMSupport.C_POINTER, 0).address();
             return CUDAHandles.register(new CUDAHandles.Context(contextPointer, device.device(), device.ordinal()));
@@ -167,16 +162,7 @@ public class CUDAPlatform implements TornadoPlatformInterface {
     }
 
     public CUDAContext createContext() {
-        CUDAContext contextObject;
-        final LongBuffer deviceIds = LongBuffer.allocate(devices.size());
-        devices.stream().mapToLong(CUDATargetDevice::getDevicePointer).forEach(deviceIds::put);
-        try {
-            long contextPtr = clCreateContext(oclPlatformPtr, deviceIds.array());
-            contextObject = new CUDAContext(this, contextPtr, devices);
-        } catch (CUDAException e) {
-            throw new TornadoBailoutRuntimeException(e.getMessage());
-        }
-        return contextObject;
+        return new CUDAContext(this, devices);
     }
 
     public void cleanup() {

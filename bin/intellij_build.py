@@ -80,16 +80,12 @@ def get_java_profile():
     """
     Determine the Java profile from the JDK that JAVA_HOME actually points at.
 
-    The version has to be detected rather than assumed: the profile selects compiler
-    flags and JVMCI dependencies, and -Pjdk21 compiles with --enable-preview plus the
-    JDK's own jdk.internal.vm.ci exports. Those are wrong for any newer JDK -- and on
-    JDK 27, where that module no longer exists, they do not even compile. One
-    jdk22plus profile covers every JDK from 22 up (see the Makefile's jdk22plus
-    comment); graal-jdk-21 is the only profile that takes Graal from the JDK itself,
-    so a GraalVM at 22+ still builds as jdk22plus with vendored Graal jars.
+    The version has to be detected rather than assumed: -Pjdk21 compiles with
+    --enable-preview, which pins the class files to JDK 21. One jdk22plus profile
+    covers every JDK from 22 up (see the Makefile's jdk22plus comment).
 
     Returns:
-        str: "jdk21", "graal-jdk-21" or "jdk22plus".
+        str: "jdk21" or "jdk22plus".
     """
     java_home = os.environ.get("JAVA_HOME", "")
     if not java_home:
@@ -112,11 +108,7 @@ def get_java_profile():
         print(f"  {version_line}")
         sys.exit(1)
 
-    if major >= 22:
-        return "jdk22plus"
-
-    is_graal = "graalvm" in java_version_output.lower() or "graal" in java_home.lower()
-    return "graal-jdk-21" if is_graal else "jdk21"
+    return "jdk22plus" if major >= 22 else "jdk21"
 
 
 def compute_tornado_backend_variant(backends):

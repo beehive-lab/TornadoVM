@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -95,9 +95,8 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         result.init(0.0f);
 
         Random r = new Random();
-        IntStream.range(0, inputSize).parallel().forEach(i -> {
-            input.set(i, r.nextFloat());
-        });
+        IntStream.range(0, inputSize).parallel().forEach(i ->
+            input.set(i, r.nextFloat()));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//
@@ -148,9 +147,8 @@ public class TestReductionsAutomatic extends TornadoTestBase {
         DoubleArray result = new DoubleArray(1);
         result.init(0);
 
-        IntStream.range(0, size).parallel().forEach(i -> {
-            input.set(i, i);
-        });
+        IntStream.range(0, size).parallel().forEach(i ->
+            input.set(i, i));
 
         TaskGraph taskGraph = new TaskGraph("s0") //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, input)//

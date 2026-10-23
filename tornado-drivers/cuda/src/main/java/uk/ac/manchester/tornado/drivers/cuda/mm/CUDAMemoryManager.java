@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.cuda.mm;
@@ -58,7 +55,7 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
     public CUDAKernelStackFrame createKernelStackFrame(long executionPlanId, final int numberOfArguments) {
         if (!oclKernelStackFrame.containsKey(executionPlanId)) {
             // Create one stack frame per execution plan ID 
-            long kernelStackFramePtr = deviceContext.getPlatformContext().createBuffer(CUDAMemFlags.CL_MEM_READ_ONLY, RESERVED_SLOTS * Long.BYTES).getBuffer();
+            long kernelStackFramePtr = createBuffer(RESERVED_SLOTS * Long.BYTES, CUDAMemFlags.CL_MEM_READ_ONLY).getBuffer();
             oclKernelStackFrame.put(executionPlanId, new CUDAKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
         }
         return oclKernelStackFrame.get(executionPlanId);
@@ -84,11 +81,11 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
     }
 
     public CUDAContext.CUDABufferResult createBuffer(long size, long flags) {
-        return deviceContext.getPlatformContext().createBuffer(flags, size);
+        return deviceContext.getPlatformContext().createBuffer(deviceContext.getDeviceIndex(), flags, size);
     }
 
     public void releaseBuffer(long bufferId) {
-        deviceContext.getPlatformContext().releaseBuffer(bufferId);
+        deviceContext.getPlatformContext().releaseBuffer(deviceContext.getDeviceIndex(), bufferId);
     }
 
     long toConstantAddress() {
@@ -101,13 +98,13 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
 
     void allocateAtomicRegion() {
         if (this.atomicsRegionPointer == NON_EXISTING_ADDRESS) {
-            this.atomicsRegionPointer = deviceContext.getPlatformContext().createBuffer(CUDAMemFlags.CL_MEM_READ_WRITE | CUDAMemFlags.CL_MEM_ALLOC_HOST_PTR, atomicRegionSize()).getBuffer();
+            this.atomicsRegionPointer = createBuffer(atomicRegionSize(), CUDAMemFlags.CL_MEM_READ_WRITE | CUDAMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
         }
     }
 
     void deallocateAtomicRegion() {
         if (this.atomicsRegionPointer != NON_EXISTING_ADDRESS) {
-            deviceContext.getPlatformContext().releaseBuffer(this.atomicsRegionPointer);
+            releaseBuffer(this.atomicsRegionPointer);
             this.atomicsRegionPointer = NON_EXISTING_ADDRESS;
         }
     }

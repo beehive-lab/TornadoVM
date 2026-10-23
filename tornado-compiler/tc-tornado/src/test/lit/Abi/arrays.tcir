@@ -1,0 +1,38 @@
+; ABI lowering turns Java-level arrays into byte pointers with the native-array header: the data
+; pointer `<array>_data` is base + header, elements at data + index * size; the element count as the first 64-bit word.
+; RUN: tc-tornado --abi %s | FileCheck %s
+; RUN: tc-tornado --abi --header=24 %s | FileCheck %s --check-prefix=UNCOMPRESSED
+
+; CHECK-LABEL: kernel @VectorAdd.add(%a: ptr<global>, %b: ptr<global>, %c: ptr<global>) -> void {
+; CHECK:         %[[CNT:[0-9]+]] = load %c : i64
+; CHECK-NEXT:    %n = trunc %[[CNT]] : i32
+; CHECK:       ^body:
+; CHECK-NEXT:    %[[H:[0-9]+]] = const 16 : i64
+; CHECK-NEXT:    %a_data = ptr.offset %a, %[[H]] : ptr<global>
+; CHECK-NEXT:    %[[W:[0-9]+]] = sext %i : i64
+; CHECK-NEXT:    %[[SZ:[0-9]+]] = const 4 : i64
+; CHECK-NEXT:    %[[SC:[0-9]+]] = mul %[[W]], %[[SZ]] : i64
+; CHECK-NEXT:    %[[PA:[0-9]+]] = ptr.offset %a_data, %[[SC]] : ptr<global>
+; CHECK-NEXT:    %x = load %[[PA]] : f32  loc("VectorAdd.java":21, bci=14)
+; CHECK:         store %{{[0-9]+}}, %z
+; CHECK-NOT:     array.
+; UNCOMPRESSED:  %{{[0-9]+}} = const 24 : i64
+kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
+^entry:
+  %n = array.length %c : i32
+  %i0 = tornado.thread_id.global<dim = 0>() : i32
+  %s = tornado.global_size<dim = 0>() : i32
+  br ^head(%i0)
+^head(%i: i32):
+  %more = icmp.slt %i, %n : i1
+  cond_br %more, ^body, ^exit
+^body:
+  %x = array.load %a[%i] : f32                 loc("VectorAdd.java":21, bci=14)
+  %y = array.load %b[%i] : f32
+  %z = fadd %x, %y : f32
+  array.store %c[%i], %z
+  %next = add %i, %s : i32
+  br ^head(%next)
+^exit:
+  ret
+}

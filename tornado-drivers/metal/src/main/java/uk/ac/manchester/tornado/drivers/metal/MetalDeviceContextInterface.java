@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.metal;
@@ -26,8 +23,6 @@ package uk.ac.manchester.tornado.drivers.metal;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
-import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -41,8 +36,6 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
     boolean isCached(long executionPlanId, String id, String entryPoint);
 
     MetalInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint);
-
-    MetalInstalledCode installCode(long executionPlanId, MetalCompilationResult result);
 
     MetalInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code);
 
@@ -81,8 +74,24 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
 
     MetalProgram createProgramWithSource(byte[] source, long[] lengths);
 
+    /** As above; {@code strictFloatingPoint} (a plan's withStrictFloatingPoint()) compiles without fast math. */
+    default MetalProgram createProgramWithSource(byte[] source, long[] lengths, boolean strictFloatingPoint) {
+        return createProgramWithSource(source, lengths);
+    }
+
     MetalProgram createProgramWithBinary(byte[] binary, long[] lengths);
 
     MetalProgram createProgramWithIL(byte[] binary, long[] lengths);
+
+    /**
+     * Raw MTLCommandQueue handle of the execution-plan queue, for external libraries (e.g.
+     * Apple MLX kernels) that encode work on TornadoVM's queue.
+     */
+    long getNativeStream(long executionPlanId);
+
+    /**
+     * Raw MTLDevice handle that owns the execution-plan queue.
+     */
+    long getNativeContext(long executionPlanId);
 
 }

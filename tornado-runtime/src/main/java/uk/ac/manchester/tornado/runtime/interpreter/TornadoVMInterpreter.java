@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2023, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.runtime.interpreter;
@@ -55,7 +52,6 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
-import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
@@ -76,6 +72,7 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.profiler.TimeProfiler;
 import uk.ac.manchester.tornado.runtime.tasks.DataObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.LibraryTask;
+import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -111,6 +108,9 @@ public class TornadoVMInterpreter {
     private final List<Object> constants;
     private final List<SchedulableTask> taskExecutionContexts;
     private final List<SchedulableTask> localTaskList;
+    /** {@link #globalToLocalTaskIndex}'s answers, -1 where not yet computed. */
+    private int[] globalToLocal;
+    private int globalToLocalLocalSize;
     private final TornadoExecutionContext graphExecutionContext;
     private final TornadoVMBytecodeResult bytecodeResult;
     private TornadoProfiler timeProfiler;
@@ -760,8 +760,10 @@ public class TornadoVMInterpreter {
             if (isWarmup) {
                 return lastEvent;
             }
-            insideCaptureRegion = false;
+            // Still inside the region until the graph is instantiated: if that fails, the failure
+            // handler abandons the capture and drops its deferred writes.
             executeGraphEndCapture(logBuilder, graphId);
+            insideCaptureRegion = false;
         return lastEvent;
     }
 
@@ -888,6 +890,8 @@ public class TornadoVMInterpreter {
                 objects[allocCounter] = this.objects.get(arg);
                 objectStates[allocCounter] = resolveObjectState(arg);
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
+                LocalObjectState localState = graphExecutionContext.getLocalStateObject(objects[allocCounter], accesses[allocCounter]);
+                objectStates[allocCounter].setTransferredEveryExecution(localState.isStreamIn() || localState.isStreamOut());
                 allocCounter++;
             } else {
                 XPUDeviceBufferState state = resolveObjectState(arg);
@@ -1201,12 +1205,25 @@ public class TornadoVMInterpreter {
 
     private void updateMeta(TaskContextInterface meta) {
         meta.setPrintKernelFlag(graphExecutionContext.meta().isPrintKernelEnabled());
-        meta.setCompilerFlags(TornadoVMBackendType.OPENCL, graphExecutionContext.meta().getCompilerFlags(TornadoVMBackendType.OPENCL));
+        meta.setStrictFloatingPoint(graphExecutionContext.meta().isStrictFloatingPoint());
+        // Every backend, not just OpenCL. withCompilerFlags() writes into the execution
+        // context's meta, and each backend's code cache reads the *task's* meta -- so a flag
+        // that is not copied down here never reaches the compiler. OCLCodeCache was the only
+        // one being served; CUDACodeCache and MetalCodeCache read the same way and got nothing,
+        // which made withCompilerFlags(CUDA, ...) and withCompilerFlags(METAL, ...) silently
+        // do nothing at all. Looping over the backends keeps that from recurring when one is
+        // added.
+        for (TornadoVMBackendType backendType : TornadoVMBackendType.values()) {
+            String compilerFlags = graphExecutionContext.meta().getCompilerFlags(backendType);
+            if (compilerFlags != null) {
+                meta.setCompilerFlags(backendType, compilerFlags);
+            }
+        }
     }
 
     private XPUExecutionFrame compileTaskFromBytecodeToBinary(final int callWrapperIndex, final int numArgs, final int eventId, final int taskIndex, final long batchThreads) {
 
-        if (interpreterDevice.getDeviceContext().wasReset() && finishedWarmup) {
+        if (interpreterDevice.getDeviceContext().wasReset(graphExecutionContext.getExecutionPlanId()) && finishedWarmup) {
             throw new TornadoFailureException("[ERROR] reset() was called after warmup() on device: " + interpreterDevice + "!");
         }
 
@@ -1432,6 +1449,8 @@ public class TornadoVMInterpreter {
 
         final Object[] callArgs = new Object[numArgs];
         final long[] devicePointers = new long[numArgs];
+        final long[] nativeBuffers = new long[numArgs];
+        final long[] nativeOffsets = new long[numArgs];
         final boolean[] isReference = new boolean[numArgs];
 
         for (int i = 0; i < numArgs; i++) {
@@ -1443,8 +1462,11 @@ public class TornadoVMInterpreter {
                 final DataObjectState globalState = resolveGlobalObjectState(argIndex);
                 final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
                 callArgs[i] = objects.get(argIndex);
-                // Pointer to the first data element on the device, past the array header
-                devicePointers[i] = objectState.getXPUBuffer().toBuffer() + TornadoNativeArray.ARRAY_HEADER;
+                // First data element past the array header, as the backend exposes it to native libraries
+                final XPUBuffer buffer = objectState.getXPUBuffer();
+                devicePointers[i] = buffer.libraryAddress();
+                nativeBuffers[i] = buffer.toBuffer();
+                nativeOffsets[i] = buffer.libraryOffset();
                 isReference[i] = true;
             } else {
                 TornadoInternalError.shouldNotReachHere();
@@ -1488,8 +1510,8 @@ public class TornadoVMInterpreter {
             nvtxDevice.nvtxRangePush(descriptor.getLibraryName() + "/" + descriptor.getFunctionName());
         }
         try {
-            provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, isReference, interpreterDevice, graphExecutionContext.getExecutionPlanId(), libraryContext,
-                    descriptor.getTuning(), insideCaptureRegion));
+            provider.dispatch(descriptor.getFunctionName(), new LibraryInvocation(callArgs, devicePointers, nativeBuffers, nativeOffsets, isReference, interpreterDevice,
+                    graphExecutionContext.getExecutionPlanId(), libraryContext, descriptor.getTuning(), insideCaptureRegion));
         } finally {
             if (nvtxDevice != null) {
                 nvtxDevice.nvtxRangePop();
@@ -1612,8 +1634,23 @@ public class TornadoVMInterpreter {
      *     The global task index to convert.
      * @return The corresponding local task index, or 0 if the task is not found in the local task list.
      */
+    /**
+     * Maps a task's index in the graph to its index among this device's tasks. Called several times per launch, so
+     * the linear {@code indexOf} runs once per task: with hundreds of tasks it was quadratic in the plan size.
+     */
     private int globalToLocalTaskIndex(int taskIndex) {
-        return localTaskList.indexOf(taskExecutionContexts.get(taskIndex)) == -1 ? 0 : localTaskList.indexOf(taskExecutionContexts.get(taskIndex));
+        int[] map = globalToLocal;
+        if (map == null || map.length != taskExecutionContexts.size() || globalToLocalLocalSize != localTaskList.size()) {
+            map = new int[taskExecutionContexts.size()];
+            Arrays.fill(map, -1);
+            globalToLocal = map;
+            globalToLocalLocalSize = localTaskList.size();
+        }
+        if (map[taskIndex] < 0) {
+            int local = localTaskList.indexOf(taskExecutionContexts.get(taskIndex));
+            map[taskIndex] = local == -1 ? 0 : local;
+        }
+        return map[taskIndex];
     }
 
     private void profilerUpdateForPreCompiledTask(SchedulableTask task) {
@@ -1636,7 +1673,30 @@ public class TornadoVMInterpreter {
     }
 
     public Event execute() {
-        return execute(false);
+        try {
+            return execute(false);
+        } catch (RuntimeException | Error e) {
+            abortCaptureAfterFailure(e);
+            throw e;
+        }
+    }
+
+    /**
+     * Called when an execution fails inside a CUDA-graph capture region. The capture is abandoned,
+     * so the device stream is not left capturing and nothing from the failed capture is flushed
+     * into the next one on the same device. A failure of the clean-up itself is attached to the
+     * execution's failure as a suppressed exception, so the execution's failure is the one reported.
+     */
+    private void abortCaptureAfterFailure(Throwable failure) {
+        if (!insideCaptureRegion) {
+            return;
+        }
+        insideCaptureRegion = false;
+        try {
+            interpreterDevice.abortExecutionGraphCapture(graphExecutionContext.getExecutionPlanId());
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
+        }
     }
 
     /**

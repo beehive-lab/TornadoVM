@@ -2,6 +2,10 @@
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
+ * Portions of this file are derived from NVIDIA TileGym (https://github.com/NVIDIA/TileGym),
+ * Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Used under the MIT License; see THIRD_PARTY_NOTICES.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +21,12 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -67,7 +71,7 @@ public class TestTileMasking extends TornadoTestBase {
     /** See {@link TestTileAttention} for why this is not {@code -inf}. */
     private static final float NEGATIVE_LIMIT = -1.0e30f;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -287,7 +291,7 @@ public class TestTileMasking extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out), rows);
 
         for (int i = 0; i < rows * ROW_WIDTH; i++) {
-            assertEquals("element " + i, Math.max(0.0f, in.get(i)), out.get(i), 1e-6);
+            assertEquals(Math.max(0.0f, in.get(i)), out.get(i), 1e-6, "element " + i);
         }
     }
 
@@ -305,7 +309,7 @@ public class TestTileMasking extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out), rows);
 
         for (int i = 0; i < rows * ROW_WIDTH; i++) {
-            assertEquals("element " + i, Math.min(Math.max(in.get(i), low), high), out.get(i), 1e-6);
+            assertEquals(Math.min(Math.max(in.get(i), low), high), out.get(i), 1e-6, "element " + i);
         }
     }
 
@@ -328,7 +332,7 @@ public class TestTileMasking extends TornadoTestBase {
                     expected++;
                 }
             }
-            assertEquals("row " + row, expected, out.get(row), 1e-6);
+            assertEquals(expected, out.get(row), 1e-6, "row " + row);
         }
     }
 
@@ -358,8 +362,8 @@ public class TestTileMasking extends TornadoTestBase {
                 expectedMinimum = Math.min(expectedMinimum, value);
                 expectedProduct *= value;
             }
-            assertEquals("row " + row + " minimum", expectedMinimum, minimums.get(row), 1e-6);
-            assertEquals("row " + row + " product", expectedProduct, products.get(row), 1e-3);
+            assertEquals(expectedMinimum, minimums.get(row), 1e-6, "row " + row + " minimum");
+            assertEquals(expectedProduct, products.get(row), 1e-3, "row " + row + " product");
         }
     }
 
@@ -410,7 +414,7 @@ public class TestTileMasking extends TornadoTestBase {
 
         double[] expected = referenceAttention(q, k, v, queryRows, kvRows, scale, true);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 
@@ -450,7 +454,7 @@ public class TestTileMasking extends TornadoTestBase {
 
         double[] expected = referenceAttention(q, k, v, queryRows, kvRows, scale, false);
         for (int i = 0; i < queryRows * HEAD_DIM; i++) {
-            assertEquals("element " + i, expected[i], out.get(i), 0.01);
+            assertEquals(expected[i], out.get(i), 0.01, "element " + i);
         }
     }
 

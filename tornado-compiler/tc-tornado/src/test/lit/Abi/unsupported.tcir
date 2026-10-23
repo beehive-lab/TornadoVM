@@ -1,0 +1,9 @@
+; Parameter objects are not lowered yet: a clear diagnostic, never wrong code.
+; RUN: not tc-tornado --abi %s 2>&1 | FileCheck %s
+; CHECK: error TC-E3101: object parameters are not lowered yet: obj<Point>
+; CHECK: error TC-E3101: 'field.load' is not lowered yet
+device @fields(%p: obj<Point>) -> i32 {
+^entry:
+  %x = field.load %p, "x" : i32
+  ret %x
+}

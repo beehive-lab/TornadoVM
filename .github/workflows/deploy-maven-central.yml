@@ -11,8 +11,10 @@ name: 4 - Deploy Maven Central [auto]
 # The deployed modules are portable pure-Java: tornado-api (including the
 # cuTile TileContext API), tornado-runtime, tornado-matrices, the CUDA backend
 # tornado-drivers-cuda (which compiles cuTile kernels) with its parent and
-# tornado-drivers-common, and the CUDA library bindings tornado-cublas/-cudnn/
-# -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs. The bindings load the NVIDIA libraries
+# tornado-drivers-common, the CUDA library bindings tornado-cublas/-cudnn/
+# -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs/-nccl, the OpenCL CLBlast bindings
+# tornado-clblast, and the Apple MLX bindings tornado-mlx.
+# The bindings load the NVIDIA, CLBlast, or Apple MLX libraries
 # through java.lang.foreign at run time; the native *-jni shims some of them use
 # are built per platform and ship only in the SDK. Each module is still deployed once PER JDK PROFILE
 # under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — the
@@ -39,6 +41,11 @@ on:
         required: false
         type: boolean
         default: false
+      jdks:
+        description: 'JSON list of JDK profiles to deploy (e.g. ["jdk21"] to redo one leg whose coordinates are not on Central yet).'
+        required: false
+        type: string
+        default: '["jdk21", "jdk22plus"]'
 
 jobs:
   deploy:
@@ -52,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [jdk21, jdk22plus]
+        jdk: ${{ fromJSON(inputs.jdks || '["jdk21", "jdk22plus"]') }}
     env:
       MAVEN_HOME: /opt/maven
     steps:
@@ -71,16 +78,13 @@ jobs:
           case "${{ matrix.jdk }}" in
             jdk21)
               echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
               ;;
             jdk22plus)
               # jdk22plus floors at JDK 22 and is deployed once for every JDK from 22 up — any
               # JDK >= 22 here builds an identical artifact (pom.xml's --release 22), so this is
               # pinned to 25 purely to match the build JDK used elsewhere (build-release-sdks.yml,
-              # build-test-platform.yml), not a requirement.
+              # gpu-ci-platform.yml), not a requirement.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"
-              echo "GRAAL_JARS=/opt/graalJarsNoJvmci" >> "$GITHUB_ENV"
-              echo "JVMCI_SOURCE_JDK=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
               ;;
           esac
 
@@ -88,20 +92,6 @@ jobs:
         run: |
           echo "$JAVA_HOME/bin" >> $GITHUB_PATH
           echo "$MAVEN_HOME/bin" >> $GITHUB_PATH
-
-      - name: Stage and build the vendored Graal module for this profile
-        run: |
-          mkdir -p graalJars && cp $GRAAL_JARS/* graalJars/
-          # tornado.graal's module-info is compiled per-profile (--release 21 for jdk21,
-          # --release 22 for jdk22plus) but both profiles publish it under the same Maven
-          # coordinate tornado.graal:tornado-graal:23.1.0. On this shared self-hosted runner
-          # the local repo / staged jar can be left over from the other leg, and a module-info
-          # newer than the build JDK fails with "Unsupported major.minor version" -> the
-          # reactor then reports "module not found: tornado.graal". Drop the staged jar and let
-          # pull_graal_jars rebuild + reinstall it for THIS profile (it already validates the
-          # descriptor is readable by the build JDK and rebuilds if not).
-          rm -f graalJars/tornado-graal-*.jar
-          python3 bin/pull_graal_jars.py --jdk ${{ matrix.jdk }}
 
       - name: Set JDK-specific deploy version (ephemeral, never committed)
         run: |
@@ -151,6 +141,11 @@ jobs:
       - name: Import GPG key
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          # Let gpg-agent grow its secure-memory pool instead of failing concurrent signings
+          # with "Cannot allocate memory" (belt and braces alongside the serial deploy below).
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          grep -qx 'auto-expand-secmem' ~/.gnupg/gpg-agent.conf 2>/dev/null || echo 'auto-expand-secmem' >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
         env:
           GPG_TTY: $(tty)
 
@@ -159,9 +154,15 @@ jobs:
         run: |
           # cuda-backend only puts tornado-drivers/cuda in the reactor; -pl keeps the native
           # *-jni shims (CMake, need the CUDA toolkit) out, and they stay in the SDK.
+          # -T 1 overrides .mvn/maven.config's -T1.5C: ~11 modules reach maven-gpg-plugin at
+          # once in a parallel build and gpg-agent fails some with "signing failed: Cannot
+          # allocate memory". The failed module makes Maven skip tornado-drivers-cuda, and the
+          # central-publishing plugin then waits forever for it ("Waiting for other projects
+          # build to finish..."), hiding the real error until the job timeout.
           mvn clean deploy \
+            -T 1 \
             -P${{ matrix.jdk }},cuda-backend,release \
-            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs \
+            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-clblast,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
             -am \
             -DskipTests \
             --batch-mode
@@ -175,7 +176,7 @@ jobs:
         if: ${{ inputs.draft_release_test == true }}
         run: |
           echo "Draft release (test): skipping the actual Maven Central deploy (mvn clean deploy -P${{ matrix.jdk }},release ...)."
-          echo "Everything up to this point (checkout, GraalVM jars, ephemeral versions:set, Maven settings, GPG import) ran for real."
+          echo "Everything up to this point (checkout, ephemeral versions:set, Maven settings, GPG import) ran for real."
 
   dispatch-sdkman:
     name: Dispatch SDKMAN publish

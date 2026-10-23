@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.cublas.provider;
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP8NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cublas.CuBlasLt;
@@ -36,9 +37,10 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 /**
  * {@link TornadoLibraryProvider} for NVIDIA cuBLASLt (matmul with fused
  * epilogues). The per-(device, execution plan) context holds the cublasLt
- * handle, the CUDA stream, a device workspace, and a cache of matmul plans
- * (descriptors + heuristic algorithm) keyed by problem shape - descriptors are
- * created once per shape and replayed on every execution.
+ * handle, a device workspace, and a cache of matmul plans (descriptors +
+ * heuristic algorithm) keyed by problem shape - descriptors are created once per
+ * shape and replayed on every execution. The stream is passed per call: it is
+ * the stream of the thread running the plan.
  */
 public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
 
@@ -47,13 +49,11 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
 
     private static final class CuBlasLtContext implements LibraryContext {
         private final long handle;
-        private final long stream;
         private final long workspacePtr;
         private final Map<String, Long> planCache = new HashMap<>();
 
-        private CuBlasLtContext(long handle, long stream, long workspacePtr) {
+        private CuBlasLtContext(long handle, long workspacePtr) {
             this.handle = handle;
-            this.stream = stream;
             this.workspacePtr = workspacePtr;
         }
     }
@@ -82,13 +82,13 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override
     public LibraryContext createContext(TornadoXPUDevice device, long executionPlanId) {
         CuBlasNativeLib.load();
-        long stream = ((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId);
         long handle = CuBlasLtNativeLib.ltCreate();
         if (handle == 0) {
             throw new TornadoRuntimeException("[ERROR] cublasLtCreate failed");
@@ -98,7 +98,7 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
             CuBlasLtNativeLib.ltDestroy(handle);
             throw new TornadoRuntimeException("[ERROR] Unable to allocate cuBLASLt workspace of " + WORKSPACE_BYTES + " bytes");
         }
-        return new CuBlasLtContext(handle, stream, workspacePtr);
+        return new CuBlasLtContext(handle, workspacePtr);
     }
 
     @Override
@@ -178,7 +178,11 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
             context.planCache.put(planKey, plan);
         }
 
-        int status = CuBlasLtNativeLib.ltExecutePlan(context.handle, plan, context.stream, alpha, //
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        int status = CuBlasLtNativeLib.ltExecutePlan(context.handle, plan, stream, alpha, //
                 invocation.getDevicePointer(6), invocation.getDevicePointer(8), beta, //
                 invocation.getDevicePointer(11), biasPtr, context.workspacePtr, WORKSPACE_BYTES);
         CuBlasNativeLib.checkStatus(status, functionName);

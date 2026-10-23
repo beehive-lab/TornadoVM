@@ -18,8 +18,9 @@
 
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -27,7 +28,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.DoubleBuffer;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.DataRange;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -490,14 +491,16 @@ public class TestAPI extends TornadoTestBase {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBuildWithSegmentsWrongSize() {
-        final int num_elements = 10;
-        final int additional_bytes = 1;
-        final long byteSize = Integer.BYTES * num_elements + additional_bytes;
+        assertThrows(IllegalArgumentException.class, () -> {
+            final int num_elements = 10;
+            final int additional_bytes = 1;
+            final long byteSize = Integer.BYTES * num_elements + additional_bytes;
 
-        MemorySegment m = Arena.ofAuto().allocate(byteSize);
-        IntArray intArray = IntArray.fromSegment(m);
+            MemorySegment m = Arena.ofAuto().allocate(byteSize);
+            IntArray intArray = IntArray.fromSegment(m);
+        });
     }
 
     @Test

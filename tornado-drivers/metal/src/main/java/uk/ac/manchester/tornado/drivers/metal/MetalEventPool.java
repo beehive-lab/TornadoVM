@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -33,6 +30,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -83,14 +81,12 @@ public class MetalEventPool {
         guarantee(!retain.get(currentEvent), "overwriting retained event");
 
         /*
-         * Metal can produce an out of resources error which results in an invalid
-         * event (-1). If this happens, then we log a fatal exception and gracefully
-         * exit.
+         * An invalid event (-1) means the command was never issued: a kernel without a compute
+         * pipeline, an out-of-resources error, or a missing queue. Fail the operation with that
+         * description instead of terminating the JVM without a word.
          */
         if (oclEventId == -1) {
-            logger.fatal("invalid event: event=0x%x, description=%s\n", oclEventId, descriptorId.getNameDescription());
-            logger.fatal("terminating application as system integrity has been compromised.");
-            System.exit(-1);
+            throw new TornadoRuntimeException(String.format("[Metal] %s was not issued: the driver returned an invalid event", descriptorId.getNameDescription()));
         }
 
         if (events[currentEvent] > 0 && !retain.get(currentEvent)) {

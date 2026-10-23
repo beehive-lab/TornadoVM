@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Checks Metal Shading Language from TC without a Mac: parses and type-checks it with clang as C++17
+# against the mock include/metal_stdlib. Not a substitute for the Metal compiler (that runs on the
+# Mac, see utils/metalc), but it catches syntax errors, wrong types, address-space mismatches and
+# missing helpers. Usage: mslcheck FILE.metal... (exit 1 on the first failing file with --fail-fast).
+set -uo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+CLANG="${CLANG:-$(command -v clang++ || echo "$HOME/.local/share/tc-llvm/bin/clang++")}"
+fail=0
+for f in "$@"; do
+  # [[buffer(n)]]-style attributes name only binding slots (and would collide with the address-space macros).
+  # A threadgroup array at kernel scope is legal MSL; clang wants it static.
+  sed -E 's/\[\[[a-z_]+(\([0-9]+\))?\]\]//g; s/^([[:space:]]+)threadgroup ([a-z_0-9]+ [A-Za-z_0-9]+\[)/\1static threadgroup \2/' "$f" > /tmp/mslcheck.$$.cpp
+  if ! "$CLANG" -std=c++17 -fsyntax-only -x c++ -I "$HERE/include" -Wno-unused-value -ferror-limit=5 /tmp/mslcheck.$$.cpp 2> /tmp/mslcheck.$$ \
+    && ! { ! grep "error:" /tmp/mslcheck.$$ | grep -qv "no viable overloaded '='\|no matching constructor" \
+           && "$CLANG" -std=c++17 -fsyntax-only -x c++ -DTC_MSL_RELAXED -I "$HERE/include" -Wno-unused-value /tmp/mslcheck.$$.cpp 2>/dev/null; }; then
+    echo "FAIL $f"; sed "s|/tmp/mslcheck.$$.cpp|$f|; s/^/  /" /tmp/mslcheck.$$ | head -12; fail=1
+  fi
+done
+rm -f /tmp/mslcheck.$$ /tmp/mslcheck.$$.cpp
+exit $fail

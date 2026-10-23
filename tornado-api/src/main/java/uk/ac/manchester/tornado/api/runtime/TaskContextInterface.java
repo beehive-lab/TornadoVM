@@ -51,6 +51,17 @@ public interface TaskContextInterface {
 
     void setDevice(TornadoDevice device);
 
+    /**
+     * Whether this task must compute floating-point arithmetic the way the host does.
+     *
+     * <p>
+     * Set by {@code TornadoExecutionPlan.withStrictFloatingPoint()}. It can only make a task
+     * stricter, never less strict: a backend already compiling without fusion is unaffected.
+     */
+    boolean isStrictFloatingPoint();
+
+    void setStrictFloatingPoint(boolean strict);
+
     boolean isPrintKernelEnabled();
 
     void setPrintKernelFlag(boolean printKernelEnabled);

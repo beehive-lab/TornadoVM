@@ -151,9 +151,7 @@ options:
                         Enable Tornado assertions
   --threadInfo          Print thread information
   --printKernel, -pk    Print OpenCL kernel
-  --junit               Run within JUnitCore main class
-  --igv                 Dump GraalIR into IGV
-  --igvLowTier          Dump OpenCL Low-TIER GraalIR into IGV
+  --junit               Run with the JUnit Platform ConsoleLauncher
   --printBytecodes, -pbc
                         Print TornadoVM internal bytecodes
   --debug, -d           Enable the Debug mode in Tornado

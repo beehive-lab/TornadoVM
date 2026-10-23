@@ -1,0 +1,36 @@
+; Only exact identities: x+0, x*1, x&-1, x|0, x<<32 (masked to 0), x*1.0, x+(-0.0), ptr+0 fold;
+; x+0.0 does not (it turns -0.0 into +0.0), and x*0 on floats does not (NaN, -0.0).
+; RUN: tc-opt --passes=canonicalize --no-loc %s | FileCheck %s
+
+; CHECK-LABEL: device @ids(%x: i32, %f: f32, %p: ptr<global>) -> f32 {
+; CHECK-NOT:   add %x
+; CHECK-NOT:   mul %x
+; CHECK:       %keepPlusZero = fadd %f, %pz : f32
+; CHECK-NEXT:  %keepTimesZero = fmul %keepPlusZero, %pz : f32
+; CHECK:       %v = load %p : f32
+; CHECK:       store %p, %x
+device @ids(%x: i32, %f: f32, %p: ptr<global>) -> f32 {
+^entry:
+  %zero = const 0 : i32
+  %one = const 1 : i32
+  %m1 = const -1 : i32
+  %c32 = const 32 : i32
+  %a = add %x, %zero : i32
+  %b = mul %a, %one : i32
+  %c = and %b, %m1 : i32
+  %d = or %c, %zero : i32
+  %e = shl %d, %c32 : i32
+  %fone = const 1.0 : f32
+  %nz = const -0.0 : f32
+  %pz = const 0.0 : f32
+  %g = fmul %f, %fone : f32
+  %h = fadd %g, %nz : f32
+  %keepPlusZero = fadd %h, %pz : f32
+  %keepTimesZero = fmul %keepPlusZero, %pz : f32
+  %z64 = const 0 : i64
+  %q = ptr.offset %p, %z64 : ptr<global>
+  %v = load %q : f32
+  store %q, %e
+  %r = fadd %v, %keepTimesZero : f32
+  ret %r
+}

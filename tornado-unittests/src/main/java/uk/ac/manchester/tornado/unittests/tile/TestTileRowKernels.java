@@ -2,6 +2,10 @@
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester.
  *
+ * Portions of this file are derived from NVIDIA TileGym (https://github.com/NVIDIA/TileGym),
+ * Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * Used under the MIT License; see THIRD_PARTY_NOTICES.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,10 +21,10 @@
  */
 package uk.ac.manchester.tornado.unittests.tile;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -62,7 +66,7 @@ public class TestTileRowKernels extends TornadoTestBase {
 
     private static final float EPSILON = 1e-5f;
 
-    @Before
+    @BeforeEach
     public void tileMustBeAvailable() {
         TileSupport.requireTileSupport();
     }
@@ -374,7 +378,7 @@ public class TestTileRowKernels extends TornadoTestBase {
             total += (ROW_TILE - n) * Math.exp(-max);
             for (int i = 0; i < n; i++) {
                 double expected = Math.exp(in.get(row * n + i) - max) / total;
-                assertEquals("row " + row + " column " + i, expected, out.get(row * n + i), 1e-5);
+                assertEquals(expected, out.get(row * n + i), 1e-5, "row " + row + " column " + i);
             }
         }
     }
@@ -397,7 +401,7 @@ public class TestTileRowKernels extends TornadoTestBase {
             }
             double scale = 1.0 / Math.sqrt(sumSquares / n + EPSILON);
             for (int i = 0; i < n; i++) {
-                assertEquals("row " + row + " column " + i, in.get(row * n + i) * scale, out.get(row * n + i), 5e-2);
+                assertEquals(in.get(row * n + i) * scale, out.get(row * n + i), 5e-2, "row " + row + " column " + i);
             }
         }
     }
@@ -428,7 +432,7 @@ public class TestTileRowKernels extends TornadoTestBase {
             variance += (ROW_TILE - n) * mean * mean;
             double scale = 1.0 / Math.sqrt(variance / ROW_TILE + EPSILON);
             for (int i = 0; i < n; i++) {
-                assertEquals("row " + row + " column " + i, (in.get(row * n + i) - mean) * scale, out.get(row * n + i), 5e-2);
+                assertEquals((in.get(row * n + i) - mean) * scale, out.get(row * n + i), 5e-2, "row " + row + " column " + i);
             }
         }
     }
@@ -452,7 +456,7 @@ public class TestTileRowKernels extends TornadoTestBase {
                 double gate = in.get(row * 2 * hidden + i);
                 double value = in.get(row * 2 * hidden + hidden + i);
                 double expected = gate / (1.0 + Math.exp(-gate)) * value;
-                assertEquals("row " + row + " column " + i, expected, out.get(row * hidden + i), 1e-2);
+                assertEquals(expected, out.get(row * hidden + i), 1e-2, "row " + row + " column " + i);
             }
         }
     }
@@ -518,7 +522,7 @@ public class TestTileRowKernels extends TornadoTestBase {
             }
             total += (padded - n) * Math.exp(-max);
             for (int i = 0; i < n; i++) {
-                assertEquals("row " + row + " column " + i, Math.exp(in.get(row * n + i) - max) / total, out.get(row * n + i), 1e-5);
+                assertEquals(Math.exp(in.get(row * n + i) - max) / total, out.get(row * n + i), 1e-5, "row " + row + " column " + i);
             }
         }
     }
@@ -557,7 +561,7 @@ public class TestTileRowKernels extends TornadoTestBase {
             }
             double scale = 1.0 / Math.sqrt(sumSquares / ROW_TILE + EPSILON);
             for (int i = 0; i < n; i++) {
-                assertEquals("row " + row + " column " + i, in.get(row * n + i) * scale, out.get(row * n + i), 5e-2);
+                assertEquals(in.get(row * n + i) * scale, out.get(row * n + i), 5e-2, "row " + row + " column " + i);
             }
         }
     }
@@ -579,7 +583,7 @@ public class TestTileRowKernels extends TornadoTestBase {
             for (int i = 0; i < HIDDEN_SMALL; i++) {
                 double g = gate.get(row * HIDDEN_SMALL + i);
                 double expected = g / (1.0 + Math.exp(-g)) * up.get(row * HIDDEN_SMALL + i);
-                assertEquals("row " + row + " column " + i, expected, out.get(row * HIDDEN_SMALL + i), 1e-2);
+                assertEquals(expected, out.get(row * HIDDEN_SMALL + i), 1e-2, "row " + row + " column " + i);
             }
         }
     }
@@ -601,7 +605,7 @@ public class TestTileRowKernels extends TornadoTestBase {
                 double x = in.get(row * HIDDEN_SMALL + i);
                 double inner = GELU_COEFFICIENT * (x + GELU_CUBIC_TERM * x * x * x);
                 double expected = 0.5 * x * (1.0 + Math.tanh(inner));
-                assertEquals("row " + row + " column " + i, expected, out.get(row * HIDDEN_SMALL + i), 1e-3);
+                assertEquals(expected, out.get(row * HIDDEN_SMALL + i), 1e-3, "row " + row + " column " + i);
             }
         }
     }
@@ -624,7 +628,7 @@ public class TestTileRowKernels extends TornadoTestBase {
                 double b = in.get(row * 2 * HIDDEN_SMALL + HIDDEN_SMALL + i);
                 double inner = GELU_COEFFICIENT * (b + GELU_CUBIC_TERM * b * b * b);
                 double expected = a * 0.5 * b * (1.0 + Math.tanh(inner));
-                assertEquals("row " + row + " column " + i, expected, out.get(row * HIDDEN_SMALL + i), 1e-3);
+                assertEquals(expected, out.get(row * HIDDEN_SMALL + i), 1e-3, "row " + row + " column " + i);
             }
         }
     }

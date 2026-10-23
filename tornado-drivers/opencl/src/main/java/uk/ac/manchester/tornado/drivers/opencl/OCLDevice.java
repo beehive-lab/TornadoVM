@@ -6,21 +6,18 @@
  * School of Engineering, The University of Manchester. All rights reserved.
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
@@ -46,6 +43,7 @@ public class OCLDevice implements OCLTargetDevice {
 
     private static final int INIT_VALUE = -1;
     private static final int MAX_BUFFER_SIZE = 8192;
+    private static final long CL_FP_DENORM = 1 << 0;
 
     private final long devicePtr;
     private final int index;
@@ -124,7 +122,7 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceMaxWorkItemDimensions();
         getDeviceMaxWorkGroupSize_0();
         getDeviceMaxConstantBufferSize();
-        getDoubleFPConfig();
+        doubleFPConfig = getDoubleFPConfig();
         getDeviceSingleFPConfig();
         getDeviceMemoryBaseAlignment();
         getDeviceMaxWorkItemSizes();
@@ -383,7 +381,7 @@ public class OCLDevice implements OCLTargetDevice {
         return buffer.getLong();
     }
 
-    public boolean isDeviceDoubleFPSupported() {
+    public synchronized boolean isDeviceDoubleFPSupported() {
         if (doubleFPConfig != -1) {
             return doubleFPConfig != 0;
         }
@@ -398,6 +396,12 @@ public class OCLDevice implements OCLTargetDevice {
         queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue());
         singleFPConfig = buffer.getLong();
         return singleFPConfig;
+    }
+
+    @Override
+    public boolean isDeviceSingleFPDenormSupported() {
+        // CL_FP_DENORM is optional for floats: Apple's driver leaves it unset and flushes subnormals.
+        return (getDeviceSingleFPConfig() & CL_FP_DENORM) != 0;
     }
 
     public int getDeviceAddressBits() {

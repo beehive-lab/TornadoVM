@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2013-2020, 2023 APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.runtime.common;
@@ -37,21 +34,11 @@ import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
-import tornado.graal.compiler.graph.Node;
-import tornado.graal.compiler.nodes.StructuredGraph;
-import tornado.graal.compiler.nodes.loop.BasicInductionVariable;
-import tornado.graal.compiler.nodes.loop.LoopEx;
-import tornado.graal.compiler.nodes.loop.LoopsData;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
+import uk.ac.manchester.tornado.api.utils.TornadoAPIUtils;
 
 public final class RuntimeUtilities {
 
@@ -83,23 +70,16 @@ public final class RuntimeUtilities {
     }
 
     /**
-     * Convert byte sizes into human-readable format Based on code from.
+     * A byte count in human-readable form; see {@link TornadoAPIUtils#humanReadableByteCount}.
      *
      * @param bytes
+     *     number of bytes
      * @param si
-     * @return humanReadableByteCount
-     * @see <a href=http://stackoverflow.com/questions/3758606/how-to-convert
-     *     -byte-size-into-human-readable-format-in-java >Reference to
-     *     StackOverflow</a>
+     *     units (true if 1000, false if 1024).
+     * @return the formatted size
      */
     public static String humanReadableByteCount(long bytes, boolean si) {
-        final int unit = si ? 1000 : 1024;
-        if (bytes < unit) {
-            return bytes + " B";
-        }
-        final int exp = (int) (Math.log(bytes) / Math.log(unit));
-        final String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-        return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+        return TornadoAPIUtils.humanReadableByteCount(bytes, si);
     }
 
     public static String humanReadableFreq(int freq) {
@@ -329,54 +309,6 @@ public final class RuntimeUtilities {
             return true;
         } else {
             return isBoxedPrimitive(type);
-        }
-    }
-
-    public static String formatMethod(ResolvedJavaMethod method) {
-
-        Signature sig = method.getSignature();
-        JavaKind rt = sig.getReturnKind();
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(rt.getJavaName()).append(" ");
-        sb.append(method.getName()).append("(");
-        for (int i = 0; i < sig.getParameterCount(!method.isStatic()); i++) {
-            JavaKind jk = sig.getParameterKind(i);
-            sb.append(jk.toString());
-            if (i < sig.getParameterCount(!method.isStatic()) - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    /**
-     * It prints the induction variables for counted loops in the given
-     * StructuredGraph. This method can be used for post-processing parallel loops
-     * with identify information for the induction variables.
-     *
-     * @param graph
-     *     The StructuredGraph to analyze and print induction variables in
-     *     the graph.
-     */
-    private static void printInductionVariables(StructuredGraph graph) {
-        final LoopsData data = new TornadoLoopsData(graph);
-        data.detectCountedLoops();
-
-        final List<LoopEx> loops = data.outerFirst();
-
-        List<ParallelRangeNode> parRanges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
-        for (LoopEx loop : loops) {
-            for (ParallelRangeNode parRange : parRanges) {
-                for (Node n : parRange.offset().usages()) {
-                    if (loop.getInductionVariables().containsKey(n)) {
-                        BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange
-                                .stride(), iv.getOp());
-                    }
-                }
-            }
         }
     }
 

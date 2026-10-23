@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.metal;
@@ -42,8 +39,8 @@ import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
-import uk.ac.manchester.tornado.drivers.metal.graal.compiler.MetalCompilationResult;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
 import uk.ac.manchester.tornado.drivers.metal.power.MetalEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalBufferProvider;
@@ -64,7 +61,8 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     private final MetalMemoryManager memoryManager;
     private final Map<Long, MetalEventPool> metalEventPool;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
+    /** Execution plans whose device state has been torn down; see TornadoDeviceContext. */
+    private final java.util.Set<Long> resetPlans = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final Set<Long> executionIDs;
 
     /**
@@ -136,6 +134,14 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public void sync(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
+        if (MetalObjects.batchesDispatches()) {
+            // The host sees results only by reading a buffer back, and every read waits for the
+            // command buffers that bind that buffer, so committing the open one is enough. Waiting
+            // here would drain the GPU at the end of every task graph, which is where a plan of
+            // many small graphs spends most of its time.
+            commandQueue.flush();
+            return;
+        }
         if (TornadoOptions.USE_SYNC_FLUSH) {
             commandQueue.flush();
         }
@@ -166,6 +172,11 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     @Override
     public MetalProgram createProgramWithSource(byte[] source, long[] lengths) {
         return context.createProgramWithSource(source, lengths, this);
+    }
+
+    @Override
+    public MetalProgram createProgramWithSource(byte[] source, long[] lengths, boolean strictFloatingPoint) {
+        return context.createProgramWithSource(source, lengths, this, strictFloatingPoint);
     }
 
     @Override
@@ -519,7 +530,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         MetalCodeCache metalCodeCache = getMetalCodeCache(executionPlanId);
         metalCodeCache.reset();
         codeCache.remove(executionPlanId);
-        wasReset = true;
+        resetPlans.add(executionPlanId);
     }
 
     public MetalTornadoDevice toDevice() {
@@ -549,13 +560,13 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     @Override
-    public boolean wasReset() {
-        return wasReset;
+    public boolean wasReset(long executionPlanId) {
+        return resetPlans.contains(executionPlanId);
     }
 
     @Override
-    public void setResetToFalse() {
-        wasReset = false;
+    public void setResetToFalse(long executionPlanId) {
+        resetPlans.remove(executionPlanId);
     }
 
     @Override
@@ -608,10 +619,6 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         return metalCodeCache.isKernelAvailable();
     }
 
-    public MetalInstalledCode installCode(long executionPlanId, MetalCompilationResult result) {
-        return installCode(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
-    }
-
     @Override
     public MetalInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code) {
         entryPoint = checkKernelName(entryPoint);
@@ -648,5 +655,32 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     public long mapOnDeviceMemoryRegion(long executionPlanId, long destDevicePtr, long srcDevicePtr, long offset, int sizeOfType, long sizeSource, long sizeDest) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
         return commandQueue.mapOnDeviceMemoryRegion(commandQueue.getCommandQueuePtr(), destDevicePtr, srcDevicePtr, offset, sizeOfType, sizeSource, sizeDest);
+    }
+
+    /* ---- Native interop (external libraries, e.g. Apple MLX) ---- */
+
+    /** -Dtornado.mlx.async=true: commit the batch before a library task without waiting for it. */
+    private static final boolean ASYNC_LIBRARY_DISPATCH = Boolean.getBoolean("tornado.mlx.async");
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        long queue = getCommandQueue(executionPlanId).getCommandQueuePtr();
+        // A library encodes its own command buffers on this queue (or reads buffers on the CPU), so
+        // the kernels batched before it are committed and finished first.
+        if (ASYNC_LIBRARY_DISPATCH) {
+            MetalObjects.flush(queue);
+            // The library returns without waiting for what it encodes, and its command buffers signal
+            // none of this backend's events: record it, so that a later host read or finish waits.
+            MetalObjects.markForeignWork(queue);
+        } else {
+            MetalObjects.finish(queue);
+        }
+        return queue;
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        // Taken from the queue itself so the two handles always belong together.
+        return MetalAPI.queueDevice(getNativeStream(executionPlanId));
     }
 }

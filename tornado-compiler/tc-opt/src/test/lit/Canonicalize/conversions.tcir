@@ -1,0 +1,24 @@
+; trunc of a sign or zero extension back to the original width is the original value (Java char
+; arithmetic: (char) (a[i] + b[i]) stored to a char[] widens and narrows twice). A trunc to a
+; different width, or of a value that was not extended, stays.
+; RUN: tc-opt --passes=canonicalize,dce --no-loc %s | FileCheck %s
+
+; CHECK-LABEL: device @chars(%x: i16, %y: i32) -> i16 {
+; CHECK-NEXT:  ^entry:
+; CHECK-NEXT:    %b = trunc %y : i8
+; CHECK-NEXT:    %w = zext %b : i32
+; CHECK-NEXT:    %n = trunc %w : i16
+; CHECK-NEXT:    %r = add %x, %n : i16
+; CHECK-NEXT:    ret %r
+device @chars(%x: i16, %y: i32) -> i16 {
+^entry:
+  %z = zext %x : i32
+  %back = trunc %z : i16
+  %s = sext %back : i64
+  %again = trunc %s : i16
+  %b = trunc %y : i8
+  %w = zext %b : i32
+  %n = trunc %w : i16
+  %r = add %again, %n : i16
+  ret %r
+}

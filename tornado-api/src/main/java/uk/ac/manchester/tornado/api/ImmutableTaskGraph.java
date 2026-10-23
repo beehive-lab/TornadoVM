@@ -234,6 +234,10 @@ public class ImmutableTaskGraph {
         taskGraph.withoutPrintKernel();
     }
 
+    void withStrictFloatingPoint() {
+        taskGraph.withStrictFloatingPoint();
+    }
+
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
         taskGraph.withCompilerFlags(backendType, compilerFlags);
     }

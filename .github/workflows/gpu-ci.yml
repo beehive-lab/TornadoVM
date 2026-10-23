@@ -1,0 +1,190 @@
+name: "GPU CI [build each SDK once, test on JDK 21 and 25]"
+
+# Build once per backend, then run that ONE artifact on the JDKs it supports.
+#
+# This replaces the old "build+test per (backend, JDK)" matrix. That shape could never prove
+# what we now claim -- that an SDK built once runs on any JDK from its floor upwards -- because
+# every leg rebuilt under the JDK it then tested on, so it only ever verified "built on N, runs
+# on N". Here the build jobs publish an SDK artifact and the test jobs consume it unchanged.
+#
+# Two SDKs exist, and they are not interchangeable:
+#   jdk21      compiled with enable-preview (FFM was a preview API before 22), which pins the
+#              class files to JDK 21 exactly. Tested on 21 only.
+#   jdk22plus  compiled at release 22 with no preview. One artifact for 22 and later; it is
+#              tested on JDK 25, the current LTS. The build JDK is pinned in gpu-ci-platform.yml.
+# Each SDK records its own contract in etc/tornado.jdk, and bin/tornado enforces it.
+
+# Scope per event (see the plan job, which computes all of it):
+#   pull request to develop   fast tests (--quickPass) on the default device, Linux and macOS,
+#                             all backends, jdk21 SDK on JDK 21 and jdk22plus SDK on JDK 25.
+#                             Skipped when the change touches documentation only.
+#   schedule (nightly)        the same legs against develop, but the full test suite on EVERY
+#                             device each backend reports. 00:00 UTC.
+#   workflow_dispatch         fast or full (the `full` input) against the chosen branch.
+#
+# Merges into develop and master run no tests: the pull request already did, and the nightly
+# run covers whatever landed since.
+on:
+  pull_request:
+    branches: [develop]
+    # No `labeled`/`unlabeled`: a label change says nothing about the code, and every run is
+    # about an hour of the self-hosted runners.
+    types: [opened, synchronize, reopened]
+    # A change to documentation only cannot break a build or a test, so it does not occupy the
+    # runners. Keep this list in step with no-gpu-tests.yml. *.txt is deliberately absent:
+    # CMakeLists.txt and bin/*.txt are build inputs.
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.rst'
+      - 'docs/**'
+      - '.claude/**'
+      - '**/LICENSE*'
+      - '**/NOTICE*'
+      - '**/THIRD_PARTY_NOTICES*'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Run the nightly scope: full test suite on every device, instead of the fast tests on the default device"
+        type: boolean
+        default: true
+  schedule:
+    # Nightly, when the runners are otherwise idle. GitHub reads this only from the workflow
+    # file on the default branch (master), but the run tests develop: see `ref` below.
+    - cron: "0 0 * * *"
+
+# One live run per pull request. Without this every push to a pull request left its predecessor
+# in the queue, and the queue is the whole cost here: this workflow is 18 jobs on three self-hosted
+# runners that take one job at a time, so a superseded run does not just linger, it delays every
+# other pull request behind it. On 2026-09-18 the repository held 32 unfinished runs and 212
+# unfinished jobs, five of those runs being five different pushes to one branch; jobs sat queued
+# for hours and one leg of #1094 waited 43 hours before it was cancelled by hand, never having
+# been given a runner. None of that showed as a failure -- the checks simply never resolved.
+concurrency:
+  # Non-PR runs stay independent, since cancel-in-progress: false still replaces pending runs
+  # in a shared group.
+  group: >-
+    ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Scheduled runs always check out the default branch (master); the nightly run is for develop.
+  # Empty means actions/checkout's own default: the pull request's merge commit, or the
+  # dispatched branch.
+  CHECKOUT_REF: ${{ github.event_name == 'schedule' && 'develop' || '' }}
+
+jobs:
+  code-quality:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    runs-on: [self-hosted, Linux, x64]
+    env:
+      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      MAVEN_HOME: /opt/maven
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CHECKOUT_REF }}
+      - name: Run Checkstyle
+        run: |
+          export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
+          ./mvnw checkstyle:check
+
+  # Both matrices are computed here rather than written inline, because they are not a plain
+  # cross product: the jdk21 SDK is paired with JDK 21 alone, while the jdk22plus SDK is paired
+  # with JDK 25.
+  plan:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    runs-on: [self-hosted, Linux, x64]
+    timeout-minutes: 2
+    outputs:
+      build_linux: ${{ steps.matrices.outputs.build_linux }}
+      test_linux: ${{ steps.matrices.outputs.test_linux }}
+      build_macos: ${{ steps.matrices.outputs.build_macos }}
+      test_macos: ${{ steps.matrices.outputs.test_macos }}
+      test_scope: ${{ steps.matrices.outputs.test_scope }}
+      ref: ${{ steps.matrices.outputs.ref }}
+    steps:
+      - id: matrices
+        env:
+          FULL: ${{ inputs.full }}
+          REF: ${{ env.CHECKOUT_REF }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os
+
+          # The CUDA legs are pinned to one machine, and both the build and the test of a chain
+          # take their runner from the same entry here, so they cannot land on different boxes.
+          # The CUDA backend itself no longer constrains this: it reaches libcuda and NVRTC through
+          # java.lang.foreign and resolves the NVRTC soname at run time, so its class files are
+          # toolkit-independent. What still is: the library-task modules (cublas/cufft/cudnn/
+          # cusparse/cutlass) are JNI and link the toolkit that built them, so a SDK built against
+          # one toolkit will not load them on a runner with another.
+          #
+          # The label used is sdk-builder, carried today only by the runner named cyclone, which is
+          # also the box with the newer toolkit (12.0 vs thunder's 11.5, too old for CUTLASS). NOTE
+          # that this is a ROLE label rather than a machine one: the pin holds only while exactly
+          # one runner carries it, and would silently stop co-locating if a second sdk-builder were
+          # added. A machine-unique label would state the intent directly.
+          #
+          # OpenCL and Metal need no pin -- they link the stable libOpenCL.so.1 ICD soname --
+          # though it does mean an OpenCL leg may land on either Linux box, so its pass counts
+          # vary with the GPU it happens to get.
+          targets = [
+              ("linux", "opencl", ["self-hosted", "Linux", "x64"]),
+              ("linux", "cuda",   ["self-hosted", "Linux", "x64", "sdk-builder"]),
+              ("macos", "opencl", ["self-hosted", "macOS", "arm64"]),
+              ("macos", "metal",  ["self-hosted", "macOS", "arm64"]),
+          ]
+          # The nightly run takes the full scope; a manual dispatch decides for itself; a pull
+          # request gets the fast tests. The legs are the same either way -- what changes is the
+          # suite and the devices it runs on (see the test step in gpu-ci-platform.yml).
+          event = os.environ["GITHUB_EVENT_NAME"]
+          if event == "workflow_dispatch":
+              full = os.environ.get("FULL") == "true"
+          else:
+              full = event == "schedule"
+
+          # Emitted per platform so each one's tests can start behind its own builds only.
+          build = {"linux": [], "macos": []}
+          test = {"linux": [], "macos": []}
+          for platform, backend, runner in targets:
+              for sdk, jdk in (("jdk21", "jdk21"), ("jdk22plus", "jdk25")):
+                  build[platform].append(dict(platform=platform, backend=backend,
+                                              runner=runner, sdk=sdk))
+                  test[platform].append(dict(platform=platform, backend=backend,
+                                             runner=runner, sdk=sdk, jdk=jdk))
+
+          for platform in ("linux", "macos"):
+              print(f"build_{platform}=" + json.dumps({"include": build[platform]}))
+              print(f"test_{platform}=" + json.dumps({"include": test[platform]}))
+          print("test_scope=" + ("full" if full else "fast"))
+          print("ref=" + os.environ.get("REF", ""))
+          EOF
+
+  # One chain per platform. They run concurrently, and each platform's tests begin as soon as that
+  # platform's builds are done rather than waiting for the other machine.
+  #
+  # macOS has ONE runner for its eight jobs per run, strictly serialised, so with several pull
+  # requests open its checks queue behind each other. That wait is accepted: Metal and the macOS
+  # OpenCL driver get device coverage on every pull request.
+  linux:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: [code-quality, plan]
+    uses: ./.github/workflows/gpu-ci-platform.yml
+    with:
+      platform: linux
+      build_matrix: ${{ needs.plan.outputs.build_linux }}
+      test_matrix: ${{ needs.plan.outputs.test_linux }}
+      test_scope: ${{ needs.plan.outputs.test_scope }}
+      ref: ${{ needs.plan.outputs.ref }}
+
+  macos:
+    if: github.repository == 'beehive-lab/TornadoVM'
+    needs: [code-quality, plan]
+    uses: ./.github/workflows/gpu-ci-platform.yml
+    with:
+      platform: macos
+      build_matrix: ${{ needs.plan.outputs.build_macos }}
+      test_matrix: ${{ needs.plan.outputs.test_macos }}
+      test_scope: ${{ needs.plan.outputs.test_scope }}
+      ref: ${{ needs.plan.outputs.ref }}

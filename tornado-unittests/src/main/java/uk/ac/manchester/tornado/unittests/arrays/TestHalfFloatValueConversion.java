@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -189,7 +189,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
 
         for (int i = 0; i < SIZE; i++) {
             float expected = Float.float16ToFloat(Float.floatToFloat16(in.get(i) * 2.0f));
-            assertEquals("out[" + i + "]", expected, out.get(i).getFloat32(), 0.0f);
+            assertEquals(expected, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -205,7 +205,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         execute(tg, "va");
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("bits[" + i + "]", Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i));
+            assertEquals(Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i), "bits[" + i + "]");
         }
     }
 
@@ -221,7 +221,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         execute(tg, "vl");
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("bits[" + i + "]", Float.floatToFloat16(in.get(i)) & 0xFFFF, out.get(i));
+            assertEquals(Float.floatToFloat16(in.get(i)) & 0xFFFF, out.get(i), "bits[" + i + "]");
         }
     }
 
@@ -239,7 +239,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         for (int i = 0; i < SIZE; i++) {
             // The device rounds through half precision, so the oracle does too: an exact comparison.
             float expected = Float.float16ToFloat(Float.floatToFloat16(in.get(i) * 2.0f));
-            assertEquals("out[" + i + "]", expected, out.get(i), 0.0f);
+            assertEquals(expected, out.get(i), 0.0f, "out[" + i + "]");
         }
     }
 
@@ -260,7 +260,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         for (int slot = 0; slot < SIZE; slot++) {
             int col = (slot / Q8_BLOCK_QUANTS) * 2;
             int k = slot % Q8_BLOCK_QUANTS;
-            assertEquals("packed[" + slot + "]", packQ8HalvesHost(weights, col, k, blocksPerRow), out.get(slot));
+            assertEquals(packQ8HalvesHost(weights, col, k, blocksPerRow), out.get(slot), "packed[" + slot + "]");
         }
     }
 
@@ -278,7 +278,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         }
 
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("bits[" + i + "]", Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i));
+            assertEquals(Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF, out.get(i), "bits[" + i + "]");
         }
     }
 
@@ -298,7 +298,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         for (int i = 0; i < SIZE; i++) {
             int expected = (Float.floatToFloat16(in.get(i) * 2.0f) & 0xFFFF) //
                     | ((Float.floatToFloat16(in.get(i) * 4.0f) & 0xFFFF) << 16);
-            assertEquals("packed[" + i + "]", expected, out.get(i));
+            assertEquals(expected, out.get(i), "packed[" + i + "]");
         }
     }
 
@@ -410,8 +410,8 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
             if (isQuietNaN(expected) && isQuietNaN(actual)) {
                 continue;
             }
-            assertEquals(String.format("half(%s): expected 0x%04X, got 0x%04X", IEEE_CASES[i], expected, actual), //
-                    expected, actual);
+            assertEquals(expected, //
+                    actual, String.format("half(%s): expected 0x%04X, got 0x%04X", IEEE_CASES[i], expected, actual));
         }
     }
 
@@ -453,8 +453,8 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
         execute(graph, "signed_computed");
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("signed computed bits[" + i + "]",
-                    (int) Float.floatToFloat16(in.get(i) * 2.0f), out.get(i));
+            assertEquals((int) Float.floatToFloat16(in.get(i) * 2.0f),
+                    out.get(i), "signed computed bits[" + i + "]");
         }
     }
 
@@ -470,7 +470,7 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
         execute(graph, "signed_load");
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("signed loaded bits[" + i + "]", (int) Float.floatToFloat16(in.get(i)), out.get(i));
+            assertEquals((int) Float.floatToFloat16(in.get(i)), out.get(i), "signed loaded bits[" + i + "]");
         }
     }
 
@@ -489,10 +489,10 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         execute(graph, "signed_widening");
         for (int i = 0; i < SIZE; i++) {
             short expected = Float.floatToFloat16(in.get(i));
-            assertEquals("long bits[" + i + "]", (long) expected, longs.get(i));
-            assertEquals("float bits[" + i + "]", (float) expected, floats.get(i), 0.0f);
-            assertEquals("signed shift/comparison[" + i + "]",
-                    (expected >> 8) + (expected < 0 ? 1 : 0), shifts.get(i));
+            assertEquals((long) expected, longs.get(i), "long bits[" + i + "]");
+            assertEquals((float) expected, floats.get(i), 0.0f, "float bits[" + i + "]");
+            assertEquals((expected >> 8) + (expected < 0 ? 1 : 0),
+                    shifts.get(i), "signed shift/comparison[" + i + "]");
         }
     }
 
@@ -530,8 +530,8 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
         execute(graph, "signed_shared");
         for (int i = 0; i < SIZE; i++) {
             short expected = Float.floatToFloat16(in.get(i));
-            assertEquals("short bits[" + i + "]", expected, shorts.get(i));
-            assertEquals("shared int bits[" + i + "]", (int) expected, ints.get(i));
+            assertEquals(expected, shorts.get(i), "short bits[" + i + "]");
+            assertEquals((int) expected, ints.get(i), "shared int bits[" + i + "]");
         }
     }
 }

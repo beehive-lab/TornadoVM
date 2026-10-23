@@ -17,13 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.cudnn;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -34,6 +35,7 @@ import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cudnn.CuDnn;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cudnn.provider.CuDnnLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
@@ -54,7 +56,7 @@ public class TestCuDnn extends TornadoTestBase {
 
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cuDnnMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -257,6 +259,152 @@ public class TestCuDnn extends TornadoTestBase {
         }
     }
 
+    private static void checkConv2dFP16(int n, int c, int h, int w, int k, int r, int s, int pad, int stride) throws TornadoExecutionPlanException {
+        final int outH = (h + 2 * pad - r) / stride + 1;
+        final int outW = (w + 2 * pad - s) / stride + 1;
+
+        HalfFloatArray input = randomHalfArray(n * c * h * w);
+        HalfFloatArray filter = randomHalfArray(k * c * r * s);
+        HalfFloatArray output = new HalfFloatArray(n * k * outH * outW);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter) //
+                .libraryTask("conv", CuDnn::cudnnConv2dFP16, input, filter, output, n, c, h, w, k, r, s, pad, stride) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // the FP32 reference sees the same FP16-rounded inputs
+        FloatArray inputF32 = new FloatArray(input.getSize());
+        for (int i = 0; i < input.getSize(); i++) {
+            inputF32.set(i, input.get(i).getFloat32());
+        }
+        FloatArray filterF32 = new FloatArray(filter.getSize());
+        for (int i = 0; i < filter.getSize(); i++) {
+            filterF32.set(i, filter.get(i).getFloat32());
+        }
+        FloatArray expected = new FloatArray(output.getSize());
+        convJava(inputF32, filterF32, expected, n, c, h, w, k, r, s, pad, stride);
+        for (int i = 0; i < expected.getSize(); i++) {
+            // FP32 accumulation, FP16 output: about 3 significant digits
+            assertEquals(expected.get(i), output.get(i).getFloat32(), 1e-2f * Math.max(1.0f, Math.abs(expected.get(i))));
+        }
+    }
+
+    @Test
+    public void testConv2dFP16() throws TornadoExecutionPlanException {
+        // channel counts that suit the tensor cores, then ones that do not
+        checkConv2dFP16(2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dFP16(2, 3, 16, 16, 4, 3, 3, 1, 1);
+        // a strided 1x1 projection and a 7x7 stem, as in ResNet
+        checkConv2dFP16(2, 64, 14, 14, 128, 1, 1, 0, 2);
+        checkConv2dFP16(1, 3, 32, 32, 64, 7, 7, 3, 2);
+    }
+
+    /**
+     * A channels-last convolution against the NCHW reference: the inputs are made NCHW and KCRS,
+     * passed as NHWC and KRSC, and the NHWC output is compared element by element.
+     */
+    private static void checkConv2dNHWC(boolean half, int n, int c, int h, int w, int k, int r, int s, int pad, int stride) throws TornadoExecutionPlanException {
+        final int outH = (h + 2 * pad - r) / stride + 1;
+        final int outW = (w + 2 * pad - s) / stride + 1;
+        FloatArray input = half ? toFloat(randomHalfArray(n * c * h * w)) : randomArray(n * c * h * w);
+        FloatArray filter = half ? toFloat(randomHalfArray(k * c * r * s)) : randomArray(k * c * r * s);
+        FloatArray inputLast = new FloatArray(input.getSize());
+        for (int in = 0; in < n; in++) {
+            for (int ic = 0; ic < c; ic++) {
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        inputLast.set(((in * h + y) * w + x) * c + ic, input.get(((in * c + ic) * h + y) * w + x));
+                    }
+                }
+            }
+        }
+        FloatArray filterLast = new FloatArray(filter.getSize());
+        for (int ok = 0; ok < k; ok++) {
+            for (int ic = 0; ic < c; ic++) {
+                for (int fr = 0; fr < r; fr++) {
+                    for (int fs = 0; fs < s; fs++) {
+                        filterLast.set(((ok * r + fr) * s + fs) * c + ic, filter.get(((ok * c + ic) * r + fr) * s + fs));
+                    }
+                }
+            }
+        }
+        FloatArray outputLast;
+        if (half) {
+            HalfFloatArray x = toHalf(inputLast);
+            HalfFloatArray f = toHalf(filterLast);
+            HalfFloatArray y = new HalfFloatArray(n * k * outH * outW);
+            TaskGraph taskGraph = new TaskGraph("g") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, f) //
+                    .libraryTask("conv", CuDnn::cudnnConv2dNHWCFP16, x, f, y, n, c, h, w, k, r, s, pad, stride) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+            outputLast = toFloat(y);
+        } else {
+            outputLast = new FloatArray(n * k * outH * outW);
+            TaskGraph taskGraph = new TaskGraph("g") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputLast, filterLast) //
+                    .libraryTask("conv", CuDnn::cudnnConv2dNHWC, inputLast, filterLast, outputLast, n, c, h, w, k, r, s, pad, stride) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outputLast);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+        }
+        FloatArray expected = new FloatArray(n * k * outH * outW);
+        convJava(input, filter, expected, n, c, h, w, k, r, s, pad, stride);
+        // FP16 output keeps about 3 significant digits; FP32 may run as TF32 on Ampere and later
+        float tolerance = half ? 1e-2f : 5e-3f;
+        for (int in = 0; in < n; in++) {
+            for (int ok = 0; ok < k; ok++) {
+                for (int oh = 0; oh < outH; oh++) {
+                    for (int ow = 0; ow < outW; ow++) {
+                        float e = expected.get(((in * k + ok) * outH + oh) * outW + ow);
+                        float a = outputLast.get(((in * outH + oh) * outW + ow) * k + ok);
+                        assertEquals(e, a, tolerance * Math.max(1.0f, Math.abs(e)));
+                    }
+                }
+            }
+        }
+    }
+
+    private static FloatArray toFloat(HalfFloatArray a) {
+        FloatArray f = new FloatArray(a.getSize());
+        for (int i = 0; i < a.getSize(); i++) {
+            f.set(i, a.get(i).getFloat32());
+        }
+        return f;
+    }
+
+    private static HalfFloatArray toHalf(FloatArray a) {
+        HalfFloatArray h = new HalfFloatArray(a.getSize());
+        for (int i = 0; i < a.getSize(); i++) {
+            h.set(i, new HalfFloat(a.get(i)));
+        }
+        return h;
+    }
+
+    @Test
+    public void testConv2dNHWC() throws TornadoExecutionPlanException {
+        checkConv2dNHWC(false, 2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dNHWC(false, 2, 3, 16, 16, 4, 3, 3, 1, 1);
+        checkConv2dNHWC(false, 2, 64, 14, 14, 128, 1, 1, 0, 2);
+    }
+
+    @Test
+    public void testConv2dNHWCFP16() throws TornadoExecutionPlanException {
+        // channel counts that suit the tensor cores, then ones that do not
+        checkConv2dNHWC(true, 2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dNHWC(true, 2, 3, 16, 16, 4, 3, 3, 1, 1);
+        // a strided 1x1 projection and a 7x7 stem, as in ResNet
+        checkConv2dNHWC(true, 2, 64, 14, 14, 128, 1, 1, 0, 2);
+        checkConv2dNHWC(true, 1, 3, 32, 32, 64, 7, 7, 3, 2);
+    }
+
     /**
      * CNN-style mixed pipeline: cuDNN convolution -> JIT bias-like task ->
      * cuDNN ReLU -> cuDNN max pooling, all on shared device buffers.
@@ -441,7 +589,48 @@ public class TestCuDnn extends TornadoTestBase {
             for (int it = 0; it < 5; it++) {
                 plan.execute();
                 for (int i = 0; i < expected.getSize(); i++) {
-                    assertEquals("iteration " + it, expected.get(i), output.get(i), 1e-3f * Math.max(1.0f, Math.abs(expected.get(i))));
+                    assertEquals(expected.get(i), output.get(i), 1e-3f * Math.max(1.0f, Math.abs(expected.get(i))), "iteration " + it);
+                }
+            }
+        }
+    }
+
+    /**
+     * Four task graphs of one plan, each with a convolution, under a CUDA graph. Each convolution
+     * needs a larger workspace than the one before, and a graph captured before a larger workspace
+     * is prepared must still find its own workspace when it is replayed.
+     */
+    @Test
+    public void testConv2dWorkspaceGrowsAcrossCapturedGraphs() throws TornadoExecutionPlanException {
+        // N, C, H, W, K: each convolution needs a larger workspace than the one before
+        int[][] shapes = { { 2, 16, 16, 16, 16 }, { 4, 32, 32, 32, 32 }, { 8, 64, 48, 48, 64 }, { 16, 128, 56, 56, 128 } };
+        int count = shapes.length;
+        FloatArray[] inputs = new FloatArray[count];
+        FloatArray[] filters = new FloatArray[count];
+        FloatArray[] outputs = new FloatArray[count];
+        FloatArray[] expected = new FloatArray[count];
+        TaskGraph[] graphs = new TaskGraph[count];
+        for (int g = 0; g < count; g++) {
+            int n = shapes[g][0], c = shapes[g][1], h = shapes[g][2], w = shapes[g][3], k = shapes[g][4];
+            inputs[g] = randomArray(n * c * h * w);
+            filters[g] = randomArray(k * c * 3 * 3);
+            outputs[g] = new FloatArray(n * k * h * w);
+            expected[g] = new FloatArray(n * k * h * w);
+            convJava(inputs[g], filters[g], expected[g], n, c, h, w, k, 3, 3, 1, 1);
+            graphs[g] = new TaskGraph("workspace" + g) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputs[g], filters[g]) //
+                    .libraryTask("conv", CuDnn::cudnnConv2d, inputs[g], filters[g], outputs[g], n, c, h, w, k, 3, 3, 1, 1) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, outputs[g]);
+        }
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graphs[0].snapshot(), graphs[1].snapshot(), graphs[2].snapshot(), graphs[3].snapshot())) {
+            plan.withCUDAGraph();
+            for (int it = 0; it < 3; it++) {
+                plan.execute();
+                for (int g = 0; g < count; g++) {
+                    for (int i = 0; i < expected[g].getSize(); i++) {
+                        assertEquals(expected[g].get(i), outputs[g].get(i), 1e-2f * Math.max(1.0f, Math.abs(expected[g].get(i))), "graph " + g + ", iteration " + it);
+                    }
                 }
             }
         }
@@ -511,6 +700,43 @@ public class TestCuDnn extends TornadoTestBase {
         for (int i = 0; i < size; i++) {
             float expected = (float) Math.tanh(Math.max(0.0f, input.get(i)));
             assertEquals(expected, output.get(i), 0.001f);
+        }
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * cuDNN call must follow the kernel that produces its input on that thread's stream, not on the
+     * stream of the thread that first ran the plan.
+     */
+    @Test
+    public void testReluFollowsKernelOnAnotherThread() throws Exception {
+        final int size = 4096;
+        FloatArray input = new FloatArray(size);
+        FloatArray output = new FloatArray(size);
+        FloatArray value = new FloatArray(1);
+        value.set(0, 1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, input) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), input, value, LibraryStreamPerThread.SPINS) //
+                .libraryTask("relu", CuDnn::cudnnRelu, input, output, size) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < size; i++) {
+                assertEquals(1.0f, output.get(i), 1e-3f, "element " + i);
+            }
+
+            // The same plan from another thread, with a new value: a call that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0f);
+            output.init(0.0f);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < size; i++) {
+                assertEquals(2.0f, output.get(i), 1e-3f, "element " + i);
+            }
         }
     }
 }

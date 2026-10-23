@@ -17,14 +17,15 @@
  */
 package uk.ac.manchester.tornado.unittests.cutlass;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Random;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -37,6 +38,7 @@ import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cutlass.Cutlass;
+import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
@@ -51,7 +53,7 @@ public class TestCutlass extends TornadoTestBase {
 
     private static final Random random = new Random(42);
 
-    @Before
+    @BeforeEach
     public void cutlassMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backendType != TornadoVMBackendType.CUDA) {
@@ -967,9 +969,50 @@ public class TestCutlass extends TornadoTestBase {
                 for (int i = 0; i < m; i++) {
                     for (int j = 0; j < n; j++) {
                         float expected = Math.max(0.0f, gemm[i * n + j] + bias.get(j).getFloat32());
-                        assertEquals("iteration " + it, expected, d.get(i * n + j).getFloat32(), 0.05f);
+                        assertEquals(expected, d.get(i * n + j).getFloat32(), 0.05f, "iteration " + it);
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * The same plan run from a second thread: TornadoVM gives each thread its own stream, and the
+     * CUTLASS call must follow the kernel that produces its input on that thread's stream, not on the
+     * stream of the thread that first ran the plan.
+     */
+    @Test
+    public void testSgemmFollowsKernelOnAnotherThread() throws Exception {
+        final int n = 64;
+        FloatArray a = new FloatArray(n * n);
+        FloatArray identity = new FloatArray(n * n);
+        FloatArray c = new FloatArray(n * n);
+        for (int i = 0; i < n; i++) {
+            identity.set(i * n + i, 1.0f);
+        }
+        FloatArray value = new FloatArray(1);
+        value.set(0, 1.0f);
+
+        TaskGraph taskGraph = new TaskGraph("streamPerThread") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, a, identity) //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, value) //
+                .task("fill", LibraryStreamPerThread::slowFill, new KernelContext(), a, value, LibraryStreamPerThread.SPINS) //
+                .libraryTask("gemm", Cutlass::cutlassSgemm, n, n, n, 1.0f, a, identity, 0.0f, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withGridScheduler(LibraryStreamPerThread.gridScheduler("streamPerThread.fill")).execute();
+            for (int i = 0; i < n * n; i++) {
+                assertEquals(1.0f, c.get(i), 1e-3f, "element " + i);
+            }
+
+            // The same plan from another thread, with a new value: a call that does not wait for
+            // the kernel on this thread's stream reads the first one.
+            value.set(0, 2.0f);
+            c.init(0.0f);
+            LibraryStreamPerThread.executeOnAnotherThread(plan);
+            for (int i = 0; i < n * n; i++) {
+                assertEquals(2.0f, c.get(i), 1e-3f, "element " + i);
             }
         }
     }

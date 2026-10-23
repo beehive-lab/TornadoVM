@@ -88,8 +88,8 @@ prefer graph-API equivalents once C0 exists.
 | # | Feature | Design / Test | Status |
 |---|---|---|---|
 | B1 | Algorithm autotuning | `cudnnFindConvolutionForwardAlgorithm` (or v7 heuristic get) at plan creation instead of fixed IMPLICIT_PRECOMP_GEMM; store per-plan; expose `CuDnnOptions.withAutotune()` via `withTuning` (pattern from `CuBlasOptions`). *Test:* result identical, log chosen algo | [ ] |
-| B2 | FP16 convolution (Tensor Cores) | `HalfFloatArray` I/O, `CUDNN_DATA_HALF` + FP32 compute via `cudnnSetConvolutionMathType(CUDNN_TENSOR_OP_MATH)`. *Test:* vs FP32 conv, relaxed tol; benchmark row (expect large Tensor Core gain) | [ ] |
-| B3 | NHWC layout | `CUDNN_TENSOR_NHWC` descriptors (preferred layout for Tensor Cores); factory variant. *Test:* NHWC vs NCHW results | [ ] |
+| B2 | FP16 convolution (Tensor Cores) | `HalfFloatArray` I/O, `CUDNN_DATA_HALF` + FP32 compute via `cudnnSetConvolutionMathType(CUDNN_TENSOR_OP_MATH)`. *Test:* vs FP32 conv, relaxed tol; benchmark row (expect large Tensor Core gain) | [x] |
+| B3 | NHWC layout | `CUDNN_TENSOR_NHWC` descriptors (preferred layout for Tensor Cores); factory variant. *Test:* NHWC vs NCHW results | [x] |
 | B4 | Grouped / depthwise conv | `cudnnSetConvolutionGroupCount`; mobile-net style. *Test:* groups=c depthwise vs Java | [ ] |
 | B5 | Conv backward (data/filter) | `cudnnConvolutionBackwardData/Filter` — training story; same plan pattern. *Test:* finite-difference check | [ ] |
 | B6 | 3D convolution | Nd descriptors (`cudnnSetConvolutionNdDescriptor`) | [ ] |

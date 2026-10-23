@@ -17,9 +17,9 @@
  */
 package uk.ac.manchester.tornado.unittests.arrays;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -28,23 +28,21 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
  * Regression tests for {@code new HalfFloat(short)}, which takes the half's <em>raw bit
  * pattern</em> - it does not convert a number to half precision.
  *
- * <p>The CUDA backend used to let that short through as an integer, so the store assigned it to a
- * {@code __half} destination and C++ converted it numerically: the bits of -8.0 ({@code 0xC800})
- * were written as -14336.0, silently, for every element. The value now goes through
- * {@code __ushort_as_half}, which reinterprets it and drops the sign extension a {@code short}
- * picks up on the Java operand stack.
+ * <p>A backend that lets that short through as an integer converts it numerically: the bits of
+ * -8.0 ({@code 0xC800}) are written as -14336.0, silently, for every element. TC reinterprets the
+ * bits (a bitcast after dropping the sign extension a {@code short} picks up on the Java operand
+ * stack) on every backend, so the tests run on CUDA, OpenCL and Metal.
  *
  * <p>The raw-bits constructor is what a kernel reaches for when it stages quantized weights, so
  * the KernelContext forms - explicit {@code globalIdx} indexing, and a shared tile of packed bits -
@@ -58,22 +56,6 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
 
     /** Half bit patterns worth pinning: both signs, zero, a subnormal, and the largest finite half. */
     private static final float[] VALUES = { 0.0f, 1.0f, -1.0f, 8.0f, -8.0f, 0.5f, -0.5f, 65504.0f, -65504.0f, 6.0e-8f, -6.0e-8f, 1024.0f };
-
-    /**
-     * The fix is applied to the CUDA backend only; the OpenCL/Metal HalfFloat replacement phases
-     * share the pattern and are not changed here, so skip them rather than assert against
-     * behaviour this change does not touch.
-     */
-    private void assumeCudaBackend() {
-        TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "This HalfFloat raw-bits fix targets the CUDA backend (default device is " + backendType + ")";
-            switch (backendType) {
-                case OPENCL, METAL -> assertNotBackend(backendType, message);
-                default -> throw new TornadoVMCUDANotSupported(message);
-            }
-        }
-    }
 
     /** Build a half out of a bit pattern carried in an int, and store it. */
     public static void storeBits(IntArray bits, HalfFloatArray out) {
@@ -120,7 +102,6 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
 
     @Test
     public void testStoreBits() throws TornadoExecutionPlanException {
-        assumeCudaBackend();
         IntArray bits = bitsInput();
         HalfFloatArray out = new HalfFloatArray(VALUES.length);
 
@@ -136,7 +117,6 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
 
     @Test
     public void testRoundTripBits() throws TornadoExecutionPlanException {
-        assumeCudaBackend();
         HalfFloatArray in = new HalfFloatArray(VALUES.length);
         for (int i = 0; i < VALUES.length; i++) {
             in.set(i, new HalfFloat(VALUES[i]));
@@ -151,13 +131,12 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
         }
 
         for (int i = 0; i < VALUES.length; i++) {
-            assertEquals("out[" + i + "]", in.get(i).getFloat32(), out.get(i).getFloat32(), 0.0f);
+            assertEquals(in.get(i).getFloat32(), out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 
     @Test
     public void testStoreBitsKernelContext() throws TornadoExecutionPlanException {
-        assumeCudaBackend();
         IntArray bits = bitsInput();
         HalfFloatArray out = new HalfFloatArray(VALUES.length);
 
@@ -171,7 +150,6 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
 
     @Test
     public void testStageBitsThroughLocalTile() throws TornadoExecutionPlanException {
-        assumeCudaBackend();
         IntArray bits = bitsInput();
         HalfFloatArray out = new HalfFloatArray(VALUES.length);
 
@@ -185,7 +163,6 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
 
     @Test
     public void testConstantBits() throws TornadoExecutionPlanException {
-        assumeCudaBackend();
         HalfFloatArray out = new HalfFloatArray(16);
 
         TaskGraph tg = new TaskGraph("cb") //
@@ -196,7 +173,41 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
         }
 
         for (int i = 0; i < out.getSize(); i++) {
-            assertEquals("out[" + i + "]", 1.0f, out.get(i).getFloat32(), 0.0f);
+            assertEquals(1.0f, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
+        }
+    }
+
+    /**
+     * Two halves packed in an int, decoded with {@link Float#float16ToFloat(short)}: the shape a
+     * kernel uses after a 16-byte copy of F16 weights into an int tile. The conversion has to
+     * reinterpret the bits; converting the integer's value turns 0x3C00 into 15360.0f.
+     */
+    public static void decodePackedHalves(KernelContext ctx, IntArray packed, FloatArray out) {
+        int i = ctx.globalIdx;
+        int bits = packed.get(i);
+        out.set(2 * i, Float.float16ToFloat((short) (bits & 0xFFFF)));
+        out.set(2 * i + 1, Float.float16ToFloat((short) (bits >>> 16)));
+    }
+
+    @Test
+    public void testFloat16ToFloatDecodesPackedBits() throws TornadoExecutionPlanException {
+        IntArray packed = new IntArray(VALUES.length);
+        for (int i = 0; i < VALUES.length; i++) {
+            int lo = Float.floatToFloat16(VALUES[i]) & 0xFFFF;
+            int hi = Float.floatToFloat16(VALUES[VALUES.length - 1 - i]) & 0xFFFF;
+            packed.set(i, lo | (hi << 16));
+        }
+        FloatArray out = new FloatArray(2 * VALUES.length);
+
+        TaskGraph tg = new TaskGraph("ph") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, packed) //
+                .task("t0", TestHalfFloatShortBits::decodePackedHalves, new KernelContext(), packed, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        executeWithGrid(tg, "ph");
+
+        for (int i = 0; i < VALUES.length; i++) {
+            assertEquals(Float.float16ToFloat(Float.floatToFloat16(VALUES[i])), out.get(2 * i), 0.0f, "lo[" + i + "]");
+            assertEquals(Float.float16ToFloat(Float.floatToFloat16(VALUES[VALUES.length - 1 - i])), out.get(2 * i + 1), 0.0f, "hi[" + i + "]");
         }
     }
 
@@ -217,7 +228,7 @@ public class TestHalfFloatShortBits extends TornadoTestBase {
     private static void assertMatchesBits(IntArray bits, HalfFloatArray out) {
         for (int i = 0; i < VALUES.length; i++) {
             float expected = Float.float16ToFloat((short) bits.get(i));
-            assertEquals("out[" + i + "]", expected, out.get(i).getFloat32(), 0.0f);
+            assertEquals(expected, out.get(i).getFloat32(), 0.0f, "out[" + i + "]");
         }
     }
 

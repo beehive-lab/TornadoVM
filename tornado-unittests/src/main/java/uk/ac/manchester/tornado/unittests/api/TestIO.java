@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
@@ -46,9 +46,8 @@ public class TestIO extends TornadoTestBase {
 
     private FloatArray createAndInitializeArray(int size) {
         FloatArray array = new FloatArray(size);
-        IntStream.range(0, size).parallel().forEach(idx -> {
-            array.set(idx, idx);
-        });
+        IntStream.range(0, size).parallel().forEach(idx ->
+            array.set(idx, idx));
 
         return array;
     }

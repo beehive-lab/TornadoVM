@@ -49,7 +49,10 @@ final class CuDnnNativeLib {
     private static final int CUDNN_STATUS_SUCCESS = 0;
     private static final int CUDNN_STATUS_INTERNAL_ERROR = 4;
     private static final int CUDNN_TENSOR_NCHW = 0;
+    private static final int CUDNN_TENSOR_NHWC = 1;
     private static final int CUDNN_DATA_FLOAT = 0;
+    private static final int CUDNN_DATA_HALF = 2;
+    private static final int CUDNN_TENSOR_OP_MATH = 1;
     private static final int CUDNN_SOFTMAX_ACCURATE = 1;
     private static final int CUDNN_SOFTMAX_MODE_INSTANCE = 0;
     private static final int CUDNN_NOT_PROPAGATE_NAN = 0;
@@ -83,6 +86,8 @@ final class CuDnnNativeLib {
     private static final MethodHandle SET_CONVOLUTION_2D_DESCRIPTOR;
     private static final MethodHandle GET_CONVOLUTION_2D_FORWARD_OUTPUT_DIM;
     private static final MethodHandle GET_CONVOLUTION_FORWARD_WORKSPACE_SIZE;
+    private static final MethodHandle SET_CONVOLUTION_MATH_TYPE;
+    private static final MethodHandle GET_CONVOLUTION_FORWARD_ALGORITHM_V7;
     private static final MethodHandle SOFTMAX_FORWARD;
     private static final MethodHandle ACTIVATION_FORWARD;
     private static final MethodHandle POOLING_FORWARD;
@@ -113,6 +118,8 @@ final class CuDnnNativeLib {
             SET_CONVOLUTION_2D_DESCRIPTOR = null;
             GET_CONVOLUTION_2D_FORWARD_OUTPUT_DIM = null;
             GET_CONVOLUTION_FORWARD_WORKSPACE_SIZE = null;
+            SET_CONVOLUTION_MATH_TYPE = null;
+            GET_CONVOLUTION_FORWARD_ALGORITHM_V7 = null;
             SOFTMAX_FORWARD = null;
             ACTIVATION_FORWARD = null;
             POOLING_FORWARD = null;
@@ -142,6 +149,9 @@ final class CuDnnNativeLib {
                     "cudnnGetConvolution2dForwardOutputDim");
             GET_CONVOLUTION_FORWARD_WORKSPACE_SIZE = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_POINTER),
                     "cudnnGetConvolutionForwardWorkspaceSize");
+            SET_CONVOLUTION_MATH_TYPE = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_INT), "cudnnSetConvolutionMathType");
+            GET_CONVOLUTION_FORWARD_ALGORITHM_V7 = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_POINTER, C_POINTER),
+                    "cudnnGetConvolutionForwardAlgorithm_v7");
             SOFTMAX_FORWARD = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_INT, C_INT, C_POINTER, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG), "cudnnSoftmaxForward");
             ACTIVATION_FORWARD = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG), "cudnnActivationForward");
             POOLING_FORWARD = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG), "cudnnPoolingForward");
@@ -404,12 +414,23 @@ final class CuDnnNativeLib {
 
     private static final ConcurrentHashMap<Long, ConvPlan> CONV_PLANS = new ConcurrentHashMap<>();
 
+    /** Size of {@code cudnnConvolutionFwdAlgoPerf_t}, and the offsets of the fields read from it. */
+    private static final int ALGO_PERF_BYTES = 48;
+    private static final int ALGO_PERF_STATUS = 4;
+    private static final int ALGO_PERF_MATH_TYPE = 28;
+    private static final int ALGO_PERF_COUNT = 8;
+
     /**
      * Builds the descriptors for a 2D cross-correlation (the deep-learning convention): input NCHW
-     * {@code (n,c,h,w)}, filter KCRS {@code (k,c,r,s)}, square pad and stride, FP32, with the
-     * IMPLICIT_PRECOMP_GEMM algorithm, and queries the workspace size. Returns 0 on failure.
+     * {@code (n,c,h,w)}, filter KCRS {@code (k,c,r,s)}, square pad and stride, and queries the
+     * workspace size. With {@code nhwc} the input and output are channels-last, NHWC, and the filter
+     * KRSC. Returns 0 on failure.
+     *
+     * <p>
+     * FP32 NCHW uses the IMPLICIT_PRECOMP_GEMM algorithm. FP16 tensors accumulate in FP32 with
+     * tensor-core maths; FP16 and NHWC take the algorithm cuDNN's heuristics rank first.
      */
-    static long createConvPlan(long handle, int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+    static long createConvPlan(long handle, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc) {
         if (CREATE_TENSOR_DESCRIPTOR == null) {
             return 0;
         }
@@ -426,12 +447,19 @@ final class CuDnnNativeLib {
             if (inputDesc == 0 || filterDesc == 0 || convDesc == 0 || outputDesc == 0) {
                 return 0;
             }
-            int status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(inputDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, n, c, h, w);
+            int dataType = half ? CUDNN_DATA_HALF : CUDNN_DATA_FLOAT;
+            // the dimensions are given as (n, c, h, w) and (k, c, r, s) in either format
+            int format = nhwc ? CUDNN_TENSOR_NHWC : CUDNN_TENSOR_NCHW;
+            int status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(inputDesc, format, dataType, n, c, h, w);
             if (status == CUDNN_STATUS_SUCCESS) {
-                status = (int) SET_FILTER_4D_DESCRIPTOR.invokeExact(filterDesc, CUDNN_DATA_FLOAT, CUDNN_TENSOR_NCHW, k, c, r, s);
+                status = (int) SET_FILTER_4D_DESCRIPTOR.invokeExact(filterDesc, dataType, format, k, c, r, s);
             }
             if (status == CUDNN_STATUS_SUCCESS) {
+                // the compute type stays FP32 for FP16 tensors: FP32 accumulation
                 status = (int) SET_CONVOLUTION_2D_DESCRIPTOR.invokeExact(convDesc, pad, pad, stride, stride, 1, 1, CUDNN_CROSS_CORRELATION, CUDNN_DATA_FLOAT);
+            }
+            if (status == CUDNN_STATUS_SUCCESS && half) {
+                status = (int) SET_CONVOLUTION_MATH_TYPE.invokeExact(convDesc, CUDNN_TENSOR_OP_MATH);
             }
             MemorySegment dims = FFMSupport.allocateArray(arena, C_INT, 4);
             if (status == CUDNN_STATUS_SUCCESS) {
@@ -439,17 +467,24 @@ final class CuDnnNativeLib {
                         dims.asSlice(8, Integer.BYTES), dims.asSlice(12, Integer.BYTES));
             }
             if (status == CUDNN_STATUS_SUCCESS) {
-                status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(outputDesc, CUDNN_TENSOR_NCHW, CUDNN_DATA_FLOAT, dims.get(C_INT, 0), dims.get(C_INT, 4), dims.get(C_INT, 8), dims.get(C_INT, 12));
+                status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(outputDesc, format, dataType, dims.get(C_INT, 0), dims.get(C_INT, 4), dims.get(C_INT, 8), dims.get(C_INT, 12));
+            }
+            int algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
+            if (status == CUDNN_STATUS_SUCCESS && (half || nhwc)) {
+                algo = heuristicAlgorithm(arena, handle, inputDesc, filterDesc, convDesc, outputDesc);
+                if (algo < 0) {
+                    return 0;
+                }
             }
             MemorySegment workspace = FFMSupport.allocateLong(arena);
             if (status == CUDNN_STATUS_SUCCESS) {
-                status = (int) GET_CONVOLUTION_FORWARD_WORKSPACE_SIZE.invokeExact(handle, inputDesc, filterDesc, convDesc, outputDesc, CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM, workspace);
+                status = (int) GET_CONVOLUTION_FORWARD_WORKSPACE_SIZE.invokeExact(handle, inputDesc, filterDesc, convDesc, outputDesc, algo, workspace);
             }
             if (status != CUDNN_STATUS_SUCCESS) {
                 return 0;
             }
             long planHandle = NEXT_CONV_PLAN.getAndIncrement();
-            CONV_PLANS.put(planHandle, new ConvPlan(inputDesc, filterDesc, convDesc, outputDesc, CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM, workspace.get(C_LONG, 0)));
+            CONV_PLANS.put(planHandle, new ConvPlan(inputDesc, filterDesc, convDesc, outputDesc, algo, workspace.get(C_LONG, 0)));
             keep = true;
             return planHandle;
         } catch (Throwable t) {
@@ -462,6 +497,27 @@ final class CuDnnNativeLib {
                 destroyDescriptor(DESTROY_TENSOR_DESCRIPTOR, inputDesc);
             }
         }
+    }
+
+    /**
+     * The first algorithm cuDNN's heuristics return that supports the descriptors; its math type is
+     * set on {@code convDesc}. Returns -1 when none does.
+     */
+    private static int heuristicAlgorithm(Arena arena, long handle, long inputDesc, long filterDesc, long convDesc, long outputDesc) throws Throwable {
+        MemorySegment count = FFMSupport.allocateArray(arena, C_INT, 1);
+        MemorySegment perf = arena.allocate((long) ALGO_PERF_BYTES * ALGO_PERF_COUNT, 8);
+        int status = (int) GET_CONVOLUTION_FORWARD_ALGORITHM_V7.invokeExact(handle, inputDesc, filterDesc, convDesc, outputDesc, ALGO_PERF_COUNT, count, perf);
+        if (status != CUDNN_STATUS_SUCCESS) {
+            return -1;
+        }
+        for (int i = 0; i < count.get(C_INT, 0); i++) {
+            MemorySegment result = perf.asSlice((long) i * ALGO_PERF_BYTES, ALGO_PERF_BYTES);
+            if (result.get(C_INT, ALGO_PERF_STATUS) == CUDNN_STATUS_SUCCESS) {
+                status = (int) SET_CONVOLUTION_MATH_TYPE.invokeExact(convDesc, result.get(C_INT, ALGO_PERF_MATH_TYPE));
+                return status == CUDNN_STATUS_SUCCESS ? result.get(C_INT, 0) : -1;
+            }
+        }
+        return -1;
     }
 
     static long convPlanWorkspaceBytes(long planPtr) {

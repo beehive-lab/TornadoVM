@@ -22,9 +22,7 @@
             <!-- License file in root directory -->
             <includes>
                 <include>LICENSE_APACHE2</include>
-                <include>LICENSE_GPLv2CE</include>
-                <include>LICENSE_GPLv2</include>
-                <include>LICENSE_MIT</include>
+                <include>THIRD_PARTY_NOTICES</include>
             </includes>
             <outputDirectory>./</outputDirectory>
             <fileMode>0444</fileMode>
@@ -39,7 +37,10 @@
                 <include>*.py</include>
                 <include>tornado</include>
                 <include>tornado-test</include>
-                <include>tornado-benchmarks.py</include>
+                <include>tc</include>
+                <include>tornado-selftest</include>
+                <include>build-tc-native</include>
+                <include>tornado-native-image</include>
                 <include>misc/*.py</include>
             </includes>
             <lineEnding>unix</lineEnding>
@@ -131,35 +132,6 @@
             </includes>
             <fileMode>0666</fileMode>
         </fileSet>
-        <fileSet>
-            <directory>../graalJars</directory>
-            <!-- Bare-minimum Graal JARs for JDK 21. The compiler is shipped relocated as
-                 the vendored tornado.graal module (tornado-graal-*.jar) so it resolves
-                 from the regular module-path; word/collections/truffle-compiler are its
-                 transitive requires. truffle-api/polyglot/graal-sdk/compiler-management
-                 are excluded. -->
-            <outputDirectory>share/java/graalJars</outputDirectory>
-            <includes>
-                <include>tornado-graal-*.jar</include>
-                <include>truffle-compiler-*.jar</include>
-                <include>collections-*.jar</include>
-                <include>word-*.jar</include>
-            </includes>
-            <fileMode>0644</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>../graalJars</directory>
-            <!-- Vendored jdk.internal.vm.ci (JDK-21 jvmci repackaged as a same-named
-                 application module by bin/build_jvmci_module.py). Shipped to a SEPARATE
-                 directory: the tornado launcher adds it to the module-path ONLY on JDK 27+
-                 where the platform no longer provides jdk.internal.vm.ci. On JDK <=26 a
-                 module of the same name would collide with the platform module. -->
-            <outputDirectory>share/java/jvmci</outputDirectory>
-            <includes>
-                <include>jvmci-*.jar</include>
-            </includes>
-            <fileMode>0644</fileMode>
-        </fileSet>
     </fileSets>
     <moduleSets>
         <moduleSet>
@@ -169,15 +141,14 @@
             <includes>
                 <include>io.github.beehive-lab:tornado-api</include>
                 <include>io.github.beehive-lab:tornado-runtime</include>
-                <include>io.github.beehive-lab:tornado-annotation</include>
                 <include>io.github.beehive-lab:tornado-matrices</include>
                 <include>io.github.beehive-lab:tornado-drivers-common</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl</include>
                 <include>io.github.beehive-lab:tornado-drivers-metal</include>
                 <include>io.github.beehive-lab:tornado-examples</include>
-                <include>io.github.beehive-lab:tornado-benchmarks</include>
                 <include>io.github.beehive-lab:tornado-unittests</include>
                 <include>io.github.beehive-lab:tornado-cublas</include>
+                <include>io.github.beehive-lab:tornado-clblast</include>
                 <include>io.github.beehive-lab:tornado-curand</include>
                 <include>io.github.beehive-lab:tornado-cufft</include>
                 <include>io.github.beehive-lab:tornado-cudnn</include>
@@ -185,6 +156,9 @@
                 <include>io.github.beehive-lab:tornado-cudf</include>
                 <include>io.github.beehive-lab:tornado-cutlass</include>
                 <include>io.github.beehive-lab:tornado-cuvs</include>
+                <include>io.github.beehive-lab:tornado-mlx</include>
+                <include>io.github.beehive-lab:tornado-nccl</include>
+                <include>io.github.beehive-lab:tc-selftest</include>
                 <include>io.github.beehive-lab:tornado-kotlin-api</include>
                 <include>io.github.beehive-lab:tornado-kotlin-unittests</include>
                 <include>io.github.beehive-lab:tornado-kotlin-benchmarks</include>

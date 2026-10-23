@@ -1,6 +1,6 @@
 ---
 name: tornadovm-nvidia
-description: NVIDIA-specific TornadoVM workflows on the CUDA backend — profile with Nsight Systems (nsys) and read NVTX ranges, use the hybrid library-task API (cuBLAS/cuBLASLt/cuDNN/cuFFT/cuSPARSE/cuTENSOR/CUTLASS/NCCL native calls from Java), print the generated CUDA-C kernel, and fuzz-test the CUDA-C backend with tornado-fuzz. Use for anything about nsys/Nsight, hybrid/library tasks, cuBLAS & friends, inspecting CUDA kernels, or fuzzing. Requires an NVIDIA GPU + `make BACKEND=cuda`. For generic build/test/commit basics see the `tornadovm` skill.
+description: NVIDIA-specific TornadoVM workflows on the CUDA backend — profile with Nsight Systems (nsys) and read NVTX ranges, use the hybrid library-task API (cuBLAS/cuBLASLt/cuDNN/cuFFT/cuSPARSE/cuTENSOR/CUTLASS/NCCL native calls from Java), print the generated CUDA-C kernel, and fuzz-test the code generator (TC, on CUDA and OpenCL) with tornado-fuzz. Use for anything about nsys/Nsight, hybrid/library tasks, cuBLAS & friends, inspecting CUDA kernels, or fuzzing. Requires an NVIDIA GPU + `make BACKEND=cuda`. For generic build/test/commit basics see the `tornadovm` skill.
 ---
 
 # TornadoVM on NVIDIA (CUDA backend)
@@ -53,7 +53,7 @@ TaskGraph graph = new TaskGraph("g")
 | cuSPARSE | `tornado-cusparse` | `nvidia/cusparse` | CSR SpMV / SpMM (FP32) |
 | cuTENSOR | `tornado-cutensor` | (see module) | FP32 tensor contractions (einsum) |
 | CUTLASS | `tornado-cutlass` | `nvidia/cutlass` | FP32/FP16 GEMM + fused epilogues (NVRTC track) |
-| NCCL | `tornado-nccl` | standalone `TornadoNccl` API | multi-GPU collectives |
+| NCCL | `tornado-nccl` | `nvidia/nccl` | multi-GPU collectives, send/recv, groups, multi-process (see the `tornadovm-nccl` skill) |
 
 **Key patterns:**
 - **CUDA graphs:** library tasks are graph-capturable. Providers that allocate device workspace (cuFFT/cuDNN/cuSPARSE plans, cuBLAS handles) do it in the SPI `prepare(descriptor, context)` pre-compile hook (idempotent) *before* capture — never allocate mid-capture. Wrap with `withCUDAGraph`.
@@ -78,24 +78,33 @@ tornado -m <module>/<MainClass> --jvm="-Dtornado.printKernel=true -Dtornado.prin
 
 Flags: `-pk`/`--printKernel` (test runner) ↔ `-Dtornado.printKernel=true` (`TornadoOptions.PRINT_KERNEL_SOURCE`); `-Dtornado.print.kernel.dir=<dir>` writes each kernel to a file; add `--printBytecodes`/`-pbc` to also see the TornadoVM bytecode. Library tasks emit no kernel (they call native code) — inspect those with nsys/NVTX instead.
 
-## 4. Fuzz-testing the CUDA-C backend (`tornado-fuzz`)
+## 4. Fuzz-testing the code generator (`tornado-fuzz`)
 
-`tornado-fuzz` (module `tornado.fuzz`) is a differential fuzzer for the **CUDA-C backend only**. Oracle: a kernel is a static Java method → run it as plain Java on the host (golden) and via the CUDA backend, then compare (int/bitwise exact; float rel+abs 1e-3; NaN==NaN); plus a crash/exception oracle.
+`tornado-fuzz` (module `tornado.fuzz`) is a differential fuzzer for TC, the kernel compiler, on **CUDA and OpenCL** (`backend=cuda|opencl`, `device=N` within that backend). Oracle: a kernel is a static Java method, run as plain Java on the host (golden) and on the device, then compared (int/long exact; float rel+abs 1e-3; NaN==NaN); plus a crash/exception oracle.
 
 ```bash
 source setvars.sh
-# Phase 1 — fixed KernelContext templates (elementwise/math/local-mem-reduce/atomic):
+cd /tmp/fuzz          # not a directory holding jars: the launcher puts "." on the module path
+# Phase 3 (start here): typed programs - int/long/float/double, casts, if/else, loops (constant and
+# data-dependent trip counts), private arrays, Integer/Long/Math helpers, computed static finals -
+# each run as a KernelContext kernel AND an @Parallel kernel, under withStrictFloatingPoint().
 tornado -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.FuzzMain \
-        --params "seed=1 count=300 phase=1 outDir=/tmp/fuzz"
+        --params "seed=1 count=300 phase=3 backend=cuda outDir=/tmp/fuzz/cuda"
+tornado -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.FuzzMain \
+        --params "seed=1 count=300 phase=3 backend=opencl device=1 outDir=/tmp/fuzz/igpu"   # fp64=auto
 
-# Phase 2 — generative: random int-expression kernels compiled in-process, run CUDA vs JVM reference.
-# The generated class dir MUST be on -cp AND passed via -Dtornado.fuzz.genDir (system classloader
-# requirement — ASM reads bytecode via getSystemClassLoader):
-tornado -cp /tmp/gen -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.FuzzMain \
-        --jvm="-Dtornado.fuzz.genDir=/tmp/gen" \
-        --params "seed=1 count=200 phase=2 outDir=/tmp/fuzz2"
+# Replay a finding: recompiles its Kernel.java (edit it to bisect) on the saved inputs.
+tornado -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.FuzzMain \
+        --params "replay=/tmp/fuzz/cuda/phase3/miscompile_int-104 backend=cuda outDir=/tmp/fuzz/replay"
+
+# Phase 1: fixed KernelContext templates (elementwise/math/local-mem-reduce/atomic).
+# Phase 2: single-line int expressions with an expression shrinker.
+tornado -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.FuzzMain --params "seed=1 count=300 phase=1 outDir=/tmp/fuzz1"
+tornado -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.FuzzMain --params "seed=1 count=200 phase=2 outDir=/tmp/fuzz2"
 ```
 
-Each finding writes a bundle under `<outDir>/findings/<kind>-<seed>/`: `config.json`, `kernel.java`, `diff.txt`, `stacktrace`, and a standalone `Repro_*.java` (JUnit extending `TornadoTestBase` with the failing inputs + golden embedded as literals). Confirmed integer-codegen divergences it has surfaced (regression suite `tornado-unittests/.../unittests/fuzz/`): `min/max(NaN,x)` semantics, `a<<31`, `INT_MIN*b`, sign-bit masks, signed `>>` emitted as logical, and an `INT_MIN` division that crashes the CUDA reassociation phase.
+Phase 3 outcomes (`<outDir>/phase3/summary.json`; one bundle per outcome with `Kernel.java`, `inputs.bin`, `finding.txt`): `miscompile:<outputs>` (marked `(float, transcendental)` when only float outputs differ in a program with sin/cos/exp/log - usually device ulp, not a bug), `internal:TC-E9xxx` (compiler bug), `crash`, `refused:TC-Exxxx` (TC declined: a shortcoming, e.g. TC-E4012 double precision on a device without it), `harness`. Failing programs are shrunk by dropping statements. Generated classes load through their own class loader (TC reads class files through the kernel's loader; `-Dtornado.fuzz.genDir` is no longer needed). javac targets the running JDK; `--enable-preview` only for a jdk21 SDK.
 
-When adding an expression shape or template, keep the JVM `reference` method the single source of truth (identical loop to the emitted kernel), and use a **unique generated class name per compile** (the system loader caches by name).
+Findings fixed in TC from phase 3 (regressions in `tornado-unittests/.../unittests/fuzz/TestFuzzRegressions`): signed overflow (C UB) folded by the driver compilers (`Long.compare(0, x + x)`, `compareUnsigned`) - TC now prints int/long `+ - *` and negation with Java's wrap-around unless it marked them `nsw`; NaN to long/int (CUDA `__float2ll_rz`, `__double2int_rz` and NVIDIA OpenCL `convert_long_sat_rtz` give MIN_VALUE); `Math.rint` folded by `-cl-fast-relaxed-math`; NaN tests folded by fast math (bit tests on OpenCL); `MIN_VALUE / -1`; float `Math` done in double (FloatNarrowing; runs on devices without fp64); strict plans on OpenCL now drop fast math, add `-cl-fp32-correctly-rounded-divide-sqrt` and `#pragma OPENCL FP_CONTRACT OFF`. The older phase-2 regressions (`TestCudaCodegenRegressions`: `a<<31`, `INT_MIN*b`, sign-bit masks, signed `>>`, `INT_MIN` division) all pass with TC. Known device issue: Intel's OpenCL compiler treats every abs idiom as non-negative, so `max(abs(MIN_VALUE), 2)` is wrong there.
+
+When adding a shape, keep the JVM `reference` method the single source of truth (the same text as the kernels), and use a **unique generated class name per compile**.

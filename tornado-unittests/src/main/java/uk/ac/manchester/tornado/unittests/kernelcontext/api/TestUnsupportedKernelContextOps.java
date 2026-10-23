@@ -4,26 +4,26 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -40,13 +40,14 @@ import uk.ac.manchester.tornado.api.types.matrix.Matrix8x8Float;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
- * {@link KernelContext} operations that a backend cannot honour must be rejected while the graph is
- * built, not silently replaced by their Java bodies.
+ * {@link KernelContext} operations that a backend cannot honour must be rejected by the compiler,
+ * not silently replaced by their Java bodies.
  *
  * <p>The bodies in {@code KernelContext} are sequential fallbacks: {@code simdSum} returns its
  * argument, the atomic read-modify-writes are plain array updates. Compiled into a kernel they run
  * without complaint and produce wrong results, so every operation a backend does not intrinsify has
- * to throw instead. These tests pin that behaviour down per backend.
+ * to fail with a TC diagnostic (its stable {@code TC-E} code) instead. Operations TC does compile
+ * natively (atomics on local and global int arrays) are checked for correct results.
  *
  * <p>How to run:
  *
@@ -125,7 +126,7 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
             }
             throw new AssertionError("Rejected, but not with the expected message (wanted \"" + expectedFragment + "\"): " + thrown, thrown);
         }
-        throw new AssertionError("Expected the unsupported operation to be rejected at graph-build time, but the kernel ran");
+        throw new AssertionError("Expected the unsupported operation to be rejected by the compiler, but the kernel ran");
     }
 
     private static void run(String taskId, TaskGraphBody body) {
@@ -150,7 +151,8 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
 
     // --- SIMD-group reductions: OpenCL has no equivalent -------------------
 
-    private static final String SIMD_MESSAGE = "SIMD-group reductions";
+    /** TC-E4015: warp operations on a device whose SIMD width TC does not know. */
+    private static final String SIMD_MESSAGE = "TC-E4015";
 
     @Test
     public void testSimdSumRejectedOnOpenCL() {
@@ -193,7 +195,8 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
 
     // --- device-side kernel launch: CUDA-only -----------------------------
 
-    private static final String DEVICE_LAUNCH_MESSAGE = "Device-side kernel launches";
+    /** TC-E4016: device-side launches need CUDA dynamic parallelism. */
+    private static final String DEVICE_LAUNCH_MESSAGE = "TC-E4016";
 
     private static final DeviceKernel CHILD = DeviceKernel.of(TestUnsupportedKernelContextOps::launchedChild);
 
@@ -216,44 +219,68 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out)));
     }
 
-    // --- atomic read-modify-write: CUDA-only ------------------------------
-
-    private static final String ATOMIC_RMW_MESSAGE = "Atomic read-modify-write operations";
+    // --- atomic read-modify-write: native on every backend ----------------
 
     @Test
-    public void testAtomicMaxRejectedOnNonCuda() {
-        assertNotBackend(TornadoVMBackendType.CUDA);
+    public void testAtomicMaxOnLocalArray() {
         IntArray in = new IntArray(SIZE);
         IntArray out = new IntArray(SIZE / 64);
-        in.init(7);
-        assertRejected(ATOMIC_RMW_MESSAGE, () -> run("atomicMax", (taskGraph, context, id) -> taskGraph //
+        for (int i = 0; i < SIZE; i++) {
+            in.set(i, (i * 37) % 101);
+        }
+        runOrRejected(() -> run("atomicMax", (taskGraph, context, id) -> taskGraph //
                 .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
                 .task(id, TestUnsupportedKernelContextOps::atomicMaxLocalKernel, context, in, out) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, out)));
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out)), () -> {
+                    for (int g = 0; g < SIZE / 64; g++) {
+                        int expected = Integer.MIN_VALUE;
+                        for (int i = g * 64; i < (g + 1) * 64; i++) {
+                            expected = Math.max(expected, in.get(i));
+                        }
+                        assertEquals(expected, out.get(g), "group " + g);
+                    }
+                });
     }
 
     @Test
-    public void testAtomicCasRejectedOnNonCuda() {
-        assertNotBackend(TornadoVMBackendType.CUDA);
+    public void testAtomicCasOnLocalArray() {
         IntArray out = new IntArray(SIZE / 64);
-        assertRejected(ATOMIC_RMW_MESSAGE, () -> run("atomicCas", (taskGraph, context, id) -> taskGraph //
+        out.init(-2);
+        runOrRejected(() -> run("atomicCas", (taskGraph, context, id) -> taskGraph //
                 .task(id, TestUnsupportedKernelContextOps::atomicCasLocalKernel, context, out) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, out)));
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out)), () -> {
+                    // Exactly one thread of each group wins the compare-and-swap: its local index.
+                    for (int g = 0; g < SIZE / 64; g++) {
+                        assertTrue(out.get(g) >= 0 && out.get(g) < 64, "group " + g + ": " + out.get(g));
+                    }
+                });
+    }
+
+    @Test
+    public void testAtomicOnGlobalArray() {
+        int[] data = new int[SIZE];
+        runOrRejected(() -> run("atomicGlobal", (taskGraph, context, id) -> taskGraph //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data) //
+                .task(id, TestUnsupportedKernelContextOps::atomicMaxGlobalKernel, context, data) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, data)), () -> assertEquals(SIZE - 1, data[0]));
     }
 
     /**
-     * On CUDA the atomics are emitted as {@code atomicMax(&tile[i], v)}, which only compiles for a
-     * shared-memory array. A global array used to fall back to the racy Java body; it must be rejected.
+     * Runs {@code body}: a kernel that runs must produce the right result ({@code check}); one that
+     * does not compile must be refused by TC with a diagnostic, never fall back to the Java body.
      */
-    @Test
-    public void testAtomicOnGlobalArrayRejectedOnCuda() {
-        assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.METAL);
-        int[] data = new int[SIZE];
-        assertRejected("local (shared) arrays only", () -> run("atomicGlobal", (taskGraph, context, id) -> taskGraph //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, data) //
-                .task(id, TestUnsupportedKernelContextOps::atomicMaxGlobalKernel, context, data) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, data)));
+    private static void runOrRejected(Runnable body, Runnable check) {
+        try {
+            body.run();
+        } catch (Throwable thrown) {
+            for (Throwable cause = thrown; cause != null; cause = cause.getCause()) {
+                if (cause.getMessage() != null && cause.getMessage().contains("TC-E")) {
+                    return;
+                }
+            }
+            throw new AssertionError("Failed without a TC diagnostic: " + thrown, thrown);
+        }
+        check.run();
     }
 
     // --- simdgroup matrices: Metal-only -----------------------------------
@@ -262,7 +289,7 @@ public class TestUnsupportedKernelContextOps extends TornadoTestBase {
     public void testSimdgroupMatrixRejectedOnNonMetal() {
         assertNotBackend(TornadoVMBackendType.METAL);
         FloatArray out = new FloatArray(64);
-        assertRejected("simdgroup_float8x8", () -> run("simdgroup", (taskGraph, context, id) -> taskGraph //
+        assertRejected("Matrix8x8Float", () -> run("simdgroup", (taskGraph, context, id) -> taskGraph //
                 .task(id, TestUnsupportedKernelContextOps::simdgroupMatrixKernel, context, out) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out)));
     }

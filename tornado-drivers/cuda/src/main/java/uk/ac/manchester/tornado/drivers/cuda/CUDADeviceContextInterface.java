@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2020, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.cuda;
@@ -26,8 +23,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResult;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -42,8 +37,6 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
     boolean isCached(long executionPlanId, String id, String entryPoint);
 
     CUDAInstalledCode getInstalledCode(long executionPlanId, String id, String entryPoint);
-
-    CUDAInstalledCode installCode(long executionPlanId, CUDACompilationResult result);
 
     CUDAInstalledCode installCode(long executionPlanId, TaskDataContext meta, String id, String entryPoint, byte[] code);
 
@@ -140,6 +133,10 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
         // no-op by default
     }
 
+    default void abortExecutionGraphCapture(long executionPlanId) {
+        // no-op by default
+    }
+
     /* ---- Native interop (external libraries, e.g. cuBLAS) ---- */
 
     default long getNativeStream(long executionPlanId) {
@@ -148,6 +145,14 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
 
     default long getNativeContext(long executionPlanId) {
         throw new UnsupportedOperationException("Native context interop is not supported on this device context");
+    }
+
+    /** Warms up the device's transfer path before its first execution; no-op without a native context. */
+    default void warmUp() {
+    }
+
+    /** Makes this device's context current on the calling thread; no-op without a native context. */
+    default void makeCurrent() {
     }
 
 }

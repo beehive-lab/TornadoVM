@@ -17,25 +17,25 @@
  */
 package uk.ac.manchester.tornado.unittests.fails;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
-import uk.ac.manchester.tornado.api.exceptions.TornadoInliningException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Test to check if the appropriate exception is thrown by TornadoVM
- * when inner function cannot be inlined.
+ * A kernel whose callee is too large for the old compiler's inlining budget (it threw
+ * {@code TornadoInliningException}). TC inlines it, so the kernel must compile and match the Java
+ * result.
  * <p>
  * How to run?
  * </p>
@@ -188,7 +188,7 @@ public class InliningFail extends TornadoTestBase {
         }
     }
 
-    @Test (expected = TornadoInliningException.class)
+    @Test
     public void testInliningError() throws TornadoExecutionPlanException {
         final int numElements = 4096;
         FloatArray a = new FloatArray(numElements);

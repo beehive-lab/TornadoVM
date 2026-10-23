@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -422,8 +422,8 @@ public class TestMatrixMultiplicationMMAFP8 extends TornadoTestBase {
         for (int i = 0; i < dimM; i++) {
             for (int j = 0; j < dimN; j++) {
                 int idx = i * dimN + j;
-                assertEquals(String.format("C[%d][%d]", i, j),
-                        ref.get(idx), c.get(idx), tol);
+                assertEquals(ref.get(idx),
+                        c.get(idx), tol, String.format("C[%d][%d]", i, j));
             }
         }
     }

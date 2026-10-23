@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.cuda.mm;
@@ -62,7 +59,9 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
  *       as {@code external} and this registry never unregisters it.</li>
  *   <li><b>Drain on plan teardown</b> ({@link #unpinAll()}): bulk buffer releases
  *       bypass per-buffer free hooks, so the device context drains the registry on
- *       {@code reset()}; cached-but-stale pins are also reclaimed there.</li>
+ *       {@code reset()} once no execution plan is left ({@link #unpinAll()}), and while
+ *       other plans are alive drops only the pins no live buffer holds
+ *       ({@link #unpinUnheld()}); cached-but-stale pins are reclaimed either way.</li>
  * </ul>
  *
  * <p>A cached pin whose segment has died is never a transfer hazard: user-segment DMA
@@ -74,6 +73,15 @@ public final class CUDAPinnedMemoryRegistry {
 
     /** Kill switch: {@code -Dtornado.cuda.host.pinning=false} disables pinning (pageable transfers). */
     public static final boolean HOST_PINNING_ENABLED = Boolean.parseBoolean(System.getProperty("tornado.cuda.host.pinning", "True"));
+
+    /**
+     * {@code -Dtornado.cuda.host.pinning.all=true} pins the host memory of every device buffer. By
+     * default only the buffers a task-graph transfers on every execution are pinned: one-shot
+     * uploads (weights, inputs set once) and device-only working buffers gain nothing from it,
+     * and pinning gigabytes of them per plan makes the driver fail allocations and copies when
+     * plans are created and closed often.
+     */
+    public static final boolean PIN_ALL_BUFFERS = Boolean.parseBoolean(System.getProperty("tornado.cuda.host.pinning.all", "False"));
 
     private static final class Registration {
         long numBytes;
@@ -153,6 +161,27 @@ public final class CUDAPinnedMemoryRegistry {
         Registration entry = registrations.get(hostPointer);
         if (entry != null && entry.refCount > 0) {
             entry.refCount--;
+        }
+    }
+
+    /**
+     * Drops the owned pins that no live buffer holds: cached pins (refcount 0) and pins whose
+     * segment has been collected. Pins still held stay registered. Called on the teardown of
+     * one execution plan while others are alive ({@code CUDADeviceContext#reset}): their
+     * captured CUDA graphs copy from the pinned host buffers they hold, and unregistering
+     * those under them crashes the next graph launch.
+     */
+    public synchronized void unpinUnheld() {
+        var it = registrations.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Long, Registration> entry = it.next();
+            Registration registration = entry.getValue();
+            if (registration.refCount == 0 || registration.segmentRef.get() == null) {
+                if (!registration.external) {
+                    context.unregisterPinnedMemory(entry.getKey());
+                }
+                it.remove();
+            }
         }
     }
 

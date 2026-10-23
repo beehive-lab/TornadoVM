@@ -1,27 +1,23 @@
 /*
- * Copyright (c) 2024, APT Group, Department of Computer Science,
- * The University of Manchester. All rights reserved.
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2024, 2026, APT Group, Department of Computer Science,
+ * The University of Manchester.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.unittests.compute;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -30,14 +26,15 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Test to check the infinity values are properly replaced for code gen.
@@ -108,8 +105,8 @@ public class MMwithBytes extends TornadoTestBase {
         // For simplicity, check that no NaNs or Infinity are in the result
         for (int i = 0; i < numRows; i++) {
             float result = outputVector.get(i);
-            assertFalse("Output contains NaN at index " + i, Float.isNaN(result));
-            assertFalse("Output contains Infinity at index " + i, Float.isInfinite(result));
+            assertFalse(Float.isNaN(result), "Output contains NaN at index " + i);
+            assertFalse(Float.isInfinite(result), "Output contains Infinity at index " + i);
         }
     }
 
@@ -196,18 +193,10 @@ public class MMwithBytes extends TornadoTestBase {
 
         positiveInfinityArray.init(Float.POSITIVE_INFINITY);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, positiveInfinityArray).task("t0", MMwithBytes::positiveInfinity, positiveInfinityArray)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, positiveInfinityArray);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
-        }
+        runInPlace(MMwithBytes::positiveInfinity, positiveInfinityArray);
 
         // Validate that all values remain Float.POSITIVE_INFINITY after TornadoVM processing
-        for (int i = 0; i < n; i++) {
-            assertEquals(Float.POSITIVE_INFINITY, positiveInfinityArray.get(i), 0.0f);
-        }
+        assertAllEqual(Float.POSITIVE_INFINITY, positiveInfinityArray);
     }
 
     public static void negativeInfinity(FloatArray negativeInfinityArray) {
@@ -225,18 +214,10 @@ public class MMwithBytes extends TornadoTestBase {
 
         negativeInfinityArray.init(Float.NEGATIVE_INFINITY);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", MMwithBytes::negativeInfinity, negativeInfinityArray)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
-        }
+        runInPlace(MMwithBytes::negativeInfinity, negativeInfinityArray);
 
         // Validate that all values remain Float.NEGATIVE_INFINITY after TornadoVM processing
-        for (int i = 0; i < n; i++) {
-            assertEquals(Float.NEGATIVE_INFINITY, negativeInfinityArray.get(i), 0.0f);
-        }
+        assertAllEqual(Float.NEGATIVE_INFINITY, negativeInfinityArray);
     }
 
     public static void negativeInfinityAssignment(FloatArray x) {
@@ -252,18 +233,26 @@ public class MMwithBytes extends TornadoTestBase {
 
         negativeInfinityArray.init(2f);
 
-        TaskGraph taskGraph = new TaskGraph("s0").transferToDevice(DataTransferMode.FIRST_EXECUTION, negativeInfinityArray).task("t0", MMwithBytes::negativeInfinityAssignment, negativeInfinityArray)
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, negativeInfinityArray);
-
-        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
-        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(immutableTaskGraph)) {
-            executionPlan.execute();
-        }
+        runInPlace(MMwithBytes::negativeInfinityAssignment, negativeInfinityArray);
 
         // Validate that all values remain Float.NEGATIVE_INFINITY after TornadoVM processing
-        for (int i = 0; i < n; i++) {
-            assertEquals(Float.NEGATIVE_INFINITY, negativeInfinityArray.get(i), 0.0f);
+        assertAllEqual(Float.NEGATIVE_INFINITY, negativeInfinityArray);
+    }
+
+    /** Runs {@code kernel} over {@code array} on the device, copying it in once and back after each run. */
+    private static void runInPlace(Task1<FloatArray> kernel, FloatArray array) throws TornadoExecutionPlanException {
+        var taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.FIRST_EXECUTION, array) //
+                .task("t0", kernel, array) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+        try (var executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.execute();
         }
     }
 
+    private static void assertAllEqual(float expected, FloatArray actual) {
+        for (int i = 0; i < actual.getSize(); i++) {
+            assertEquals(expected, actual.get(i), 0.0f, "index " + i);
+        }
+    }
 }

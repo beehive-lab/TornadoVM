@@ -4,26 +4,24 @@
  *
  * Copyright (c) 2013-2021, 2024, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
+import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.nio.ByteOrder;
@@ -37,13 +35,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLInstalledCode;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetricHandler;
@@ -65,7 +62,8 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     private final OCLMemoryManager memoryManager;
     private final Map<Long, OCLEventPool> oclEventPool;
     private final TornadoBufferProvider bufferProvider;
-    private boolean wasReset;
+    /** Execution plans whose device state has been torn down; see TornadoDeviceContext. */
+    private final java.util.Set<Long> resetPlans = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final Set<Long> executionIDs;
 
     /**
@@ -262,6 +260,18 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         return eventPool.registerEvent(commandQueue.enqueueWrite(bufferId, OpenCLBlocking.FALSE, offset, bytes, array, hostOffset, eventPool.serialiseEvents(waitEvents, commandQueue)
                 ? eventPool.waitEventsBuffer
                 : null), EventDescriptor.DESC_WRITE_DOUBLE, commandQueue);
+    }
+
+    /**
+     * Queue used by native library tasks on the calling thread. Libraries such as
+     * CLBlast require an in-order queue to order their internal kernel launches.
+     */
+    public long getNativeCommandQueue(long executionPlanId) {
+        OCLCommandQueue queue = getCommandQueue(executionPlanId);
+        if ((queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) != 0) {
+            throw new TornadoRuntimeException("Native OpenCL library tasks require an in-order command queue (set tornado.ooo-execution.enable=false)");
+        }
+        return queue.getCommandQueuePtr();
     }
 
     private OCLCommandQueue getCommandQueue(long executionPlanId) {
@@ -528,7 +538,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
         oclCodeCache.reset();
         codeCache.remove(executionPlanId);
-        wasReset = true;
+        resetPlans.add(executionPlanId);
     }
 
     public OCLTornadoDevice toDevice() {
@@ -558,13 +568,13 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     @Override
-    public boolean wasReset() {
-        return wasReset;
+    public boolean wasReset(long executionPlanId) {
+        return resetPlans.contains(executionPlanId);
     }
 
     @Override
-    public void setResetToFalse() {
-        wasReset = false;
+    public void setResetToFalse(long executionPlanId) {
+        resetPlans.remove(executionPlanId);
     }
 
     @Override
@@ -615,10 +625,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     public boolean isKernelAvailable(long executionPlanId) {
         OCLCodeCache oclCodeCache = getOCLCodeCache(executionPlanId);
         return oclCodeCache.isKernelAvailable();
-    }
-
-    public OCLInstalledCode installCode(long executionPlanId, OCLCompilationResult result) {
-        return installCode(executionPlanId, result.getMeta(), result.getId(), result.getName(), result.getTargetCode());
     }
 
     @Override

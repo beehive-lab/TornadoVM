@@ -17,7 +17,7 @@
  */
 package uk.ac.manchester.tornado.unittests.quantization;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
@@ -41,7 +41,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * How to test?
@@ -88,21 +88,22 @@ public class QuantizationTests extends TornadoTestBase {
         if (lid == 0) {
             max.set(groupId, localX[0]);
         }
+    }
 
-        if (gid == 0) {
-            int numGroups = (arraySize + groupSize - 1) / groupSize;
-
-            float max_abs_val = 0.0f;
-            for (int i = 0; i < numGroups; i++) {
-                max_abs_val = TornadoMath.max(max_abs_val, max.get(i));
-            }
-
-            max.set(0, max_abs_val);
-
-            float scale = (max_abs_val == 0.0f) ? 1.0f : max_abs_val / 127.0f;
-            inv_scale.set(0, 1.0f / scale);
-            x_scale.set(0, scale);
+    /**
+     * The scale from every group's maximum ({@link #reductionCalculateMax}). A task of its own: inside
+     * that kernel, thread 0 read other groups' maxima with no synchronisation across groups (a race).
+     */
+    public static void finalizeScale(FloatArray max, FloatArray x_scale, FloatArray inv_scale, int numGroups) {
+        float max_abs_val = 0.0f;
+        for (int i = 0; i < numGroups; i++) {
+            max_abs_val = TornadoMath.max(max_abs_val, max.get(i));
         }
+        max.set(0, max_abs_val);
+
+        float scale = (max_abs_val == 0.0f) ? 1.0f : max_abs_val / 127.0f;
+        inv_scale.set(0, 1.0f / scale);
+        x_scale.set(0, scale);
     }
 
     public static void quantizeKernelContext(KernelContext context, FloatArray x, FloatArray inv_scale, Int8Array x_quant) {
@@ -557,8 +558,10 @@ public class QuantizationTests extends TornadoTestBase {
         FloatArray input = new FloatArray(inputDim);
         fillRandomData(input, -1.0f, 1.0f, random);
 
+        int numGroups = (inputDim + local_workgroup_size - 1) / local_workgroup_size;
         FloatArray x_scale = new FloatArray(1);
-        FloatArray x_max = new FloatArray(1);
+        // One slot per work-group: reductionCalculateMax writes each group's maximum.
+        FloatArray x_max = new FloatArray(numGroups);
         FloatArray inv_scale = new FloatArray(1);
         Int8Array x_quant = new Int8Array(input.getSize());
 
@@ -568,11 +571,10 @@ public class QuantizationTests extends TornadoTestBase {
         scheduler.addWorkerGrid("s0_quant.quantize", worker);
         worker.setLocalWork(local_workgroup_size, 1, 1);
 
-        int numGroups = (inputDim + local_workgroup_size - 1) / local_workgroup_size;
-
         TaskGraph taskGraphQ = new TaskGraph("s0_quant")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, x_quant, x_scale, x_max, inv_scale)
                 .task("scales", QuantizationTests::reductionCalculateMax, new KernelContext(), x_max, input, x_scale, inv_scale, local_workgroup_size, inputDim)
+                .task("scale", QuantizationTests::finalizeScale, x_max, x_scale, inv_scale, numGroups)
                 .task("quantize", QuantizationTests::quantizeKernelContext,new KernelContext(), input, inv_scale, x_quant)
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, x_quant, x_scale);
 
@@ -629,6 +631,7 @@ public class QuantizationTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0_quant_kc")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, x_quant, x_scale, x_max, inv_scale, w_quant, w_scale)
                 .task("scales", QuantizationTests::reductionCalculateMax, new KernelContext(), x_max, input, x_scale, inv_scale, local_workgroup_size, inputDim)
+                .task("scale", QuantizationTests::finalizeScale, x_max, x_scale, inv_scale, maxNumGroups)
                 .task("quantize", QuantizationTests::quantizeKernelContext,new KernelContext(), input, inv_scale, x_quant)
                 .task("dp4amatvec", QuantizationTests::matrixVectorGenericDP4A, new KernelContext(), w_quant, x_quant,
                         output, inputDim, outputDim, local_workgroup_size, w_scale, x_scale)
@@ -691,6 +694,7 @@ public class QuantizationTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0_quant_kc")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, x_quant, x_scale, x_max, inv_scale, w_quant, w_scale)
                 .task("scales", QuantizationTests::reductionCalculateMax, new KernelContext(), x_max, input, x_scale, inv_scale, local_workgroup_size, inputDim)
+                .task("scale", QuantizationTests::finalizeScale, x_max, x_scale, inv_scale, maxNumGroups)
                 .task("quantize", QuantizationTests::quantizeKernelContext,new KernelContext(), input, inv_scale, x_quant)
                 .task("dp4amatvec", QuantizationTests::matrixVectorGenericLocalMemory, new KernelContext(), w_quant, x_quant,
                         output, inputDim, outputDim, local_workgroup_size, w_scale, x_scale)
@@ -751,6 +755,7 @@ public class QuantizationTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0_quant_kc")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, x_quant, x_scale, x_max, inv_scale, w_quant, w_scale)
                 .task("scales", QuantizationTests::reductionCalculateMax, new KernelContext(), x_max, input, x_scale, inv_scale, local_workgroup_size, inputDim)
+                .task("scale", QuantizationTests::finalizeScale, x_max, x_scale, inv_scale, maxNumGroups)
                 .task("quantize", QuantizationTests::quantizeKernelContext,new KernelContext(), input, inv_scale, x_quant)
                 .task("dp4amatvec", QuantizationTests::matrixVectorGenericPacked, new KernelContext(), w_quant, x_quant,
                         output, inputDim, outputDim, local_workgroup_size, w_scale, x_scale)
@@ -810,6 +815,7 @@ public class QuantizationTests extends TornadoTestBase {
         TaskGraph taskGraph = new TaskGraph("s0_quant_kc")
                 .transferToDevice(DataTransferMode.FIRST_EXECUTION, input, x_quant, x_scale, x_max, inv_scale, w_quant, w_scale)
                 .task("scales", QuantizationTests::reductionCalculateMax, new KernelContext(), x_max, input, x_scale, inv_scale, local_workgroup_size, inputDim)
+                .task("scale", QuantizationTests::finalizeScale, x_max, x_scale, inv_scale, maxNumGroups)
                 .task("quantize", QuantizationTests::quantizeKernelContext,new KernelContext(), input, inv_scale, x_quant)
                 .task("dp4amatvec", QuantizationTests::matrixVectorGenericDP4A4Way, new KernelContext(), w_quant, x_quant,
                         output, inputDim, outputDim, local_workgroup_size, w_scale, x_scale)

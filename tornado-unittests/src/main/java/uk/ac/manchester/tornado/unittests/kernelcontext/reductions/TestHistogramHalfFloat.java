@@ -17,11 +17,11 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.reductions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -114,7 +114,7 @@ public class TestHistogramHalfFloat extends TornadoTestBase {
 
         int totalCounted = 0;
         for (int b = 0; b < NUM_BINS; b++) {
-            assertEquals("bin " + b, expected[b], globalHist.get(b));
+            assertEquals(expected[b], globalHist.get(b), "bin " + b);
             totalCounted += globalHist.get(b);
         }
         assertEquals(SIZE, totalCounted);

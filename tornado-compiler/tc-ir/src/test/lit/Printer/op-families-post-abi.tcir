@@ -1,0 +1,23 @@
+; Every post-ABI instruction family round-trips unchanged and verifies at the post-ABI stage.
+; RUN: tc-ir --verify --stage=post-abi %s | FileCheck %s
+
+; CHECK-LABEL: kernel @post(%p: ptr<global>, %n: i32) -> void {
+; CHECK:  %buf = alloca.shared f32[256] : ptr<shared>
+; CHECK:  %priv = alloca.private vec<4 x f32>[2] : ptr<private>
+; CHECK:  %off = ptr.offset %p, %n : ptr<global>
+; CHECK:  %val = load %off : f32
+; CHECK:  store %buf, %val
+; CHECK:  tornado.barrier.local()
+; CHECK:  %r = math.sqrt(%val) : f32
+; CHECK:  unreachable
+kernel @post(%p: ptr<global>, %n: i32) -> void {
+^entry:
+  %buf = alloca.shared f32[256] : ptr<shared>
+  %priv = alloca.private vec<4 x f32>[2] : ptr<private>
+  %off = ptr.offset %p, %n : ptr<global>
+  %val = load %off : f32
+  store %buf, %val
+  tornado.barrier.local()
+  %r = math.sqrt(%val) : f32
+  unreachable
+}

@@ -1,0 +1,24 @@
+; Constant conditions become branches; straight-line chains merge; unreachable blocks go.
+; RUN: tc-opt --passes=cfg-simplify --no-loc %s | FileCheck %s
+
+; CHECK-LABEL: device @f(%x: i32) -> i32 {
+; CHECK-NEXT:  ^entry:
+; CHECK-NEXT:    %t = const 1 : i1
+; CHECK-NEXT:    %y = add %x, %x : i32
+; CHECK-NEXT:    ret %y
+; CHECK-NEXT:  }
+device @f(%x: i32) -> i32 {
+^entry:
+  %t = const 1 : i1
+  br ^a
+^a:
+  cond_br %t, ^b, ^dead
+^b:
+  %y = add %x, %x : i32
+  br ^c(%y)
+^c(%r: i32):
+  ret %r
+^dead:
+  %z = const 0 : i32
+  ret %z
+}

@@ -24,7 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * This class represents an array of ints stored in native memory. The int data is stored in a {@link MemorySegment}, which represents a contiguous region of off-heap memory. The class also
@@ -33,7 +33,7 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 @SegmentElementSize(size = 4)
 public final class IntArray extends TornadoNativeArray {
     private static final int INT_BYTES = 4;
-    private int numberOfElements;
+    private long numberOfElements;
     private TornadoMemorySegment segment;
     private int arrayHeaderSize;
 
@@ -48,7 +48,18 @@ public final class IntArray extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public IntArray(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link IntArray} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public IntArray(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / INT_BYTES;
         segmentByteSize = (long) numberOfElements * INT_BYTES + arrayHeaderSize;
@@ -67,13 +78,12 @@ public final class IntArray extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, INT_BYTES);
-        this.numberOfElements = (int) (dataSize / INT_BYTES);
+        this.numberOfElements = toNumElements(dataSize, INT_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -132,8 +142,7 @@ public final class IntArray extends TornadoNativeArray {
      */
     public static IntArray fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / INT_BYTES);
-        ensureMultipleOfElementSize(byteSize, INT_BYTES);
+        long numElements = toNumElements(byteSize, INT_BYTES);
         IntArray intArray = new IntArray(numElements);
         MemorySegment.copy(segment, 0, intArray.segment.getSegment(), (long) intArray.baseIndex * INT_BYTES, byteSize);
         return intArray;
@@ -186,7 +195,7 @@ public final class IntArray extends TornadoNativeArray {
      * @return A new {@link IntArray} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static IntArray concat(IntArray... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(IntArray::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(IntArray::getSizeLong).sum());
         IntArray concatArray = new IntArray(newSize);
         long currentPositionBytes = 0;
         for (IntArray array : arrays) {
@@ -222,6 +231,18 @@ public final class IntArray extends TornadoNativeArray {
     }
 
     /**
+     * Sets the int value at a specified index of the {@link IntArray} instance.
+     *
+     * @param index
+     *         The index at which to set the int value.
+     * @param value
+     *         The int value to store at the specified index.
+     */
+    public void set(long index, int value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
+    /**
      * Gets the int value stored at the specified index of the {@link IntArray} instance.
      *
      * @param index
@@ -229,6 +250,17 @@ public final class IntArray extends TornadoNativeArray {
      * @return
      */
     public int get(int index) {
+        return segment.getIntAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets the int value stored at the specified index of the {@link IntArray} instance.
+     *
+     * @param index
+     *         The index of which to retrieve the int value.
+     * @return
+     */
+    public int get(long index) {
         return segment.getIntAtIndex(index, baseIndex);
     }
 
@@ -252,7 +284,7 @@ public final class IntArray extends TornadoNativeArray {
      *         The int value to initialize the {@link IntArray} instance with.
      */
     public void init(int value) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, value, baseIndex);
         }
     }
@@ -264,6 +296,11 @@ public final class IntArray extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -319,7 +356,14 @@ public final class IntArray extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public IntArray slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public IntArray slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 

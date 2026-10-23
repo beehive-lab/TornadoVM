@@ -22,7 +22,7 @@ import uk.ac.manchester.tornado.api.types.FP8;
 
 import java.lang.foreign.MemorySegment;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * Off-heap array of 8-bit floating-point (FP8) values - one byte per element - for low-precision
@@ -41,7 +41,7 @@ public final class FP8Array extends TornadoNativeArray {
 
     private static final int FP8_BYTES = 1;
 
-    private final int numberOfElements;
+    private final long numberOfElements;
     private final int arrayHeaderSize;
     private final int baseIndex;
     private final long segmentByteSize;
@@ -52,7 +52,18 @@ public final class FP8Array extends TornadoNativeArray {
      * {@code +0.0} in both formats).
      */
     public FP8Array(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link FP8Array} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public FP8Array(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / FP8_BYTES;
         this.segmentByteSize = (long) numberOfElements * FP8_BYTES + arrayHeaderSize;
@@ -63,10 +74,10 @@ public final class FP8Array extends TornadoNativeArray {
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / FP8_BYTES;
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        this.numberOfElements = (int) (dataSize / FP8_BYTES);
+        this.numberOfElements = toNumElements(dataSize, FP8_BYTES);
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /** Wraps an existing header+data segment without copying. */
@@ -98,7 +109,15 @@ public final class FP8Array extends TornadoNativeArray {
         segment.setAtIndex(index, value, baseIndex);
     }
 
+    public void set(long index, byte value) {
+        segment.setAtIndex(index, value, baseIndex);
+    }
+
     public byte get(int index) {
+        return segment.getByteAtIndex(index, baseIndex);
+    }
+
+    public byte get(long index) {
         return segment.getByteAtIndex(index, baseIndex);
     }
 
@@ -109,8 +128,18 @@ public final class FP8Array extends TornadoNativeArray {
         return FP8.e4m3ToFloat(segment.getByteAtIndex(index, baseIndex));
     }
 
+    /** Decode element {@code index} as E4M3 -> float. Kernel-safe. */
+    public float getE4M3(long index) {
+        return FP8.e4m3ToFloat(segment.getByteAtIndex(index, baseIndex));
+    }
+
     /** Encode {@code value} to E4M3 and store at {@code index} (round-to-nearest-even, saturating). */
     public void setE4M3(int index, float value) {
+        segment.setAtIndex(index, FP8.e4m3FromFloat(value), baseIndex);
+    }
+
+    /** Encode {@code value} to E4M3 and store at {@code index} (round-to-nearest-even, saturating). */
+    public void setE4M3(long index, float value) {
         segment.setAtIndex(index, FP8.e4m3FromFloat(value), baseIndex);
     }
 
@@ -119,8 +148,18 @@ public final class FP8Array extends TornadoNativeArray {
         return FP8.e5m2ToFloat(segment.getByteAtIndex(index, baseIndex));
     }
 
+    /** Decode element {@code index} as E5M2 -> float. Kernel-safe. */
+    public float getE5M2(long index) {
+        return FP8.e5m2ToFloat(segment.getByteAtIndex(index, baseIndex));
+    }
+
     /** Encode {@code value} to E5M2 and store at {@code index} (round-to-nearest-even). */
     public void setE5M2(int index, float value) {
+        segment.setAtIndex(index, FP8.e5m2FromFloat(value), baseIndex);
+    }
+
+    /** Encode {@code value} to E5M2 and store at {@code index} (round-to-nearest-even). */
+    public void setE5M2(long index, float value) {
         segment.setAtIndex(index, FP8.e5m2FromFloat(value), baseIndex);
     }
 
@@ -128,7 +167,7 @@ public final class FP8Array extends TornadoNativeArray {
 
     @Override
     public void clear() {
-        for (int i = 0; i < numberOfElements; i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, (byte) 0, baseIndex);
         }
     }
@@ -140,6 +179,11 @@ public final class FP8Array extends TornadoNativeArray {
 
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 

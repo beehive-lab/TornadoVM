@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.OffPlanResultsHistory;
 import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
@@ -38,6 +39,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAPendingLaunchCount;
 import uk.ac.manchester.tornado.api.plan.types.WithClearProfiles;
 import uk.ac.manchester.tornado.api.plan.types.WithCompilerFlags;
+import uk.ac.manchester.tornado.api.plan.types.WithStrictFloatingPoint;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
@@ -47,6 +49,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithIntraPlanConcurrency;
 import uk.ac.manchester.tornado.api.plan.types.WithStagedTransfers;
 import uk.ac.manchester.tornado.api.plan.types.WithMemoryLimit;
+import uk.ac.manchester.tornado.api.plan.types.WithPlanResultsHistory;
 import uk.ac.manchester.tornado.api.plan.types.WithPreCompilation;
 import uk.ac.manchester.tornado.api.plan.types.WithPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.WithProfiler;
@@ -76,6 +79,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
 
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
 
+    /** The backends whose kernels are built by a compiler that takes flags. */
+    private static final TornadoVMBackendType[] COMPILED_BACKENDS = { TornadoVMBackendType.OPENCL, TornadoVMBackendType.CUDA, TornadoVMBackendType.METAL };
+
     /**
      * The TornadoVM executor is a list of chain of actions to be performed.
      * Each action can enable/disable runtime features, influence the compiler,
@@ -100,7 +106,28 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     protected TornadoExecutionPlan parentLink;
 
-    protected List<TornadoExecutionResult> planResults;
+    /**
+     * Result of the most recent {@link #execute()} of this plan. Like the fields below, it is
+     * only used on the root node, so that every node of the plan chain shares it.
+     */
+    protected TornadoExecutionResult lastPlanResult;
+
+    /**
+     * Number of times {@link #execute()} has been called on this plan.
+     */
+    protected long numPlanResults;
+
+    /**
+     * Every result since {@link #withPlanResultsHistory()} was enabled, or {@code null} when only
+     * the latest result is kept (the default). Keeping every result grows the heap by one entry
+     * per execution for as long as the history is enabled.
+     */
+    protected List<TornadoExecutionResult> planResultsHistory;
+
+    /**
+     * Index of the execution stored at position 0 of {@link #planResultsHistory}.
+     */
+    protected long planResultsHistoryStart;
 
     /**
      * Create an Execution Plan: Object to create and optimize an execution plan for
@@ -118,7 +145,6 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         executionFrame = new ExecutorFrame(id);
         updateAccess(immutableTaskGraphs);
         rootNode = this;
-        planResults = new ArrayList<>();
     }
 
     /**
@@ -200,7 +226,12 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         tornadoExecutor.execute(executionFrame);
         TornadoProfilerResult profilerResult = new TornadoProfilerResult(tornadoExecutor, this::getTraceExecutionPlan);
         TornadoExecutionResult executionResult = new TornadoExecutionResult(profilerResult);
-        planResults.add(executionResult);
+        TornadoExecutionPlan root = rootNode;
+        root.lastPlanResult = executionResult;
+        if (root.planResultsHistory != null) {
+            root.planResultsHistory.add(executionResult);
+        }
+        root.numPlanResults++;
         tornadoExecutor.updateLastExecutedTaskGraph();
         return executionResult;
     }
@@ -522,6 +553,43 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
+     * Keep the result of every execution from now on, so that {@link #getPlanResult(int)} returns
+     * the object that each {@link #execute()} call returned. By default, only the latest result is
+     * kept.
+     *
+     * <p>
+     * The history grows by one entry per execution until it is disabled with
+     * {@link #withoutPlanResultsHistory()} or the plan is released, so avoid it on plans that
+     * execute many times.
+     * </p>
+     *
+     * @since 7.0.2
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withPlanResultsHistory() {
+        TornadoExecutionPlan root = rootNode;
+        if (root.planResultsHistory == null) {
+            root.planResultsHistory = new ArrayList<>();
+            root.planResultsHistoryStart = root.numPlanResults;
+        }
+        return new WithPlanResultsHistory(this);
+    }
+
+    /**
+     * Keep only the latest execution result (the default), and release the history recorded by
+     * {@link #withPlanResultsHistory()}.
+     *
+     * @since 7.0.2
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withoutPlanResultsHistory() {
+        rootNode.planResultsHistory = null;
+        return new OffPlanResultsHistory(this);
+    }
+
+    /**
      * Enable printing of the generated kernels for each task in a task-graph.
      *
      * @since 1.0.2
@@ -546,8 +614,26 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Set compiler flags for each backend.
-     * 
+     * Add compiler flags for one backend to the flags this plan's kernels are built with.
+     *
+     * <p>
+     * The flags are merged into the backend's defaults rather than replacing them: an option given
+     * here replaces a default option of the same name ({@code --fmad=true} replaces
+     * {@code --fmad=false}, {@code -cl-std=CL3.0} replaces {@code -cl-std=CL2.0}), and every other
+     * default is kept. The defaults are, for {@link TornadoVMBackendType#CUDA}, the
+     * {@code -Dtornado.cuda.compile.profile} options, {@code -Dtornado.cuda.compiler.flags}, and
+     * the {@code --fmad=false} implied by {@code -Dtornado.enable.fma=false} or
+     * {@link #withStrictFloatingPoint()}; for {@link TornadoVMBackendType#OPENCL},
+     * {@code -Dtornado.opencl.compiler.flags} ({@code -cl-mad-enable -cl-fast-relaxed-math -w}
+     * unless set). To build OpenCL kernels without one of those defaults, change
+     * {@code -Dtornado.opencl.compiler.flags}. {@link TornadoVMBackendType#METAL} compiles through
+     * {@code MTLCompileOptions}, which takes no option string, so its flags are kept but not used.
+     * </p>
+     *
+     * <p>
+     * A later call for the same backend replaces an earlier one.
+     * </p>
+     *
      * @param backend
      *     {@link TornadoVMBackendType}
      * @param compilerFlags
@@ -558,6 +644,53 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionPlan withCompilerFlags(TornadoVMBackendType backend, String compilerFlags) {
         tornadoExecutor.withCompilerFlags(backend, compilerFlags);
         return new WithCompilerFlags(this, compilerFlags);
+    }
+
+    /**
+     * Add compiler flags for whichever backend this plan's kernels are compiled by, merged into that
+     * backend's defaults as {@link #withCompilerFlags(TornadoVMBackendType, String)} does.
+     *
+     * <p>
+     * The flags are passed as they are to the backend's compiler, so they must be ones it accepts:
+     * NVRTC options for a plan on a CUDA device, OpenCL build options for an OpenCL device. A plan
+     * whose task-graphs run on devices of different backends should name the backend instead.
+     * </p>
+     *
+     * @param compilerFlags
+     *     {@link String}
+     * @since 7.3.2
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withCompilerFlags(String compilerFlags) {
+        for (TornadoVMBackendType backend : COMPILED_BACKENDS) {
+            tornadoExecutor.withCompilerFlags(backend, compilerFlags);
+        }
+        return new WithCompilerFlags(this, compilerFlags);
+    }
+
+    /**
+     * Requires this plan's kernels to round floating-point arithmetic the way the host does.
+     *
+     * <p>
+     * A device fuses {@code a * b + c} into one operation with a single rounding, which is more
+     * accurate than the host's two roundings and therefore a different answer. Use this when device
+     * and host results must agree. It disables both places the CUDA backend fuses -- the compiler
+     * phase and NVRTC's contraction -- since turning off either alone leaves the other.
+     *
+     * <p>
+     * Scoped to this plan, and can only make a task stricter, so it composes with
+     * {@code -Dtornado.enable.fma=false}.
+     *
+     * <p>
+     * Implemented for the CUDA backend. Elsewhere the call is accepted and has no effect, so check
+     * the backend before relying on it as a correctness guarantee.
+     *
+     * @since 7.0.2
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withStrictFloatingPoint() {
+        tornadoExecutor.withStrictFloatingPoint();
+        return new WithStrictFloatingPoint(this);
     }
 
     /**
@@ -581,11 +714,38 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         return tornadoExecutor.getCurrentDeviceMemoryUsage();
     }
 
+    /**
+     * Returns the result of an execution of this plan.
+     *
+     * <p>
+     * By default the plan keeps only the latest result, and any index of an execution that has
+     * taken place returns it. With {@link #withPlanResultsHistory()} enabled, the plan keeps every
+     * result from that point on, and an index recorded in the history returns the result of that
+     * execution.
+     * </p>
+     *
+     * <p>
+     * Every {@link TornadoExecutionResult} is a live view of the plan's executor: its profiler
+     * reads the executor's current timers, not a snapshot taken at that execution. A result kept
+     * in the history is therefore the object returned by that {@code execute()} call, but its
+     * timers report the latest execution.
+     * </p>
+     *
+     * @param index
+     *     Index of the execution, starting at 0.
+     * @return {@link TornadoExecutionResult}
+     * @throws TornadoRuntimeException
+     *     if no execution with that index has taken place.
+     */
     public TornadoExecutionResult getPlanResult(int index) {
-        if (index >= planResults.size()) {
+        TornadoExecutionPlan root = rootNode;
+        if (index < 0 || index >= root.numPlanResults) {
             throw new TornadoRuntimeException("[ERROR] Execution result not found");
         }
-        return planResults.get(index);
+        if (root.planResultsHistory != null && index >= root.planResultsHistoryStart) {
+            return root.planResultsHistory.get((int) (index - root.planResultsHistoryStart));
+        }
+        return root.lastPlanResult;
     }
 
     /**

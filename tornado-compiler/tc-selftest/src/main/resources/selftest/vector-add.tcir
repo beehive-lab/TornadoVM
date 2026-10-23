@@ -1,0 +1,23 @@
+; tornado-selftest backend/ir-vector-add: a @Parallel loop over FloatArrays, written in TC's IR as
+; javac would give it (i = 0; i < n; i++); TC lowers it to a grid-stride loop over the launch.
+; The bound is the length of an input array (the header of a write-only output is not copied to the
+; device, so its length cannot be read there).
+kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
+^entry:
+  %n = array.length %a : i32                   loc("VectorAdd.java":20)
+  %zero = const 0 : i32
+  br ^head(%zero)
+^head(%i: i32) [parallel<iv = 0>]:
+  %more = icmp.slt %i, %n : i1                 loc("VectorAdd.java":20)
+  cond_br %more, ^body, ^exit
+^body:
+  %x = array.load %a[%i] : f32                 loc("VectorAdd.java":21)
+  %y = array.load %b[%i] : f32                 loc("VectorAdd.java":21)
+  %z = fadd %x, %y : f32                       loc("VectorAdd.java":21)
+  array.store %c[%i], %z                       loc("VectorAdd.java":21)
+  %one = const 1 : i32
+  %next = add %i, %one : i32                   loc("VectorAdd.java":20)
+  br ^head(%next)
+^exit:
+  ret
+}

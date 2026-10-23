@@ -26,15 +26,17 @@ import uk.ac.manchester.tornado.api.TornadoSetting;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.exceptions.TornadoAPIException;
 
+/**
+ * Loads the runtime that implements the API. The {@code tornado.load.*} properties name the classes;
+ * without them TornadoVM's own runtime is used, so a launcher, an argfile or a native image need not
+ * set them.
+ */
 public class TornadoAPIProvider {
 
     public static TornadoTaskGraphInterface loadScheduleRuntime(String name) {
         TornadoTaskGraphInterface taskGraphImpl;
         try {
-            String tornadoAPIImplementation = System.getProperty("tornado.load.api.implementation");
-            if (tornadoAPIImplementation == null) {
-                throw new TornadoAPIException("[ERROR] Tornado API Implementation class not specified. Did you remember to add @tornado-argfile?");
-            }
+            String tornadoAPIImplementation = System.getProperty("tornado.load.api.implementation", "uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph");
             Class<?> klass = Class.forName(tornadoAPIImplementation);
             Constructor<?> constructor = klass.getConstructor(String.class);
             taskGraphImpl = (TornadoTaskGraphInterface) constructor.newInstance(name);
@@ -47,10 +49,7 @@ public class TornadoAPIProvider {
     public static TornadoRuntime loadTornadoRuntimeImpl() {
         TornadoRuntime runtime;
         try {
-            String tornadoRuntimeImplementation = System.getProperty("tornado.load.runtime.implementation");
-            if (tornadoRuntimeImplementation == null) {
-                throw new TornadoAPIException("[ERROR] Tornado Runtime Implementation class not specified. Did you remember to add @tornado-argfile?");
-            }
+            String tornadoRuntimeImplementation = System.getProperty("tornado.load.runtime.implementation", "uk.ac.manchester.tornado.runtime.TornadoCoreRuntime");
             Class<?> klass = Class.forName(tornadoRuntimeImplementation);
             Method method = klass.getDeclaredMethod("getTornadoRuntime");
             runtime = (TornadoRuntime) method.invoke(null);
@@ -63,10 +62,7 @@ public class TornadoAPIProvider {
     public static TornadoSetting loadTornadoImpl() {
         TornadoSetting tornado;
         try {
-            String tornadoImplementation = System.getProperty("tornado.load.tornado.implementation");
-            if (tornadoImplementation == null) {
-                throw new TornadoAPIException("[ERROR] Tornado Implementation class not specified. Did you remember to add @tornado-argfile?");
-            }
+            String tornadoImplementation = System.getProperty("tornado.load.tornado.implementation", "uk.ac.manchester.tornado.runtime.common.Tornado");
             Class<?> klass = Class.forName(tornadoImplementation);
             Constructor<?> constructor = klass.getConstructor();
             tornado = (TornadoSetting) constructor.newInstance();

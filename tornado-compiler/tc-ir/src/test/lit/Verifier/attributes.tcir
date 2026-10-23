@@ -1,0 +1,29 @@
+; Attributes are declared (Attribute.DEFS): where they may appear and the values they need.
+; RUN: tc-ir --verify-diagnostics %s
+
+; expected-error@* {{TC-E2118: attribute 'parallel' on block ^head needs the value 'iv'}}
+; expected-error@* {{TC-E2118: parallel<iv = 3> names a block argument ^body does not have}}
+; expected-error@* {{TC-E2118: attribute 'unrolled' on function @kernel is not declared}}
+; expected-error@* {{TC-E2118: attribute 'grid' belongs on a block, not on function @kernel}}
+kernel @kernel(%n: i32) -> void [unrolled, grid<dim = 0>] {
+^entry:
+  %zero = const 0 : i32
+  br ^head(%zero)
+^head(%i: i32) [parallel]:
+  %c = icmp.slt %i, %n : i1
+  cond_br %c, ^body(%i), ^exit
+^body(%j: i32) [parallel<iv = 3>]:
+  %one = const 1 : i32
+  %next = add %j, %one : i32
+  br ^head(%next)
+^exit:
+  ret
+}
+
+device @contract(%a: f32, %b: f32) -> f32 {
+^entry:
+  %m = fmul %a, %b : f32 [contract]
+  %s = fadd %m, %a : f32 [contract<fast = 1>]
+  %t = fadd %s, %b : f32 [parallel<iv = 0>] ; expected-error {{TC-E2118: attribute 'parallel' belongs on a block, not on 'fadd'}}
+  ret %t
+}

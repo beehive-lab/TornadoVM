@@ -4,28 +4,25 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -245,7 +242,7 @@ public class TestWarpVote extends TornadoTestBase {
         skipUnsupportedBackends();
         IntArray out = runKernel("ballot", TestWarpVote::ballotKernel);
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("lane " + i, EVEN_LANES, out.get(i));
+            assertEquals(EVEN_LANES, out.get(i), "lane " + i);
         }
     }
 
@@ -255,7 +252,7 @@ public class TestWarpVote extends TornadoTestBase {
         IntArray out = runKernel("anyAll", TestWarpVote::anyAllKernel);
         // any = true (lane 7 passes), all = false: encoded as 1 * 2 + 0.
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("lane " + i, 2, out.get(i));
+            assertEquals(2, out.get(i), "lane " + i);
         }
     }
 
@@ -264,7 +261,7 @@ public class TestWarpVote extends TornadoTestBase {
         skipUnsupportedBackends();
         IntArray out = runKernel("allTrue", TestWarpVote::allTrueKernel);
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("lane " + i, 1, out.get(i));
+            assertEquals(1, out.get(i), "lane " + i);
         }
     }
 
@@ -276,7 +273,7 @@ public class TestWarpVote extends TornadoTestBase {
             int lane = i % WARP_SIZE;
             // Lanes 0, 3, 6, ... pass; a lane's rank is how many passing lanes precede it.
             int expected = (lane + 2) / 3;
-            assertEquals("lane " + i, expected, out.get(i));
+            assertEquals(expected, out.get(i), "lane " + i);
         }
     }
 
@@ -294,7 +291,7 @@ public class TestWarpVote extends TornadoTestBase {
             int warpInBlock = (i % blockSize) / WARP_SIZE;
             // Odd warps: every lane passes, so any and all hold (1 * 2 + 1). Even warps: neither.
             int expected = (warpInBlock % 2 == 1) ? 3 : 0;
-            assertEquals("lane " + i, expected, out.get(i));
+            assertEquals(expected, out.get(i), "lane " + i);
         }
     }
 
@@ -317,7 +314,7 @@ public class TestWarpVote extends TornadoTestBase {
                     expected++;
                 }
             }
-            assertEquals("lane " + i, expected, out.get(i));
+            assertEquals(expected, out.get(i), "lane " + i);
         }
     }
 
@@ -329,7 +326,7 @@ public class TestWarpVote extends TornadoTestBase {
         // Per step: simdAny holds (+1), simdAll does not (+0), and the ballot selects a quarter of
         // the warp (+8). Four steps: 4 * (1 + 8) = 36.
         for (int i = 0; i < SIZE; i++) {
-            assertEquals("lane " + i, 36, out.get(i));
+            assertEquals(36, out.get(i), "lane " + i);
         }
     }
 
@@ -353,7 +350,7 @@ public class TestWarpVote extends TornadoTestBase {
                     break;
                 }
             }
-            assertEquals("lane " + i, expected, out.get(i));
+            assertEquals(expected, out.get(i), "lane " + i);
         }
     }
 }

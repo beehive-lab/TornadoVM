@@ -5,19 +5,18 @@
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
  */
 package uk.ac.manchester.tornado.drivers.metal.ffm;
 
@@ -225,7 +224,7 @@ public final class ObjCRuntime {
             return 0;
         }
         try {
-            return (long) msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG)).invokeExact(receiver, sel(selector));
+            return (long) Sends.LONG_LONG_LONG.invokeExact(receiver, sel(selector));
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -237,7 +236,7 @@ public final class ObjCRuntime {
             return 0;
         }
         try {
-            return (long) msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG)).invokeExact(receiver, sel(selector), argument);
+            return (long) Sends.LONG_LONG_LONG_LONG.invokeExact(receiver, sel(selector), argument);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -249,7 +248,7 @@ public final class ObjCRuntime {
             return 0;
         }
         try {
-            return (long) msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG)).invokeExact(receiver, sel(selector), first, second);
+            return (long) Sends.LONG_LONG_LONG_LONG_LONG.invokeExact(receiver, sel(selector), first, second);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -261,7 +260,7 @@ public final class ObjCRuntime {
             return 0;
         }
         try {
-            return (long) msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG)).invokeExact(receiver, sel(selector), first, second, third);
+            return (long) Sends.LONG_LONG_LONG_LONG_LONG_LONG.invokeExact(receiver, sel(selector), first, second, third);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -273,7 +272,7 @@ public final class ObjCRuntime {
             return false;
         }
         try {
-            return (byte) msgSend(FunctionDescriptor.of(FFMSupport.C_CHAR, C_LONG, C_LONG)).invokeExact(receiver, sel(selector)) != 0;
+            return (byte) Sends.CHAR_LONG_LONG.invokeExact(receiver, sel(selector)) != 0;
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -285,7 +284,7 @@ public final class ObjCRuntime {
             return;
         }
         try {
-            msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG)).invokeExact(receiver, sel(selector));
+            Sends.VOID_LONG_LONG.invokeExact(receiver, sel(selector));
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -297,7 +296,7 @@ public final class ObjCRuntime {
             return;
         }
         try {
-            msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG)).invokeExact(receiver, sel(selector), argument);
+            Sends.VOID_LONG_LONG_LONG.invokeExact(receiver, sel(selector), argument);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -312,7 +311,7 @@ public final class ObjCRuntime {
         try (Arena arena = Arena.ofConfined()) {
             long allocated = send(nsString, "alloc");
             MemorySegment utf8 = FFMSupport.allocateCString(arena, value);
-            return (long) msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_POINTER)).invokeExact(allocated, sel("initWithUTF8String:"), utf8);
+            return (long) Sends.LONG_LONG_LONG_POINTER.invokeExact(allocated, sel("initWithUTF8String:"), utf8);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -324,7 +323,7 @@ public final class ObjCRuntime {
             return null;
         }
         try {
-            MemorySegment utf8 = (MemorySegment) msgSend(FunctionDescriptor.of(C_POINTER, C_LONG, C_LONG)).invokeExact(nsString, sel("UTF8String"));
+            MemorySegment utf8 = (MemorySegment) Sends.POINTER_LONG_LONG.invokeExact(nsString, sel("UTF8String"));
             return FFMSupport.readCString(utf8);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -391,5 +390,23 @@ public final class ObjCRuntime {
         all[1] = C_LONG;
         System.arraycopy(arguments, 0, all, 2, arguments.length);
         return FunctionDescriptor.of(C_INT, all);
+    }
+
+    /**
+     * The downcall handles of the message sends in this file, one per signature, resolved when one
+     * of them is first used. Looking a handle up by a freshly built {@code FunctionDescriptor} on
+     * every send hashes the descriptor's layouts each time, which dominated the CPU time of
+     * dispatching small kernels.
+     */
+    private static final class Sends {
+        static final MethodHandle CHAR_LONG_LONG = msgSend(FunctionDescriptor.of(FFMSupport.C_CHAR, C_LONG, C_LONG));
+        static final MethodHandle LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG));
+        static final MethodHandle LONG_LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG));
+        static final MethodHandle LONG_LONG_LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
+        static final MethodHandle LONG_LONG_LONG_LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
+        static final MethodHandle LONG_LONG_LONG_POINTER = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_POINTER));
+        static final MethodHandle POINTER_LONG_LONG = msgSend(FunctionDescriptor.of(C_POINTER, C_LONG, C_LONG));
+        static final MethodHandle VOID_LONG_LONG = msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG));
+        static final MethodHandle VOID_LONG_LONG_LONG = msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG, C_LONG));
     }
 }

@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.metal;
@@ -32,8 +29,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import tornado.graal.compiler.options.OptionValues;
-import tornado.graal.compiler.phases.util.Providers;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
@@ -41,9 +36,6 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceNotFound;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalHotSpotBackendFactory;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalSuitesProvider;
-import uk.ac.manchester.tornado.drivers.metal.graal.backend.MetalBackend;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoVMConfigAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
@@ -56,13 +48,13 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
             MetalDeviceType.METAL_DEVICE_TYPE_CPU, //
             MetalDeviceType.METAL_DEVICE_TYPE_ACCELERATOR, //
             MetalDeviceType.METAL_DEVICE_TYPE_CUSTOM);
-    private final MetalBackend[][] backends;
+    private final MetalDeviceBackend[][] backends;
     private final List<MetalContextInterface> contexts;
-    private MetalBackend[] flatBackends;
+    private MetalDeviceBackend[] flatBackends;
     private volatile List<TornadoDevice> devices;
     private final TornadoLogger logger;
 
-    public MetalBackendImpl(final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    public MetalBackendImpl(TornadoVMConfigAccess vmConfig) {
         // Only allow Metal backend initialization on macOS hosts.
         String osName = System.getProperty("os.name").toLowerCase();
         if (!osName.contains("mac") && !osName.contains("darwin")) {
@@ -80,17 +72,17 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
             throw new TornadoBailoutRuntimeException("[WARNING] No Metal platforms found. Deoptimizing to sequential execution.");
         }
 
-        backends = new MetalBackend[numPlatforms][];
+        backends = new MetalDeviceBackend[numPlatforms][];
         contexts = new ArrayList<>();
         logger = new TornadoLogger(this.getClass());
-        discoverDevices(options, vmConfig);
+        discoverDevices(vmConfig);
         flatBackends = flattenBackends(backends);
         flatBackends = orderFlattenBackends();
 
     }
 
-    private MetalBackend[] flattenBackends(MetalBackend[][] backends) {
-        MetalBackend[] flatBackendList = new MetalBackend[getNumDevices()];
+    private MetalDeviceBackend[] flattenBackends(MetalDeviceBackend[][] backends) {
+        MetalDeviceBackend[] flatBackendList = new MetalDeviceBackend[getNumDevices()];
         int index = 0;
         for (int i = 0; i < getNumPlatforms(); i++) {
             for (int j = 0; j < getNumDevices(i); j++, index++) {
@@ -107,26 +99,26 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
      * @return An array of Metal backends ordered according to the device type
      *     ordering.
      */
-    private MetalBackend[] orderFlattenBackends() {
-        List<MetalBackend> backendList = new ArrayList<>();
-        EnumMap<MetalDeviceType, List<MetalBackend>> deviceTypeMap = new EnumMap<>(MetalDeviceType.class);
+    private MetalDeviceBackend[] orderFlattenBackends() {
+        List<MetalDeviceBackend> backendList = new ArrayList<>();
+        EnumMap<MetalDeviceType, List<MetalDeviceBackend>> deviceTypeMap = new EnumMap<>(MetalDeviceType.class);
 
         // Populate deviceTypeMap with backends for each device type
-        for (MetalBackend backend : flatBackends) {
+        for (MetalDeviceBackend backend : flatBackends) {
             MetalDeviceType deviceType = backend.getDeviceContext().getDevice().getDeviceType();
-            List<MetalBackend> backendListForDeviceType = deviceTypeMap.computeIfAbsent(deviceType, k -> new ArrayList<>());
+            List<MetalDeviceBackend> backendListForDeviceType = deviceTypeMap.computeIfAbsent(deviceType, k -> new ArrayList<>());
             backendListForDeviceType.add(backend);
         }
 
         // Add backends to backendList in the order specified by deviceTypeOrdering
         for (MetalDeviceType deviceType : MetalBackendImpl.DEVICE_TYPE_LIST) {
-            List<MetalBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
+            List<MetalDeviceBackend> backendListForDeviceType = deviceTypeMap.get(deviceType);
             if (backendListForDeviceType != null) {
                 backendList.addAll(backendListForDeviceType);
             }
         }
 
-        Map<MetalDeviceType, List<MetalBackend>> groupedByDeviceType = backendList.stream().collect(Collectors.groupingBy(backend -> backend.getDeviceContext().getDevice().getDeviceType()));
+        Map<MetalDeviceType, List<MetalDeviceBackend>> groupedByDeviceType = backendList.stream().collect(Collectors.groupingBy(backend -> backend.getDeviceContext().getDevice().getDeviceType()));
 
         // Sort each sublist by size in descending order
         groupedByDeviceType.forEach((deviceType, sublist) -> Collections.sort(sublist, (backend1, backend2) -> {
@@ -136,12 +128,12 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         }));
 
         // Create a list to hold the sorted backends
-        List<MetalBackend> sortedBackends = new ArrayList<>();
+        List<MetalDeviceBackend> sortedBackends = new ArrayList<>();
 
         // Iterate through 'MetalDriver.DEVICE_TYPE_LIST' and add backends in the
         // specified order
         for (MetalDeviceType deviceType : MetalBackendImpl.DEVICE_TYPE_LIST) {
-            List<MetalBackend> backendsOfType = groupedByDeviceType.get(deviceType);
+            List<MetalDeviceBackend> backendsOfType = groupedByDeviceType.get(deviceType);
             if (backendsOfType != null) {
                 sortedBackends.addAll(backendsOfType);
             }
@@ -150,7 +142,7 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         // Update 'backendList' with the sorted backends
         backendList = sortedBackends;
 
-        return backendList.toArray(new MetalBackend[0]);
+        return backendList.toArray(new MetalDeviceBackend[0]);
     }
 
     @Override
@@ -194,8 +186,8 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
         return IntStream.range(0, getNumPlatforms()).map(this::getNumDevices).sum();
     }
 
-    private MetalBackend checkAndInitBackend(final int platform, final int device) {
-        final MetalBackend backend = backends[platform][device];
+    private MetalDeviceBackend checkAndInitBackend(final int platform, final int device) {
+        final MetalDeviceBackend backend = backends[platform][device];
         if (!backend.isInitialised()) {
             backend.init();
         }
@@ -204,52 +196,49 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
     }
 
     private void swapDefaultDevice(final int device) {
-        MetalBackend tmp = flatBackends[0];
+        MetalDeviceBackend tmp = flatBackends[0];
         flatBackends[0] = flatBackends[device];
         flatBackends[device] = tmp;
-        MetalBackend backend = flatBackends[0];
+        MetalDeviceBackend backend = flatBackends[0];
 
         if (!backend.isInitialised()) {
             backend.init();
         }
     }
 
-    private MetalBackend createMetalJITCompiler(final OptionValues options, TornadoVMConfigAccess vmConfig, final MetalContextInterface context,
+    private MetalDeviceBackend createMetalJITCompiler(TornadoVMConfigAccess vmConfig, final MetalContextInterface context,
             final int deviceIndex) {
         final MetalTargetDevice device = context.devices().get(deviceIndex);
         logger.info("Creating backend for %s", device.getDeviceName());
-        return MetalHotSpotBackendFactory.createJITCompiler(options, vmConfig, context, device);
+        var deviceContext = (MetalDeviceContextInterface) context.createDeviceContext(device.getIndex());
+        return new MetalDeviceBackend(deviceContext);
     }
 
-    private void installDevices(int platformIndex, TornadoPlatformInterface platform, final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void installDevices(int platformIndex, TornadoPlatformInterface platform, TornadoVMConfigAccess vmConfig) {
         logger.info("Metal[%d]: Platform %s", platformIndex, platform.getName());
         final MetalContextInterface context = platform.createContext();
         assert context != null : "Metal context is null";
         contexts.add(context);
         final int numDevices = context.getNumDevices();
         logger.info("Metal[%d]: Has %d devices...", platformIndex, numDevices);
-        backends[platformIndex] = new MetalBackend[numDevices];
+        backends[platformIndex] = new MetalDeviceBackend[numDevices];
         for (int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
             final MetalTargetDevice device = context.devices().get(deviceIndex);
             logger.info("Metal[%d]: device=%s", platformIndex, device.getDeviceName());
-            backends[platformIndex][deviceIndex] = createMetalJITCompiler(options, vmConfig, context, deviceIndex);
+            backends[platformIndex][deviceIndex] = createMetalJITCompiler(vmConfig, context, deviceIndex);
         }
     }
 
-    private void discoverDevices(final OptionValues options, TornadoVMConfigAccess vmConfig) {
+    private void discoverDevices(TornadoVMConfigAccess vmConfig) {
         IntStream.range(0, Metal.getNumPlatforms()).forEach(i -> {
             final TornadoPlatformInterface platform = Metal.getPlatform(i);
-            installDevices(i, platform, options, vmConfig);
+            installDevices(i, platform, vmConfig);
         });
     }
 
-    public MetalBackend getBackend(int platform, int device) {
+    /** A device: its context and memory. */
+    public MetalDeviceBackend getDeviceBackend(int platform, int device) {
         return checkAndInitBackend(platform, device);
-    }
-
-    @Override
-    public MetalBackend getDefaultBackend() {
-        return checkAndInitBackend(0, 0);
     }
 
     public int getNumDevices(int platform) {
@@ -267,16 +256,6 @@ public final class MetalBackendImpl implements TornadoAcceleratorBackend {
 
     public MetalContextInterface getPlatformContext(final int index) {
         return (index < contexts.size()) ? contexts.get(index) : contexts.get(0);
-    }
-
-    @Override
-    public Providers getProviders() {
-        return getDefaultBackend().getProviders();
-    }
-
-    @Override
-    public MetalSuitesProvider getSuitesProvider() {
-        return getDefaultBackend().getTornadoSuites();
     }
 
     @Override

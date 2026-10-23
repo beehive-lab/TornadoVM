@@ -1,0 +1,21 @@
+Performing C SOURCE FILE Test JNI_INCLUDE_PATH2_OPTIONAL failed with the following output:
+Change Dir: /Users/thanos/repositories/TornadoVM-stratika/tornado-drivers/metal-jni/src/main/cpp/build/CMakeFiles/CMakeScratch/TryCompile-i0ZPQZ
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_a3fc9/fast && /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_a3fc9.dir/build.make CMakeFiles/cmTC_a3fc9.dir/build
+Building C object CMakeFiles/cmTC_a3fc9.dir/src.c.o
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/cc -DJNI_INCLUDE_PATH2_OPTIONAL -I/Users/thanos/.sdkman/candidates/java/current/include -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk -mmacosx-version-min=26.3 -MD -MT CMakeFiles/cmTC_a3fc9.dir/src.c.o -MF CMakeFiles/cmTC_a3fc9.dir/src.c.o.d -o CMakeFiles/cmTC_a3fc9.dir/src.c.o -c /Users/thanos/repositories/TornadoVM-stratika/tornado-drivers/metal-jni/src/main/cpp/build/CMakeFiles/CMakeScratch/TryCompile-i0ZPQZ/src.c
+In file included from /Users/thanos/repositories/TornadoVM-stratika/tornado-drivers/metal-jni/src/main/cpp/build/CMakeFiles/CMakeScratch/TryCompile-i0ZPQZ/src.c:2:
+/Users/thanos/.sdkman/candidates/java/current/include/jni.h:45:10: fatal error: 'jni_md.h' file not found
+   45 | #include "jni_md.h"
+      |          ^~~~~~~~~~
+1 error generated.
+make[1]: *** [CMakeFiles/cmTC_a3fc9.dir/src.c.o] Error 1
+make: *** [cmTC_a3fc9/fast] Error 2
+
+
+Source file was:
+
+#include <jni.h>
+int main(void) { return 0; }
+
+

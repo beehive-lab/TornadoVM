@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.runtime.library.spi;
@@ -28,13 +25,16 @@ import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 /**
  * A single library-task call with its arguments already resolved by the
  * TornadoVM interpreter: reference arguments (off-heap arrays/tensors) carry
- * the raw device pointer of their TornadoVM-managed device buffer (past the
- * array header), primitive arguments carry their boxed value.
+ * the address of their first data element in the TornadoVM-managed buffer
+ * (past the array header), plus the native buffer object and the element's
+ * byte offset inside it; primitive arguments carry their boxed value.
  */
 public final class LibraryInvocation {
 
     private final Object[] javaArgs;
     private final long[] devicePointers;
+    private final long[] nativeBuffers;
+    private final long[] nativeOffsets;
     private final boolean[] isReference;
     private final TornadoXPUDevice device;
     private final long executionPlanId;
@@ -42,9 +42,12 @@ public final class LibraryInvocation {
     private final Object tuning;
     private final boolean capturing;
 
-    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, boolean[] isReference, TornadoXPUDevice device, long executionPlanId, LibraryContext context, Object tuning, boolean capturing) {
+    public LibraryInvocation(Object[] javaArgs, long[] devicePointers, long[] nativeBuffers, long[] nativeOffsets, boolean[] isReference, TornadoXPUDevice device, long executionPlanId,
+            LibraryContext context, Object tuning, boolean capturing) {
         this.javaArgs = javaArgs;
         this.devicePointers = devicePointers;
+        this.nativeBuffers = nativeBuffers;
+        this.nativeOffsets = nativeOffsets;
         this.isReference = isReference;
         this.device = device;
         this.executionPlanId = executionPlanId;
@@ -66,11 +69,30 @@ public final class LibraryInvocation {
     }
 
     /**
-     * The raw device pointer for a reference argument at the given position,
-     * pointing at the first data element (past the TornadoVM array header).
+     * The address of the first data element (past the TornadoVM array header) of
+     * a reference argument: a device pointer on CUDA, and a CPU address of the
+     * shared-storage buffer on Metal. See {@code XPUBuffer.libraryAddress()}.
      */
     public long getDevicePointer(int index) {
         return devicePointers[index];
+    }
+
+    /**
+     * The backend's native buffer object for a reference argument: the device
+     * allocation on CUDA, the MTLBuffer on Metal, or cl_mem on OpenCL. Providers that bind buffers
+     * rather than raw addresses (e.g. Metal compute encoders) combine it with
+     * {@link #getNativeOffset(int)}. OpenCL providers must use this handle rather
+     * than adding an offset to {@link #getDevicePointer(int)}; cl_mem is opaque.
+     */
+    public long getNativeBuffer(int index) {
+        return nativeBuffers[index];
+    }
+
+    /**
+     * Byte offset of the first data element inside {@link #getNativeBuffer(int)}.
+     */
+    public long getNativeOffset(int index) {
+        return nativeOffsets[index];
     }
 
     public boolean isReference(int index) {

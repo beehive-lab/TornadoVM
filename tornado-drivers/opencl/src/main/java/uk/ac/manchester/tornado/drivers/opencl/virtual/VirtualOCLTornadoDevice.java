@@ -4,21 +4,18 @@
  *
  * Copyright (c) 2020-2022, APT Group, Department of Computer Science,
  * School of Engineering, The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
@@ -35,7 +32,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
@@ -46,30 +42,23 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
-import uk.ac.manchester.tornado.api.profiler.ProfilerType;
-import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
-import uk.ac.manchester.tornado.drivers.opencl.graal.OCLProviders;
-import uk.ac.manchester.tornado.drivers.opencl.graal.backend.OCLBackend;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompilationResult;
-import uk.ac.manchester.tornado.drivers.opencl.graal.compiler.OCLCompiler;
+import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
+import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
-import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
@@ -123,11 +112,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public OCLDeviceContextInterface getDeviceContext() {
-        return getBackend().getDeviceContext();
-    }
-
-    public OCLBackend getBackend() {
-        return findDriver().getBackend(platformIndex, deviceIndex);
+        return findDriver().getDeviceBackend(platformIndex, deviceIndex).getDeviceContext();
     }
 
     @Override
@@ -169,10 +154,8 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
 
     @Override
     public void ensureLoaded(long executionPlanId) {
-        final OCLBackend backend = getBackend();
-        if (!backend.isInitialised()) {
-            backend.init();
-        }
+        // Initialise the device (context, queues and memory).
+        findDriver().getDeviceBackend(platformIndex, deviceIndex).init();
     }
 
     @Override
@@ -186,36 +169,14 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     }
 
     private TornadoInstalledCode compileTask(SchedulableTask task) {
+        // A virtual device has nothing to install on: print the kernel when asked.
         final CompilableTask executable = (CompilableTask) task;
-        final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod(executable.getMethod());
-        final Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-
-        // copy meta data into task
-        final TaskDataContext taskMeta = executable.meta();
-        final Access[] sketchAccess = sketch.getArgumentsAccess();
-        final Access[] taskAccess = taskMeta.getArgumentsAccess();
-        System.arraycopy(sketchAccess, 0, taskAccess, 0, sketchAccess.length);
-
-        try {
-            OCLProviders providers = (OCLProviders) getBackend().getProviders();
-            TornadoProfiler profiler = task.getProfiler();
-            profiler.start(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            final OCLCompilationResult result = OCLCompiler.compileSketchForDevice(sketch, executable, providers, getBackend(), executable.getProfiler());
-            profiler.stop(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId());
-            profiler.sum(ProfilerType.TOTAL_GRAAL_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_GRAAL_TIME, taskMeta.getId()));
-
-            if (taskMeta.isPrintKernelEnabled()) {
-                RuntimeUtilities.dumpKernel(result.getTargetCode());
+        return TcKernels.compile(executable, TargetCaps.OPENCL_GENERIC.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER), getDeviceContext(), (entry, source) -> {
+            if (executable.meta().isPrintKernelEnabled()) {
+                RuntimeUtilities.dumpKernel(source);
             }
-
             return null;
-        } catch (Exception e) {
-            TornadoLogger tornadoLogger = new TornadoLogger();
-            tornadoLogger.fatal("unable to compile %s for device %s", task.getId(), getDeviceName());
-            tornadoLogger.fatal("exception occurred when compiling %s", ((CompilableTask) task).getMethod().getName());
-            tornadoLogger.fatal("exception: %s", e.toString());
-            throw new TornadoBailoutRuntimeException("[Error During the Task Compilation] ", e);
-        }
+        });
     }
 
     private TornadoInstalledCode compilePreBuiltTask(SchedulableTask task) {

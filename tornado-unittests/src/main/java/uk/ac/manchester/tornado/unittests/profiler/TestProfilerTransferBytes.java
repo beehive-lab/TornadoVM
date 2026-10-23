@@ -17,10 +17,10 @@
  */
 package uk.ac.manchester.tornado.unittests.profiler;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -76,8 +76,8 @@ public class TestProfilerTransferBytes extends TornadoTestBase {
             long copyIn = result.getProfilerResult().getTotalBytesCopyIn();
             long copyOut = result.getProfilerResult().getTotalBytesCopyOut();
 
-            assertTrue("copy-in bytes should be counted, got " + copyIn, copyIn > 0);
-            assertTrue("copy-out bytes should be counted, got " + copyOut, copyOut > 0);
+            assertTrue(copyIn > 0, "copy-in bytes should be counted, got " + copyIn);
+            assertTrue(copyOut > 0, "copy-out bytes should be counted, got " + copyOut);
         }
     }
 
@@ -98,7 +98,7 @@ public class TestProfilerTransferBytes extends TornadoTestBase {
             for (int iteration = 0; iteration < 3; iteration++) {
                 TornadoExecutionResult result = plan.execute();
                 long copyOut = result.getProfilerResult().getTotalBytesCopyOut();
-                assertTrue("copy-out bytes should be counted on execution " + iteration + ", got " + copyOut, copyOut > 0);
+                assertTrue(copyOut > 0, "copy-out bytes should be counted on execution " + iteration + ", got " + copyOut);
                 previous = copyOut;
             }
             assertTrue(previous > 0);

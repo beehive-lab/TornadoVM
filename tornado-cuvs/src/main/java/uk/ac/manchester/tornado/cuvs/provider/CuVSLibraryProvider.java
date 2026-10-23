@@ -21,6 +21,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cuvs.CuVS;
 import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsOptions;
@@ -43,10 +44,13 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
     private static final class CuVSContext implements LibraryContext {
         private final long resources;
         private final int deviceId;
+        /** The stream the resources are bound to. */
+        private long stream;
 
-        private CuVSContext(long resources, int deviceId) {
+        private CuVSContext(long resources, int deviceId, long stream) {
             this.resources = resources;
             this.deviceId = deviceId;
+            this.stream = stream;
         }
     }
 
@@ -86,8 +90,8 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        // Only the CUDA backend exposes its native stream for library interop
-        return device instanceof TornadoNativeStreamSupport;
+        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
+        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
     }
 
     @Override
@@ -96,7 +100,7 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
         long stream = ((TornadoNativeStreamSupport) device).getNativeStream(executionPlanId);
         long resources = CuVSNativeLib.resourcesCreate();
         CuVSNativeLib.streamSet(resources, stream);
-        return new CuVSContext(resources, CuVSNativeLib.deviceId(resources));
+        return new CuVSContext(resources, CuVSNativeLib.deviceId(resources), stream);
     }
 
     @Override
@@ -108,8 +112,17 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
         if (invocation.isCapturing()) {
             throw new TornadoRuntimeException("[ERROR] cuVS library tasks cannot be captured in a CUDA graph (cuVS allocates scratch memory during the call)");
         }
+        CuVSContext context = (CuVSContext) invocation.getContext();
+        // The stream belongs to the thread that runs the plan, which need not be the one that
+        // created this context: follow it, or the call runs on another thread's stream, unordered
+        // with the kernels that produce its inputs.
+        long stream = ((TornadoNativeStreamSupport) invocation.getDevice()).getNativeStream(invocation.getExecutionPlanId());
+        if (stream != context.stream) {
+            CuVSNativeLib.streamSet(context.resources, stream);
+            context.stream = stream;
+        }
         try (Arena arena = Arena.ofConfined()) {
-            call.invoke((CuVSContext) invocation.getContext(), invocation, arena);
+            call.invoke(context, invocation, arena);
         }
     }
 

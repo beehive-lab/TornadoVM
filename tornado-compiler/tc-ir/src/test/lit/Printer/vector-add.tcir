@@ -1,0 +1,45 @@
+; The VectorAdd kernel from the IR specification: Java-level arrays, a parallel loop header with a
+; block argument, intrinsics with no operands, and source locations.
+; RUN: tc-ir %s | FileCheck %s
+; Printing is a fixed point: parse(print(x)) prints the same text.
+; RUN: tc-ir %s | tc-ir - | FileCheck %s
+
+; CHECK-LABEL: kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
+; CHECK-NEXT:  ^entry:
+; CHECK-NEXT:    %n = array.length %c : i32  loc("VectorAdd.java":20)
+; CHECK-NEXT:    %i0 = tornado.thread_id.global<dim = 0>() : i32
+; CHECK-NEXT:    %s = tornado.global_size<dim = 0>() : i32
+; CHECK-NEXT:    br ^head(%i0)
+; CHECK-NEXT:  ^head(%i: i32) [parallel<iv = 0>]:
+; CHECK-NEXT:    %more = icmp.slt %i, %n : i1
+; CHECK-NEXT:    cond_br %more, ^body, ^exit
+; CHECK-NEXT:  ^body:
+; CHECK-NEXT:    %x = array.load %a[%i] : f32  loc("VectorAdd.java":21, bci=14)
+; CHECK-NEXT:    %y = array.load %b[%i] : f32
+; CHECK-NEXT:    %z = fadd %x, %y : f32 [contract]
+; CHECK-NEXT:    array.store %c[%i], %z
+; CHECK-NEXT:    %next = add %i, %s : i32
+; CHECK-NEXT:    br ^head(%next)
+; CHECK-NEXT:  ^exit:
+; CHECK-NEXT:    ret
+; CHECK-NEXT:  }
+
+kernel @VectorAdd.add(%a: array<f32>, %b: array<f32>, %c: array<f32>) -> void {
+^entry:
+  %n = array.length %c : i32                   loc("VectorAdd.java":20)
+  %i0 = tornado.thread_id.global<dim = 0>() : i32
+  %s = tornado.global_size<dim = 0>() : i32
+  br ^head(%i0)
+^head(%i: i32) [parallel<iv = 0>]:
+  %more = icmp.slt %i, %n : i1
+  cond_br %more, ^body, ^exit
+^body:
+  %x = array.load %a[%i] : f32                 loc("VectorAdd.java":21, bci=14)
+  %y = array.load %b[%i] : f32
+  %z = fadd %x, %y : f32 [contract]
+  array.store %c[%i], %z
+  %next = add %i, %s : i32
+  br ^head(%next)
+^exit:
+  ret
+}

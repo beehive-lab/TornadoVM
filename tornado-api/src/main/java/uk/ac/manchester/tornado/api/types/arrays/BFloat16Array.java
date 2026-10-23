@@ -24,7 +24,7 @@ import uk.ac.manchester.tornado.api.types.BFloat16;
 import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
  * A native array of bfloat16 values (see {@link BFloat16}) stored in off-heap memory. Each element is the two-byte raw bfloat16 bit pattern held in a {@link MemorySegment}; this is a type-safe
@@ -42,7 +42,7 @@ public final class BFloat16Array extends TornadoNativeArray {
     private static final int BF16_BYTES = 2;
     private TornadoMemorySegment segment;
 
-    private int numberOfElements;
+    private long numberOfElements;
 
     private int arrayHeaderSize;
 
@@ -57,7 +57,18 @@ public final class BFloat16Array extends TornadoNativeArray {
      *         The number of elements in the array.
      */
     public BFloat16Array(int numberOfElements) {
-        this.numberOfElements = numberOfElements;
+        this((long) numberOfElements);
+    }
+
+    /**
+     * Constructs a new instance of the {@link BFloat16Array} that will store a user-specified number of elements. The number of elements can exceed
+     * {@link Integer#MAX_VALUE}; access such arrays with the {@code long}-index accessors.
+     *
+     * @param numberOfElements
+     *         The number of elements in the array.
+     */
+    public BFloat16Array(long numberOfElements) {
+        this.numberOfElements = checkNumElements(numberOfElements);
         arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         baseIndex = arrayHeaderSize / BF16_BYTES;
         segmentByteSize = (long) numberOfElements * BF16_BYTES + arrayHeaderSize;
@@ -76,13 +87,12 @@ public final class BFloat16Array extends TornadoNativeArray {
 
         // Calculate number of elements from segment size
         long dataSize = existingSegment.byteSize() - arrayHeaderSize;
-        ensureMultipleOfElementSize(dataSize, BF16_BYTES);
-        this.numberOfElements = (int) (dataSize / BF16_BYTES);
+        this.numberOfElements = toNumElements(dataSize, BF16_BYTES);
 
         // Set up the segment and initialize header
         this.segmentByteSize = existingSegment.byteSize();
         this.segment = new TornadoMemorySegment(existingSegment);
-        this.segment.getSegment().setAtIndex(JAVA_INT, 0, numberOfElements);
+        this.segment.getSegment().setAtIndex(JAVA_LONG, 0, numberOfElements);
     }
 
     /**
@@ -134,8 +144,7 @@ public final class BFloat16Array extends TornadoNativeArray {
      */
     public static BFloat16Array fromSegment(MemorySegment segment) {
         long byteSize = segment.byteSize();
-        int numElements = (int) (byteSize / BF16_BYTES);
-        ensureMultipleOfElementSize(byteSize, BF16_BYTES);
+        long numElements = toNumElements(byteSize, BF16_BYTES);
         BFloat16Array bfloat16Array = new BFloat16Array(numElements);
         MemorySegment.copy(segment, 0, bfloat16Array.segment.getSegment(), (long) bfloat16Array.baseIndex * BF16_BYTES, byteSize);
         return bfloat16Array;
@@ -160,7 +169,7 @@ public final class BFloat16Array extends TornadoNativeArray {
      * @return A new {@link BFloat16Array} instance containing all the elements of the input arrays, concatenated in the order they were provided.
      */
     public static BFloat16Array concat(BFloat16Array... arrays) {
-        int newSize = Arrays.stream(arrays).mapToInt(BFloat16Array::getSize).sum();
+        long newSize = checkNumElements(Arrays.stream(arrays).mapToLong(BFloat16Array::getSizeLong).sum());
         BFloat16Array concatArray = new BFloat16Array(newSize);
         long currentPositionBytes = 0;
         for (BFloat16Array array : arrays) {
@@ -210,6 +219,18 @@ public final class BFloat16Array extends TornadoNativeArray {
     }
 
     /**
+     * Sets the raw bfloat16 bit pattern at a specified index.
+     *
+     * @param index
+     *         The index at which to set the value.
+     * @param bits
+     *         The raw bfloat16 {@code short} bit pattern.
+     */
+    public void set(long index, short bits) {
+        segment.setAtIndex(index, bits, baseIndex);
+    }
+
+    /**
      * Gets the raw bfloat16 bit pattern stored at the specified index. Inside a device kernel this is
      * decoded to float with the hardware-accelerated {@link BFloat16#bf16ToFloat(short)}.
      *
@@ -218,6 +239,18 @@ public final class BFloat16Array extends TornadoNativeArray {
      * @return The raw bfloat16 {@code short} bit pattern at the given index.
      */
     public short get(int index) {
+        return segment.getShortAtIndex(index, baseIndex);
+    }
+
+    /**
+     * Gets the raw bfloat16 bit pattern stored at the specified index. Inside a device kernel this is
+     * decoded to float with the hardware-accelerated {@link BFloat16#bf16ToFloat(short)}.
+     *
+     * @param index
+     *         The index to retrieve.
+     * @return The raw bfloat16 {@code short} bit pattern at the given index.
+     */
+    public short get(long index) {
         return segment.getShortAtIndex(index, baseIndex);
     }
 
@@ -234,6 +267,18 @@ public final class BFloat16Array extends TornadoNativeArray {
     }
 
     /**
+     * Host-side convenience: encodes a float to bfloat16 and stores it at the given index.
+     *
+     * @param index
+     *         The index at which to set the value.
+     * @param value
+     *         The float value to encode and store.
+     */
+    public void setFloat(long index, float value) {
+        segment.setAtIndex(index, BFloat16.bf16FromFloat(value), baseIndex);
+    }
+
+    /**
      * Host-side convenience: reads the raw bfloat16 bits at the given index and decodes them to float.
      *
      * @param index
@@ -241,6 +286,17 @@ public final class BFloat16Array extends TornadoNativeArray {
      * @return The decoded float value.
      */
     public float getFloat(int index) {
+        return BFloat16.bf16ToFloat(get(index));
+    }
+
+    /**
+     * Host-side convenience: reads the raw bfloat16 bits at the given index and decodes them to float.
+     *
+     * @param index
+     *         The index to retrieve.
+     * @return The decoded float value.
+     */
+    public float getFloat(long index) {
         return BFloat16.bf16ToFloat(get(index));
     }
 
@@ -264,7 +320,7 @@ public final class BFloat16Array extends TornadoNativeArray {
      *         The raw bfloat16 bit pattern.
      */
     public void init(short bits) {
-        for (int i = 0; i < getSize(); i++) {
+        for (long i = 0; i < numberOfElements; i++) {
             segment.setAtIndex(i, bits, baseIndex);
         }
     }
@@ -276,6 +332,11 @@ public final class BFloat16Array extends TornadoNativeArray {
      */
     @Override
     public int getSize() {
+        return toIntSize(numberOfElements);
+    }
+
+    @Override
+    public long getSizeLong() {
         return numberOfElements;
     }
 
@@ -331,7 +392,14 @@ public final class BFloat16Array extends TornadoNativeArray {
      *         if the specified slice is out of the bounds of the original array.
      */
     public BFloat16Array slice(int offset, int length) {
-        if (offset < 0 || length < 0 || offset + length > getSize()) {
+        return slice((long) offset, (long) length);
+    }
+
+    /**
+     * Extracts a slice of elements using {@code long} bounds. See {@link #slice(int, int)}.
+     */
+    public BFloat16Array slice(long offset, long length) {
+        if (offset < 0 || length < 0 || offset > numberOfElements - length) {
             throw new IllegalArgumentException("Slice out of bounds");
         }
 

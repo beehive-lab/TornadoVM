@@ -17,8 +17,14 @@
  */
 package uk.ac.manchester.tornado.unittests.compiler;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider.getTornadoRuntime;
 
+import org.junit.jupiter.api.Test;
+
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -38,6 +44,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * </p>
  */
 public class TestCompilerFlagsAPI extends TornadoTestBase {
+
+    private static final int SIZE = 256;
 
     private static void foo(FloatArray data) {
         for (@Parallel int i = 0; i < data.getSize(); i++) {
@@ -61,4 +69,269 @@ public class TestCompilerFlagsAPI extends TornadoTestBase {
 
     }
 
+    private static void add(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) + b.get(i));
+        }
+    }
+
+    /**
+     * Division, because it is the cheapest operation whose code generation fast-math changes.
+     */
+    private static void divide(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) / b.get(i));
+        }
+    }
+
+    private static TornadoVMBackendType backend() {
+        return getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+    }
+
+    /**
+     * A flag the backend's compiler honours, or null where this backend has no obvious one.
+     *
+     * <p>
+     * Chosen to be semantically inert on the kernel below -- it contains no multiply and no
+     * division -- so that "the flag was accepted" is the only thing being asserted.
+     */
+    private static String benignFlagFor(TornadoVMBackendType backendType) {
+        return switch (backendType) {
+            case CUDA -> "--fmad=false";
+            case OPENCL -> "-cl-opt-disable";
+            default -> null;
+        };
+    }
+
+    /** A flag that demonstrably changes what the device computes, or null where there is none. */
+    private static String fastMathFlagFor(TornadoVMBackendType backendType) {
+        return switch (backendType) {
+            case CUDA -> "--use_fast_math";
+            case OPENCL -> "-cl-fast-relaxed-math";
+            default -> null;
+        };
+    }
+
+    private static TornadoExecutionPlan planFor(FloatArray a, FloatArray b, FloatArray c) {
+        return planFor(a, b, c, TestCompilerFlagsAPI::add);
+    }
+
+    private static TornadoExecutionPlan planFor(FloatArray a, FloatArray b, FloatArray c, Task3<FloatArray, FloatArray, FloatArray> kernel) {
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
+                .task("t0", kernel, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        ImmutableTaskGraph immutableTaskGraph = taskGraph.snapshot();
+        return new TornadoExecutionPlan(immutableTaskGraph);
+    }
+
+    private static FloatArray filled(float value) {
+        FloatArray array = new FloatArray(SIZE);
+        array.init(value);
+        return array;
+    }
+
+    /**
+     * The flag reaches the backend compiler and changes what it emits.
+     *
+     * <p>
+     * Before the fix this could not fail: the flag never left the execution context, both runs
+     * compiled the same kernel, and the two results were bit-identical by construction.
+     */
+    @Test
+    public void testFastMathFlagChangesWhatTheDeviceComputes() throws Exception {
+        // What this asserts is a CUDA property: --use_fast_math lowers the divide to
+        // div.approx.ftz.f32, whose flush-to-zero changes the denormal case below. Other backends
+        // accept their own fast-math flag without any guarantee that it alters this kernel, so the
+        // assertion would be testing the driver rather than the flag reaching the compiler.
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        String fastMath = fastMathFlagFor(backend());
+        if (fastMath == null) {
+            return;
+        }
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            // Values whose quotient is not representable, so an approximate divide differs.
+            a.set(i, 1.0f + i);
+            b.set(i, 3.0f + i * 7.0f);
+        }
+        // A denormal makes the difference certain rather than likely: fast-math division on CUDA
+        // is div.approx.ftz.f32, and the ftz flushes this to zero while a correctly rounded
+        // divide keeps it.
+        a.set(0, Float.MIN_VALUE);
+        b.set(0, 1.0f);
+
+        FloatArray exact = new FloatArray(SIZE);
+        try (TornadoExecutionPlan plan = planFor(a, b, exact, TestCompilerFlagsAPI::divide)) {
+            plan.execute();
+        }
+
+        FloatArray approximate = new FloatArray(SIZE);
+        try (TornadoExecutionPlan plan = planFor(a, b, approximate, TestCompilerFlagsAPI::divide)) {
+            plan.withCompilerFlags(backend(), fastMath).execute();
+        }
+
+        boolean differs = false;
+        for (int i = 0; i < SIZE && !differs; i++) {
+            differs = Float.floatToRawIntBits(exact.get(i)) != Float.floatToRawIntBits(approximate.get(i));
+        }
+        assertTrue(differs, "fast-math changed nothing, so the flag never reached the compiler for " + backend());
+    }
+
+    private static void multiplyAdd(FloatArray a, FloatArray b, FloatArray c) {
+        for (@Parallel int i = 0; i < c.getSize(); i++) {
+            c.set(i, a.get(i) * b.get(i) + c.get(i));
+        }
+    }
+
+    /**
+     * CUDA flags given to the plan are added to the defaults rather than replacing them.
+     *
+     * <p>
+     * {@code withStrictFloatingPoint()} puts {@code --fmad=false} into the plan's NVRTC options. A
+     * later {@code withCompilerFlags(CUDA, "--use_fast_math")} used to overwrite them, dropping it,
+     * and fast-math lets NVRTC contract {@code a*b+c} into one fused, single-rounding instruction,
+     * so the result no longer matched the host's two roundings.
+     */
+    @Test
+    public void testCudaFlagsKeepStrictFloatingPoint() throws Exception {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        FloatArray c = new FloatArray(SIZE);
+        float[] expected = new float[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            // 1 + i*2^-23, squared, minus 1: the low bits of the product are what fusion keeps.
+            float x = 1.0f + (i + 1) * Math.ulp(1.0f);
+            a.set(i, x);
+            b.set(i, x);
+            c.set(i, -1.0f);
+            expected[i] = x * x + -1.0f;
+        }
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b, c) //
+                .task("t0", TestCompilerFlagsAPI::multiplyAdd, a, b, c) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, c);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.withStrictFloatingPoint().withCompilerFlags(TornadoVMBackendType.CUDA, "--use_fast_math").execute();
+        }
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(Float.floatToRawIntBits(expected[i]), Float.floatToRawIntBits(c.get(i)), "element " + i + " was fused");
+        }
+    }
+
+    /**
+     * {@code withCompilerFlags(flags)} without a backend reaches the compiler of the backend the
+     * plan runs on: the same fast-math difference as naming the backend.
+     */
+    @Test
+    public void testFlagsWithoutBackendReachTheCompiler() throws Exception {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        String fastMath = fastMathFlagFor(backend());
+        if (fastMath == null) {
+            return;
+        }
+        FloatArray a = new FloatArray(SIZE);
+        FloatArray b = new FloatArray(SIZE);
+        for (int i = 0; i < SIZE; i++) {
+            a.set(i, 1.0f + i);
+            b.set(i, 3.0f + i * 7.0f);
+        }
+        a.set(0, Float.MIN_VALUE);
+        b.set(0, 1.0f);
+
+        FloatArray named = new FloatArray(SIZE);
+        try (TornadoExecutionPlan plan = planFor(a, b, named, TestCompilerFlagsAPI::divide)) {
+            plan.withCompilerFlags(backend(), fastMath).execute();
+        }
+        FloatArray unnamed = new FloatArray(SIZE);
+        try (TornadoExecutionPlan plan = planFor(a, b, unnamed, TestCompilerFlagsAPI::divide)) {
+            plan.withCompilerFlags(fastMath).execute();
+        }
+        FloatArray exact = new FloatArray(SIZE);
+        try (TornadoExecutionPlan plan = planFor(a, b, exact, TestCompilerFlagsAPI::divide)) {
+            plan.execute();
+        }
+        boolean differsFromExact = false;
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(Float.floatToRawIntBits(named.get(i)), Float.floatToRawIntBits(unnamed.get(i)), "element " + i);
+            differsFromExact |= Float.floatToRawIntBits(exact.get(i)) != Float.floatToRawIntBits(unnamed.get(i));
+        }
+        assertTrue(differsFromExact, "withCompilerFlags(flags) changed nothing, so the flags never reached the compiler");
+    }
+
+    /** A flag the compiler accepts, given without a backend, still produces the right answer, on every backend. */
+    @Test
+    public void testFlagsWithoutBackendStillCompileAndRun() throws Exception {
+        String flag = benignFlagFor(backend());
+        if (flag == null) {
+            return;
+        }
+        FloatArray a = filled(2.0f);
+        FloatArray b = filled(3.0f);
+        FloatArray c = new FloatArray(SIZE);
+        try (TornadoExecutionPlan plan = planFor(a, b, c)) {
+            plan.withCompilerFlags(flag).execute();
+        }
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(5.0f, c.get(i), 0.0f);
+        }
+    }
+
+    /** And a flag the compiler does accept still produces the right answer. */
+    @Test
+    public void testAcceptedCompilerFlagStillCompilesAndRuns() throws Exception {
+        String flag = benignFlagFor(backend());
+        if (flag == null) {
+            return;
+        }
+        FloatArray a = filled(2.0f);
+        FloatArray b = filled(3.0f);
+        FloatArray c = new FloatArray(SIZE);
+
+        try (TornadoExecutionPlan plan = planFor(a, b, c)) {
+            plan.withCompilerFlags(backend(), flag).execute();
+        }
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(5.0f, c.get(i), 0.0f);
+        }
+    }
+
+    /**
+     * The same graph, compiled twice under different flags, is not served from one cached binary.
+     *
+     * <p>
+     * The code caches key on the source <em>and</em> the flags, so this should hold; it is asserted
+     * because propagating the flags is what makes the second half of that key non-empty, and a
+     * cache that ignored them would return the first kernel for the second request.
+     */
+    @Test
+    public void testFlagsAreNotCachedAcross() throws Exception {
+        String flag = benignFlagFor(backend());
+        if (flag == null) {
+            return;
+        }
+        FloatArray a = filled(2.0f);
+        FloatArray b = filled(3.0f);
+        FloatArray c = new FloatArray(SIZE);
+
+        try (TornadoExecutionPlan plan = planFor(a, b, c)) {
+            plan.execute();
+        }
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(5.0f, c.get(i), 0.0f);
+        }
+
+        c.init(0.0f);
+        try (TornadoExecutionPlan plan = planFor(a, b, c)) {
+            plan.withCompilerFlags(backend(), flag).execute();
+        }
+        for (int i = 0; i < SIZE; i++) {
+            assertEquals(5.0f, c.get(i), 0.0f);
+        }
+    }
 }

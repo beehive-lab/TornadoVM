@@ -1,0 +1,44 @@
+; GVN shares the address arithmetic that ABI lowering repeats per access, and dedupes constants;
+; a value in one branch is not reused in the other (no dominance).
+; RUN: tc-opt --passes=gvn --stage=post-abi --no-loc %s | FileCheck %s
+
+; CHECK-LABEL: kernel @k(
+; CHECK:       %w = sext %i : i64
+; CHECK-NEXT:  %four = const 4 : i64
+; CHECK-NEXT:  %s = mul %w, %four : i64
+; CHECK-NEXT:  %h = const 16 : i64
+; CHECK-NEXT:  %o = add %s, %h : i64
+; CHECK-NEXT:  %pa = ptr.offset %a, %o : ptr<global>
+; CHECK-NEXT:  %x = load %pa : f32
+; CHECK-NEXT:  %pb = ptr.offset %b, %o : ptr<global>
+; CHECK-NOT:   sext %i
+; CHECK:       ^left:
+; CHECK-NEXT:    %l = add %i, %i : i32
+; CHECK:       ^right:
+; CHECK-NEXT:    %r = add %i, %i : i32
+kernel @k(%a: ptr<global>, %b: ptr<global>, %i: i32, %c: i1) -> void {
+^entry:
+  %w = sext %i : i64
+  %four = const 4 : i64
+  %s = mul %w, %four : i64
+  %h = const 16 : i64
+  %o = add %s, %h : i64
+  %pa = ptr.offset %a, %o : ptr<global>
+  %x = load %pa : f32
+  %w2 = sext %i : i64
+  %four2 = const 4 : i64
+  %s2 = mul %four2, %w2 : i64
+  %h2 = const 16 : i64
+  %o2 = add %s2, %h2 : i64
+  %pb = ptr.offset %b, %o2 : ptr<global>
+  store %pb, %x
+  cond_br %c, ^left, ^right
+^left:
+  %l = add %i, %i : i32
+  store %pb, %x
+  ret
+^right:
+  %r = add %i, %i : i32
+  store %pa, %x
+  ret
+}

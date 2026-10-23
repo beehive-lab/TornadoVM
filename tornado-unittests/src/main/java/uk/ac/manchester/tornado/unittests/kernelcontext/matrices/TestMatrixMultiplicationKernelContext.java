@@ -17,12 +17,12 @@
  */
 package uk.ac.manchester.tornado.unittests.kernelcontext.matrices;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 import java.util.stream.IntStream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -84,7 +84,7 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         float sum = 0.0f;
 
         for (int k = 0; k < size; k++) {
-            sum += a.get((k * size) + idx) * b.get((jdx * size) + k);
+            sum += a.get((idx * size) + k) * b.get((k * size) + jdx);
         }
         c.set((idx * size) + jdx, sum);
     }
@@ -104,25 +104,25 @@ public class TestMatrixMultiplicationKernelContext extends TornadoTestBase {
         int numTiles = size / TS;
         for (int tileIndex = 0; tileIndex < numTiles; tileIndex++) {
 
-            // Load one tile of A and B into local memory
+            // Load one tile of A and B (row-major) into local memory
             int tiledRow = TS * tileIndex + row;
             int tiledCol = TS * tileIndex + col;
-            aSub[col * TS + row] = A.get(tiledCol * size + globalRow);
-            bSub[col * TS + row] = B.get(globalCol * size + tiledRow);
+            aSub[row * TS + col] = A.get(globalRow * size + tiledCol);
+            bSub[row * TS + col] = B.get(tiledRow * size + globalCol);
 
             // Synchronise to make sure the tile is loaded
             context.localBarrier();
 
             // Perform the computation for a single tile
             for (int k = 0; k < TS; k++) {
-                sum += aSub[k * TS + row] * bSub[col * TS + k];
+                sum += aSub[row * TS + k] * bSub[k * TS + col];
             }
             // Synchronise before loading the next tile
             context.localBarrier();
         }
 
         // Store the final result in C
-        C.set((globalCol * size) + globalRow, sum);
+        C.set((globalRow * size) + globalCol, sum);
     }
 
     @Test

@@ -1,32 +1,29 @@
 /*
- * This file is part of Tornado: A heterogeneous programming framework: 
+ * This file is part of Tornado: A heterogeneous programming framework:
  * https://github.com/beehive-lab/tornadovm
  *
  * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.runtime.analyzer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
-import tornado.graal.compiler.nodes.StructuredGraph;
 
 /**
  * Mapping between the input tasks and the parameters indexes in which reduce
@@ -35,16 +32,18 @@ import tornado.graal.compiler.nodes.StructuredGraph;
  */
 public class MetaReduceTasks {
 
-    private HashMap<Integer, ArrayList<Integer>> reduceList;
-    private HashMap<Integer, Integer> reduceSize;
-    private StructuredGraph graph;
+    private final HashMap<Integer, ArrayList<Integer>> reduceList;
+    private final HashMap<Integer, Integer> reduceSize;
+    private final List<ReduceCodeAnalysis.REDUCE_OPERATION> operations;
+    private final int loopStart;
 
-    MetaReduceTasks(int taskIndex, StructuredGraph graph, ArrayList<Integer> reduceIndexes, int inputSize) {
+    MetaReduceTasks(int taskIndex, ArrayList<Integer> reduceIndexes, int inputSize, int loopStart, List<ReduceCodeAnalysis.REDUCE_OPERATION> operations) {
+        this.loopStart = loopStart;
         reduceList = new HashMap<>();
         reduceSize = new HashMap<>();
         reduceList.put(taskIndex, reduceIndexes);
         reduceSize.put(taskIndex, inputSize);
-        this.graph = graph;
+        this.operations = operations;
     }
 
     public ArrayList<Integer> getListOfReduceParameters(int taskID) {
@@ -55,7 +54,13 @@ public class MetaReduceTasks {
         return reduceSize.get(taskIndex);
     }
 
-    public StructuredGraph getGraph() {
-        return graph;
+    /** The constant start of the reduction loop: the iterations are {@code inputSize - loopStart}. */
+    public int getLoopStart() {
+        return loopStart;
+    }
+
+    /** The operations, one per reduce parameter. */
+    public List<ReduceCodeAnalysis.REDUCE_OPERATION> getOperations() {
+        return operations;
     }
 }
