@@ -68,8 +68,15 @@ final class CusparseNativeLib {
 
     private static final SymbolLookup LIBCUSPARSE = FFMSupport.loadLibrary("libcusparse.so.12", "libcusparse.so.11", "libcusparse.so", "cusparse64_12.dll", "libcusparse.dylib");
 
-    /** The scratch allocation goes through the CUDA runtime, as cuSPARSE itself does. */
-    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_12.dll", "libcudart.dylib");
+    /**
+     * The scratch allocation goes through the CUDA runtime, as cuSPARSE itself does. Windows bakes
+     * the CUDA version into the DLL name ({@code cudart64_12.dll} served every CUDA 12.x release;
+     * CUDA 13.0 introduced {@code cudart64_13.dll}), so every major version this backend has ever
+     * been run against is tried here, newest first, rather than hardcoding one that goes stale the
+     * day a newer toolkit ships.
+     */
+    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_13.dll", "cudart64_12.dll", "cudart64_11.dll",
+            "cudart64_10.dll", "libcudart.dylib");
 
     private static final MethodHandle CREATE;
     private static final MethodHandle DESTROY;

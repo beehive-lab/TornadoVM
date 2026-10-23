@@ -97,7 +97,7 @@ public final class Lit {
         try (Stream<Path> files = Files.walk(dir)) {
             return files.filter(Files::isRegularFile)
                     .filter(p -> Stream.of(extensions).anyMatch(e -> p.toString().endsWith(e)))
-                    .filter(p -> !dir.relativize(p).toString().matches("(.*/)?Inputs/.*"))
+                    .filter(p -> !dir.relativize(p).toString().replace('\\', '/').matches("(.*/)?Inputs/.*"))
                     .sorted()
                     .map(p -> new Object[] { dir.relativize(p).toString(), p })
                     .toList();
@@ -164,7 +164,7 @@ public final class Lit {
     private static List<String> runLines(String text) {
         var commands = new ArrayList<String>();
         var current = new StringBuilder();
-        for (var line : text.split("\n")) {
+        for (var line : text.split("\\R")) {
             var m = RUN_LINE.matcher(line);
             if (!m.matches()) {
                 continue;
