@@ -76,7 +76,7 @@ final class CuBlasLtNativeLib {
     private static final int HEURISTIC_RESULT_BYTES = 96;
     private static final int MATMUL_ALGO_BYTES = 64;
 
-    private static final SymbolLookup LIBCUBLASLT = FFMSupport.loadLibrary("libcublasLt.so.12", "libcublasLt.so.11", "libcublasLt.so", "cublasLt64_12.dll", "libcublasLt.dylib");
+    private static final SymbolLookup LIBCUBLASLT = FFMSupport.loadLibrary("libcublasLt.so.13", "libcublasLt.so.12", "libcublasLt.so.11", "libcublasLt.so", "cublasLt64_13.dll", "cublasLt64_12.dll", "libcublasLt.dylib");
 
     /** Scratch for the host-side alpha and beta scalars every matmul passes by pointer. */
     private static final FFMSupport.Staging SCALARS = new FFMSupport.Staging();

@@ -42,15 +42,19 @@ final class CuBlasNativeLib {
     private static final int CUBLAS_STATUS_SUCCESS = 0;
     private static final int CUDA_SUCCESS = 0;
 
-    /** cuBLAS handles, streams and device pointers are all opaque to the Java layer. */
-    private static final SymbolLookup LIBCUBLAS = FFMSupport.loadLibrary("libcublas.so.12", "libcublas.so.11", "libcublas.so", "cublas64_12.dll", "libcublas.dylib");
+    /**
+     * cuBLAS handles, streams and device pointers are all opaque to the Java layer. The newest
+     * major version comes first: with several CUDA toolkits installed, an older cuBLAS may have no
+     * kernels for a newer GPU (cuBLAS 12.0 on Blackwell) and fall back to much slower code.
+     */
+    private static final SymbolLookup LIBCUBLAS = FFMSupport.loadLibrary("libcublas.so.13", "libcublas.so.12", "libcublas.so.11", "libcublas.so", "cublas64_13.dll", "cublas64_12.dll", "libcublas.dylib");
 
     /**
      * The workspace allocation goes through the CUDA runtime rather than the driver API, because
      * that is what cuBLAS itself is built on and {@code cudaMalloc} is what guarantees the
      * 256-byte alignment {@code cublasSetWorkspace} requires.
      */
-    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_12.dll", "libcudart.dylib");
+    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.13", "libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_13.dll", "cudart64_12.dll", "libcudart.dylib");
 
     /** Scratch for the host-side alpha and beta scalars every GEMM passes by pointer. */
     private static final FFMSupport.Staging SCALARS = new FFMSupport.Staging();

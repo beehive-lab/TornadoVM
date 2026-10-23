@@ -75,7 +75,7 @@ final class CusparseNativeLib {
      * been run against is tried here, newest first, rather than hardcoding one that goes stale the
      * day a newer toolkit ships.
      */
-    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_13.dll", "cudart64_12.dll", "cudart64_11.dll",
+    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.13", "libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_13.dll", "cudart64_12.dll", "cudart64_11.dll",
             "cudart64_10.dll", "libcudart.dylib");
 
     private static final MethodHandle CREATE;
