@@ -206,10 +206,6 @@ summary at the end.
 - Each tag is checked out into a **temporary git worktree** in the system temp
   directory.  The current working branch is never modified.  Worktrees are
   always removed on exit, even if a build fails.
-- Before every build the script clears `graalJars/` inside the worktree so that
-  `pull_graal_jars.py` always downloads the correct GraalVM JAR versions for the
-  JDK being built.  Stale JARs would otherwise be silently reused, causing
-  version mismatches between JDK 21 and JDK 25 builds.
 - Each individual build (`bin/compile`) runs a Maven clean before compiling, so
   builds are fully independent of one another.
 - Archives are moved out of the worktree's `dist/` into the output directory

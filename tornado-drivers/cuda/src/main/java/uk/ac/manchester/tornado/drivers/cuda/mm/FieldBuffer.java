@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 
 public class FieldBuffer {
@@ -62,13 +63,7 @@ public class FieldBuffer {
     }
 
     private Object getFieldValue(final Object container) {
-        Object value = null;
-        try {
-            value = field.get(container);
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            logger.warn("Illegal access to field: name=%s, object=0x%x", field.getName(), container.hashCode());
-        }
-        return value;
+        return FieldLayout.get(field, container);
     }
 
     public void read(long executionPlanId, final Object ref) {

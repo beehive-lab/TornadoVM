@@ -23,10 +23,9 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.mm;
 
-import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.runtime.common.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
-import uk.ac.manchester.tornado.drivers.opencl.graal.lir.OCLKind;
 
 public class OCLLongArrayWrapper extends OCLArrayWrapper<long[]> {
 
@@ -60,7 +59,7 @@ public class OCLLongArrayWrapper extends OCLArrayWrapper<long[]> {
 
     @Override
     public int getSizeOfType() {
-        return OCLKind.LONG.getSizeInBytes();
+        return Long.BYTES;
     }
 
 }

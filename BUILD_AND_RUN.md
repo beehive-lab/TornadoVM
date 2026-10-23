@@ -67,10 +67,10 @@ java @tornado-argfile \
 ### How it works
 - `./mvnw clean install` builds all TornadoVM modules using Maven
 - The `tornado-argfile` contains all necessary JVM flags:
-  - JVM mode and memory settings (`-XX:+EnableJVMCI`, etc.)
+  - JVM mode (`-server`, and `--enable-preview` for the JDK 21 SDK)
   - Native library paths (`-Djava.library.path=...`)
   - Module system configuration (`--module-path`, `--add-modules`, etc.)
-  - Required exports and opens for Graal compiler access
+  - The `--add-opens` TornadoVM needs and native access for its FFM bindings
 - The `@tornado-argfile` syntax tells Java to read arguments from the file
 
 ### Viewing the argfile
@@ -98,12 +98,11 @@ cat tornado-argfile
 
 ### tornado-argfile
 Located at the repository root, this file contains:
-- JVM server mode and experimental VM options
-- JVMCI enablement for Graal compiler
+- JVM server mode
 - Native library paths for TornadoVM
 - Tornado runtime class implementations
-- Module path and upgrade paths
-- Extensive `--add-exports` and `--add-opens` declarations for Graal compiler internals
+- The module path
+- A few `--add-opens` and `--enable-native-access` declarations
 
 ### .mvn/maven.config
 Maven configuration file that applies to all Maven builds (both `./mvnw` and `bin/compile`):
@@ -126,7 +125,6 @@ These settings are automatically applied. To override:
 ### Module Structure
 Both approaches load these core TornadoVM modules:
 - `tornado.runtime` - Core runtime implementation
-- `tornado.annotation` - Annotation processing
 - `tornado.drivers.common` - Common driver infrastructure
 - `tornado.drivers.opencl` - OpenCL backend (additional drivers may be added)
 

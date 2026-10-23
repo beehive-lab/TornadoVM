@@ -134,28 +134,27 @@ public final class BundleWriter {
         return switch (template) {
             case "elementwise-arith" -> {
                 if ("F2I".equals(op)) {
-                    yield new String[] { "`tornado-drivers/cuda/.../graal/lir/CUDAArithmeticTool.java` — `emitFloatConvert` (only `I2D` is implemented; `F2I` is a known `unimplemented()` edge)", "`tornado-drivers/cuda/.../graal/asm/CUDAAssembler.java` — `CAST_TO_*` unary ops" };
+                    yield new String[] { "`tornado-compiler/tc-frontend/.../Bindings.java` and `tc-codegen/.../CEmitter.java` — float-to-int conversion (Java saturating semantics)" };
                 }
                 if ("DIV_INT".equals(op) || "MOD_INT".equals(op)) {
-                    yield new String[] { "`tornado-drivers/cuda/.../graal/lir/CUDAArithmeticTool.java` — `emitDiv`/`emitRem`/`emitUDiv`", "`tornado-drivers/cuda/.../graal/asm/CUDAAssembler.java` — DIV/MOD binary ops" };
+                    yield new String[] { "`tornado-compiler/tc-codegen/.../CEmitter.java` and `Helpers.java` — integer division/remainder (Java semantics for MIN_VALUE / -1 and by zero)" };
                 }
                 if ("SHL_INT".equals(op) || "SHR_INT".equals(op)) {
-                    yield new String[] { "`tornado-drivers/cuda/.../graal/lir/CUDAArithmeticTool.java` — `emitShl`/`emitShr`/`emitUShr`" };
+                    yield new String[] { "`tornado-compiler/tc-codegen/.../CEmitter.java` — shifts (Java masks the shift count)" };
                 }
-                yield new String[] { "`tornado-drivers/cuda/.../graal/lir/CUDAArithmeticTool.java` — binary arithmetic/bitwise emission", "`tornado-drivers/cuda/.../graal/asm/CUDAAssembler.java` — `CUDABinaryOp`" };
+                yield new String[] { "`tornado-compiler/tc-codegen/.../CEmitter.java` — binary arithmetic/bitwise emission", "`tornado-compiler/tc-opt/` — the optimisation passes that may have rewritten it" };
             }
             case "math-intrinsic" -> new String[] { //
-                    "`tornado-drivers/cuda/.../graal/compiler/plugins/CUDAMathPlugins.java` — is `" + fn + "` registered/reachable?", //
-                    "`tornado-drivers/cuda/.../graal/lir/CUDABuiltinTool.java` — LIR emission for `" + fn + "` (many builtins are `unimplemented()`)" };
+                    "`tornado-compiler/tc-frontend/.../Bindings.java` — is `" + fn + "` bound?", //
+                    "`tornado-compiler/tc-codegen/.../Intrinsics.java` and `Helpers.java` — the CUDA spelling of `" + fn + "`" };
             case "localmem-reduce" -> new String[] { //
-                    "`tornado-drivers/cuda/.../graal/nodes/` — `LocalArrayNode` / `FixedArrayNode` (__shared__ allocation)", //
-                    "`tornado-drivers/cuda/.../graal/nodes/CUDABarrierNode.java` — `__syncthreads()` lowering", //
-                    "`tornado-drivers/cuda/.../graal/asm/CUDAAssemblerConstants.java` — `SHARED/LOCAL_MEM_MODIFIER`" };
+                    "`tornado-compiler/tc-tornado/.../AbiLowering.java` — local arrays (__shared__ allocation)", //
+                    "`tornado-compiler/tc-codegen/.../Intrinsics.java` — barrier (`__syncthreads()`)", //
+                    "`tornado-compiler/tc-tornado/.../ReductionLowering.java` — reductions" };
             case "atomic-add" -> new String[] { //
-                    "`tornado-drivers/cuda/.../graal/lir/` — `StoreAtomicAddStmt` / `StoreAtomicAddFloatStmt`", //
-                    "`tornado-drivers/cuda/.../graal/compiler/plugins/AtomicPlugins.java` — `atomicAdd` intrinsic", //
-                    "`tornado-drivers/cuda/.../graal/lir/CUDAKind.java` — `ATOMIC_ADD_INT/LONG` kinds" };
-            default -> new String[] { "`tornado-drivers/cuda/.../graal/` — CUDA backend code generator" };
+                    "`tornado-compiler/tc-tornado/.../AtomicSlots.java` — atomic slots", //
+                    "`tornado-compiler/tc-codegen/.../Intrinsics.java` — `tornado.atomic.add`" };
+            default -> new String[] { "`tornado-compiler/` — TC, the kernel compiler (`tc-codegen/.../CudaDialect.java` for CUDA)" };
         };
     }
 }

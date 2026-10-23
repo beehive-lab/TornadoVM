@@ -37,21 +37,10 @@ import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
-import tornado.graal.compiler.graph.Node;
-import tornado.graal.compiler.nodes.StructuredGraph;
-import tornado.graal.compiler.nodes.loop.BasicInductionVariable;
-import tornado.graal.compiler.nodes.loop.LoopEx;
-import tornado.graal.compiler.nodes.loop.LoopsData;
 
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.Signature;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
-import uk.ac.manchester.tornado.runtime.graal.nodes.ParallelRangeNode;
-import uk.ac.manchester.tornado.runtime.graal.nodes.TornadoLoopsData;
 
 public final class RuntimeUtilities {
 
@@ -329,54 +318,6 @@ public final class RuntimeUtilities {
             return true;
         } else {
             return isBoxedPrimitive(type);
-        }
-    }
-
-    public static String formatMethod(ResolvedJavaMethod method) {
-
-        Signature sig = method.getSignature();
-        JavaKind rt = sig.getReturnKind();
-        StringBuilder sb = new StringBuilder();
-
-        sb.append(rt.getJavaName()).append(" ");
-        sb.append(method.getName()).append("(");
-        for (int i = 0; i < sig.getParameterCount(!method.isStatic()); i++) {
-            JavaKind jk = sig.getParameterKind(i);
-            sb.append(jk.toString());
-            if (i < sig.getParameterCount(!method.isStatic()) - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(")");
-        return sb.toString();
-    }
-
-    /**
-     * It prints the induction variables for counted loops in the given
-     * StructuredGraph. This method can be used for post-processing parallel loops
-     * with identify information for the induction variables.
-     *
-     * @param graph
-     *     The StructuredGraph to analyze and print induction variables in
-     *     the graph.
-     */
-    private static void printInductionVariables(StructuredGraph graph) {
-        final LoopsData data = new TornadoLoopsData(graph);
-        data.detectCountedLoops();
-
-        final List<LoopEx> loops = data.outerFirst();
-
-        List<ParallelRangeNode> parRanges = graph.getNodes().filter(ParallelRangeNode.class).snapshot();
-        for (LoopEx loop : loops) {
-            for (ParallelRangeNode parRange : parRanges) {
-                for (Node n : parRange.offset().usages()) {
-                    if (loop.getInductionVariables().containsKey(n)) {
-                        BasicInductionVariable iv = (BasicInductionVariable) loop.getInductionVariables().get(n);
-                        System.out.printf("[%d] parallel loop: %s -> init=%s, cond=%s, stride=%s, op=%s\n", parRange.index(), loop.loopBegin(), parRange.offset().value(), parRange.value(), parRange
-                                .stride(), iv.getOp());
-                    }
-                }
-            }
         }
     }
 

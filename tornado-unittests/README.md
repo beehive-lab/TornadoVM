@@ -152,8 +152,6 @@ options:
   --threadInfo          Print thread information
   --printKernel, -pk    Print OpenCL kernel
   --junit               Run with the JUnit Platform ConsoleLauncher
-  --igv                 Dump GraalIR into IGV
-  --igvLowTier          Dump OpenCL Low-TIER GraalIR into IGV
   --printBytecodes, -pbc
                         Print TornadoVM internal bytecodes
   --debug, -d           Enable the Debug mode in Tornado

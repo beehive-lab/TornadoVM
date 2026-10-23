@@ -9,7 +9,7 @@ TornadoVM is a GPU programming framework for Java that works with JDK 21+ (curre
 
 On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN, cuDF) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
-[![Build & Test](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/build-test.yml)
+[![GPU CI](https://github.com/beehive-lab/TornadoVM/actions/workflows/gpu-ci.yml/badge.svg)](https://github.com/beehive-lab/TornadoVM/actions/workflows/gpu-ci.yml)
 [![Tornado API](https://img.shields.io/maven-central/v/io.github.beehive-lab/tornado-api?logo=apache-maven&color=blue&label=Tornado%20API)](https://central.sonatype.com/artifact/io.github.beehive-lab/tornado-api)
 [![Install with SDKMAN!](https://img.shields.io/badge/Install%20with-SDKMAN!-2c7a7b?logo=sdkman&logoColor=white)](https://sdkman.io/sdks/tornadovm/)
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
@@ -143,7 +143,7 @@ On NVIDIA hardware, TornadoVM is an open-source on-ramp to the whole CUDA softwa
 
 | Capability | What it gives Java developers |
 |---|---|
-| **CUDA backend** | Java bytecode → Graal IR → **CUDA PTX → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
+| **CUDA backend** | Java bytecode → TC → **CUDA C++ → NVRTC → cubin**, JIT-compiled and specialized to your data sizes and GPU at runtime. |
 | **cuBLAS / cuBLASLt** library tasks | SGEMV, SGEMM, strided-batched, TF32 and FP16 GemmEx on Tensor Cores, and cuBLASLt with plan caching and fused `BIAS` / `GELU_BIAS` epilogues — one library task replaces a GEMM plus a separate activation kernel. |
 | **cuFFT** library tasks | C2C, R2C / C2R, and Z2Z transforms (1D and 2D) with capture-safe plan caching; FFT-filter pipelines mix with JIT kernels in one graph. |
 | **cuDNN** library tasks | Deep-learning primitives through the cuDNN graph API, including fused scaled-dot-product (flash) attention via cudnn-frontend. |
@@ -340,3 +340,65 @@ Link the **Tornado-API** (Apache 2.0) into your application.
 Partially funded by [Intel Corporation](https://www.intel.com/) and by EU & UKRI grants (most recent first): [AERO](https://aero-project.eu/) (101092850), [P2CODE](https://p2code-project.eu/) (101093069), [ENCRYPT](https://encrypt-project.eu) (101070670), [TANGO](https://tango-project.eu) (101070052), [ELEGANT](https://www.elegant-h2020.eu/) (957286), [E2Data](https://e2data.eu) (780245), [ACTiCLOUD](https://acticloud.eu) (732366); and EPSRC grants [PAMELA](http://apt.cs.manchester.ac.uk/projects/PAMELA/) (EP/K008730/1) and [AnyScale Apps](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/L000725/1) (EP/L000725/1).
 
 Meet the [team](https://www.tornadovm.org/about-us).
+
+## Fast start-up: Project Leyden and GraalVM native image
+
+Exact commands, JDK requirements and measurements for each option: [LEYDEN_GRAALVM_NATIVE_IMAGE.md](LEYDEN_GRAALVM_NATIVE_IMAGE.md).
+
+TornadoVM has no JVMCI or Graal dependency. Its kernel compiler is TC
+([`tornado-compiler/`](tornado-compiler/README.md)), plain Java, so a TornadoVM application can start
+from a **Leyden AOT cache** or be built into a **GraalVM native image**. Both need a JDK 22+ SDK
+(`make jdk22plus`).
+
+**Leyden AOT cache (JDK 25+).** The first run with `--aotCache` trains the cache and writes it;
+later runs start from it:
+
+```bash
+tornado --aotCache app.aot --classpath app.jar com.example.Main    # first run: writes app.aot
+tornado --aotCache app.aot --classpath app.jar com.example.Main    # later runs: start from it
+```
+
+The application must be on the class path as **jars**: an AOT cache accepts no non-empty
+directory in its paths. Retrain after changing the application or the SDK. For saxpy on an RTX 4090
+(OpenCL, JDK 25), the process takes 0.54 s instead of 0.69 s, and TC compiles the kernel in 18 ms
+instead of 42 ms.
+
+**Load only the backend you use.** TornadoVM initialises every installed backend at start-up. On
+a machine with an NVIDIA GPU, an unused OpenCL backend costs about 170 ms of a CUDA application's
+start-up. `-Dtornado.enabled.backends=cuda` (or `opencl`, `metal`, or a comma-separated list) loads
+only those; backend indices then count only the loaded backends. Saxpy on CUDA starts in 0.48 s
+instead of 0.64 s, and in 0.32 s together with an AOT cache:
+
+```bash
+tornado --jvm="-Dtornado.enabled.backends=cuda" --aotCache app.aot --classpath app.jar com.example.Main
+```
+
+**Native image of an application (GraalVM for JDK 25+).** `tornado-native-image` builds the whole
+application as one executable: the TornadoVM runtime, the drivers (through FFM) and TC.
+
+```bash
+export GRAALVM_HOME=/path/to/graalvm-jdk-25
+tornado-native-image -cp app.jar -o app com.example.Main [args for the tracing runs]
+./app                         # the default device
+./app -Dtornado.backend=1     # another backend
+```
+
+The script first runs the application on the GraalVM JVM once per installed backend, with the
+native-image agent recording reflection, resources and FFM downcalls. Give it arguments that compile
+and launch its kernels. It then builds with `-H:+ForeignAPISupport -H:+SharedArenaSupport`. Kernels
+are still compiled when the application runs: TC reads their class files from the image. Saxpy on
+an RTX 4090 runs as a 32 MB executable in 0.43 s on OpenCL and on CUDA. TC compiles the kernel in
+about 1.5 ms.
+
+**`tc`, the compiler on its own.** `tc emit` prints the CUDA, OpenCL or Metal source for one kernel,
+with no GPU:
+
+```bash
+tc emit --target cuda --cp app.jar com.example.Kernels saxpy
+GRAALVM_HOME=/path/to/graalvm-jdk-25 build-tc-native     # optional: bin/tc-native, used by tc from then on
+```
+
+As a native image, a cold `tc emit` takes 0.02 s instead of 0.19 s, with byte-identical output.
+
+Not covered yet: Windows; JNI-based libraries (cuDNN, cuDF, CUTLASS) in a native image; and
+training a native image on a backend the build machine does not have.

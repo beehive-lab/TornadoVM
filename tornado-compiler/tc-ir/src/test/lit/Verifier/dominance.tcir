@@ -1,0 +1,52 @@
+; Every use must be dominated by its definition; block arguments are the way to merge values.
+; RUN: tc-ir --verify-diagnostics %s
+
+device @not_dominated(%c: i1) -> i32 {
+^entry:
+  cond_br %c, ^left, ^right
+^left:
+  %l = const 1 : i32
+  br ^join
+^right:
+  br ^join
+^join:
+  ret %l ; expected-error {{TC-E2105: use of %l is not dominated by its definition}}
+}
+
+device @use_before_def() -> i32 {
+^entry:
+  %one = const 1 : i32
+  %a = add %b, %one : i32 ; expected-error {{TC-E2105: use of %b}}
+  %b = const 2 : i32
+  ret %a
+}
+
+; The correct way: pass the value as a block argument.
+device @merged(%c: i1) -> i32 {
+^entry:
+  cond_br %c, ^left, ^right
+^left:
+  %l = const 1 : i32
+  br ^join(%l)
+^right:
+  %r = const 2 : i32
+  br ^join(%r)
+^join(%v: i32):
+  ret %v
+}
+
+; Uses inside a loop are dominated through the header.
+device @loop(%n: i32) -> i32 {
+^entry:
+  %zero = const 0 : i32
+  br ^head(%zero)
+^head(%i: i32):
+  %more = icmp.slt %i, %n : i1
+  cond_br %more, ^body, ^exit
+^body:
+  %one = const 1 : i32
+  %next = add %i, %one : i32
+  br ^head(%next)
+^exit:
+  ret %i
+}

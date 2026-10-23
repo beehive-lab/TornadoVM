@@ -1,0 +1,51 @@
+; tornado-selftest backend/ir-local-memory: a KernelContext block reduction. Each work-group of 256
+; threads sums its slice of the input in shared memory (tree reduction with barriers) and thread 0
+; writes the group's sum.
+kernel @Reduce.blockSum(%in: array<f32>, %out: array<f32>) -> void {
+^entry:
+  %gid = tornado.thread_id.global<dim = 0>() : i32    loc("Reduce.java":40)
+  %lid = tornado.thread_id.local<dim = 0>() : i32     loc("Reduce.java":41)
+  %grp = tornado.group_id<dim = 0>() : i32            loc("Reduce.java":42)
+  %lsz = tornado.group_size.local<dim = 0>() : i32    loc("Reduce.java":43)
+  %scratch = alloca.shared f32[256] : ptr<shared>   loc("Reduce.java":44)
+  %v = array.load %in[%gid] : f32              loc("Reduce.java":45)
+  %lw = sext %lid : i64
+  %four = const 4 : i64
+  %lo = mul %lw, %four : i64
+  %slot = ptr.offset %scratch, %lo : ptr<shared>
+  store %slot, %v                              loc("Reduce.java":45)
+  tornado.barrier.local()                      loc("Reduce.java":46)
+  %one = const 1 : i32
+  %half0 = shr %lsz, %one : i32
+  br ^head(%half0)
+^head(%s: i32):
+  %zero = const 0 : i32
+  %more = icmp.sgt %s, %zero : i1              loc("Reduce.java":47)
+  cond_br %more, ^step, ^write
+^step:
+  %active = icmp.slt %lid, %s : i1             loc("Reduce.java":48)
+  cond_br %active, ^add, ^sync
+^add:
+  %peer = add %lid, %s : i32
+  %pw = sext %peer : i64
+  %po = mul %pw, %four : i64
+  %pslot = ptr.offset %scratch, %po : ptr<shared>
+  %mine = load %slot : f32                     loc("Reduce.java":49)
+  %other = load %pslot : f32                   loc("Reduce.java":49)
+  %sum = fadd %mine, %other : f32              loc("Reduce.java":49)
+  store %slot, %sum                            loc("Reduce.java":49)
+  br ^sync
+^sync:
+  tornado.barrier.local()                      loc("Reduce.java":51)
+  %next = shr %s, %one : i32
+  br ^head(%next)
+^write:
+  %first = icmp.eq %lid, %zero : i1            loc("Reduce.java":53)
+  cond_br %first, ^store, ^done
+^store:
+  %total = load %scratch : f32                 loc("Reduce.java":54)
+  array.store %out[%grp], %total               loc("Reduce.java":54)
+  br ^done
+^done:
+  ret
+}

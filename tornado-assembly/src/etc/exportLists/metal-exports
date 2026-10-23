@@ -22,10 +22,3 @@
 #
 
 --add-opens java.base/java.lang=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.common=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.amd64=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.meta=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.code=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.runtime=tornado.drivers.metal
---add-opens jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.metal
---add-exports jdk.internal.vm.ci/jdk.vm.ci.hotspot=tornado.drivers.metal

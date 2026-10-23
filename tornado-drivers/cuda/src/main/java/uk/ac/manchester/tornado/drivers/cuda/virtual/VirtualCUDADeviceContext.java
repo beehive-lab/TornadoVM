@@ -35,8 +35,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAProgram;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
-import uk.ac.manchester.tornado.drivers.cuda.graal.CUDAInstalledCode;
-import uk.ac.manchester.tornado.drivers.cuda.graal.compiler.CUDACompilationResult;
+import uk.ac.manchester.tornado.drivers.cuda.CUDAInstalledCode;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
@@ -197,11 +196,6 @@ public class VirtualCUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public boolean isKernelAvailable(long executionPlanId) {
         return true;
-    }
-
-    @Override
-    public CUDAInstalledCode installCode(long executionPlanId, CUDACompilationResult result) {
-        return null;
     }
 
     @Override

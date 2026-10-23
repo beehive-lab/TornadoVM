@@ -495,7 +495,8 @@ public class TestLoops extends TornadoTestBase {
 
     @Test
     public void testStepLoop3() throws TornadoExecutionPlanException {
-        final int size = 512;
+        // A multiple of 3: the last iteration (i = size - 3) writes i + 2 = size - 1, inside the array.
+        final int size = 513;
 
         IntArray a = new IntArray(size);
         a.init(75);

@@ -41,7 +41,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalBuildStatus;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
-import uk.ac.manchester.tornado.drivers.metal.graal.MetalInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
@@ -253,7 +252,7 @@ public class MetalCodeCache {
     public MetalInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {
         logger.info("Installing code for %s into code cache", entryPoint);
 
-        final MetalProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+        final MetalProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length }, meta.isStrictFloatingPoint());
 
         if (METAL_DUMP_SOURCE) {
             final Path outDir = resolveSourceDirectory();

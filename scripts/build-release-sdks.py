@@ -56,7 +56,7 @@ For jdk22plus specifically, ANY JDK >= 22 produces a byte-identical artifact
 (pom.xml compiles it with `--release 22`, which pins the floor regardless of
 the build JDK), so which one you point --jdk22plus-home at doesn't affect
 correctness. JDK 25 is used by default via sdkman auto-detection purely to
-match the build JDK build-test-platform.yml already pins for reproducibility
+match the build JDK gpu-ci-platform.yml already pins for reproducibility
 — pass an explicit --jdk22plus-home to build with a different JDK >= 22.
 
 Usage:
@@ -625,28 +625,6 @@ def patch_worktree_skip_executables(worktree_path):
 # Build execution
 # ---------------------------------------------------------------------------
 
-def clean_graal_jars(worktree_path):
-    """
-    Remove all files inside graalJars/ in *worktree_path* before a build.
-
-    GraalVM JARs are version-specific and tied to the JDK being built.
-    pull_graal_jars.py skips files that already exist, so stale JARs from a
-    previous build (e.g. JDK 25 jars left when switching to JDK 21) would be
-    silently reused and cause version mismatches.  Clearing the directory
-    forces a fresh download for every build.
-    """
-    graal_jars_dir = os.path.join(worktree_path, "graalJars")
-    if not os.path.isdir(graal_jars_dir):
-        return
-    removed = 0
-    for entry in os.scandir(graal_jars_dir):
-        if entry.is_file():
-            os.remove(entry.path)
-            removed += 1
-    if removed:
-        info(f"Removed {removed} stale file(s) from graalJars/")
-
-
 def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jdk21_home=None):
     """
     Build a single SDK variant inside *worktree_path*.
@@ -661,13 +639,7 @@ def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jdk2
     twice instead of ever reaching jdk22plus). Pinning the target explicitly
     makes profile selection correct on both platforms and independent of
     JAVA_HOME parsing.
-
-    *jdk21_home*, when known, is threaded through as JVMCI_SOURCE_JDK for any
-    profile other than jdk21 (see the JVMCI_SOURCE_JDK block below) —
-    irrelevant for jdk21 itself, which runs on the platform's own jvmci.
     """
-    clean_graal_jars(worktree_path)
-
     env = os.environ.copy()
     env["JAVA_HOME"] = jdk_home
     env["TORNADO_BUILD_REPO_ROOT"] = repo_root
@@ -676,26 +648,6 @@ def build_sdk(worktree_path, jdk_home, jdk_arg, backends, label, repo_root, jdk2
     # correct JDK rather than whatever is current in the shell.
     jdk_bin = os.path.join(jdk_home, "bin")
     env["PATH"] = jdk_bin + os.pathsep + env.get("PATH", "")
-
-    # Every profile other than jdk21 vendors jdk.internal.vm.ci from a real
-    # JDK 21 runtime image (bin/build_jvmci_module.py, invoked from
-    # pull_graal_jars.py) — a step that is completely independent of which
-    # JDK JAVA_HOME points at above. That script reads JVMCI_SOURCE_JDK, and
-    # falls back to a hardcoded sdkman path
-    # (~/.sdkman/candidates/java/21.0.2-open) when it's unset. On Windows
-    # there is no sdkman, so that fallback never exists and the jdk22plus
-    # build fails deep inside the Maven reactor with "no runtime image at
-    # ...; set JVMCI_SOURCE_JDK to a JDK 21 home" — reproduced locally and
-    # confirmed as the actual root cause of the jdk22plus build failures,
-    # independent of backend (opencl and cuda both hit this identically,
-    # since it happens before any backend-specific compilation). Pointing it
-    # at the jdk21 home we already resolved (--jdk21-home / sdkman) fixes
-    # this on every platform - including macOS/Linux, where it also makes
-    # the vendoring robust to a locally installed JDK 21 whose exact version
-    # isn't 21.0.2, rather than only working by coincidence of matching the
-    # hardcoded fallback path.
-    if jdk_arg != "jdk21" and jdk21_home:
-        env["JVMCI_SOURCE_JDK"] = jdk21_home
 
     target = f"sdk-{jdk_arg}"
     if os.name == "nt":
@@ -1184,8 +1136,7 @@ def main():
         if skip_win_exe:
             patch_worktree_skip_executables(worktree_path)
 
-        # jdk21_home feeds JVMCI_SOURCE_JDK for every other profile's build (see
-        # build_sdk) — None if --jdk21-home wasn't resolved, e.g. a jdk22plus-only run.
+        # None if --jdk21-home wasn't resolved, e.g. a jdk22plus-only run.
         jdk21_home = dict(validated).get("jdk21")
 
         for jdk_arg, jdk_home in validated:

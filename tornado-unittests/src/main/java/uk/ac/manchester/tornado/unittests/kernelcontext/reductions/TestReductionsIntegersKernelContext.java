@@ -118,6 +118,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         for (int i = 0; i < 256; i++) {
             localA[i] = 2;
         }
+        // Every thread writes the whole array: they must all finish before any reads it.
+        context.localBarrier();
 
         b.set(idx, localA[localIdx]);
     }
@@ -133,6 +135,8 @@ public class TestReductionsIntegersKernelContext extends TornadoTestBase {
         for (int i = 0; i < localGroupSize; i++) {
             localA[i] = 2;
         }
+        // Every thread writes the whole array: they must all finish before any reads it.
+        context.localBarrier();
 
         b.set(idx, localA[localIdx]);
     }

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# tornado-selftest: checks that TornadoVM's kernel compiler (TC) produces correct code on this
+# machine's devices, and prints what TC can use on each (compute capability, NVRTC, fp64, fp16, warp
+# width, local memory, tensor cores, device launches). Small kernels are run on every device and
+# compared with the JVM; PASS / FAIL / SKIP / UNSUPPORTED per check, exit status 1 if one fails.
+#   tornado-selftest [-d B:D]... [-g GROUP]... [--list] [--json FILE] [-v]
+# Attach the --json report to bug reports about generated code.
+set -euo pipefail
+: "${TORNADOVM_HOME:?source setvars.sh first}"
+# Run from an empty directory: the tornado launcher puts "." on the module path.
+cd "$(mktemp -d)"
+main=tornado.tc.selftest/uk.ac.manchester.tornado.tc.selftest.SelfTest
+if [ $# -eq 0 ]; then
+  exec "$TORNADOVM_HOME/bin/tornado" -m "$main"
+fi
+exec "$TORNADOVM_HOME/bin/tornado" -m "$main" --params="$*"

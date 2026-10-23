@@ -1,0 +1,124 @@
+// Mock of the Metal standard library for checking TC's Metal output on machines without the Metal
+// toolchain (utils/mslcheck). Not Apple's header: declarations written from the Metal Shading
+// Language specification, enough for clang to parse and type-check generated kernels. Address
+// spaces map to distinct clang address spaces, so mixing device and threadgroup pointers is an error
+// as it is in MSL; attributes such as [[buffer(n)]] are accepted and ignored.
+#pragma once
+#include <cmath>
+#include <cstring>
+#include <cstdint>
+
+#define kernel
+#ifdef TC_MSL_RELAXED
+// Relaxed check: address spaces erased (struct copies across address spaces are fine in MSL but not
+// expressible in plain C++); used only for files whose strict errors are all of that kind.
+#define device
+#define constant const
+#define threadgroup
+#else
+#define device __attribute__((address_space(1)))
+#define constant __attribute__((address_space(2)))
+#define threadgroup __attribute__((address_space(3)))
+#endif
+#define thread
+
+namespace metal {
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+typedef _Float16 half;
+
+template <typename T, int N> struct vec;
+template <typename T> struct vec<T, 2> {
+  T x, y;
+  vec() = default;
+  vec(T a, T b) : x(a), y(b) {}
+  explicit vec(T a) : x(a), y(a) {}
+  T &operator[](int i) { return (&x)[i]; }
+  T operator[](int i) const { return (&x)[i]; }
+};
+template <typename T> struct vec<T, 3> {
+  T x, y, z;
+  vec() = default;
+  vec(T a, T b, T c) : x(a), y(b), z(c) {}
+  explicit vec(T a) : x(a), y(a), z(a) {}
+  T &operator[](int i) { return (&x)[i]; }
+  T operator[](int i) const { return (&x)[i]; }
+};
+template <typename T> struct vec<T, 4> {
+  T x, y, z, w;
+  vec() = default;
+  vec(T a, T b, T c, T d) : x(a), y(b), z(c), w(d) {}
+  explicit vec(T a) : x(a), y(a), z(a), w(a) {}
+  T &operator[](int i) { return (&x)[i]; }
+  T operator[](int i) const { return (&x)[i]; }
+};
+#define TC_VEC_OPS(op) \
+  template <typename T, int N> vec<T, N> operator op(vec<T, N> a, vec<T, N> b) { for (int i = 0; i < N; i++) a[i] = a[i] op b[i]; return a; } \
+  template <typename T, int N> vec<T, N> operator op(vec<T, N> a, T b) { for (int i = 0; i < N; i++) a[i] = a[i] op b; return a; }
+TC_VEC_OPS(+) TC_VEC_OPS(-) TC_VEC_OPS(*) TC_VEC_OPS(/)
+#define TC_VEC_TYPES(t) typedef vec<t, 2> t##2; typedef vec<t, 3> t##3; typedef vec<t, 4> t##4;
+TC_VEC_TYPES(float) TC_VEC_TYPES(half) TC_VEC_TYPES(int) TC_VEC_TYPES(uint) TC_VEC_TYPES(short) TC_VEC_TYPES(ushort)
+TC_VEC_TYPES(char) TC_VEC_TYPES(uchar) TC_VEC_TYPES(long) TC_VEC_TYPES(ulong) TC_VEC_TYPES(bool)
+
+template <typename To, typename From> To as_type(From v) {
+  static_assert(sizeof(To) == sizeof(From), "as_type needs types of the same size");
+  To t;
+  std::memcpy(&t, &v, sizeof t);
+  return t;
+}
+
+using std::sqrt; using std::exp; using std::log; using std::sin; using std::cos; using std::tan; using std::tanh; using std::floor; using std::ceil;
+using std::atan; using std::asin; using std::acos; using std::sinh; using std::cosh; using std::asinh; using std::acosh; using std::atanh; using std::log10;
+using std::fabs; using std::atan2; using std::pow; using std::fma; using std::isnan;
+// min/max as MSL declares them: by value, so address-space-qualified lvalues convert.
+#define TC_MINMAX(t) inline t min(t a, t b) { return a < b ? a : b; } inline t max(t a, t b) { return a > b ? a : b; }
+TC_MINMAX(int) TC_MINMAX(uint) TC_MINMAX(long) TC_MINMAX(ulong) TC_MINMAX(float) TC_MINMAX(half) TC_MINMAX(short) TC_MINMAX(char)
+inline float rsqrt(float x) { return 1.0f / std::sqrt(x); }
+inline float sinpi(float x) { return std::sin(x * 3.14159265f); }
+inline float cospi(float x) { return std::cos(x * 3.14159265f); }
+inline half sqrt(half x) { return (half) std::sqrt((float) x); }
+inline bool isnan(half x) { return x != x; }
+
+enum class mem_flags { mem_none, mem_device, mem_threadgroup, mem_texture };
+inline void threadgroup_barrier(mem_flags) {}
+inline void simdgroup_barrier(mem_flags) {}
+
+enum memory_order { memory_order_relaxed };
+struct atomic_int { int v; };
+struct atomic_uint { uint v; };
+#define TC_ATOMICS(space) \
+  inline int atomic_fetch_add_explicit(space atomic_int *, int, memory_order) { return 0; } \
+  inline int atomic_fetch_sub_explicit(space atomic_int *, int, memory_order) { return 0; } \
+  inline int atomic_fetch_min_explicit(space atomic_int *, int, memory_order) { return 0; } \
+  inline int atomic_fetch_max_explicit(space atomic_int *, int, memory_order) { return 0; } \
+  inline int atomic_exchange_explicit(space atomic_int *, int, memory_order) { return 0; } \
+  inline int atomic_load_explicit(space atomic_int *, memory_order) { return 0; } \
+  inline uint atomic_load_explicit(space atomic_uint *, memory_order) { return 0; } \
+  inline uint atomic_fetch_add_explicit(space atomic_uint *, uint, memory_order) { return 0; } \
+  inline bool atomic_compare_exchange_weak_explicit(space atomic_int *, thread int *, int, memory_order, memory_order) { return true; } \
+  inline bool atomic_compare_exchange_weak_explicit(space atomic_uint *, thread uint *, uint, memory_order, memory_order) { return true; }
+#ifdef TC_MSL_RELAXED
+TC_ATOMICS(device)
+#else
+TC_ATOMICS(device) TC_ATOMICS(threadgroup)
+#endif
+
+template <typename T> T simd_sum(T v) { return v; }
+template <typename T> T simd_shuffle_down(T v, ushort) { return v; }
+template <typename T> T simd_broadcast_first(T v) { return v; }
+inline bool simd_any(bool v) { return v; }
+inline bool simd_all(bool v) { return v; }
+
+// simdgroup matrices: an opaque value per SIMD group; load from device or threadgroup, store to either.
+template <typename T, int Cols, int Rows> struct simdgroup_matrix { T storage[Cols * Rows]; };
+typedef simdgroup_matrix<float, 8, 8> simdgroup_float8x8;
+template <typename T, int Cols, int Rows> simdgroup_matrix<T, Cols, Rows> make_filled_simdgroup_matrix(T) { return {}; }
+typedef simdgroup_matrix<half, 8, 8> simdgroup_half8x8;
+template <typename T, int C, int R> void simdgroup_load(thread simdgroup_matrix<T, C, R> &, const device T *, ulong = C, ulong2 = ulong2(), bool = false) {}
+template <typename T, int C, int R> void simdgroup_load(thread simdgroup_matrix<T, C, R> &, const threadgroup T *, ulong = C, ulong2 = ulong2(), bool = false) {}
+template <typename T, int C, int R> void simdgroup_store(simdgroup_matrix<T, C, R>, device T *, ulong) {}
+template <typename T, int C, int R> void simdgroup_store(simdgroup_matrix<T, C, R>, threadgroup T *, ulong) {}
+template <typename D, typename A, typename B, typename C> void simdgroup_multiply_accumulate(thread D &, A, B, C) {}
+}  // namespace metal

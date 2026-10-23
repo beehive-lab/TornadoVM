@@ -133,7 +133,7 @@ public class CUDADevice implements CUDATargetDevice {
         getDeviceMaxWorkItemDimensions();
         getDeviceMaxWorkGroupSize_0();
         getDeviceMaxConstantBufferSize();
-        getDoubleFPConfig();
+        doubleFPConfig = getDoubleFPConfig();
         getDeviceSingleFPConfig();
         getDeviceMemoryBaseAlignment();
         getDeviceMaxWorkItemSizes();
@@ -546,7 +546,7 @@ public class CUDADevice implements CUDATargetDevice {
         return buffer.getLong();
     }
 
-    public boolean isDeviceDoubleFPSupported() {
+    public synchronized boolean isDeviceDoubleFPSupported() {
         if (doubleFPConfig != -1) {
             return doubleFPConfig != 0;
         }

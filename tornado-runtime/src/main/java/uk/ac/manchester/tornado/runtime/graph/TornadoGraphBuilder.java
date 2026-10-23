@@ -29,11 +29,9 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Objects;
 
-import jdk.vm.ci.meta.ResolvedJavaMethod;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
@@ -50,8 +48,6 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.OnDeviceObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.PersistedObjectNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.StreamInNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
-import uk.ac.manchester.tornado.runtime.sketcher.Sketch;
-import uk.ac.manchester.tornado.runtime.sketcher.TornadoSketcher;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.LocalObjectState;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoGraphBitcodes;
@@ -268,9 +264,7 @@ public class TornadoGraphBuilder {
 
 
                 if (task instanceof CompilableTask compilableTask) {
-                    final ResolvedJavaMethod resolvedMethod = TornadoCoreRuntime.getTornadoRuntime().resolveMethod((compilableTask.getMethod()));
-                    Sketch sketch = TornadoSketcher.lookup(resolvedMethod, task.meta().getBackendIndex(), task.meta().getDeviceIndex());
-                    accesses = sketch.getArgumentsAccess();
+                    accesses = uk.ac.manchester.tornado.runtime.common.KernelAccess.of(compilableTask.getMethod(), compilableTask.meta().getArgumentsAccess().length);
                 } else {
                     accesses = task.getArgumentsAccess();
                 }

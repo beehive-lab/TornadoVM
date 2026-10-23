@@ -46,6 +46,7 @@ public class OCLDevice implements OCLTargetDevice {
 
     private static final int INIT_VALUE = -1;
     private static final int MAX_BUFFER_SIZE = 8192;
+    private static final long CL_FP_DENORM = 1 << 0;
 
     private final long devicePtr;
     private final int index;
@@ -124,7 +125,7 @@ public class OCLDevice implements OCLTargetDevice {
         getDeviceMaxWorkItemDimensions();
         getDeviceMaxWorkGroupSize_0();
         getDeviceMaxConstantBufferSize();
-        getDoubleFPConfig();
+        doubleFPConfig = getDoubleFPConfig();
         getDeviceSingleFPConfig();
         getDeviceMemoryBaseAlignment();
         getDeviceMaxWorkItemSizes();
@@ -383,7 +384,7 @@ public class OCLDevice implements OCLTargetDevice {
         return buffer.getLong();
     }
 
-    public boolean isDeviceDoubleFPSupported() {
+    public synchronized boolean isDeviceDoubleFPSupported() {
         if (doubleFPConfig != -1) {
             return doubleFPConfig != 0;
         }
@@ -398,6 +399,12 @@ public class OCLDevice implements OCLTargetDevice {
         queryOpenCLAPI(OCLDeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue());
         singleFPConfig = buffer.getLong();
         return singleFPConfig;
+    }
+
+    @Override
+    public boolean isDeviceSingleFPDenormSupported() {
+        // CL_FP_DENORM is optional for floats: Apple's driver leaves it unset and flushes subnormals.
+        return (getDeviceSingleFPConfig() & CL_FP_DENORM) != 0;
     }
 
     public int getDeviceAddressBits() {

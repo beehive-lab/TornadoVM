@@ -24,7 +24,7 @@ ifneq ($(UNSUPPORTED_BACKENDS),)
 $(error [ERROR] Unsupported backends specified in BACKEND: $(subst $(SPACE),$(COMMA)$(SPACE),$(UNSUPPORTED_BACKENDS)). Supported backends: $(subst $(SPACE),$(COMMA)$(SPACE),$(SUPPORTED_BACKENDS)))
 endif
 
-# JDK profile used by the `sdk`, `test-reflection` and `test-reflection-only` targets
+# JDK profile used by the `sdk` and `test-nogpu` targets
 # { jdk21, jdk22plus }, derived from JAVA_HOME rather than hardcoded.
 #
 # It has to be derived: bin/compile checks that JAVA_HOME matches the requested profile, so a fixed
@@ -39,7 +39,7 @@ JDK ?= $(shell v=$$("$${JAVA_HOME:-/nonexistent}/bin/java" -version 2>&1 | sed -
 
 # jdk25/jdk26/jdk27 no longer exist as Maven profiles: one jdk22plus profile serves every JDK
 # from 22 up. Map the legacy names onto it so `JDK=jdk25` and CI callers keep working.
-JDK_PROFILE = $(if $(filter jdk21 graal-jdk-21,$(JDK)),$(JDK),jdk22plus)
+JDK_PROFILE = $(if $(filter jdk21,$(JDK)),$(JDK),jdk22plus)
 
 build jdk21:
 	bin/compile --jdk jdk21 --backend $(BACKEND)
@@ -55,17 +55,11 @@ jdk22plus jdk25 jdk26 jdk27:
 rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
 	bin/compile --jdk jdk22plus --rebuild --backend $(BACKEND)
 
-graal-jdk-21:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND)
-
 mvn-single-threaded-jdk21:
 	bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
 
 mvn-single-threaded-jdk22plus:
 	bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded
-
-mvn-single-threaded-graal-jdk-21:
-	bin/compile --jdk graal-jdk-21 --backend $(BACKEND) --mvn_single_threaded
 
 
 metal:
@@ -86,27 +80,17 @@ sdk-jdk22plus:
 checkstyle:
 	./mvnw checkstyle:check
 
-# Pure-JVM (no-GPU) unit tests for the reflection JVMCI layer. Every JDK profile skips surefire,
-# so force it on here. `clean` + `-am` rebuilds tornado-api and tornado-runtime together in the
-# same reactor so stale class files from a previously-used JDK profile (source/target release
-# differs per profile, e.g. jdk21 compiles at 21, jdk22plus at 22) never leak into the test
-# classpath — this target is then safe to run right after a different JDK profile's build, with
-# no manual `mvn clean` in between. Override the profile with JDK=jdk22plus to run under
-# another JDK (JDK is declared once, near BACKEND, at the top of this file).
-test-reflection:
-	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false
+# The unit tests that need no GPU: TC's (the compiler's lit file tests and API tests; every build
+# runs them too) and tornado-api/tornado-runtime's. The JDK profiles skip surefire elsewhere, so force
+# it on here. `clean` + `-am` rebuilds the modules in one reactor so stale class files from another
+# JDK profile (jdk21 compiles at 21, jdk22plus at 22) never reach the test classpath; the target is
+# safe to run right after a different profile's build. Override the profile with JDK=jdk22plus
+# (JDK is declared once, near BACKEND, at the top of this file). `test-reflection` is the old name.
+TC_MODULES = tornado-compiler/tc-check,tornado-compiler/tc-ir,tornado-compiler/tc-frontend,tornado-compiler/tc-opt,tornado-compiler/tc-lower,tornado-compiler/tc-codegen,tornado-compiler/tc-tornado,tornado-compiler/tc-runtime,tornado-compiler/tc-debug
+test-nogpu:
+	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime,$(TC_MODULES) -am clean test -DskipTests=false
 
-# No-GPU tests for the CUDA code generator (tornado-drivers/cuda/src/test): they build LIR by hand,
-# so they need no device. `-am` is required -- tornado-drivers-cuda resolves tornado-drivers-common
-# from the reactor, not the local repository.
-test-cuda-codegen:
-	./mvnw -P$(JDK_PROFILE),cuda-backend -Dtornado.backend=cuda -pl tornado-drivers/cuda -am test -DskipTests=false
-
-# Only the reflection JVMCI-layer suites (uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test) —
-# the standalone metadata API, a subset of what test-reflection runs. Same JDK override and
-# clean+-am rationale as test-reflection.
-test-reflection-only:
-	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime -am clean test -DskipTests=false -Dtest="uk.ac.manchester.tornado.runtime.jvmci.reflection.*Test"
+test-reflection: test-nogpu
 
 clean:
 	./mvnw -Popencl-backend,cuda-backend,metal-backend clean

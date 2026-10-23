@@ -24,13 +24,12 @@
 package uk.ac.manchester.tornado.drivers.cuda.mm;
 
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.humanReadableByteCount;
-import static uk.ac.manchester.tornado.runtime.graal.TornadoLIRGenerator.warn;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.vm.ci.meta.JavaKind;
+import uk.ac.manchester.tornado.runtime.common.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -349,7 +348,7 @@ public class CUDAVectorWrapper implements XPUBuffer {
             } else if (type == HalfFloat[].class) {
                 return JavaKind.Object;
             } else {
-                warn("cannot wrap field: array type=%s", type.getName());
+                new TornadoLogger(getClass()).warn("cannot wrap field: array type=%s", type.getName());
             }
         } else if (type == FloatArray.class || type == IntArray.class || type == DoubleArray.class || type == LongArray.class || type == ShortArray.class || type == CharArray.class || type == ByteArray.class || type == HalfFloatArray.class || type == BFloat16Array.class) {
             return JavaKind.Object;

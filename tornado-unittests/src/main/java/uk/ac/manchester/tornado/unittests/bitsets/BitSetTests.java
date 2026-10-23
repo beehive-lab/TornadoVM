@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Random;
 
-import org.apache.lucene.util.LongBitSet;
 import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
@@ -45,7 +44,26 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class BitSetTests extends TornadoTestBase {
 
-    public static void intersectionCount(int numWords, LongBitSet a, LongBitSet b, LongArray result) {
+    /** A bit set over a {@code long[]} of words, passed to the kernel as an object and read through a getter. */
+    public static final class LongBits {
+        private final long[] bits;
+        private final long numBits;
+
+        public LongBits(long[] bits, long numBits) {
+            this.bits = bits;
+            this.numBits = numBits;
+        }
+
+        public long[] getBits() {
+            return bits;
+        }
+
+        public long length() {
+            return numBits;
+        }
+    }
+
+    public static void intersectionCount(int numWords, LongBits a, LongBits b, LongArray result) {
         final long[] aBits = a.getBits();
         final long[] bBits = b.getBits();
         for (@Parallel int i = 0; i < numWords; i++) {
@@ -61,8 +79,8 @@ public class BitSetTests extends TornadoTestBase {
         final long[] aBits = new long[numWords];
         final long[] bBits = new long[numWords];
 
-        final LongBitSet a = new LongBitSet(aBits, numWords * 8);
-        final LongBitSet b = new LongBitSet(bBits, numWords * 8);
+        final LongBits a = new LongBits(aBits, numWords * 8);
+        final LongBits b = new LongBits(bBits, numWords * 8);
         LongArray result = new LongArray(numWords);
         LongArray seq = new LongArray(numWords);
 

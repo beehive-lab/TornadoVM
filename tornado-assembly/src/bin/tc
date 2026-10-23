@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# tc: TornadoVM's kernel compiler, headless. Compiles one kernel method from class files and prints
+# the CUDA C++, OpenCL C or MSL it generates; no GPU and no TornadoVM runtime are needed.
+#   tc emit [--target cuda|opencl|metal] [--cp PATH] [--stats] Class method
+# Runs the native image when `build-tc-native` has built one, the JVM otherwise.
+set -euo pipefail
+: "${TORNADOVM_HOME:?source setvars.sh first}"
+if [ -x "$TORNADOVM_HOME/bin/tc-native" ]; then
+  exec "$TORNADOVM_HOME/bin/tc-native" "$@"
+fi
+cp=$(ls "$TORNADOVM_HOME"/share/java/tornado/tc-*.jar | tr '\n' ':')
+preview=$(grep -q 'tornado.jdk.preview=true' "$TORNADOVM_HOME/etc/tornado.jdk" 2>/dev/null && echo --enable-preview || true)
+exec "${JAVA_HOME:+$JAVA_HOME/bin/}java" $preview -XX:TieredStopAtLevel=1 -cp "$cp" uk.ac.manchester.tornado.tc.runtime.tools.Tc "$@"

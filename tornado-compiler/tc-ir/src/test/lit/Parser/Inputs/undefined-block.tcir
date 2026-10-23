@@ -1,0 +1,4 @@
+device @f() -> void {
+^entry:
+  br ^nowhere
+}

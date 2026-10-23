@@ -23,8 +23,6 @@
  */
 package uk.ac.manchester.tornado.runtime;
 
-import tornado.graal.compiler.options.OptionValues;
-
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 
 /**
@@ -42,7 +40,7 @@ public interface TornadoBackendProvider extends Comparable<TornadoBackendProvide
 
     String getName();
 
-    TornadoAcceleratorBackend createBackend(OptionValues options, TornadoVMConfigAccess config);
+    TornadoAcceleratorBackend createBackend(TornadoVMConfigAccess config);
 
     TornadoBackends getDevicePriority();
 }

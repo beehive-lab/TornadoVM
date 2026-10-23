@@ -1,0 +1,18 @@
+; Element sizes follow the Java types; a 64-bit index is used as is.
+; RUN: tc-tornado --abi %s | FileCheck %s
+
+; CHECK-LABEL: device @sizes(
+; CHECK:     const 8 : i64
+; CHECK:     load %{{[0-9]+}} : f64
+; CHECK:     const 2 : i64
+; CHECK:     load %{{[0-9]+}} : i16
+; CHECK:     const 1 : i64
+; CHECK:     load %{{[0-9]+}} : i8
+; CHECK-NOT: sext %l
+device @sizes(%d: array<f64>, %s: array<i16>, %b: array<i8>, %i: i32, %l: i64) -> void {
+^entry:
+  %x = array.load %d[%i] : f64
+  %y = array.load %s[%i] : i16
+  %z = array.load %b[%l] : i8
+  ret
+}

@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.unittests.fuzz;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -40,10 +39,10 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * that triggers it. Every kernel is a plain {@link KernelContext} elementwise
  * expression; the expected values are the exact Java result.
  *
- * <p>These assert the correct (Java) semantics, so they FAIL / ERROR while the
- * underlying CUDA code-generator bug is open. When a bug is fixed, its test turns
- * green and becomes a permanent guard against regression. Findings referenced by
- * their fuzz seed under phase-2 generation.
+ * <p>These assert the correct (Java) semantics. They were found against the Graal-based
+ * code generator and ignored while open; TC compiles all five correctly, on CUDA and on
+ * OpenCL, so they now run as regression guards. Findings referenced by their fuzz seed
+ * under phase-2 generation.
  *
  * <p>Run: {@code tornado-test -V uk.ac.manchester.tornado.unittests.fuzz.TestCudaCodegenRegressions}
  * (add {@code --jvm="-Dtornado.cuda.priority=100"} on a multi-backend build).
@@ -87,35 +86,30 @@ public class TestCudaCodegenRegressions extends TornadoTestBase {
     // ---- tests ----
 
     @Test
-    @Disabled("Open CUDA backend bug (tornado-fuzz seed 529/232): `a << 31` yields 0 instead of a<<31; shift count 31 mishandled.")
     public void testShiftBy31() throws Exception {
         int[] in = { 0, 1, 2, 3, -1, -2, Integer.MAX_VALUE, Integer.MIN_VALUE };
         run(TestCudaCodegenRegressions::shiftBy31, in, in, (a, b, i) -> a << 31);
     }
 
     @Test
-    @Disabled("Open CUDA backend bug (tornado-fuzz seed 629): `Integer.MIN_VALUE * b` yields 0 instead of the wrapped product.")
     public void testIntMinMul() throws Exception {
         int[] in = { 0, 1, 2, 3, -1, -2, 7, Integer.MAX_VALUE };
         run(TestCudaCodegenRegressions::intMinMul, in, in, (a, b, i) -> Integer.MIN_VALUE * b);
     }
 
     @Test
-    @Disabled("Open CUDA backend bug (tornado-fuzz seed 221): `-(a & Integer.MIN_VALUE)` yields 0 instead of INT_MIN when the sign bit is set.")
     public void testSignBitNegate() throws Exception {
         int[] in = { 0, 1, -1, -2, Integer.MAX_VALUE, Integer.MIN_VALUE, 12345, -12345 };
         run(TestCudaCodegenRegressions::signBitNegate, in, in, (a, b, i) -> -(a & Integer.MIN_VALUE));
     }
 
     @Test
-    @Disabled("Open CUDA backend bug (tornado-fuzz seed 167): `(a*a) >> 20` emitted as a logical shift, dropping the sign (returns +2048 where Java gives -2048).")
     public void testSignedShiftProduct() throws Exception {
         int[] in = { 0, 100000, 46341, -46341, 65536, 3, -3, 1 << 20 };
         run(TestCudaCodegenRegressions::signedShiftProduct, in, in, (a, b, i) -> (a * a) >> 20);
     }
 
     @Test
-    @Disabled("Open CUDA backend crash (tornado-fuzz seed 189): `(INT_MIN / (b|1)) / (i|1)` throws GraalError 'unhandled node in reassociation with constants' during code generation.")
     public void testIntMinDivChain() throws Exception {
         int[] in = { 1, 2, 3, 4, 5, 6, 7, 8 };
         run(TestCudaCodegenRegressions::intMinDivChain, in, in, (a, b, i) -> (Integer.MIN_VALUE / (b | 1)) / (i | 1));
