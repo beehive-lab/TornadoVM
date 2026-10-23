@@ -22,7 +22,7 @@ package uk.ac.manchester.tornado.kotlin.api
 import uk.ac.manchester.tornado.api.KernelContext
 
 // The thread-index fields of KernelContext are boxed Integers. `val i = context.globalIdx` keeps
-// the box and unboxes it at every use, which the KernelContext lowering cannot compile. These
+// the box, with a null check and an unbox at every use. These
 // inline accessors unbox exactly once per read, which is the shape javac emits for
 // `int i = context.globalIdx`.
 

@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
 import uk.ac.manchester.tornado.runtime.tasks.meta.ScheduleContext;
@@ -117,7 +118,7 @@ public class TaskUtils {
             Class<?>[] parameterTypes = parseParameterTypes(serializedLambda.getImplMethodSignature(), loader);
             Method implementation = findDeclaredMethod(implClass, serializedLambda.getImplMethodName(), parameterTypes);
             implementation.setAccessible(true);
-            return implementation;
+            return KernelAccess.kernel(implementation);
         } catch (ReflectiveOperationException e) {
             throw new TornadoInternalError("Unable to resolve kernel entry via SerializedLambda: " + e);
         }

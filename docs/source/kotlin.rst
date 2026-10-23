@@ -139,18 +139,17 @@ Rules for kernels
 Runtime support
 ***************
 
-The runtime recognises Kotlin kernels by the ``kotlin.Metadata`` annotation that kotlinc puts on
-every class. The Kotlin-specific compiler rewrites below only apply to those methods, so Java
-kernels are never affected. They are all switched off with ``-Dtornado.kotlin.support=false``.
+The compiler recognises Kotlin kernels by the ``kotlin.Metadata`` annotation that kotlinc puts on
+every class. The Kotlin-specific rewrites below only apply to those classes, so Java kernels are
+never affected. They are all switched off with ``-Dtornado.kotlin.support=false``.
 
 * Calls to kotlinc's null checks (``kotlin.jvm.internal.Intrinsics.checkNotNull*``) are removed.
-* ``Number.intValue()`` (and the other ``xxxValue()`` methods) on a boxed value becomes a plain
-  unbox, as ``Integer.intValue()`` does for Java.
-* ``KernelContext`` indices read as boxed ``Integer`` values and unboxed several times are lowered
-  like Java's single unbox.
+* ``Number.intValue()`` (and the other ``xxxValue()`` methods) on a boxed value is the value
+  itself, as ``Integer.intValue()`` is for Java. ``KernelContext`` indices read as boxed
+  ``Integer`` values and unboxed several times compile like Java's single unbox.
 * ``parallelFor`` loops become parallel loops.
-* ``@Reduce`` is read through the forwarding method kotlinc generates for a ``::kernel`` task
-  reference, and a reduction's input size is found when the loop bound is evaluated before the loop.
+* A ``::kernel`` task reference is compiled to a method that only forwards its arguments to the
+  function: the function itself is compiled in its place, so its ``@Reduce`` parameters are seen.
 
 Hybrid API (library tasks)
 **************************

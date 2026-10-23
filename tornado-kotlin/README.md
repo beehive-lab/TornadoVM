@@ -96,18 +96,20 @@ TornadoVM arrays support `a[i]`, `a[i] = v` and `a.size` directly, because Kotli
 
 ## Runtime support
 
-The runtime recognises Kotlin kernels by the `kotlin.Metadata` annotation that kotlinc puts on
-every class. All Kotlin-specific compiler rewrites only apply to such methods, so Java kernels are
-never affected. They can be switched off with `-Dtornado.kotlin.support=false`.
+The compiler (TC) recognises Kotlin kernels by the `kotlin.Metadata` annotation that kotlinc puts
+on every class. All Kotlin-specific rewrites only apply to such classes, so Java kernels are never
+affected. They can be switched off with `-Dtornado.kotlin.support=false`. They live in
+`tornado-compiler/tc-frontend` (`Kotlin`, used by the bytecode `Translator`).
 
 | Rewrite | Where |
 |---|---|
-| Drop `kotlin.jvm.internal.Intrinsics` null checks | `KotlinGraphBuilderPlugins` (bytecode parsing) |
-| Turn `Number.intValue()` and friends on a boxed value into a plain unbox | `KotlinGraphBuilderPlugins` (bytecode parsing) |
-| Lower a `KernelContext` index that is unboxed several times | `TornadoKernelContextReplacement` (sketcher) |
-| Turn `parallelFor` loops into parallel loops (`ParallelLoops.parallelIndex` marker) | `KotlinGraphBuilderPlugins`, `TornadoApiReplacement` |
-| Read `@Reduce` through the forwarding method kotlinc generates for `::kernel` task references | `KotlinSupport`, `ReduceCodeAnalysis`, `TornadoReduceReplacement` |
-| Find a reduction's input size when the loop bound is evaluated before the loop | `ReduceCodeAnalysis` |
+| Drop `kotlin.jvm.internal.Intrinsics` null checks | `Translator` (bytecode translation) |
+| Turn `Number.intValue()` and friends on a boxed value into the value itself | `Translator` (bytecode translation) |
+| Turn `parallelFor` loops into parallel loops (`ParallelLoops.parallelIndex` marker) | `Translator` (bytecode translation) |
+| Compile the function behind the forwarding method kotlinc generates for `::kernel` task references, with its `@Reduce` parameters | `Kotlin.forwardingTarget`, through `KernelAccess.kernel` in the runtime |
+
+A `KernelContext` index read as a boxed `Integer` and unboxed several times needs no rewrite: TC
+reads the `KernelContext` fields as `int` values.
 
 ## Examples
 
