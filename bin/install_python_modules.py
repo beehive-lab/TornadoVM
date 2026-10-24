@@ -18,6 +18,7 @@
 #
 
 import importlib
+import site
 import subprocess
 import sys
 
@@ -49,6 +50,10 @@ def check_python_dependencies():
     # Into the active virtual environment if there is one, else the user's site-packages.
     in_venv = sys.prefix != sys.base_prefix
     subprocess.call([sys.executable, "-m", "pip", "install"] + ([] if in_venv else ["--user"]) + missing)
+    if not in_venv:
+        # A user site-packages directory that did not exist when Python started is not on sys.path,
+        # so a module pip just installed there is not found until it is added.
+        site.addsitedir(site.getusersitepackages())
     importlib.invalidate_caches()
     still_missing = _missing(missing)
     if still_missing:
