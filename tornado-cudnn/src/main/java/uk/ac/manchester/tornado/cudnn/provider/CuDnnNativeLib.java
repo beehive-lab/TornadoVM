@@ -63,7 +63,8 @@ final class CuDnnNativeLib {
     private static final SymbolLookup LIBCUDNN = FFMSupport.loadLibrary("libcudnn.so.9", "libcudnn.so.8", "libcudnn.so", "cudnn64_9.dll", "cudnn64_8.dll", "libcudnn.dylib");
 
     /** The workspace allocation goes through the CUDA runtime, as cuDNN itself does. */
-    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.13", "libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_13.dll", "cudart64_12.dll", "libcudart.dylib");
+    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.13", "libcudart.so.12", "libcudart.so.11.0", "libcudart.so",
+            "cudart64_13.dll", "cudart64_12.dll", "libcudart.dylib");
 
     private static final MethodHandle CUDNN_CREATE;
     private static final MethodHandle CUDNN_DESTROY;
