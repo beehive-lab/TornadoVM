@@ -22,7 +22,10 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.zip.ZipFile;
 
@@ -49,6 +52,11 @@ public final class Frontend {
     @FunctionalInterface
     public interface BytecodeSource {
         Optional<byte[]> classBytes(String internalName);
+
+        /** The parsed class file; a source over loaded classes parses each class once. */
+        default Optional<ClassFile> classFile(String internalName) {
+            return classBytes(internalName).map(ClassFile::parse);
+        }
 
         /**
          * The static method a {@code static final DeviceKernel} field names (the child of
@@ -147,6 +155,21 @@ public final class Frontend {
                 }
 
                 @Override
+                public Optional<ClassFile> classFile(String internalName) {
+                    // A loaded class does not change; every compilation of a kernel and its callees read it again.
+                    Map<String, Optional<ClassFile>> parsed;
+                    synchronized (PARSED) {
+                        parsed = PARSED.computeIfAbsent(loader, l -> new ConcurrentHashMap<>());
+                    }
+                    var cached = parsed.get(internalName);
+                    if (cached == null) {
+                        cached = classBytes(internalName).map(ClassFile::parse);
+                        parsed.put(internalName, cached);
+                    }
+                    return cached;
+                }
+
+                @Override
                 public Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
                     return DeviceKernels.resolve(loader, ownerInternalName, field);
                 }
@@ -239,6 +262,9 @@ public final class Frontend {
         }
     }
 
+    /** Parsed class files per class loader ({@link BytecodeSource#classLoader}). */
+    private static final Map<ClassLoader, Map<String, Optional<ClassFile>>> PARSED = new WeakHashMap<>();
+
     private Frontend() {
     }
 
@@ -247,30 +273,42 @@ public final class Frontend {
      * name unless {@code descriptor} is given).
      */
     public static Result translate(BytecodeSource source, String className, String methodName, String descriptor) {
+        return translateKernel(source, className, methodName, descriptor).result();
+    }
+
+    /** A kernel's translation: the result, and the function with its callees when it succeeded. */
+    private record Kernel(Result result, Optional<Translator.Translated> translated) {
+        Kernel(Result failure) {
+            this(failure, Optional.empty());
+        }
+    }
+
+    private static Kernel translateKernel(BytecodeSource source, String className, String methodName, String descriptor) {
         var internal = className.replace('.', '/');
-        var bytes = source.classBytes(internal);
-        if (bytes.isEmpty()) {
-            return failure("TC-E1007", "class " + className + " not found");
-        }
-        ClassFile classFile;
+        Optional<ClassFile> parsed;
         try {
-            classFile = ClassFile.parse(bytes.get());
+            parsed = source.classFile(internal);
         } catch (ClassFormatException e) {
-            return failure("TC-E1008", "malformed class file " + className + ": " + e.getMessage());
+            return new Kernel(failure("TC-E1008", "malformed class file " + className + ": " + e.getMessage()));
         }
+        if (parsed.isEmpty()) {
+            return new Kernel(failure("TC-E1007", "class " + className + " not found"));
+        }
+        var classFile = parsed.get();
         var method = classFile.method(methodName, descriptor);
         if (method.isEmpty()) {
-            return failure("TC-E1007", "method " + methodName + (descriptor == null ? "" : descriptor) + " not found in " + className);
+            return new Kernel(failure("TC-E1007", "method " + methodName + (descriptor == null ? "" : descriptor) + " not found in " + className));
         }
         if (method.get().code().isEmpty()) {
             // An abstract or native task method: a task built from an interface method reference (k::apply).
-            return failure("TC-E1003", "task method " + className + "." + methodName + " has no bytecode (abstract or native): give the task a method with a body");
+            return new Kernel(failure("TC-E1003", "task method " + className + "." + methodName + " has no bytecode (abstract or native): give the task a method with a body"));
         }
         Supplier<String> listing = () -> Disassembler.print(classFile, method.get());
         try {
-            return new Result(Optional.of(Translator.translate(source, classFile, method.get())), List.of(), listing);
+            var translated = Translator.translate(source, classFile, method.get(), Function.Kind.KERNEL);
+            return new Kernel(new Result(Optional.of(translated.function()), List.of(), listing), Optional.of(translated));
         } catch (Translator.FrontendError e) {
-            return new Result(Optional.empty(), List.of(e.diagnostic), listing);
+            return new Kernel(new Result(Optional.empty(), List.of(e.diagnostic), listing));
         }
     }
 
@@ -354,11 +392,11 @@ public final class Frontend {
      * for a model frontend's calls into code that has no model.
      */
     public static ModuleResult translateCallee(BytecodeSource source, String owner, String methodName, String descriptor, String name) {
-        var bytes = source.classBytes(owner);
-        if (bytes.isEmpty()) {
+        var parsed = source.classFile(owner);
+        if (parsed.isEmpty()) {
             return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", "class " + owner.replace('/', '.') + " not found", "", Loc.UNKNOWN)), () -> "");
         }
-        var classFile = ClassFile.parse(bytes.get());
+        var classFile = parsed.get();
         var method = classFile.method(methodName, descriptor);
         if (method.isEmpty() || method.get().code().isEmpty()) {
             return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + owner.replace('/', '.') + "." + methodName + descriptor + " has no bytecode", "", Loc.UNKNOWN)), () -> "");
@@ -399,22 +437,13 @@ public final class Frontend {
                 return result.get();
             }
         }
-        var kernel = translate(source, className, methodName, descriptor);
-        if (kernel.function().isEmpty()) {
-            return new ModuleResult(Optional.empty(), kernel.diagnostics(), kernel.listing());
+        var kernel = translateKernel(source, className, methodName, descriptor);
+        if (kernel.translated().isEmpty()) {
+            return new ModuleResult(Optional.empty(), kernel.result().diagnostics(), kernel.result().listing());
         }
         var module = new uk.ac.manchester.tornado.tc.ir.IrModule();
         var work = new java.util.ArrayDeque<java.util.Map.Entry<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef>>();
-        // Re-translate the kernel to learn its callees (translate() does not expose them).
-        var internal = className.replace('.', '/');
-        var classFile = ClassFile.parse(source.classBytes(internal).orElseThrow());
-        var method = classFile.method(methodName, descriptor).orElseThrow();
-        Translator.Translated root;
-        try {
-            root = Translator.translate(source, classFile, method, Function.Kind.KERNEL);
-        } catch (Translator.FrontendError e) {
-            return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.listing());
-        }
+        var root = kernel.translated().get();
         module.add(root.function());
         work.addAll(root.callees().entrySet());
         var seen = new java.util.HashSet<String>();
@@ -424,39 +453,39 @@ public final class Frontend {
                 continue;
             }
             var ref = entry.getValue();
-            var bytes = source.classBytes(ref.owner());
-            if (bytes.isEmpty()) {
+            var parsed = source.classFile(ref.owner());
+            if (parsed.isEmpty()) {
                 var why = "class " + ref.owner().replace('/', '.') + " of called method " + ref.name() + " not found";
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", why, "", Loc.UNKNOWN)), kernel.listing());
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1007", why, "", Loc.UNKNOWN)), kernel.result().listing());
             }
-            var calleeClass = ClassFile.parse(bytes.get());
+            var calleeClass = parsed.get();
             var calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
             // An inherited instance method is declared in a superclass.
             while (calleeMethod.isEmpty() && calleeClass.superName().isPresent()) {
-                var superBytes = source.classBytes(calleeClass.superName().get());
-                if (superBytes.isEmpty()) {
+                var superClass = source.classFile(calleeClass.superName().get());
+                if (superClass.isEmpty()) {
                     break;
                 }
-                calleeClass = ClassFile.parse(superBytes.get());
+                calleeClass = superClass.get();
                 calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
             }
             if (calleeMethod.isEmpty() || calleeMethod.get().code().isEmpty()) {
                 var why = "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode";
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", why, "", Loc.UNKNOWN)), kernel.listing());
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", why, "", Loc.UNKNOWN)), kernel.result().listing());
             }
             try {
                 var translated = Translator.translateDevice(source, calleeClass, calleeMethod.get(), entry.getKey());
                 module.add(translated.function());
                 work.addAll(translated.callees().entrySet());
             } catch (Translator.FrontendError e) {
-                return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.listing());
+                return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.result().listing());
             }
             if (seen.size() > 64) {
                 var why = "more than 64 distinct callees: recursion or an unbounded call graph";
-                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", why, "", Loc.UNKNOWN)), kernel.listing());
+                return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", why, "", Loc.UNKNOWN)), kernel.result().listing());
             }
         }
-        return new ModuleResult(Optional.of(module), List.of(), kernel.listing());
+        return new ModuleResult(Optional.of(module), List.of(), kernel.result().listing());
     }
 
     private static Result failure(String code, String message) {

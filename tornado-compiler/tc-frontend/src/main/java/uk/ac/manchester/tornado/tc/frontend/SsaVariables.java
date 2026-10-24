@@ -141,9 +141,7 @@ final class SsaVariables {
             var term = pred.terminator().orElseThrow();
             for (int i = 0; i < term.successors().size(); i++) {
                 if (term.successors().get(i).target() == block) {
-                    var args = new ArrayList<>(term.successors().get(i).args());
-                    args.add(value);
-                    term.setSuccessorArgs(i, args);
+                    term.addSuccessorArg(i, value);
                 }
             }
         }
