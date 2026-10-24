@@ -1,0 +1,3 @@
+/Users/thanos/repositories/TornadoVM-stratika/tornado-drivers/metal-jni/src/main/cpp/build/CMakeFiles/tornado-objc-metal.dir
+/Users/thanos/repositories/TornadoVM-stratika/tornado-drivers/metal-jni/src/main/cpp/build/CMakeFiles/edit_cache.dir
+/Users/thanos/repositories/TornadoVM-stratika/tornado-drivers/metal-jni/src/main/cpp/build/CMakeFiles/rebuild_cache.dir

@@ -61,6 +61,12 @@ Beyond JIT-compiling Java bytecode to each backend, TornadoVM's runtime provides
    unsupported
 
 .. toctree::
+   :caption: Kotlin
+   :hidden:
+
+   kotlin
+
+.. toctree::
    :caption: Integrate Native CUDA Libraries
    :hidden:
 

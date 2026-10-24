@@ -29,9 +29,12 @@ import java.util.Optional;
  * A parsed class file, read directly from the format defined in chapter 4 of The Java Virtual
  * Machine Specification. Only what the TC frontend needs is kept: the constant pool, the methods
  * with their {@code Code} attribute, line numbers, local variable names and raw type annotations
- * (where {@code @Parallel} lives). Any class-file version is accepted: unknown attributes are skipped.
+ * (where {@code @Parallel} lives), and the types of the class's own runtime-visible annotations
+ * (kotlinc marks its classes with {@code kotlin.Metadata}). Any class-file version is accepted:
+ * unknown attributes are skipped.
  */
-public record ClassFile(String name, Optional<String> superName, int majorVersion, ConstantPool constants, List<Method> methods, List<BootstrapMethod> bootstrapMethods) {
+public record ClassFile(String name, Optional<String> superName, int majorVersion, ConstantPool constants, List<Method> methods, List<BootstrapMethod> bootstrapMethods,
+        List<String> annotations) {
 
     /** One entry of the {@code BootstrapMethods} attribute: the method handle and its static arguments. */
     public record BootstrapMethod(int methodHandle, List<Integer> arguments) {
@@ -130,6 +133,7 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
             methods.add(new Method(methodName, descriptor, access, code));
         }
         var bootstraps = new ArrayList<BootstrapMethod>();
+        var annotations = new ArrayList<String>();
         int classAttributes = in.readUnsignedShort();
         for (int a = 0; a < classAttributes; a++) {
             var attributeName = pool.utf8(in.readUnsignedShort());
@@ -145,11 +149,42 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
                     }
                     bootstraps.add(new BootstrapMethod(handle, List.copyOf(arguments)));
                 }
+            } else if (attributeName.equals("RuntimeVisibleAnnotations")) {
+                int n = in.readUnsignedShort();
+                for (int i = 0; i < n; i++) {
+                    annotations.add(readAnnotation(in, pool));
+                }
             } else {
                 in.skipNBytes(length);
             }
         }
-        return new ClassFile(name, superName, major, pool, List.copyOf(methods), List.copyOf(bootstraps));
+        return new ClassFile(name, superName, major, pool, List.copyOf(methods), List.copyOf(bootstraps), List.copyOf(annotations));
+    }
+
+    /** Reads one annotation and returns its type descriptor; its element values are skipped. */
+    private static String readAnnotation(DataInputStream in, ConstantPool pool) throws IOException {
+        var type = pool.utf8(in.readUnsignedShort());
+        int pairs = in.readUnsignedShort();
+        for (int i = 0; i < pairs; i++) {
+            in.readUnsignedShort(); // element name
+            skipElementValue(in, pool);
+        }
+        return type;
+    }
+
+    private static void skipElementValue(DataInputStream in, ConstantPool pool) throws IOException {
+        int tag = in.readUnsignedByte();
+        switch (tag) {
+            case 'e' -> in.skipNBytes(4);
+            case '@' -> readAnnotation(in, pool);
+            case '[' -> {
+                int n = in.readUnsignedShort();
+                for (int i = 0; i < n; i++) {
+                    skipElementValue(in, pool);
+                }
+            }
+            default -> in.skipNBytes(2); // a constant or a class: one constant-pool index
+        }
     }
 
     private static Code readCode(DataInputStream in, ConstantPool pool) throws IOException {
