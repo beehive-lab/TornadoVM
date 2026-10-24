@@ -123,9 +123,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
     public void prepare(LibraryTaskDescriptor descriptor, LibraryContext context) {
         Object[] p = descriptor.getParameters();
         switch (descriptor.getFunctionName()) {
-            case "cudnnConv2d", "cudnnConv2dFP16", "cudnnConv2dNHWC", "cudnnConv2dNHWCFP16" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7],
-                    (int) p[8], (int) p[9], (int) p[10], (int) p[11], descriptor.getFunctionName().endsWith("FP16"), descriptor.getFunctionName().contains("NHWC"));
+            case "cudnnConv2d", "cudnnConv2dFP16", "cudnnConv2dNHWC", "cudnnConv2dNHWCFP16", "cudnnConv2dBackwardData", "cudnnConv2dBackwardDataFP16", "cudnnConv2dBackwardFilter",
+                    "cudnnConv2dBackwardFilterFP16" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10],
+                            (int) p[11], descriptor.getFunctionName().endsWith("FP16"), descriptor.getFunctionName().contains("NHWC"), direction(descriptor.getFunctionName()));
             case "sdpaForward" -> getOrCreateSdpaPlan((CuDnnContext) context, (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (float) p[9], (boolean) p[10]);
+            case "sdpaForwardPackedQkv" -> getOrCreatePackedSdpaPlan((CuDnnContext) context, (int) p[2], (int) p[3], (int) p[4], (int) p[5], (float) p[6], (boolean) p[7]);
             default -> {
                 // simple ops have no per-shape native state
             }
@@ -160,7 +162,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             case "cudnnConv2dFP16" -> conv2d(context, invocation, true, false);
             case "cudnnConv2dNHWC" -> conv2d(context, invocation, false, true);
             case "cudnnConv2dNHWCFP16" -> conv2d(context, invocation, true, true);
+            case "cudnnConv2dBackwardData", "cudnnConv2dBackwardDataFP16", "cudnnConv2dBackwardFilter", "cudnnConv2dBackwardFilterFP16" -> conv2dBackward(context, invocation,
+                    functionName.endsWith("FP16"), direction(functionName));
             case "sdpaForward" -> sdpa(context, invocation);
+            case "sdpaForwardPackedQkv" -> sdpaPacked(context, invocation);
             default -> throw new TornadoRuntimeException("[ERROR] cuDNN function not supported: " + functionName);
         };
         CuDnnNativeLib.checkStatus(status, functionName);
@@ -176,10 +181,31 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         long plan = getOrCreateConvPlan(context, //
                 (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), //
                 (int) invocation.getArg(7), (int) invocation.getArg(8), (int) invocation.getArg(9), //
-                (int) invocation.getArg(10), (int) invocation.getArg(11), half, nhwc);
+                (int) invocation.getArg(10), (int) invocation.getArg(11), half, nhwc, CuDnnNativeLib.CONV_FORWARD);
         return CuDnnNativeLib.convForward(context.handle, plan, //
                 invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), //
                 context.workspacePtr, context.workspaceBytes);
+    }
+
+    private static int direction(String functionName) {
+        return functionName.startsWith("cudnnConv2dBackwardData") ? CuDnnNativeLib.CONV_BACKWARD_DATA
+                : functionName.startsWith("cudnnConv2dBackwardFilter") ? CuDnnNativeLib.CONV_BACKWARD_FILTER : CuDnnNativeLib.CONV_FORWARD;
+    }
+
+    /**
+     * Data: (filter, dOutput, dInput, n, c, h, w, k, r, s, pad, stride). Filter: (input, dOutput,
+     * dFilter, ...). The sizes are those of the forward convolution.
+     */
+    private static int conv2dBackward(CuDnnContext context, LibraryInvocation invocation, boolean half, int direction) {
+        long plan = getOrCreateConvPlan(context, //
+                (int) invocation.getArg(3), (int) invocation.getArg(4), (int) invocation.getArg(5), (int) invocation.getArg(6), //
+                (int) invocation.getArg(7), (int) invocation.getArg(8), (int) invocation.getArg(9), //
+                (int) invocation.getArg(10), (int) invocation.getArg(11), half, false, direction);
+        return direction == CuDnnNativeLib.CONV_BACKWARD_DATA
+                ? CuDnnNativeLib.convBackwardData(context.handle, plan, invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), context.workspacePtr,
+                        context.workspaceBytes)
+                : CuDnnNativeLib.convBackwardFilter(context.handle, plan, invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), context.workspacePtr,
+                        context.workspaceBytes);
     }
 
     /** (q, k, v, o, b, h, sQ, sKv, d, scale, causal). */
@@ -190,6 +216,40 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         return CuDnnNativeLib.executeSdpaPlan(context.handle, plan, //
                 invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), invocation.getDevicePointer(3), //
                 context.workspacePtr);
+    }
+
+    /** (qkv, o, b, h, s, d, scale, causal): q, k and v at element offsets 0, h d and 2 h d of each token's row. */
+    private static int sdpaPacked(CuDnnContext context, LibraryInvocation invocation) {
+        int h = (int) invocation.getArg(3);
+        int d = (int) invocation.getArg(5);
+        long plan = getOrCreatePackedSdpaPlan(context, (int) invocation.getArg(2), h, (int) invocation.getArg(4), d, (float) invocation.getArg(6), (boolean) invocation.getArg(7));
+        long qkv = invocation.getDevicePointer(0);
+        long headBytes = (long) h * d * Short.BYTES;
+        return CuDnnNativeLib.executeSdpaPlan(context.handle, plan, qkv, qkv + headBytes, qkv + 2 * headBytes, invocation.getDevicePointer(1), context.workspacePtr);
+    }
+
+    private static long getOrCreatePackedSdpaPlan(CuDnnContext context, int b, int h, int s, int d, float scale, boolean causal) {
+        String planKey = "packed:" + b + ":" + h + ":" + s + ":" + d + ":" + scale + ":" + causal;
+        Long plan = context.sdpaPlanCache.get(planKey);
+        if (plan == null) {
+            CuDnnNativeLib.loadSdpaShim();
+            long row = 3L * h * d;
+            long qkvB = s * row;
+            long out = (long) h * d;
+            // element strides of (batch, head, token, dim) for q, k, v, then o
+            long[] strides = { qkvB, d, row, 1, qkvB, d, row, 1, qkvB, d, row, 1, s * out, d, out, 1 };
+            plan = CuDnnNativeLib.createSdpaPlanStrided(context.handle, b, h, s, s, d, scale, causal, strides);
+            if (plan == 0) {
+                if (!hasSdpaSupport(context)) {
+                    throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] cuDNN fused SDPA is not available for this device/build " //
+                            + "(requires an Ampere sm_80 or later GPU and libtornado-cudnn built against CUDA 12.0+). Shape: " + planKey);
+                }
+                throw new TornadoRuntimeException("[ERROR] cuDNN SDPA plan creation failed for " + planKey + " (requires Ampere+, head dim multiple of 8, <= 256)");
+            }
+            context.growWorkspace(CuDnnNativeLib.sdpaPlanWorkspaceBytes(plan));
+            context.sdpaPlanCache.put(planKey, plan);
+        }
+        return plan;
     }
 
     /**
@@ -228,11 +288,11 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         return plan;
     }
 
-    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc) {
-        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride + (half ? ":f16" : ":f32") + (nhwc ? ":nhwc" : ":nchw");
+    private static long getOrCreateConvPlan(CuDnnContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc, int direction) {
+        String planKey = n + ":" + c + ":" + h + ":" + w + ":" + k + ":" + r + ":" + s + ":" + pad + ":" + stride + (half ? ":f16" : ":f32") + (nhwc ? ":nhwc" : ":nchw") + ":" + direction;
         Long plan = context.convPlanCache.get(planKey);
         if (plan == null) {
-            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride, half, nhwc);
+            plan = CuDnnNativeLib.createConvPlan(context.handle, n, c, h, w, k, r, s, pad, stride, half, nhwc, direction);
             if (plan == 0) {
                 throw new TornadoRuntimeException("[ERROR] cuDNN convolution plan creation failed for " + planKey);
             }
