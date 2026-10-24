@@ -108,6 +108,20 @@ public class TestTileFP8Arithmetic extends TornadoTestBase {
         cv.store(tc.cast(acc, DType.F32), 0);
     }
 
+    /** FP8 tiles have no comparison operators in CUDA Tile, so both compare forms widen to float. */
+    public static void compareE4M3(TileContext tc, FP8Array a, FP8Array b, FloatArray out) {
+        PartitionView av = tc.partition(tc.view(a, DType.FP8_E4M3, SIZE), SIZE);
+        PartitionView bv = tc.partition(tc.view(b, DType.FP8_E4M3, SIZE), SIZE);
+        PartitionView ov = tc.partition(tc.view(out, SIZE * 2), SIZE);
+        Tile x = av.load(0);
+        Tile y = bv.load(0);
+        Tile ones = tc.ones(DType.F32, SIZE);
+        Tile zeros = tc.zeros(DType.F32, SIZE);
+        ov.store(tc.select(tc.lessThan(x, y), ones, zeros), 0);
+        // 0.3 is not an FP8 value: the scalar is compared unrounded, as in the Java reference.
+        ov.store(tc.select(tc.greaterThan(x, 0.3), ones, zeros), 1);
+    }
+
     private static float decode(byte bits, boolean e5m2) {
         return e5m2 ? FP8.e5m2ToFloat(bits) : FP8.e4m3ToFloat(bits);
     }
@@ -196,6 +210,42 @@ public class TestTileFP8Arithmetic extends TornadoTestBase {
                 assertEquals(max, reduced.get(1), 0.0f, "max");
                 assertEquals(min, reduced.get(2), 0.0f, "min");
             }
+        }
+    }
+
+    @Test
+    public void testE4M3Compare() throws TornadoExecutionPlanException {
+        FP8Array a = new FP8Array(SIZE);
+        FP8Array b = new FP8Array(SIZE);
+        FloatArray out = new FloatArray(SIZE * 2);
+        float[] values = { 1.0f, -1.0f, 0.25f, -0.5f, 0.3125f, 0.75f, 0.0f, 2.0f };
+        for (int i = 0; i < SIZE; i++) {
+            a.set(i, encode(values[i % values.length], false));
+            b.set(i, encode(i % 2 == 0 ? 0.125f : 0.75f, false));
+        }
+        TaskGraph graph = new TaskGraph("fp8cmp")
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b)
+                .task("k", TestTileFP8Arithmetic::compareE4M3, new TileContext(), a, b, out)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        WorkerGrid1D worker = new WorkerGrid1D(1);
+        worker.setLocalWork(1, 1, 1);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withGridScheduler(new GridScheduler("fp8cmp.k", worker));
+            try {
+                plan.execute();
+            } catch (RuntimeException e) {
+                String message = String.valueOf(e.getMessage()) + String.valueOf(e.getCause());
+                if (message.contains("FP8") && message.contains("9.0")) {
+                    throw new TornadoVMCUDANotSupported("FP8 tiles require compute capability 9.0: " + message);
+                }
+                throw e;
+            }
+        }
+        for (int i = 0; i < SIZE; i++) {
+            float x = decode(a.get(i), false);
+            float y = decode(b.get(i), false);
+            assertEquals(x < y ? 1.0f : 0.0f, out.get(i), 0.0f, "lessThan element " + i);
+            assertEquals(x > 0.3f ? 1.0f : 0.0f, out.get(SIZE + i), 0.0f, "greaterThan scalar element " + i);
         }
     }
 
