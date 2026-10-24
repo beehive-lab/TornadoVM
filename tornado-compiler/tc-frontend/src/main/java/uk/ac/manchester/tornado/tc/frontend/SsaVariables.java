@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.tc.frontend;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -31,6 +32,7 @@ import uk.ac.manchester.tornado.tc.ir.ApiTypes;
 import uk.ac.manchester.tornado.tc.ir.Block;
 import uk.ac.manchester.tornado.tc.ir.BlockArg;
 import uk.ac.manchester.tornado.tc.ir.Function;
+import uk.ac.manchester.tornado.tc.ir.Inst;
 import uk.ac.manchester.tornado.tc.ir.Type;
 import uk.ac.manchester.tornado.tc.ir.Value;
 
@@ -139,9 +141,7 @@ final class SsaVariables {
             var term = pred.terminator().orElseThrow();
             for (int i = 0; i < term.successors().size(); i++) {
                 if (term.successors().get(i).target() == block) {
-                    var args = new ArrayList<>(term.successors().get(i).args());
-                    args.add(value);
-                    term.setSuccessorArgs(i, args);
+                    term.addSuccessorArg(i, value);
                 }
             }
         }
@@ -170,6 +170,9 @@ final class SsaVariables {
 
     /** Removes block arguments whose incoming values are all the same value (or the argument itself). */
     void removeTrivialArguments() {
+        // Only successor arguments change from here on, so the edges into each block are found once:
+        // looking them up per argument scanned the whole function for every argument of every block.
+        var edges = incomingEdges();
         boolean changed = true;
         while (changed) {
             changed = false;
@@ -177,30 +180,69 @@ final class SsaVariables {
                 if (block == function.entry()) {
                     continue;
                 }
+                var incoming = edges.getOrDefault(block, List.of());
+                var removed = new ArrayList<BlockArg>();
+                var removedIndices = new BitSet();
                 for (int index = block.args().size() - 1; index >= 0; index--) {
                     var arg = block.args().get(index);
                     Value same = null;
                     boolean trivial = true;
-                    for (var incoming : incomingValues(block, index)) {
-                        if (incoming == arg || incoming == same) {
+                    for (var edge : incoming) {
+                        var value = edge.args().get(index);
+                        if (value == arg || value == same) {
                             continue;
                         }
                         if (same != null) {
                             trivial = false;
                             break;
                         }
-                        same = incoming;
+                        same = value;
                     }
                     if (!trivial || same == null) {
                         continue;
                     }
                     arg.replaceAllUsesWith(same);
-                    removeIncoming(block, index);
-                    block.removeArg(arg);
-                    changed = true;
+                    removed.add(arg);
+                    removedIndices.set(index);
                 }
+                if (removed.isEmpty()) {
+                    continue;
+                }
+                // One rewrite per edge for all the block's trivial arguments.
+                for (var edge : incoming) {
+                    var args = new ArrayList<Value>();
+                    var old = edge.args();
+                    for (int i = 0; i < old.size(); i++) {
+                        if (!removedIndices.get(i)) {
+                            args.add(old.get(i));
+                        }
+                    }
+                    edge.term().setSuccessorArgs(edge.successor(), args);
+                }
+                removed.forEach(block::removeArg);
+                changed = true;
             }
         }
+    }
+
+    /** An edge into a block: successor {@code successor} of terminator {@code term}. */
+    private record Edge(Inst term, int successor) {
+        List<Value> args() {
+            return term.successors().get(successor).args();
+        }
+    }
+
+    /** The edges into each block, in block and successor order. */
+    private Map<Block, List<Edge>> incomingEdges() {
+        var edges = new IdentityHashMap<Block, List<Edge>>();
+        for (var pred : function.blocks()) {
+            pred.terminator().ifPresent(term -> {
+                for (int i = 0; i < term.successors().size(); i++) {
+                    edges.computeIfAbsent(term.successors().get(i).target(), _k -> new ArrayList<>()).add(new Edge(term, i));
+                }
+            });
+        }
+        return edges;
     }
 
     List<Value> incomingValues(Block block, int index) {
@@ -215,20 +257,6 @@ final class SsaVariables {
             });
         }
         return values;
-    }
-
-    private void removeIncoming(Block block, int index) {
-        for (var pred : function.blocks()) {
-            pred.terminator().ifPresent(term -> {
-                for (int i = 0; i < term.successors().size(); i++) {
-                    if (term.successors().get(i).target() == block) {
-                        var args = new ArrayList<>(term.successors().get(i).args());
-                        args.remove(index);
-                        term.setSuccessorArgs(i, args);
-                    }
-                }
-            });
-        }
     }
 
     boolean definedSomewhere(Var key) {

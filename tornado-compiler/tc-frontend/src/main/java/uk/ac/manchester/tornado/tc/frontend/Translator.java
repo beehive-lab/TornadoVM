@@ -149,10 +149,6 @@ final class Translator {
         this.ssa = new SsaVariables(function, preds, (key, block) -> error("TC-E1006", "read of " + SsaVariables.describe(key) + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci()));
     }
 
-    static Function translate(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method) {
-        return new Translator(source, classFile, method, Function.Kind.KERNEL).run();
-    }
-
     /** The function and the static methods it calls (by TC function name), for transitive translation. */
     record Translated(Function function, Map<String, uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef> callees) {
     }
