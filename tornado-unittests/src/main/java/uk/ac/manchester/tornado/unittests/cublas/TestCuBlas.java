@@ -40,6 +40,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.cublas.CuBlas;
 import uk.ac.manchester.tornado.cublas.CuBlasOptions;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
@@ -341,6 +342,49 @@ public class TestCuBlas extends TornadoTestBase {
                 float sum = 0.0f;
                 for (int p = 0; p < SIZE; p++) {
                     sum += matrixA.get(i * SIZE + p).getFloat32() * matrixB.get(p * SIZE + j).getFloat32();
+                }
+                assertEquals(sum, matrixC.get(i * SIZE + j), 1e-3f * Math.max(1.0f, Math.abs(sum)));
+            }
+        }
+    }
+
+    /** A float rounded to bfloat16 (nearest even), as its raw 16 bits. */
+    private static short toBFloat16Bits(float f) {
+        int bits = Float.floatToRawIntBits(f);
+        return (short) ((bits + 0x7FFF + ((bits >>> 16) & 1)) >>> 16);
+    }
+
+    private static float fromBFloat16Bits(short b) {
+        return Float.intBitsToFloat((b & 0xFFFF) << 16);
+    }
+
+    @Test
+    public void testGemmExBF16FP32() throws TornadoExecutionPlanException {
+        ShortArray matrixA = new ShortArray(SIZE * SIZE);
+        ShortArray matrixB = new ShortArray(SIZE * SIZE);
+        FloatArray matrixC = new FloatArray(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrixA.set(i, toBFloat16Bits(random.nextFloat()));
+            matrixB.set(i, toBFloat16Bits(random.nextFloat()));
+        }
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB) //
+                .libraryTask("gemmEx", CuBlas::cublasGemmExBF16FP32, //
+                        CuBlasOperation.CUBLAS_OP_N.operation(), CuBlasOperation.CUBLAS_OP_N.operation(), //
+                        SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // the inputs are exact bfloat16 values and the result is FP32: only the accumulation order differs
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                float sum = 0.0f;
+                for (int p = 0; p < SIZE; p++) {
+                    sum += fromBFloat16Bits(matrixA.get(i * SIZE + p)) * fromBFloat16Bits(matrixB.get(p * SIZE + j));
                 }
                 assertEquals(sum, matrixC.get(i * SIZE + j), 1e-3f * Math.max(1.0f, Math.abs(sum)));
             }

@@ -182,4 +182,91 @@ public final class CuDnn {
                 .withParameters(new Object[] { input, filter, output, n, c, h, w, k, r, s, pad, stride }) //
                 .withAccess(accesses);
     }
+
+    /**
+     * The gradient of the input of a {@link #cudnnConv2d}: {@code dInput (n,c,h,w)} from
+     * the filter {@code (k,c,r,s)} and {@code dOutput}, NCHW. The sizes are those of the forward
+     * convolution.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dBackwardData(FloatArray filter, FloatArray dOutput, FloatArray dInput, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+        Access[] accesses = new Access[12];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[2] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cudnnConv2dBackwardData") //
+                .withParameters(new Object[] { filter, dOutput, dInput, n, c, h, w, k, r, s, pad, stride }) //
+                .withAccess(accesses);
+    }
+
+    /**
+     * The gradient of the filter of a {@link #cudnnConv2d}: {@code dFilter (k,c,r,s)}
+     * from the input {@code (n,c,h,w)} and {@code dOutput}, NCHW. The sizes are those of the
+     * forward convolution.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dBackwardFilter(FloatArray input, FloatArray dOutput, FloatArray dFilter, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+        Access[] accesses = new Access[12];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[2] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cudnnConv2dBackwardFilter") //
+                .withParameters(new Object[] { input, dOutput, dFilter, n, c, h, w, k, r, s, pad, stride }) //
+                .withAccess(accesses);
+    }
+
+    /**
+     * The gradient of the input of a {@link #cudnnConv2dFP16} on FP16 tensors, accumulated in FP32 on the tensor cores where the device has them: {@code dInput (n,c,h,w)} from
+     * the filter {@code (k,c,r,s)} and {@code dOutput}, NCHW. The sizes are those of the forward
+     * convolution.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dBackwardDataFP16(HalfFloatArray filter, HalfFloatArray dOutput, HalfFloatArray dInput, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+        Access[] accesses = new Access[12];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[2] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cudnnConv2dBackwardDataFP16") //
+                .withParameters(new Object[] { filter, dOutput, dInput, n, c, h, w, k, r, s, pad, stride }) //
+                .withAccess(accesses);
+    }
+
+    /**
+     * The gradient of the filter of a {@link #cudnnConv2dFP16} on FP16 tensors, accumulated in FP32 on the tensor cores where the device has them: {@code dFilter (k,c,r,s)}
+     * from the input {@code (n,c,h,w)} and {@code dOutput}, NCHW. The sizes are those of the
+     * forward convolution.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dBackwardFilterFP16(HalfFloatArray input, HalfFloatArray dOutput, HalfFloatArray dFilter, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride) {
+        Access[] accesses = new Access[12];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[2] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cudnnConv2dBackwardFilterFP16") //
+                .withParameters(new Object[] { input, dOutput, dFilter, n, c, h, w, k, r, s, pad, stride }) //
+                .withAccess(accesses);
+    }
+
+    /**
+     * {@link #sdpaForward} for self-attention on one packed projection: {@code qkv} holds, per batch
+     * and token, q, k and v for every head ({@code [b, s, 3, h, d]}), and {@code o} is written as
+     * {@code [b, s, h, d]}, the layout the output projection reads. cuDNN reads and writes these
+     * strides directly, so no gather into BHSD and no merge back are needed. Constraints as for
+     * {@link #sdpaForward}; {@code h * d} must be a multiple of 8.
+     */
+    public static LibraryTaskDescriptor sdpaForwardPackedQkv(HalfFloatArray qkv, HalfFloatArray o, //
+            int b, int h, int s, int d, float scale, boolean causal) {
+        Access[] accesses = new Access[8];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[1] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("sdpaForwardPackedQkv") //
+                .withParameters(new Object[] { qkv, o, b, h, s, d, scale, causal }) //
+                .withAccess(accesses);
+    }
 }

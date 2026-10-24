@@ -259,6 +259,78 @@ public class TestCuDnn extends TornadoTestBase {
         }
     }
 
+    /** The gradients of {@link #convJava}'s input and filter for an output gradient {@code dOut}. */
+    private static void convBackwardJava(FloatArray input, FloatArray filter, FloatArray dOut, FloatArray dInput, FloatArray dFilter, int n, int c, int h, int w, int k, int r, int s, int pad,
+            int stride) {
+        int outH = (h + 2 * pad - r) / stride + 1;
+        int outW = (w + 2 * pad - s) / stride + 1;
+        for (int in = 0; in < n; in++) {
+            for (int ok = 0; ok < k; ok++) {
+                for (int oh = 0; oh < outH; oh++) {
+                    for (int ow = 0; ow < outW; ow++) {
+                        float g = dOut.get(((in * k + ok) * outH + oh) * outW + ow);
+                        for (int ic = 0; ic < c; ic++) {
+                            for (int fr = 0; fr < r; fr++) {
+                                for (int fs = 0; fs < s; fs++) {
+                                    int ih = oh * stride + fr - pad;
+                                    int iw = ow * stride + fs - pad;
+                                    if (ih >= 0 && ih < h && iw >= 0 && iw < w) {
+                                        int at = ((in * c + ic) * h + ih) * w + iw;
+                                        int wt = ((ok * c + ic) * r + fr) * s + fs;
+                                        dInput.set(at, dInput.get(at) + g * filter.get(wt));
+                                        dFilter.set(wt, dFilter.get(wt) + g * input.get(at));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testConv2dBackward() throws TornadoExecutionPlanException {
+        final int n = 2;
+        final int c = 3;
+        final int h = 16;
+        final int w = 16;
+        final int k = 4;
+        final int r = 3;
+        final int s = 3;
+        final int pad = 1;
+        final int stride = 2;
+        final int outH = (h + 2 * pad - r) / stride + 1;
+        final int outW = (w + 2 * pad - s) / stride + 1;
+
+        FloatArray input = randomArray(n * c * h * w);
+        FloatArray filter = randomArray(k * c * r * s);
+        FloatArray dOut = randomArray(n * k * outH * outW);
+        FloatArray dInput = new FloatArray(n * c * h * w);
+        FloatArray dFilter = new FloatArray(k * c * r * s);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter, dOut) //
+                .libraryTask("dx", CuDnn::cudnnConv2dBackwardData, filter, dOut, dInput, n, c, h, w, k, r, s, pad, stride) //
+                .libraryTask("dw", CuDnn::cudnnConv2dBackwardFilter, input, dOut, dFilter, n, c, h, w, k, r, s, pad, stride) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, dInput, dFilter);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        FloatArray expectedInput = new FloatArray(n * c * h * w);
+        FloatArray expectedFilter = new FloatArray(k * c * r * s);
+        convBackwardJava(input, filter, dOut, expectedInput, expectedFilter, n, c, h, w, k, r, s, pad, stride);
+        // cuDNN may use TF32 for FP32 on Ampere and newer, as it does for the forward convolution
+        for (int i = 0; i < expectedInput.getSize(); i++) {
+            assertEquals(expectedInput.get(i), dInput.get(i), 1e-2f * Math.max(1.0f, Math.abs(expectedInput.get(i))));
+        }
+        for (int i = 0; i < expectedFilter.getSize(); i++) {
+            assertEquals(expectedFilter.get(i), dFilter.get(i), 1e-2f * Math.max(1.0f, Math.abs(expectedFilter.get(i))));
+        }
+    }
+
     private static void checkConv2dFP16(int n, int c, int h, int w, int k, int r, int s, int pad, int stride) throws TornadoExecutionPlanException {
         final int outH = (h + 2 * pad - r) / stride + 1;
         final int outW = (w + 2 * pad - s) / stride + 1;
@@ -541,6 +613,62 @@ public class TestCuDnn extends TornadoTestBase {
         attentionJava(q, k, v, expected, b, h, s, d, scale, causal);
         for (int i = 0; i < expected.getSize(); i++) {
             assertEquals(expected.get(i), o.get(i).getFloat32(), 2e-2f * Math.max(0.1f, Math.abs(expected.get(i))));
+        }
+    }
+
+    /**
+     * Attention read from one packed projection [b, s, 3, h, d] (q, k, v per token) and written as
+     * [b, s, h, d], without gathering into BHSD first.
+     */
+    @Test
+    public void testSdpaForwardPackedQkv() throws TornadoExecutionPlanException {
+        final int b = 2;
+        final int h = 4;
+        final int s = 64;
+        final int d = 64;
+        final float scale = (float) (1.0 / Math.sqrt(d));
+
+        HalfFloatArray qkv = randomHalfArray(b * s * 3 * h * d);
+        HalfFloatArray o = new HalfFloatArray(b * s * h * d);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, qkv) //
+                .libraryTask("sdpa", CuDnn::sdpaForwardPackedQkv, qkv, o, b, h, s, d, scale, false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, o);
+
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+
+        // the same problem in BHSD for the reference
+        HalfFloatArray q = new HalfFloatArray(b * h * s * d);
+        HalfFloatArray k = new HalfFloatArray(b * h * s * d);
+        HalfFloatArray v = new HalfFloatArray(b * h * s * d);
+        for (int ib = 0; ib < b; ib++) {
+            for (int it = 0; it < s; it++) {
+                for (int ih = 0; ih < h; ih++) {
+                    for (int dd = 0; dd < d; dd++) {
+                        int bhsd = ((ib * h + ih) * s + it) * d + dd;
+                        int packed = (((ib * s + it) * 3) * h + ih) * d + dd;
+                        q.set(bhsd, qkv.get(packed));
+                        k.set(bhsd, qkv.get(packed + h * d));
+                        v.set(bhsd, qkv.get(packed + 2 * h * d));
+                    }
+                }
+            }
+        }
+        FloatArray expected = new FloatArray(b * h * s * d);
+        attentionJava(q, k, v, expected, b, h, s, d, scale, false);
+        for (int ib = 0; ib < b; ib++) {
+            for (int it = 0; it < s; it++) {
+                for (int ih = 0; ih < h; ih++) {
+                    for (int dd = 0; dd < d; dd++) {
+                        float e = expected.get(((ib * h + ih) * s + it) * d + dd);
+                        float a = o.get(((ib * s + it) * h + ih) * d + dd).getFloat32();
+                        assertEquals(e, a, 2e-2f * Math.max(0.1f, Math.abs(e)));
+                    }
+                }
+            }
         }
     }
 
