@@ -76,49 +76,48 @@ public final class CfgSimplify implements Pass {
     /** Merges B into P when P ends with {@code br B(args)} and P is B's only predecessor. */
     private static boolean mergeStraightLines(Function function) {
         boolean changed = false;
-        var preds = function.predecessors();
-        for (var p : List.copyOf(function.blocks())) {
-            if (!function.blocks().contains(p)) {
-                continue;
-            }
-            var term = p.terminator().orElse(null);
-            if (term == null || !(term.opcode() instanceof Opcode.Branch)) {
-                continue;
-            }
-            var b = term.successors().get(0).target();
-            if (b == p || b == function.entry() || preds.get(b).size() != 1 || countEdges(function, b) != 1) {
-                continue;
-            }
-            var args = List.copyOf(term.successors().get(0).args());
-            term.erase();
-            for (int i = 0; i < b.args().size(); i++) {
-                b.args().get(i).replaceAllUsesWith(args.get(i));
-            }
-            for (var inst : List.copyOf(b.insts())) {
-                inst.moveToEnd(p);
-            }
-            for (var arg : List.copyOf(b.args())) {
-                b.removeArg(arg);
-            }
-            // b's block attributes are not carried over: they describe b (a loop header's
-            // arguments, say), and a block with a single predecessor heads no loop.
-            function.removeBlock(b);
-            preds = function.predecessors();
-            changed = true;
-        }
-        return changed;
-    }
-
-    private static int countEdges(Function function, Block target) {
-        int n = 0;
+        // Edges into each block. A merge moves B's terminator, with its edges, to P and removes the
+        // only edge into B, so the counts of the other blocks stay valid.
+        var edges = new IdentityHashMap<Block, Integer>();
         for (var block : function.blocks()) {
             for (var s : block.successors()) {
-                if (s == target) {
-                    n++;
-                }
+                edges.merge(s, 1, Integer::sum);
             }
         }
-        return n;
+        var merged = Collections.newSetFromMap(new IdentityHashMap<Block, Boolean>());
+        for (var p : List.copyOf(function.blocks())) {
+            if (merged.contains(p)) {
+                continue;
+            }
+            // P takes in a whole chain of such blocks.
+            while (true) {
+                var term = p.terminator().orElse(null);
+                if (term == null || !(term.opcode() instanceof Opcode.Branch)) {
+                    break;
+                }
+                var b = term.successors().get(0).target();
+                if (b == p || b == function.entry() || edges.getOrDefault(b, 0) != 1) {
+                    break;
+                }
+                var args = List.copyOf(term.successors().get(0).args());
+                term.erase();
+                for (int i = 0; i < b.args().size(); i++) {
+                    b.args().get(i).replaceAllUsesWith(args.get(i));
+                }
+                for (var inst : List.copyOf(b.insts())) {
+                    inst.moveToEnd(p);
+                }
+                for (var arg : List.copyOf(b.args())) {
+                    b.removeArg(arg);
+                }
+                // b's block attributes are not carried over: they describe b (a loop header's
+                // arguments, say), and a block with a single predecessor heads no loop.
+                function.removeBlock(b);
+                merged.add(b);
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     static boolean removeUnreachable(Function function) {
