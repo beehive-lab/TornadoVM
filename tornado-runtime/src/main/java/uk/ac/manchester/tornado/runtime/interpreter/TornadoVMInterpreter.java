@@ -1377,7 +1377,7 @@ public class TornadoVMInterpreter {
             } else if (argType == TornadoVMBytecodes.PUSH_REFERENCE_ARGUMENT.value()) {
 
                 if (isHostOnlyContext(objects.get(argIndex))) {
-                    if (objects.get(argIndex) instanceof KernelContext && threadDeploy.isEmpty()) {
+                    if (objects.get(argIndex) instanceof KernelContext && threadDeploy.isEmpty() && launchesOneThread(task)) {
                         warnKernelContextWithoutGrid(task.getId());
                     }
                     // Mark a kernel context
@@ -1601,7 +1601,19 @@ public class TornadoVMInterpreter {
     }
 
     /**
-     * A {@link KernelContext} kernel launched without a worker grid runs on a single thread: every
+     * Whether the task launches on a single thread: compiled as a sequential task, with no global
+     * work size set for it (the {@code <task>.global.dims} option sets one).
+     */
+    private static boolean launchesOneThread(SchedulableTask task) {
+        if (task.meta() instanceof TaskDataContext meta) {
+            long[] global = meta.getGlobalWork();
+            return !meta.isParallel() && (global == null || global.length == 0);
+        }
+        return false;
+    }
+
+    /**
+     * A {@link KernelContext} kernel launched on a single thread without a worker grid: every
      * thread index it reads is 0, so a kernel written for one thread a row or element processes one
      * of them and leaves the rest of its output untouched, with no error. This is almost always a
      * grid missing from the execution plan's {@link GridScheduler}, often a task added or renamed

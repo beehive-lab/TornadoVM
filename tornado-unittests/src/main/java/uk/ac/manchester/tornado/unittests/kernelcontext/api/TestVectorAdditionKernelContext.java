@@ -245,9 +245,10 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
     }
 
     /**
-     * A KernelContext task with no worker grid in the execution plan runs on one thread: only
-     * element 0 is computed. The runtime prints a warning naming the task (once a task), since this
-     * is almost always a grid missing from the plan's GridScheduler.
+     * A KernelContext task with no worker grid in the execution plan runs on one thread, so only
+     * element 0 is computed. The inputs differ from the other tests', whose results the output's
+     * device buffer may still hold. The runtime prints a warning naming the task, once a task, since
+     * this is almost always a grid missing from the plan's GridScheduler.
      */
     @Test
     public void vectorAddKernelContextWithoutGrid() throws TornadoExecutionPlanException {
@@ -255,8 +256,8 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
         IntArray a = new IntArray(size);
         IntArray b = new IntArray(size);
         IntArray c = new IntArray(size);
-        a.init(10);
-        b.init(20);
+        a.init(100);
+        b.init(200);
         c.init(-1);
         KernelContext context = new KernelContext();
 
@@ -269,9 +270,9 @@ public class TestVectorAdditionKernelContext extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        assertEquals(30, c.get(0));
+        assertEquals(300, c.get(0));
         for (int i = 1; i < size; i++) {
-            assertNotEquals(30, c.get(i));
+            assertNotEquals(300, c.get(i));
         }
     }
 }
