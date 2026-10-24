@@ -310,10 +310,14 @@ jobs:
           CUDF_DIR="$RUNNER_TEMP/libcudf"
           rm -rf "$CUDF_DIR"
           mkdir -p "$CUDF_DIR/wheels"
+          # The libcudf wheels for the CUDA major the shim links (CUDA_PATH, else /usr/local/cuda, as
+          # its CMakeLists looks), so the SDK needs one CUDA runtime and not libcudf's plus the shim's.
+          CUDART_VERSION=$(sed -n 's/^#define CUDART_VERSION *\([0-9]*\).*/\1/p' "${CUDA_PATH:-/usr/local/cuda}/include/cuda_runtime_api.h")
+          CUDA_MAJOR=$((CUDART_VERSION / 1000))
           python3 -m pip download --quiet --timeout 120 --retries 10 --only-binary=:all: --python-version 3.12 \
             --platform manylinux_2_28_x86_64 --platform manylinux_2_27_x86_64 \
             --platform manylinux_2_17_x86_64 --platform manylinux2014_x86_64 \
-            --extra-index-url https://pypi.nvidia.com -d "$CUDF_DIR/wheels" "libcudf-cu12==$CUDF_VERSION"
+            --extra-index-url https://pypi.nvidia.com -d "$CUDF_DIR/wheels" "libcudf-cu$CUDA_MAJOR==$CUDF_VERSION"
           for wheel in "$CUDF_DIR"/wheels/*.whl; do
             python3 -m zipfile -e "$wheel" "$CUDF_DIR"
           done
@@ -343,6 +347,28 @@ jobs:
             fi
           done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' \( -name '*cuda*' -o -name '*full*' \))
           exit $missing
+
+      - name: Check the native libraries load on an older glibc
+        # A newer build host links the shims to newer glibc symbols (2.38's __isoc23_strtol, from
+        # libcudf's and cuDNN's headers), and the SDK then fails to load on Ubuntu 22.04 and RHEL 9.
+        env:
+          GLIBC_FLOOR: "2.34"
+        run: |
+          failed=0
+          work=$(mktemp -d)
+          while IFS= read -r archive; do
+            rm -rf "$work"/*
+            tar -xzf "$archive" -C "$work" --wildcards '*/lib/*.so'
+            while IFS= read -r so; do
+              needed=$(objdump -T "$so" | grep -o 'GLIBC_2\.[0-9]*' | sed 's/GLIBC_//' | sort -uV | tail -1)
+              if [ -n "$needed" ] && [ "$(printf '%s\n%s\n' "$GLIBC_FLOOR" "$needed" | sort -V | tail -1)" != "$GLIBC_FLOOR" ]; then
+                echo "::error::$(basename "$archive"): $(basename "$so") needs glibc $needed (floor $GLIBC_FLOOR)"
+                failed=1
+              fi
+            done < <(find "$work" -name '*.so')
+          done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' \( -name '*cuda*' -o -name '*full*' \))
+          rm -rf "$work"
+          exit $failed
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
@@ -428,10 +454,14 @@ jobs:
           CUDF_DIR="$RUNNER_TEMP/libcudf"
           rm -rf "$CUDF_DIR"
           mkdir -p "$CUDF_DIR/wheels"
+          # The libcudf wheels for the CUDA major the shim links (CUDA_PATH, else /usr/local/cuda, as
+          # its CMakeLists looks), so the SDK needs one CUDA runtime and not libcudf's plus the shim's.
+          CUDART_VERSION=$(sed -n 's/^#define CUDART_VERSION *\([0-9]*\).*/\1/p' "${CUDA_PATH:-/usr/local/cuda}/include/cuda_runtime_api.h")
+          CUDA_MAJOR=$((CUDART_VERSION / 1000))
           python3 -m pip download --quiet --timeout 120 --retries 10 --only-binary=:all: --python-version 3.12 \
             --platform manylinux_2_28_aarch64 --platform manylinux_2_27_aarch64 \
             --platform manylinux_2_17_aarch64 --platform manylinux2014_aarch64 \
-            --extra-index-url https://pypi.nvidia.com -d "$CUDF_DIR/wheels" "libcudf-cu12==$CUDF_VERSION"
+            --extra-index-url https://pypi.nvidia.com -d "$CUDF_DIR/wheels" "libcudf-cu$CUDA_MAJOR==$CUDF_VERSION"
           for wheel in "$CUDF_DIR"/wheels/*.whl; do
             python3 -m zipfile -e "$wheel" "$CUDF_DIR"
           done
@@ -461,6 +491,28 @@ jobs:
             fi
           done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' -name '*cuda*')
           exit $missing
+
+      - name: Check the native libraries load on an older glibc
+        # A newer build host links the shims to newer glibc symbols (2.38's __isoc23_strtol, from
+        # libcudf's and cuDNN's headers), and the SDK then fails to load on Ubuntu 22.04 and RHEL 9.
+        env:
+          GLIBC_FLOOR: "2.34"
+        run: |
+          failed=0
+          work=$(mktemp -d)
+          while IFS= read -r archive; do
+            rm -rf "$work"/*
+            tar -xzf "$archive" -C "$work" --wildcards '*/lib/*.so'
+            while IFS= read -r so; do
+              needed=$(objdump -T "$so" | grep -o 'GLIBC_2\.[0-9]*' | sed 's/GLIBC_//' | sort -uV | tail -1)
+              if [ -n "$needed" ] && [ "$(printf '%s\n%s\n' "$GLIBC_FLOOR" "$needed" | sort -V | tail -1)" != "$GLIBC_FLOOR" ]; then
+                echo "::error::$(basename "$archive"): $(basename "$so") needs glibc $needed (floor $GLIBC_FLOOR)"
+                failed=1
+              fi
+            done < <(find "$work" -name '*.so')
+          done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' -name '*cuda*')
+          rm -rf "$work"
+          exit $failed
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
