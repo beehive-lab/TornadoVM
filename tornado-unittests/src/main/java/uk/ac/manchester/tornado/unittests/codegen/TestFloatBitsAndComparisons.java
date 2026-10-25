@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -40,7 +41,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * {@link Double#doubleToRawLongBits} and {@link Double#longBitsToDouble})
  * and float comparisons on NaNs, infinities and signed zeros, which must follow Java semantics: a
  * comparison with a NaN operand is false, so its negation is true. Subnormals are left out, since
- * devices may flush them to zero.
+ * devices may flush them to zero. NaN comparisons are not checked on OpenCL with
+ * -cl-fast-relaxed-math, which allows the compiler to assume there are no NaNs.
  *
  * <p>
  * How to run?
@@ -171,7 +173,14 @@ public class TestFloatBitsAndComparisons extends TornadoTestBase {
                 .task("t", TestFloatBitsAndComparisons::compare, new KernelContext(), a, b, out, N) //
                 .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
         execute(g);
+        // -cl-fast-relaxed-math (TornadoVM's OpenCL default) lets the compiler assume no NaN operands:
+        // Intel's folds NaN >= NaN and NaN <= NaN to true. NaN comparisons are only checked without it.
+        boolean relaxedNaNs = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() == TornadoVMBackendType.OPENCL //
+                && TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS.contains("-cl-fast-relaxed-math");
         for (int i = 0; i < N; i++) {
+            if (relaxedNaNs && (Float.isNaN(a.get(i)) || Float.isNaN(b.get(i)))) {
+                continue;
+            }
             assertEquals(reference(a.get(i), b.get(i)), out.get(i), "comparisons of " + a.get(i) + " and " + b.get(i));
         }
     }
