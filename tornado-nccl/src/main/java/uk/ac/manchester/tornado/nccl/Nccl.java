@@ -77,6 +77,25 @@ public final class Nccl {
                 Access.READ_ONLY, Access.READ_WRITE, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY);
     }
 
+    /**
+     * Starts {@code buffer = op(buffer of every rank)}, in place, on a stream of its own, and lets the
+     * plan go on at once: the tasks after it on the plan's stream run while the collective is in
+     * flight, until {@link #allReduceWait} with the same {@code tag} makes the plan's stream wait for
+     * it. Nothing between the two may read or write {@code buffer}. It overlaps a collective with
+     * independent work, such as the all-reduce of the last layers' gradients with the backward pass of
+     * the first layers in data-parallel training. Tags tell apart collectives of one communicator in
+     * flight at the same time; a plan captured into a CUDA graph keeps the overlap.
+     */
+    public static LibraryTaskDescriptor allReduceInPlaceStart(NcclCommunicator communicator, TornadoNativeArray buffer, NcclRedOp op, int tag) {
+        return describe("allReduceInPlaceStart", new Object[] { communicator.handle(), buffer, op.code(), dataType(buffer), (long) buffer.getSize(), tag }, //
+                Access.READ_ONLY, Access.READ_WRITE, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY, Access.READ_ONLY);
+    }
+
+    /** Makes the plan's stream wait for the collective {@link #allReduceInPlaceStart} started on {@code buffer} with {@code tag}. */
+    public static LibraryTaskDescriptor allReduceWait(NcclCommunicator communicator, TornadoNativeArray buffer, int tag) {
+        return describe("allReduceWait", new Object[] { communicator.handle(), buffer, tag }, Access.READ_ONLY, Access.READ_WRITE, Access.READ_ONLY);
+    }
+
     /** Copies {@code buffer} of rank {@code root} into {@code buffer} of every other rank, in place. */
     public static LibraryTaskDescriptor broadcast(NcclCommunicator communicator, TornadoNativeArray buffer, int root) {
         requireRank(communicator, root, "broadcast");

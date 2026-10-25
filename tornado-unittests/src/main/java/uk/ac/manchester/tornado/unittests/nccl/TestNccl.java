@@ -403,6 +403,74 @@ public class TestNccl extends TornadoTestBase {
         checkAverage(buffers, n, step[0]);
     }
 
+    /**
+     * The all-reduce started on a stream of its own while a kernel on other data runs on the plan's
+     * stream, then waited for before a kernel reads its result: plain and captured into a CUDA graph,
+     * over several executions.
+     */
+    @Test
+    public void testAllReduceStartWaitOverlapped() {
+        overlapped(false);
+    }
+
+    @Test
+    public void testAllReduceStartWaitInCudaGraph() {
+        overlapped(true);
+    }
+
+    private void overlapped(boolean cudaGraph) {
+        TornadoDevice[] devices = cudaDevices();
+        int n = devices.length;
+        final int steps = 3;
+        FloatArray[] inputs = new FloatArray[n];
+        FloatArray[] buffers = new FloatArray[n];
+        FloatArray[] second = new FloatArray[n];
+        FloatArray[] others = new FloatArray[n];
+        int[] step = { -1 };
+        try (NcclCommunicator communicator = NcclCommunicator.create(devices)) {
+            runRanks(devices, SIZE, 4, steps, (rank, name) -> {
+                inputs[rank] = new FloatArray(SIZE);
+                buffers[rank] = new FloatArray(SIZE);
+                second[rank] = new FloatArray(SIZE);
+                others[rank] = new FloatArray(SIZE);
+                return new TaskGraph(name) //
+                        .transferToDevice(DataTransferMode.EVERY_EXECUTION, inputs[rank]) //
+                        .task("k0", TestNccl::twice, new KernelContext(), inputs[rank], buffers[rank]) //
+                        .task("k1", TestNccl::twice, new KernelContext(), inputs[rank], second[rank]) //
+                        .libraryTask("start", Nccl::allReduceInPlaceStart, communicator, buffers[rank], NcclRedOp.AVG, 1) //
+                        .libraryTask("start2", Nccl::allReduceInPlaceStart, communicator, second[rank], NcclRedOp.AVG, 2) //
+                        // runs while both collectives are in flight
+                        .task("k2", TestNccl::twice, new KernelContext(), inputs[rank], others[rank]) //
+                        .libraryTask("wait", Nccl::allReduceWait, communicator, buffers[rank], 1) //
+                        .libraryTask("wait2", Nccl::allReduceWait, communicator, second[rank], 2) //
+                        .task("k3", TestNccl::addOne, new KernelContext(), buffers[rank]) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, buffers[rank], second[rank], others[rank]);
+            }, () -> {
+                if (step[0] >= 0) {
+                    checkAverage(buffers, n, step[0]);
+                    checkOverlapped(inputs, second, others, n, step[0]);
+                }
+                step[0]++;
+                for (int rank = 0; rank < n; rank++) {
+                    for (int i = 0; i < SIZE; i++) {
+                        inputs[rank].set(i, rank + step[0] + i % 3);
+                    }
+                }
+            }, cudaGraph);
+        }
+        checkAverage(buffers, n, step[0]);
+        checkOverlapped(inputs, second, others, n, step[0]);
+    }
+
+    private static void checkOverlapped(FloatArray[] inputs, FloatArray[] second, FloatArray[] others, int n, int step) {
+        for (int rank = 0; rank < n; rank++) {
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(2.0f * ((n - 1) / 2.0f + step + i % 3), second[rank].get(i), 1e-4f);
+                assertEquals(2.0f * inputs[rank].get(i), others[rank].get(i), 1e-4f);
+            }
+        }
+    }
+
     private static void checkAverage(FloatArray[] buffers, int n, int step) {
         for (int rank = 0; rank < n; rank++) {
             for (int i = 0; i < SIZE; i++) {

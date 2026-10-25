@@ -85,6 +85,14 @@ public final class NcclNativeLib {
     private static final MethodHandle NCCL_GROUP_START;
     private static final MethodHandle NCCL_GROUP_END;
     private static final MethodHandle CUDA_GET_DEVICE;
+    private static final MethodHandle CUDA_STREAM_CREATE_WITH_FLAGS;
+    private static final MethodHandle CUDA_EVENT_CREATE_WITH_FLAGS;
+    private static final MethodHandle CUDA_EVENT_RECORD;
+    private static final MethodHandle CUDA_STREAM_WAIT_EVENT;
+
+    /** {@code cudaStreamNonBlocking} and {@code cudaEventDisableTiming}. */
+    private static final int CUDA_STREAM_NON_BLOCKING = 1;
+    private static final int CUDA_EVENT_DISABLE_TIMING = 2;
 
     static {
         if (LIBNCCL == null || LIBCUDART == null) {
@@ -105,6 +113,10 @@ public final class NcclNativeLib {
             NCCL_GROUP_START = null;
             NCCL_GROUP_END = null;
             CUDA_GET_DEVICE = null;
+            CUDA_STREAM_CREATE_WITH_FLAGS = null;
+            CUDA_EVENT_CREATE_WITH_FLAGS = null;
+            CUDA_EVENT_RECORD = null;
+            CUDA_STREAM_WAIT_EVENT = null;
         } else {
             NCCL_GET_VERSION = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetVersion");
             NCCL_GET_ERROR_STRING = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_POINTER, C_INT), "ncclGetErrorString");
@@ -130,6 +142,11 @@ public final class NcclNativeLib {
             NCCL_GROUP_START = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT), "ncclGroupStart");
             NCCL_GROUP_END = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT), "ncclGroupEnd");
             CUDA_GET_DEVICE = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_POINTER), "cudaGetDevice");
+            // the side stream and the events of the collectives started with allReduceInPlaceStart
+            CUDA_STREAM_CREATE_WITH_FLAGS = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), "cudaStreamCreateWithFlags");
+            CUDA_EVENT_CREATE_WITH_FLAGS = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), "cudaEventCreateWithFlags");
+            CUDA_EVENT_RECORD = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_LONG, C_LONG), "cudaEventRecord");
+            CUDA_STREAM_WAIT_EVENT = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT), "cudaStreamWaitEvent");
         }
     }
 
@@ -277,6 +294,49 @@ public final class NcclNativeLib {
             check((int) NCCL_ALL_REDUCE.invokeExact(send, recv, count, dataType, op, comm, stream), "ncclAllReduce");
         } catch (Throwable t) {
             throw rethrow(t);
+        }
+    }
+
+    /**
+     * A non-blocking stream and two events (no timing) of the device current on this thread: where a
+     * started collective runs, and the fork and join points that order it with the plan's stream.
+     */
+    static long[] createSideChannel() {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment handle = FFMSupport.allocateArray(arena, C_LONG, 1);
+            long[] result = new long[3];
+            cudaCheck((int) CUDA_STREAM_CREATE_WITH_FLAGS.invokeExact(handle, CUDA_STREAM_NON_BLOCKING), "cudaStreamCreateWithFlags");
+            result[0] = handle.get(C_LONG, 0);
+            for (int i = 1; i < 3; i++) {
+                cudaCheck((int) CUDA_EVENT_CREATE_WITH_FLAGS.invokeExact(handle, CUDA_EVENT_DISABLE_TIMING), "cudaEventCreateWithFlags");
+                result[i] = handle.get(C_LONG, 0);
+            }
+            return result;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    static void eventRecord(long event, long stream) {
+        try {
+            cudaCheck((int) CUDA_EVENT_RECORD.invokeExact(event, stream), "cudaEventRecord");
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** Work enqueued on {@code stream} after this waits for {@code event}. */
+    static void streamWaitEvent(long stream, long event) {
+        try {
+            cudaCheck((int) CUDA_STREAM_WAIT_EVENT.invokeExact(stream, event, 0), "cudaStreamWaitEvent");
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    private static void cudaCheck(int result, String call) {
+        if (result != CUDA_SUCCESS) {
+            throw new TornadoRuntimeException("[ERROR] " + call + " failed with status " + result);
         }
     }
 
