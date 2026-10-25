@@ -448,7 +448,9 @@ final class CuDnnNativeLib {
     /** Size of {@code cudnnConvolutionFwdAlgoPerf_t}, and the offsets of the fields read from it. */
     private static final int ALGO_PERF_BYTES = 48;
     private static final int ALGO_PERF_STATUS = 4;
+    private static final int ALGO_PERF_DETERMINISM = 24;
     private static final int ALGO_PERF_MATH_TYPE = 28;
+    private static final int CUDNN_DETERMINISTIC = 1;
     private static final int ALGO_PERF_COUNT = 8;
 
     /**
@@ -551,8 +553,9 @@ final class CuDnnNativeLib {
     /**
      * The first algorithm cuDNN's heuristics ({@code query}, one of the {@code _v7} queries; the
      * descriptors in its argument order) return that supports the descriptors; its math type is set
-     * on {@code convDesc}. The backward results have the forward result's layout. Returns -1 when none
-     * does.
+     * on {@code convDesc}. The backward results have the forward result's layout. With
+     * {@code -Dtornado.cudnn.deterministic=true} only algorithms cuDNN reports as deterministic are
+     * taken. Returns -1 when none qualifies.
      */
     private static int heuristicAlgorithm(Arena arena, MethodHandle query, long handle, long desc1, long desc2, long convDesc, long desc3) throws Throwable {
         MemorySegment count = FFMSupport.allocateArray(arena, C_INT, 1);
@@ -563,7 +566,8 @@ final class CuDnnNativeLib {
         }
         for (int i = 0; i < count.get(C_INT, 0); i++) {
             MemorySegment result = perf.asSlice((long) i * ALGO_PERF_BYTES, ALGO_PERF_BYTES);
-            if (result.get(C_INT, ALGO_PERF_STATUS) == CUDNN_STATUS_SUCCESS) {
+            boolean deterministic = !Boolean.getBoolean("tornado.cudnn.deterministic") || result.get(C_INT, ALGO_PERF_DETERMINISM) == CUDNN_DETERMINISTIC;
+            if (result.get(C_INT, ALGO_PERF_STATUS) == CUDNN_STATUS_SUCCESS && deterministic) {
                 status = (int) SET_CONVOLUTION_MATH_TYPE.invokeExact(convDesc, result.get(C_INT, ALGO_PERF_MATH_TYPE));
                 return status == CUDNN_STATUS_SUCCESS ? result.get(C_INT, 0) : -1;
             }
