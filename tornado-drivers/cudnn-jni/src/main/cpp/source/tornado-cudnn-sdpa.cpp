@@ -56,6 +56,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include <cudnn.h>
 #include <cudnn_frontend.h>
@@ -82,10 +83,14 @@ typedef struct sdpa_plan_s {
  * V[b,h,s_kv,d] -> O[b,h,s_q,d], packed BHSD strides. Returns an opaque plan
  * pointer, or 0 on failure (the frontend error is printed to stderr).
  */
-JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_createSdpaPlan
-        (JNIEnv *env, jclass clazz, jlong handle, jint b, jint h, jint s_q, jint s_kv, jint d,
-         jfloat scale, jboolean causal) {
-
+/*
+ * Builds and finalizes the fused SDPA graph for Q[b,h,s_q,d], K[b,h,s_kv,d], V[b,h,s_kv,d] ->
+ * O[b,h,s_q,d] with the given element strides (batch, head, sequence, dim). Returns 0 on failure
+ * (the frontend error is printed to stderr).
+ */
+static sdpa_plan_t *build_sdpa_plan(cudnnHandle_t handle, int64_t b, int64_t h, int64_t s_q, int64_t s_kv, int64_t d, float scale, bool causal,
+                                    const std::vector<int64_t> &stride_q, const std::vector<int64_t> &stride_k,
+                                    const std::vector<int64_t> &stride_v, const std::vector<int64_t> &stride_o) {
     auto plan = new sdpa_plan_t();
     plan->graph = std::make_shared<fe::graph::Graph>();
     plan->graph->set_io_data_type(fe::DataType_t::HALF)
@@ -93,13 +98,11 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNative
                .set_compute_data_type(fe::DataType_t::FLOAT);
 
     auto dim_q = std::vector<int64_t>{b, h, s_q, d};
-    auto stride_q = std::vector<int64_t>{(int64_t) h * s_q * d, (int64_t) s_q * d, d, 1};
     auto dim_kv = std::vector<int64_t>{b, h, s_kv, d};
-    auto stride_kv = std::vector<int64_t>{(int64_t) h * s_kv * d, (int64_t) s_kv * d, d, 1};
 
     plan->q = plan->graph->tensor(fe::graph::Tensor_attributes().set_name("Q").set_dim(dim_q).set_stride(stride_q));
-    plan->k = plan->graph->tensor(fe::graph::Tensor_attributes().set_name("K").set_dim(dim_kv).set_stride(stride_kv));
-    plan->v = plan->graph->tensor(fe::graph::Tensor_attributes().set_name("V").set_dim(dim_kv).set_stride(stride_kv));
+    plan->k = plan->graph->tensor(fe::graph::Tensor_attributes().set_name("K").set_dim(dim_kv).set_stride(stride_k));
+    plan->v = plan->graph->tensor(fe::graph::Tensor_attributes().set_name("V").set_dim(dim_kv).set_stride(stride_v));
 
     auto sdpa_options = fe::graph::SDPA_attributes()
             .set_name("sdpa")
@@ -112,13 +115,13 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNative
     auto [o, stats] = plan->graph->sdpa(plan->q, plan->k, plan->v, sdpa_options);
     (void) stats; // null in inference mode
     plan->o = o;
-    plan->o->set_output(true).set_dim(dim_q).set_stride(stride_q);
+    plan->o->set_output(true).set_dim(dim_q).set_stride(stride_o);
 
-    auto status = plan->graph->build((cudnnHandle_t) handle, {fe::HeurMode_t::A});
+    auto status = plan->graph->build(handle, {fe::HeurMode_t::A});
     if (status.is_bad()) {
         fprintf(stderr, "[tornado-cudnn] SDPA plan build failed: %s\n", status.get_message().c_str());
         delete plan;
-        return 0;
+        return nullptr;
     }
 
     int64_t workspace = 0;
@@ -126,10 +129,45 @@ JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNative
     if (wsStatus.is_bad()) {
         fprintf(stderr, "[tornado-cudnn] SDPA workspace query failed: %s\n", wsStatus.get_message().c_str());
         delete plan;
-        return 0;
+        return nullptr;
     }
     plan->workspaceBytes = workspace;
-    return (jlong) plan;
+    return plan;
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib
+ * Method:    createSdpaPlan
+ * Signature: (JIIIIIFZ)J
+ *
+ * Packed BHSD strides. Returns an opaque plan pointer, or 0 on failure.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_createSdpaPlan
+        (JNIEnv *env, jclass clazz, jlong handle, jint b, jint h, jint s_q, jint s_kv, jint d,
+         jfloat scale, jboolean causal) {
+    auto stride_q = std::vector<int64_t>{(int64_t) h * s_q * d, (int64_t) s_q * d, d, 1};
+    auto stride_kv = std::vector<int64_t>{(int64_t) h * s_kv * d, (int64_t) s_kv * d, d, 1};
+    return (jlong) build_sdpa_plan((cudnnHandle_t) handle, b, h, s_q, s_kv, d, scale, causal, stride_q, stride_kv, stride_kv, stride_q);
+}
+
+/*
+ * Class:     uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib
+ * Method:    createSdpaPlanStrided
+ * Signature: (JIIIIIFZ[J)J
+ *
+ * strides: 16 element strides, (batch, head, sequence, dim) of Q, K, V and then O.
+ */
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_createSdpaPlanStrided
+        (JNIEnv *env, jclass clazz, jlong handle, jint b, jint h, jint s_q, jint s_kv, jint d,
+         jfloat scale, jboolean causal, jlongArray strides) {
+    if (strides == nullptr || env->GetArrayLength(strides) != 16) {
+        fprintf(stderr, "[tornado-cudnn] SDPA strides: expected 16 values\n");
+        return 0;
+    }
+    jlong st[16];
+    env->GetLongArrayRegion(strides, 0, 16, st);
+    std::vector<int64_t> q(st, st + 4), k(st + 4, st + 8), v(st + 8, st + 12), o(st + 12, st + 16);
+    return (jlong) build_sdpa_plan((cudnnHandle_t) handle, b, h, s_q, s_kv, d, scale, causal, q, k, v, o);
 }
 
 /*
@@ -187,6 +225,17 @@ JNIEXPORT void JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeL
  */
 
 extern "C" {
+
+JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_createSdpaPlanStrided
+        (JNIEnv *env, jclass clazz, jlong handle, jint b, jint h, jint s_q, jint s_kv, jint d,
+         jfloat scale, jboolean causal, jlongArray strides) {
+    (void) env; (void) clazz; (void) handle; (void) b; (void) h; (void) s_q; (void) s_kv; (void) d;
+    (void) scale; (void) causal; (void) strides;
+    fprintf(stderr, "[tornado-cudnn] fused SDPA unavailable: built against CUDA %d.%d "
+                    "(requires CUDA >= 12.0 for the cudnn-frontend flash-attention path)\n",
+            CUDA_VERSION / 1000, (CUDA_VERSION % 1000) / 10);
+    return 0;
+}
 
 JNIEXPORT jlong JNICALL Java_uk_ac_manchester_tornado_cudnn_provider_CuDnnNativeLib_createSdpaPlan
         (JNIEnv *env, jclass clazz, jlong handle, jint b, jint h, jint s_q, jint s_kv, jint d,
