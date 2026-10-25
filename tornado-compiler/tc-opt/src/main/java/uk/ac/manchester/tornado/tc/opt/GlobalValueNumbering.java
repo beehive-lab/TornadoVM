@@ -57,17 +57,32 @@ public final class GlobalValueNumbering implements Pass {
             ordinal.put(param, ordinal.size());
         }
         boolean changed = false;
-        record Frame(Block block, Map<Key, Inst> scope) {
+        // One table for the dominator-tree walk: a block's keys are removed when its subtree is done,
+        // instead of each block copying its parent's table.
+        var scope = new HashMap<Key, Inst>();
+        final class Frame {
+            final Block block;
+            final List<Key> added = new ArrayList<>();
+            boolean entered;
+
+            Frame(Block block) {
+                this.block = block;
+            }
         }
         var stack = new ArrayDeque<Frame>();
-        stack.push(new Frame(function.entry(), new HashMap<>()));
+        stack.push(new Frame(function.entry()));
         while (!stack.isEmpty()) {
-            var frame = stack.pop();
-            var scope = new HashMap<>(frame.scope());
-            for (var arg : frame.block().args()) {
+            var frame = stack.peek();
+            if (frame.entered) {
+                stack.pop();
+                frame.added.forEach(scope::remove);
+                continue;
+            }
+            frame.entered = true;
+            for (var arg : frame.block.args()) {
                 ordinal.putIfAbsent(arg, ordinal.size());
             }
-            for (var inst : List.copyOf(frame.block().insts())) {
+            for (var inst : List.copyOf(frame.block.insts())) {
                 if (inst.producesValue() && inst.opcode().isPure()) {
                     var key = key(inst, ordinal);
                     var existing = scope.get(key);
@@ -78,12 +93,13 @@ public final class GlobalValueNumbering implements Pass {
                         continue;
                     }
                     scope.put(key, inst);
+                    frame.added.add(key);
                 }
                 ordinal.putIfAbsent(inst, ordinal.size());
             }
-            var children = new ArrayList<>(tree.children(frame.block()));
+            var children = new ArrayList<>(tree.children(frame.block));
             for (int i = children.size() - 1; i >= 0; i--) {
-                stack.push(new Frame(children.get(i), scope));
+                stack.push(new Frame(children.get(i)));
             }
         }
         return changed;

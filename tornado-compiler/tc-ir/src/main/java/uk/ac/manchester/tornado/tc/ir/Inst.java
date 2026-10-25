@@ -127,6 +127,12 @@ public final class Inst extends Value {
         args.forEach(arg -> arg.addUser(this));
     }
 
+    /** Appends {@code arg} to the arguments of successor {@code index}. */
+    public void addSuccessorArg(int index, Value arg) {
+        successors.get(index).mutableArgs().add(arg);
+        arg.addUser(this);
+    }
+
     /** All values this instruction reads: operands followed by successor arguments. */
     public List<Value> allUses() {
         var all = new ArrayList<Value>(operands);
