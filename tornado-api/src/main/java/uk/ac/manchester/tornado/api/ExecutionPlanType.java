@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
+import uk.ac.manchester.tornado.api.plan.types.WithAutoTune;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAPendingLaunchCount;
@@ -54,7 +55,7 @@ public abstract sealed class ExecutionPlanType extends TornadoExecutionPlan //
         WithConcurrentDevices, WithDefaultScheduler, WithDevice,  //
         WithFreeDeviceMemory, WithGraph, WithGridScheduler, WithMemoryLimit, WithPrintKernel, WithProfiler, //
         WithResetDevice, WithThreadInfo, WithWarmUpIterations, WithWarmUpTime, WithCUDAGraph, WithCUDAPendingLaunchCount, WithIntraPlanConcurrency, //
-        WithStagedTransfers, WithPlanResultsHistory, OffPlanResultsHistory { //
+        WithStagedTransfers, WithPlanResultsHistory, OffPlanResultsHistory, WithAutoTune { //
 
     public ExecutionPlanType(TornadoExecutionPlan parentNode) {
 
