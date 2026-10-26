@@ -135,7 +135,8 @@ public enum TornadoVMBytecodes {
     ADD_DEPENDENCY((byte) 19),
 
     /**
-     * Open an execution context. It needs a context-id (device-id).
+     * Open an execution context. It needs the context's slot in the bytecode, which is always 0:
+     * each device runs its own bytecode with one context.
      * <p>
      * Format:
      *
