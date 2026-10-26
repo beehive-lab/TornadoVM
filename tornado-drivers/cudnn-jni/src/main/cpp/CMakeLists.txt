@@ -146,6 +146,10 @@ endif()
 # cuDNN surface is bound directly from Java (see CuDnnNativeLib), and its former translation
 # unit has been deleted.
 set(SOURCE_FILES "source/tornado-cudnn-sdpa.cpp")
+# Keeps the shim loadable on a glibc older than the build host's (see source/glibc_compat.cpp).
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND SOURCE_FILES "source/glibc_compat.cpp")
+endif()
 add_library(tornado-cudnn SHARED ${SOURCE_FILES})
 
 
