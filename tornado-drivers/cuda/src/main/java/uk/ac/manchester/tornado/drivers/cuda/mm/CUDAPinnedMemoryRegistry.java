@@ -50,10 +50,14 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
  *   <li><b>Provable-liveness revival</b>: a cached pin is revived only when the request
  *       presents the SAME {@link MemorySegment} instance (tracked by weak reference).
  *       A new segment at a reused address is a different instance, and a collected
- *       segment clears the weak reference - both force unregister + fresh register, so
- *       DMA always sees the current physical pages. </li>
- *   <li><b>Sync before unpin</b>: the native unregister synchronises the context first,
- *       so no in-flight async DMA can still touch a region being unpinned.</li>
+ *       segment clears the weak reference - both force an unregister, and the next
+ *       allocation registers the current physical pages, so DMA always sees them. </li>
+ *   <li><b>Sync before unpin, off the plan threads</b>: unregistering synchronises every
+ *       context first, so no in-flight async DMA can still touch a region being unpinned.
+ *       It runs on the context's unpinning thread: the driver also synchronises every device
+ *       there, and a thread running plans could block on another thread's work (an NCCL
+ *       collective waiting for this thread's next one). A region being unregistered stays
+ *       pageable until that has finished.</li>
  *   <li><b>External pins are never stolen</b>: if the driver reports the range as
  *       already registered by someone outside this registry the entry is tracked
  *       as {@code external} and this registry never unregisters it.</li>
@@ -101,6 +105,8 @@ public final class CUDAPinnedMemoryRegistry {
 
     private final CUDAContext context;
     private final Map<Long, Registration> registrations = new HashMap<>();
+    /** Regions whose unregistration is queued on the context's unpinning thread. */
+    private final java.util.Set<Long> unpinning = new java.util.HashSet<>();
 
     public CUDAPinnedMemoryRegistry(CUDAContext context) {
         this.context = context;
@@ -118,7 +124,8 @@ public final class CUDAPinnedMemoryRegistry {
             return false;
         }
         long hostPointer = segment.address();
-        if (hostPointer == 0) {
+        if (hostPointer == 0 || unpinning.contains(hostPointer)) {
+            // a region still being unregistered stays pageable this time
             return false;
         }
         Registration entry = registrations.get(hostPointer);
@@ -129,12 +136,13 @@ public final class CUDAPinnedMemoryRegistry {
                 return true;
             }
             // Different instance or size at a known base: the old segment died and the
-            // address was reused. Drop the stale pin (native side syncs first) and fall
-            // through to register the current physical pages.
-            if (!entry.external) {
-                context.unregisterPinnedMemory(hostPointer);
-            }
+            // address was reused. Drop the stale pin; the current pages are registered on a
+            // later allocation, once it is gone, and stay pageable until then.
             registrations.remove(hostPointer);
+            if (!entry.external) {
+                unregisterLater(hostPointer);
+                return false;
+            }
         }
         int result = context.registerPinnedMemory(hostPointer, numBytes);
         if (result == 0) {
@@ -178,7 +186,7 @@ public final class CUDAPinnedMemoryRegistry {
             Registration registration = entry.getValue();
             if (registration.refCount == 0 || registration.segmentRef.get() == null) {
                 if (!registration.external) {
-                    context.unregisterPinnedMemory(entry.getKey());
+                    unregisterLater(entry.getKey());
                 }
                 it.remove();
             }
@@ -194,9 +202,23 @@ public final class CUDAPinnedMemoryRegistry {
     public synchronized void unpinAll() {
         for (Map.Entry<Long, Registration> entry : registrations.entrySet()) {
             if (!entry.getValue().external) {
-                context.unregisterPinnedMemory(entry.getKey());
+                unregisterLater(entry.getKey());
             }
         }
         registrations.clear();
+    }
+
+    /**
+     * Queues the unregistration of an owned pin on the context's unpinning thread: unregistering
+     * synchronises every device, which can block a thread running plans on another thread's
+     * collective (see {@link CUDAContext#unregisterPinnedMemoryLater}).
+     */
+    private void unregisterLater(long hostPointer) {
+        unpinning.add(hostPointer);
+        context.unregisterPinnedMemoryLater(hostPointer, () -> {
+            synchronized (this) {
+                unpinning.remove(hostPointer);
+            }
+        });
     }
 }
