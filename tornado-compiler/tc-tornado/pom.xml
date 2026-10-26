@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-compiler</artifactId>
-        <version>${revision}</version>
+        <version>8.0.0</version>
     </parent>
 
     <!-- TornadoVM-specific lowering on TC-SSA: kernel ABI lowering, parallel loops, KernelContext,

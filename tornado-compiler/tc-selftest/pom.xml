@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-compiler</artifactId>
-        <version>${revision}</version>
+        <version>8.0.0</version>
     </parent>
 
     <!-- tornado-selftest: checks TC on this machine's devices (kernels run on a device and compared with

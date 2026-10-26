@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-compiler</artifactId>
-        <version>${revision}</version>
+        <version>8.0.0</version>
     </parent>
 
     <!-- LLVM-style test infrastructure for TC: a FileCheck implementation and a lit-like runner for
