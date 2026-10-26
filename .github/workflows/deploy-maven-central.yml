@@ -46,6 +46,11 @@ on:
         required: false
         type: string
         default: '["jdk21", "jdk22plus"]'
+      modules:
+        description: 'Comma-separated -pl list to deploy on its own (e.g. tornado-drivers/cuda), for re-publishing modules missing from a release; empty deploys everything'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   deploy:
@@ -159,6 +164,19 @@ jobs:
           # allocate memory". The failed module makes Maven skip tornado-drivers-cuda, and the
           # central-publishing plugin then waits forever for it ("Waiting for other projects
           # build to finish..."), hiding the real error until the job timeout.
+          if [ -n "$MODULES" ]; then
+            # Partial re-publish: install the modules and their dependencies locally (install
+            # publishes nothing, central-publishing is bound to deploy), then deploy each module
+            # in its own mvn run with no -am, so each bundle holds exactly that module. One run
+            # per module because central-publishing 0.6.0 can upload the bundle before the last
+            # reactor module is built, silently dropping the rest (how v8.0.0 lost 9 modules).
+            mvn clean install -T 1 -P${{ matrix.jdk }},cuda-backend,release -pl "$MODULES" -am -DskipTests --batch-mode
+            IFS=',' read -ra MODS <<< "$MODULES"
+            for m in "${MODS[@]}"; do
+              mvn deploy -T 1 -P${{ matrix.jdk }},cuda-backend,release -pl "$m" -DskipTests --batch-mode
+            done
+            exit 0
+          fi
           mvn clean deploy \
             -T 1 \
             -P${{ matrix.jdk }},cuda-backend,release \
@@ -171,6 +189,7 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MODULES: ${{ inputs.modules }}
 
       - name: Draft release (test) - Maven Central
         if: ${{ inputs.draft_release_test == true }}
@@ -181,7 +200,8 @@ jobs:
   dispatch-sdkman:
     name: Dispatch SDKMAN publish
     needs: deploy
-    if: needs.deploy.result == 'success'
+    # A partial re-publish (modules set) must not publish SDKMAN again: that already happened.
+    if: needs.deploy.result == 'success' && inputs.modules == ''
     runs-on: [self-hosted, Linux, x64]
     permissions:
       actions: write
