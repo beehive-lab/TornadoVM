@@ -50,7 +50,11 @@ public abstract class MlxTestBase extends TornadoTestBase {
     public void mlxMustBeAvailable() {
         TornadoVMBackendType backend = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
         if (backend != TornadoVMBackendType.METAL) {
-            assertNotBackend(backend, "MLX library tasks require the Metal backend (default device is " + backend + ")");
+            String message = "MLX library tasks require the Metal backend (default device is " + backend + ")";
+            switch (backend) {
+                case CUDA, OPENCL -> assertNotBackend(backend, message);
+                default -> throw new TornadoVMMetalNotSupported(message);
+            }
         }
         if (!MlxLibraryProvider.isAvailable()) {
             throw new TornadoVMMetalNotSupported("mlx.metallib is not available on this host");
