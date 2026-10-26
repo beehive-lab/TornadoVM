@@ -154,13 +154,16 @@ jobs:
         run: |
           # cuda-backend only puts tornado-drivers/cuda in the reactor; -pl keeps the native
           # *-jni shims (CMake, need the CUDA toolkit) out, and they stay in the SDK.
-          # -T 1 overrides .mvn/maven.config's -T1.5C: ~11 modules reach maven-gpg-plugin at
-          # once in a parallel build and gpg-agent fails some with "signing failed: Cannot
-          # allocate memory". The failed module makes Maven skip tornado-drivers-cuda, and the
-          # central-publishing plugin then waits forever for it ("Waiting for other projects
-          # build to finish..."), hiding the real error until the job timeout.
+          # The deploy must run on Maven's single-threaded builder, so .mvn/maven.config's -T1.5C
+          # is dropped for this checkout only (never committed). A parallel build has ~11 modules
+          # reach maven-gpg-plugin at once, and gpg-agent fails some with "signing failed: Cannot
+          # allocate memory". Passing -T 1 is not enough: it still schedules modules as their
+          # dependencies finish rather than in reactor order, while central-publishing uploads
+          # the bundle when it reaches the last module in reactor order (tornado-mlx). 8.0.0 was
+          # uploaded that way before the tc-* modules, tornado-drivers-common and
+          # tornado-drivers-cuda were built, and those nine never reached Central.
+          sed -i '/^-T/d' .mvn/maven.config
           mvn clean deploy \
-            -T 1 \
             -P${{ matrix.jdk }},cuda-backend,release \
             -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-clblast,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
             -am \
@@ -171,6 +174,26 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           GPG_KEYNAME: ${{ secrets.GPG_KEYNAME }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Check every staged module was in the uploaded bundle
+        # central-publishing stages each module under target/central-staging and uploads
+        # target/central-publishing/central-bundle.zip once. A module staged after the upload is
+        # never published, yet Maven still reports BUILD SUCCESS. Failing here keeps the SDKMAN
+        # dispatch below from running on a partial release.
+        if: ${{ inputs.draft_release_test != true }}
+        run: |
+          set -euo pipefail
+          staging=target/central-staging/io/github/beehive-lab
+          bundle=target/central-publishing/central-bundle.zip
+          staged=$(find "$staging" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)
+          bundled=$(python3 -c 'import sys, zipfile; print("\n".join(sorted({n.split("/")[3] for n in zipfile.ZipFile(sys.argv[1]).namelist() if n.count("/") >= 4})))' "$bundle")
+          missing=$(comm -23 <(echo "$staged") <(echo "$bundled"))
+          if [ -n "$missing" ]; then
+            echo "::error::Staged but not in the uploaded bundle, so not published to Maven Central:"
+            echo "$missing" | sed 's/^/  /'
+            exit 1
+          fi
+          echo "All $(echo "$staged" | wc -l) staged modules are in the uploaded bundle."
 
       - name: Draft release (test) - Maven Central
         if: ${{ inputs.draft_release_test == true }}
