@@ -568,6 +568,47 @@ set(cutlass_SOURCE_DIR "${CUTLASS_SOURCE_DIR}")
     ok("Patched worktree cutlass-jni/CMakeLists.txt to sparse-checkout CUTLASS (avoids Windows MAX_PATH).")
 
 
+# Native shims that include <stdlib.h> and so, built on glibc >= 2.38, reference __isoc23_strtol.
+_GLIBC_COMPAT_SHIMS = {
+    "cudnn-jni": "tornado-cudnn",
+    "cudf-jni": "tornado-cudf",
+}
+
+
+def patch_worktree_glibc_compat(worktree_path, repo_root):
+    """
+    Add glibc_compat.cpp to the cuDNN and cuDF shims in a worktree whose tag predates it.
+
+    Built on glibc 2.38 or newer, the shims reference __isoc23_strtol and friends, so the SDK fails
+    to load on Ubuntu 22.04 and RHEL 9 (and build-release-sdks.yml's glibc floor check fails the
+    release). glibc_compat.cpp defines those symbols in the shim itself. v8.0.0 and earlier tags do
+    not have it, and published tags are immutable, so as with the CUTLASS patch above the file is
+    copied from this checkout into the throw-away worktree and appended to each shim's target.
+    A tag that already has the file is left alone.
+    """
+    for module, target in _GLIBC_COMPAT_SHIMS.items():
+        rel_dir = os.path.join("tornado-drivers", module, "src", "main", "cpp")
+        compat_rel = os.path.join(rel_dir, "source", "glibc_compat.cpp")
+        cmake_path = os.path.join(worktree_path, rel_dir, "CMakeLists.txt")
+        if not os.path.isfile(cmake_path):
+            continue
+        if os.path.isfile(os.path.join(worktree_path, compat_rel)):
+            continue
+        compat_src = os.path.join(repo_root, compat_rel)
+        if not os.path.isfile(compat_src):
+            warn(f"{compat_rel} not found in {repo_root} — cannot patch {module}; "
+                 f"its shim may need a newer glibc than the release floor.")
+            continue
+        shutil.copy2(compat_src, os.path.join(worktree_path, compat_rel))
+        # Appended at the end: the shim's CMakeLists returns early when its library is missing,
+        # in which case the target does not exist and nothing is added.
+        with open(cmake_path, "a", encoding="utf-8") as f:
+            f.write(f"\nif(TARGET {target} AND CMAKE_SYSTEM_NAME STREQUAL \"Linux\")\n"
+                    f"    target_sources({target} PRIVATE source/glibc_compat.cpp)\n"
+                    f"endif()\n")
+        ok(f"Patched worktree {module} to build glibc_compat.cpp into lib{target}.so.")
+
+
 def patch_worktree_skip_executables(worktree_path):
     """
     Neutralise the places where the tagged bin/compile launches native
@@ -1142,6 +1183,9 @@ def main():
 
         if skip_win_exe:
             patch_worktree_skip_executables(worktree_path)
+
+        if current_platform == "linux":
+            patch_worktree_glibc_compat(worktree_path, repo_root)
 
         # None if --jdk21-home wasn't resolved, e.g. a jdk22plus-only run.
         jdk21_home = dict(validated).get("jdk21")
