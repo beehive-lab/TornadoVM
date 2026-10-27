@@ -146,6 +146,7 @@ public class TcDiskCacheTest {
         var recording = new TcDiskCache.Recording(live);
         recording.classBytes("pkg/Kernels");
         TcDiskCache.storeAnalysis(access, recording.reads(), new int[] { 1, 2, 3 });
+        TcDiskCache.flush();
         assertArrayEquals(new int[] { 1, 2, 3 }, TcDiskCache.loadAnalysis(access, live).orElseThrow());
         assertTrue(TcDiskCache.loadAnalysis(loopIndex, live).isEmpty(), "not stored");
         classes.put("pkg/Kernels", "kernel v2".getBytes(StandardCharsets.UTF_8));

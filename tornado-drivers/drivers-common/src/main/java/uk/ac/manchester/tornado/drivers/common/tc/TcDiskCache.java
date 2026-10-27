@@ -161,7 +161,51 @@ final class TcDiskCache {
         }
     }
 
+    /**
+     * Analysis entries are asked for on the thread that builds a task graph: they are written on one
+     * background thread so that a cold run does not wait for the file system there. Writes still
+     * pending at exit get a short grace period; one that is lost only costs the next run an analysis.
+     */
+    private static final java.util.concurrent.ExecutorService WRITER = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "tornado-tc-cache-writer");
+        t.setDaemon(true);
+        return t;
+    });
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            WRITER.shutdown();
+            try {
+                WRITER.awaitTermination(1, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }, "tornado-tc-cache-flush"));
+    }
+
     static void storeAnalysis(String key, Map<String, String> reads, int[] bits) {
+        var entry = new TreeMap<>(reads);
+        var values = bits.clone();
+        try {
+            WRITER.execute(() -> writeAnalysis(key, entry, values));
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            writeAnalysis(key, entry, values); // shutting down
+        }
+    }
+
+    /** Waits for the analysis entries queued so far to be written (tests). */
+    static void flush() {
+        try {
+            WRITER.submit(() -> {
+            }).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.RejectedExecutionException e) {
+            // nothing to wait for
+        }
+    }
+
+    private static void writeAnalysis(String key, Map<String, String> reads, int[] bits) {
         try {
             Files.createDirectories(directory);
             var p = new Properties();
