@@ -164,7 +164,7 @@ public class TornadoHatBackend extends Backend {
         if (!buffers.isEmpty()) {
             graph.transferToDevice(DataTransferMode.EVERY_EXECUTION, buffers.toArray());
         }
-        addTask(graph, kernel, tornadoArgs);
+        addTask(graph, "t", kernel, tornadoArgs);
         if (!buffers.isEmpty()) {
             graph.transferToHost(DataTransferMode.EVERY_EXECUTION, buffers.toArray());
         }
@@ -287,7 +287,7 @@ public class TornadoHatBackend extends Backend {
      * {@code graph.task("t", <TaskN implemented by kernel>, args...)}: a serializable lambda made at
      * run time, which TornadoVM resolves to the kernel method as it does any method reference.
      */
-    private static void addTask(TaskGraph graph, Method kernel, Object[] args) {
+    static void addTask(TaskGraph graph, String id, Method kernel, Object[] args) {
         int n = args.length;
         try {
             Class<?> taskInterface = Class.forName("uk.ac.manchester.tornado.api.common.TornadoFunctions$Task" + n);
@@ -302,7 +302,7 @@ public class TornadoHatBackend extends Backend {
                     .filter(m -> m.getName().equals("task") && m.getParameterCount() == n + 2 && m.getParameterTypes()[1] == taskInterface).findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("TaskGraph has no task method with " + n + " arguments"));
             Object[] call = new Object[n + 2];
-            call[0] = "t";
+            call[0] = id;
             call[1] = task;
             System.arraycopy(args, 0, call, 2, n);
             taskMethod.invoke(graph, call);
