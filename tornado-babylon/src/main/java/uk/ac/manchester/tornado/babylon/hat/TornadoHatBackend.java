@@ -245,9 +245,11 @@ public class TornadoHatBackend extends Backend {
             var lookup = MethodHandles.privateLookupIn(kernel.getDeclaringClass(), MethodHandles.lookup());
             var target = lookup.unreflect(kernel);
             var erased = MethodType.genericMethodType(n).changeReturnType(void.class);
-            var site = LambdaMetafactory.altMetafactory(lookup, "apply", MethodType.methodType(taskInterface), erased, target, target.type().wrap().changeReturnType(void.class), LambdaMetafactory.FLAG_SERIALIZABLE);
+            var site = LambdaMetafactory.altMetafactory(lookup, "apply", MethodType.methodType(taskInterface), erased, target, target.type().wrap().changeReturnType(void.class),
+                    LambdaMetafactory.FLAG_SERIALIZABLE);
             Object task = site.getTarget().invoke();
-            Method taskMethod = Arrays.stream(TaskGraph.class.getMethods()).filter(m -> m.getName().equals("task") && m.getParameterCount() == n + 2 && m.getParameterTypes()[1] == taskInterface).findFirst()
+            Method taskMethod = Arrays.stream(TaskGraph.class.getMethods())
+                    .filter(m -> m.getName().equals("task") && m.getParameterCount() == n + 2 && m.getParameterTypes()[1] == taskInterface).findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("TaskGraph has no task method with " + n + " arguments"));
             Object[] call = new Object[n + 2];
             call[0] = "t";
