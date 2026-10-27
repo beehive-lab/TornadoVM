@@ -666,6 +666,10 @@ final class BabylonTranslator {
                     .orElseThrow(() -> new Unsupported("TC-E1013", "DeviceKernel field " + ref.name() + " cannot be resolved: KernelContext.launch needs a static final field")));
             return null;
         }
+        if (descriptor(ref.type()).startsWith("Ljdk/incubator/code/")) {
+            // A code type (JavaType.FLOAT for Tile.arange): compile-time only, like a class literal
+            return null;
+        }
         // A static final field: its value, as the bytecode frontend folds computed constants.
         try {
             var owner = context.load((JavaType) ref.refType());
@@ -1623,6 +1627,41 @@ final class BabylonTranslator {
                 var d = dims(t);
                 return tile(b, "tile.unary.transpose", List.of(t), d.size() == 2 ? List.of(d.get(1), d.get(0)) : d);
             }
+            case "arange" -> {
+                // arange(size[, codeType]) and arange(size, start, step[, codeType]): 0, 1, ... (times step, plus start), as F32
+                var size = v(operands.get(0));
+                var dims = List.of(size);
+                // CUDA Tile's iota is integral: S32, then cast to F32
+                var ops = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(b.constInt(Type.I32, dtype("S32"))));
+                ops.addAll(rank2(b, dims, false));
+                var iota = tile(b, "tile.cast", List.of(tile(b, "tile.iota", ops, dims), b.constInt(Type.I32, dtype("F32"))), dims);
+                if (operands.size() >= 3 && descriptor(operands.get(1).type()).equals("I")) {
+                    var scaled = tile(b, "tile.scale", List.of(iota, toF64(b, v(operands.get(2)))), dims);
+                    var fullOps = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(b.constInt(Type.I32, dtype("F32")), toF64(b, v(operands.get(1)))));
+                    fullOps.addAll(rank2(b, dims, false));
+                    return tile(b, "tile.binary.add", List.of(scaled, tile(b, "tile.full", fullOps, dims)), dims);
+                }
+                return iota;
+            }
+            case "reshape" -> {
+                var t = v(operands.get(0));
+                var dims = tuple(b, operands.get(1));
+                var ops = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(t));
+                ops.addAll(rank2(b, dims, false));
+                return tile(b, "tile.reshape", ops, dims);
+            }
+            case "permute" -> {
+                var t = v(operands.get(0));
+                var d = dims(t);
+                var order = tuple(b, operands.get(1)).stream().map(x -> uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(x).orElse(-1L)).toList();
+                if (d.size() == 2 && order.equals(List.of(1L, 0L))) {
+                    return tile(b, "tile.unary.transpose", List.of(t), List.of(d.get(1), d.get(0)));
+                }
+                if (order.equals(java.util.stream.LongStream.range(0, d.size()).boxed().toList())) {
+                    return t;
+                }
+                throw new Unsupported("TC-E1003", "Tile.permute supports the identity and the 2D transpose (1, 0); got " + order);
+            }
             case "sum", "min", "max" -> {
                 if (name.equals("min") && operands.stream().allMatch(x -> descriptor(x.type()).equals("I"))) {
                     // A select, not math.min: CUDA Tile kernels cannot call device functions such as min().
@@ -1646,10 +1685,7 @@ final class BabylonTranslator {
                 var intrinsic = "tile.binary." + (name.equals("truediv") ? "div" : name);
                 if (tileDims.containsKey(x) && tileDims.containsKey(y)) {
                     // elementwise, broadcasting extents of 1: the result has the larger extents
-                    var dx = dims(x);
-                    var dy = dims(y);
-                    var d = constantProduct(dx) >= constantProduct(dy) ? dx : dy;
-                    return tile(b, intrinsic, List.of(x, y), d);
+                    return tile(b, intrinsic, List.of(x, y), broadcast(dims(x), dims(y)));
                 }
                 var t = tileDims.containsKey(x) ? x : y;
                 var scalar = t == x ? y : x;
@@ -1681,12 +1717,20 @@ final class BabylonTranslator {
         return b.convert(x.type().isFloat() ? ConvertOp.FEXT : ConvertOp.I2F, x, Type.F64);
     }
 
-    private static long constantProduct(List<uk.ac.manchester.tornado.tc.ir.Value> dims) {
-        long p = 1;
-        for (var d : dims) {
-            p *= uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(d).orElse(Long.MAX_VALUE / 4);
+    /**
+     * The extents of an elementwise result, axis by axis: an extent that is the constant 1 is broadcast
+     * to the other operand's (a (1, n) bias row over an (m, n) tile is (m, n)).
+     */
+    private static List<uk.ac.manchester.tornado.tc.ir.Value> broadcast(List<uk.ac.manchester.tornado.tc.ir.Value> x, List<uk.ac.manchester.tornado.tc.ir.Value> y) {
+        if (x.size() != y.size()) {
+            return x.size() > y.size() ? x : y;
         }
-        return p;
+        var result = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(x.size());
+        for (int i = 0; i < x.size(); i++) {
+            boolean xOne = uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(x.get(i)).orElse(-1L) == 1;
+            result.add(xOne ? y.get(i) : x.get(i));
+        }
+        return result;
     }
 
     // ---- HAT tensors (Tensor): warp-level 16x16x16 F16 multiply-accumulate on TC's m16n8k16 intrinsics
