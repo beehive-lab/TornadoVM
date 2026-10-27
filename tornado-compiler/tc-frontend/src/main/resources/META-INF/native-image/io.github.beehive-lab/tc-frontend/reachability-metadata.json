@@ -1,0 +1,10 @@
+{
+  "reflection": [
+    {
+      "type": "uk.ac.manchester.tornado.tc.frontend.classfile.JdkClassFileReader",
+      "methods": [
+        { "name": "<init>", "parameterTypes": [] }
+      ]
+    }
+  ]
+}

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
+import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
@@ -93,7 +94,7 @@ public final class Tc {
         }
         System.out.print(c.source());
         if (stats) {
-            System.err.printf("[TC] %s: %.2f ms%n", c.entryName(), c.nanos() / 1e6);
+            System.err.printf("[TC] %s: %.2f ms (class files: %s reader first)%n", c.entryName(), c.nanos() / 1e6, ClassFile.reader());
         }
         return 0;
     }

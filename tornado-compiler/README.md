@@ -37,7 +37,7 @@ flowchart LR
 | Module | Role |
 |---|---|
 | `tc-ir` | TC-SSA: types (`i1`…`i64`, `f16`/`bf16`/`f32`/`f64`, vectors, pointers with NVPTX address spaces), block arguments instead of phis, the Tornado intrinsic registry, the verifier, the textual printer and parser, dominators and loops. `TargetCaps` describes what a device offers. |
-| `tc-frontend` | Reads class files (no `java.lang.reflect` or class loading needed) and builds SSA on the fly (Braun et al. 2013). It keeps Java names, lines and bcis on every value. It resolves TornadoVM API calls through a binding table. |
+| `tc-frontend` | Reads class files (no `java.lang.reflect` or class loading needed) and builds SSA on the fly (Braun et al. 2013). On JDK 24 and newer it reads them with the JDK's Class-File API (`java.lang.classfile`, JEP 484), elsewhere with its own reader; both give the frontend the same model. It keeps Java names, lines and bcis on every value. It resolves TornadoVM API calls through a binding table. |
 | `tc-opt` | A pass manager and the target-independent passes. Every pass is verified in tests. |
 | `tc-tornado` | The TornadoVM semantics: inlining, specialisation on argument facts (array lengths, scalars, object layouts), `@Parallel` loops into grid-stride loops, `KernelContext`, reductions, atomics, legality per target, and the ABI lowering to the runtime's buffers. It also provides `AccessAnalysis` (the `Access[]` of each parameter). |
 | `tc-lower` | SSA destruction and dominator-based structuring (Ramsey 2022) into TC-S, a structured IR. Irreducible control flow gets a diagnostic, not a `goto`. |
@@ -182,6 +182,7 @@ plug in as a `Backend` service.
 | `tornado.tc.dump=all\|<stage>,...` | write the IR after each stage to `tornado.tc.dumpDir` (default `tc-dumps/`) |
 | `tornado.tc.only=<Class.method>` | restrict dumps and reports to one kernel |
 | `tornado.tc.report=html` | a self-contained HTML report per kernel: bytecode, every stage, the source |
+| `tornado.tc.classfile=auto\|jdk\|tc` | the class-file reader: `auto` (default) uses the JDK's Class-File API on JDK 24+ and TC's own reader for a class the API refuses (a class-file version newer than the running JDK); `jdk` or `tc` uses one only |
 | `tornado.tc.verify=each` | verify the IR after every pass and stage instead of once at the end (the default); names the pass that broke it |
 | `tornado.tc.memoize=false` | compile every task, even when an earlier one had the same method and facts |
 | `tornado.tc.varyingScalars=<n>` | a scalar argument that takes `n` (default 3) different values across tasks of one kernel is compiled as a runtime value; `0` specialises every value |

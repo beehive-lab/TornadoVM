@@ -45,7 +45,6 @@ import uk.ac.manchester.tornado.tc.frontend.Bindings.SharedArray;
 import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode;
 import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode.Insn;
 import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
-import uk.ac.manchester.tornado.tc.frontend.classfile.TypeAnnotations;
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.ApiTypes;
 import uk.ac.manchester.tornado.tc.ir.Attribute;
@@ -139,7 +138,7 @@ final class Translator {
         this.code = method.code().orElseThrow(() -> new IllegalArgumentException(method.name() + " has no code"));
         var simpleClass = classFile.name().substring(classFile.name().lastIndexOf('/') + 1);
         this.sourceFile = (simpleClass.contains("$") ? simpleClass.substring(0, simpleClass.indexOf('$')) : simpleClass) + ".java";
-        this.insns = Bytecode.decode(code.bytes());
+        this.insns = code.insns();
         for (int i = 0; i < insns.size(); i++) {
             indexOfBci.put(insns.get(i).bci(), i);
         }
@@ -445,7 +444,7 @@ final class Translator {
      * {@code parallel(iv=k)} names the argument; {@code tc-tornado} lowers the loop.
      */
     private void markParallelLoops() {
-        var parallel = TypeAnnotations.locals(code.typeAnnotations(), classFile.constants()).stream().filter(a -> a.descriptor().equals(PARALLEL)).toList();
+        var parallel = code.localAnnotations().stream().filter(a -> a.descriptor().equals(PARALLEL)).toList();
         if (parallel.isEmpty()) {
             return;
         }

@@ -9,8 +9,9 @@
         <version>${revision}</version>
     </parent>
 
-    <!-- Java bytecode frontend: a class-file reader written from the JVM specification and the
-         translation of kernel methods into TC-SSA (SSA construction after Braun et al. 2013).
+    <!-- Java bytecode frontend: a class-file reader written from the JVM specification (and, built
+         on JDK 24+, a second one over the JDK's Class-File API) and the translation of kernel
+         methods into TC-SSA (SSA construction after Braun et al. 2013).
          Depends on tc-ir only; TornadoVM API types are recognised by name, not linked. Test kernels
          under src/test/kernels are compiled against tornado-api. -->
     <artifactId>tc-frontend</artifactId>
@@ -65,4 +66,74 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <!-- Built on JDK 24 or newer: also compile the Class-File API reader (src/main/java24,
+             java.lang.classfile, JEP 484) with release 24 into the same classes. ClassFile loads it by
+             name, only when it runs on JDK 24+, so the jar still runs on JDK 22 and 23; a build on an
+             older JDK leaves it out and TC uses its own reader. -->
+        <profile>
+            <id>classfile-api</id>
+            <activation>
+                <jdk>[24,)</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <!-- javac run directly rather than a second maven-compiler-plugin execution:
+                             that one would also replace this module's output directory in the reactor.
+                             Its own output directory keeps javac out of module mode (target/classes
+                             holds module-info.class); the classes are then copied into target/classes. -->
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>compile-classfile-api</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>${java.home}/bin/javac</executable>
+                                    <arguments>
+                                        <argument>--release</argument>
+                                        <argument>24</argument>
+                                        <argument>-g</argument>
+                                        <argument>-encoding</argument>
+                                        <argument>UTF-8</argument>
+                                        <argument>-XDstringConcat=inline</argument>
+                                        <argument>-classpath</argument>
+                                        <argument>${project.build.outputDirectory}</argument>
+                                        <argument>-d</argument>
+                                        <argument>${project.build.directory}/classes-java24</argument>
+                                        <argument>${project.basedir}/src/main/java24/uk/ac/manchester/tornado/tc/frontend/classfile/JdkClassFileReader.java</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>add-classfile-api-classes</id>
+                                <phase>process-classes</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}/classes-java24</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

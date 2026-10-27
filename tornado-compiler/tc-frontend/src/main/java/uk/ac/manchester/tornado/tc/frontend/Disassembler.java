@@ -35,7 +35,7 @@ public final class Disassembler {
         sb.append("// ").append(classFile.name().replace('/', '.')).append('.').append(method.name()).append(method.descriptor()).append('\n');
         sb.append("// max_stack=").append(code.maxStack()).append(" max_locals=").append(code.maxLocals()).append('\n');
         int lastLine = -2;
-        for (var insn : Bytecode.decode(code.bytes())) {
+        for (var insn : code.insns()) {
             int line = code.lineAt(insn.bci());
             if (line != lastLine && line >= 0) {
                 sb.append("  // line ").append(line).append('\n');

@@ -43,7 +43,7 @@ public final class TaskSites {
             if (method.code().isEmpty()) {
                 continue;
             }
-            for (var insn : Bytecode.decode(method.code().get().bytes())) {
+            for (var insn : method.code().get().insns()) {
                 if (insn.opcode() != Bytecode.INVOKEDYNAMIC) {
                     continue;
                 }

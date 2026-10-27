@@ -91,7 +91,7 @@ public final class CoverageTool {
                                 .map(i -> ((uk.ac.manchester.tornado.tc.ir.Opcode.Call) i.opcode()).callee()).toList();
                         if (problems.isEmpty() && callees.isEmpty()) {
                             translated++;
-                            if (method.code().get().typeAnnotations().length > 0) {
+                            if (!method.code().get().localAnnotations().isEmpty()) {
                                 needsParallel++;
                             }
                         } else if (problems.isEmpty()) {

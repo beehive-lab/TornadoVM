@@ -24,12 +24,16 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
- * A parsed class file, read directly from the format defined in chapter 4 of The Java Virtual
- * Machine Specification. Only what the TC frontend needs is kept: the constant pool, the methods
- * with their {@code Code} attribute, line numbers, local variable names and raw type annotations
- * (where {@code @Parallel} lives). Any class-file version is accepted: unknown attributes are skipped.
+ * A parsed class file (chapter 4 of The Java Virtual Machine Specification). Only what the TC
+ * frontend needs is kept: the constant pool, the methods with their {@code Code} attribute, line
+ * numbers, local variable names and the type annotations on locals (where {@code @Parallel} lives).
+ *
+ * <p>Two readers produce it ({@link Reader}): TC's own, which accepts any class-file version and
+ * skips unknown attributes, and on JDK 24 and newer the JDK's Class-File API (JEP 484). The
+ * frontend sees the same model, with the class file's own constant-pool indices, from both.
  */
 public record ClassFile(String name, Optional<String> superName, int majorVersion, ConstantPool constants, List<Method> methods, List<BootstrapMethod> bootstrapMethods) {
 
@@ -44,8 +48,28 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
         }
     }
 
+    /**
+     * The instructions of a {@code Code} attribute and the type annotations on its locals, decoded on
+     * first use: a class is parsed whole, but only the methods TC compiles are decoded.
+     */
+    public interface Body {
+        List<Bytecode.Insn> insns();
+
+        List<TypeAnnotations.LocalAnnotation> localAnnotations();
+    }
+
     /** The {@code Code} attribute of a method. */
-    public record Code(int maxStack, int maxLocals, byte[] bytes, List<Handler> handlers, List<LineNumber> lines, List<LocalVariable> locals, byte[] typeAnnotations) {
+    public record Code(int maxStack, int maxLocals, Body body, List<Handler> handlers, List<LineNumber> lines, List<LocalVariable> locals) {
+
+        /** The decoded instructions, in bci order. */
+        public List<Bytecode.Insn> insns() {
+            return body.insns();
+        }
+
+        /** Annotations on local variables ({@code @Parallel}, {@code @Reduce}). */
+        public List<TypeAnnotations.LocalAnnotation> localAnnotations() {
+            return body.localAnnotations();
+        }
 
         /** Source line of the instruction at {@code bci}, or {@code -1}. */
         public int lineAt(int bci) {
@@ -79,12 +103,93 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
         return methods.stream().filter(m -> m.name().equals(name) && (descriptor == null || m.descriptor().equals(descriptor))).findFirst();
     }
 
-    /** Parses {@code bytes}; throws {@link ClassFormatException} for malformed input. */
+    /** The class-file readers. */
+    public enum Reader {
+        /** TC's own reader, written from the JVM specification. Every JDK, any class-file version. */
+        TC,
+        /** The JDK's Class-File API ({@code java.lang.classfile}, JEP 484): JDK 24 and newer. */
+        JDK;
+
+        /** Whether this reader can run here: {@link #JDK} needs JDK 24+ and a build that includes it. */
+        public boolean isAvailable() {
+            return this == TC || JdkReader.INSTANCE != null;
+        }
+    }
+
+    /**
+     * Parses {@code bytes}; throws {@link ClassFormatException} for malformed input. With
+     * {@code -Dtornado.tc.classfile=auto} (the default) the JDK's reader is used where available, and a
+     * class it refuses (a class-file version newer than the running JDK, for example) is read by TC's
+     * own; {@code jdk} or {@code tc} selects one reader only.
+     */
     public static ClassFile parse(byte[] bytes) {
+        return switch (SELECTED) {
+            case "tc" -> parse(bytes, Reader.TC);
+            case "jdk" -> parse(bytes, Reader.JDK);
+            default -> {
+                if (JdkReader.INSTANCE == null) {
+                    yield parse(bytes, Reader.TC);
+                }
+                try {
+                    yield parse(bytes, Reader.JDK);
+                } catch (ClassFormatException e) {
+                    yield parse(bytes, Reader.TC);
+                }
+            }
+        };
+    }
+
+    /** The reader {@link #parse(byte[])} uses first: {@code -Dtornado.tc.classfile}, or JDK where available. */
+    public static Reader reader() {
+        return switch (SELECTED) {
+            case "tc" -> Reader.TC;
+            case "jdk" -> Reader.JDK;
+            default -> JdkReader.INSTANCE != null ? Reader.JDK : Reader.TC;
+        };
+    }
+
+    /** Parses {@code bytes} with {@code reader}. */
+    public static ClassFile parse(byte[] bytes, Reader reader) {
+        if (reader == Reader.JDK) {
+            if (JdkReader.INSTANCE == null) {
+                throw new UnsupportedOperationException("the Class-File API reader needs JDK 24 or newer and a TC build made with JDK 24 or newer");
+            }
+            return JdkReader.INSTANCE.apply(bytes);
+        }
         try {
             return read(new DataInputStream(new ByteArrayInputStream(bytes)));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        }
+    }
+
+    private static final String SELECTED = System.getProperty("tornado.tc.classfile", "auto");
+
+    /**
+     * The Class-File API reader, compiled from {@code src/main/java24} with {@code --release 24} when
+     * TC is built on JDK 24 or newer. It is looked up by name so that this class still loads on JDK 21.
+     * A native image needs the constructor registered for reflection; tc-frontend's
+     * {@code META-INF/native-image} metadata does that, and without it TC falls back to its own reader.
+     */
+    private static final class JdkReader {
+        static final Function<byte[], ClassFile> INSTANCE = load();
+
+        @SuppressWarnings("unchecked")
+        private static Function<byte[], ClassFile> load() {
+            if (Runtime.version().feature() < 24) {
+                return null;
+            }
+            try {
+                return (Function<byte[], ClassFile>) Class.forName("uk.ac.manchester.tornado.tc.frontend.classfile.JdkClassFileReader").getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+                return null;
+            } catch (Error e) {
+                // A native image without the reflection metadata throws an Error of its own here.
+                if (e instanceof VirtualMachineError) {
+                    throw e;
+                }
+                return null;
+            }
         }
     }
 
@@ -94,7 +199,7 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
         }
         in.readUnsignedShort(); // minor version
         int major = in.readUnsignedShort();
-        var pool = ConstantPool.read(in);
+        var pool = ClassFileConstantPool.read(in);
         in.readUnsignedShort(); // access flags
         var name = pool.className(in.readUnsignedShort());
         int superIndex = in.readUnsignedShort();
@@ -152,7 +257,7 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
         return new ClassFile(name, superName, major, pool, List.copyOf(methods), List.copyOf(bootstraps));
     }
 
-    private static Code readCode(DataInputStream in, ConstantPool pool) throws IOException {
+    private static Code readCode(DataInputStream in, ClassFileConstantPool pool) throws IOException {
         int maxStack = in.readUnsignedShort();
         int maxLocals = in.readUnsignedShort();
         var bytes = in.readNBytes(in.readInt());
@@ -185,7 +290,42 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
                 default -> in.skipNBytes(length);
             }
         }
-        return new Code(maxStack, maxLocals, bytes, List.copyOf(handlers), List.copyOf(lines), List.copyOf(locals), typeAnnotations);
+        return new Code(maxStack, maxLocals, new RawBody(bytes, typeAnnotations, pool), List.copyOf(handlers), List.copyOf(lines), List.copyOf(locals));
+    }
+
+    /** TC's own decoding of the code bytes and the {@code RuntimeVisibleTypeAnnotations} attribute. */
+    private static final class RawBody implements Body {
+        private final byte[] bytes;
+        private final byte[] typeAnnotations;
+        private final ConstantPool pool;
+        private volatile List<Bytecode.Insn> insns;
+        private volatile List<TypeAnnotations.LocalAnnotation> localAnnotations;
+
+        RawBody(byte[] bytes, byte[] typeAnnotations, ConstantPool pool) {
+            this.bytes = bytes;
+            this.typeAnnotations = typeAnnotations;
+            this.pool = pool;
+        }
+
+        @Override
+        public List<Bytecode.Insn> insns() {
+            var result = insns;
+            if (result == null) {
+                result = List.copyOf(Bytecode.decode(bytes));
+                insns = result;
+            }
+            return result;
+        }
+
+        @Override
+        public List<TypeAnnotations.LocalAnnotation> localAnnotations() {
+            var result = localAnnotations;
+            if (result == null) {
+                result = List.copyOf(TypeAnnotations.locals(typeAnnotations, pool));
+                localAnnotations = result;
+            }
+            return result;
+        }
     }
 
     private static void skipAttributes(DataInputStream in) throws IOException {
