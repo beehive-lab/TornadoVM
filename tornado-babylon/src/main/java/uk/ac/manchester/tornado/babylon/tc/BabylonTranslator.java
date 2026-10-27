@@ -87,6 +87,11 @@ final class BabylonTranslator {
 
         /** The kernel a {@code static final DeviceKernel} field names (for {@code KernelContext.launch}). */
         java.util.Optional<Frontend.MethodRef> deviceKernel(String ownerInternalName, String field);
+
+        /** The method being translated, if known (for HatWrites). */
+        default Method method() {
+            return null;
+        }
     }
 
     private static final String HAT_KERNEL_CONTEXT = "hat.KernelContext";
@@ -238,6 +243,7 @@ final class BabylonTranslator {
         if (!problems.isEmpty()) {
             throw new Unsupported(problems.get(0).code(), problems.get(0).message());
         }
+        recordWrites();
         return function;
     }
 
@@ -815,6 +821,9 @@ final class BabylonTranslator {
                 var layout = index == null ? null : context.bufferLayout(index);
                 if (layout != null) {
                     HatLayouts.record(method, i, layout);
+                }
+                if (index != null && context.method() != null) {
+                    HatWrites.passes(context.method(), index, method, i);
                 }
             }
             context.callee(method, calleeName);
@@ -1955,7 +1964,10 @@ final class BabylonTranslator {
      * A struct inside a HAT buffer ({@code input.complex(k)}): no value of its own, only the buffer, the
      * struct's byte offset in it and its layout. Its accessors ({@code .real()}) read and write there.
      */
-    private record View(uk.ac.manchester.tornado.tc.ir.Value buffer, uk.ac.manchester.tornado.tc.ir.Value offset, GroupLayout layout) {
+    private record View(uk.ac.manchester.tornado.tc.ir.Value buffer, uk.ac.manchester.tornado.tc.ir.Value offset, GroupLayout layout, String member) {
+        View(uk.ac.manchester.tornado.tc.ir.Value buffer, uk.ac.manchester.tornado.tc.ir.Value offset, GroupLayout layout) {
+            this(buffer, offset, layout, null);
+        }
     }
 
     private uk.ac.manchester.tornado.tc.ir.Value fieldAccess(IrBuilder b, JavaOp.InvokeOp op, View view, String name) {
@@ -1975,9 +1987,9 @@ final class BabylonTranslator {
             var index64 = i.type().equals(Type.I64) ? i : b.convert(ConvertOp.SEXT, i, Type.I64);
             // byte offsets of a sign-extended int index cannot overflow i64: plain signed arithmetic
             var offset = noSignedWrap(b.add(base, noSignedWrap(b.binary(BinaryOp.MUL, index64, b.constInt(Type.I64, seq.elementLayout().byteSize())))));
-            return element(b, op, new View(view.buffer(), offset, null), seq.elementLayout(), args.subList(1, args.size()), name);
+            return element(b, op, new View(view.buffer(), offset, null, member(view, name)), seq.elementLayout(), args.subList(1, args.size()), name);
         }
-        return element(b, op, new View(view.buffer(), base, null), field, args, name);
+        return element(b, op, new View(view.buffer(), base, null, member(view, name)), field, args, name);
     }
 
     /** The element at {@code at.offset()}: a value loaded or stored, or a struct view for later accessors. */
@@ -1994,10 +2006,15 @@ final class BabylonTranslator {
             var value = v(rest.get(0));
             memStore(b, at.buffer(), at.offset(), value.type().equals(memory) ? value
                     : b.convert(value.type().equals(Type.I1) ? ConvertOp.ZEXT : ConvertOp.TRUNC, value, memory));
+            var param = bufferParams.get(at.buffer());
+            if (param != null && at.member() != null && lastStore != null) {
+                memberStores.add(lastStore);
+                writes.add(new String[] { String.valueOf(param), at.member() });
+            }
             return null;
         }
         if (element instanceof GroupLayout group && rest.isEmpty()) {
-            views.put(op.result(), new View(at.buffer(), at.offset(), group));
+            views.put(op.result(), new View(at.buffer(), at.offset(), group, at.member()));
             if (op.resultType() instanceof JavaType j && HAT_F16_TYPES.contains(descriptor(j))) {
                 // A half float ({short value}): also its value, for F16 arithmetic. Unused, it is dead code.
                 return b.convert(ConvertOp.BITCAST, memLoad(b, at.buffer(), at.offset(), Type.I16), Type.F16);
@@ -2015,11 +2032,48 @@ final class BabylonTranslator {
         return isAlloca(memory) ? b.load(b.pointerOffset(memory, offset), type) : b.arrayLoad(memory, offset, type);
     }
 
-    private static void memStore(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value memory, uk.ac.manchester.tornado.tc.ir.Value offset, uk.ac.manchester.tornado.tc.ir.Value value) {
+    private void memStore(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value memory, uk.ac.manchester.tornado.tc.ir.Value offset, uk.ac.manchester.tornado.tc.ir.Value value) {
         if (isAlloca(memory)) {
             b.store(b.pointerOffset(memory, offset), value);
+            lastStore = null;
         } else {
-            b.arrayStore(memory, offset, value);
+            lastStore = b.arrayStore(memory, offset, value);
+        }
+    }
+
+    /** The top-level member of a HAT buffer an access is in: the view's, or this field when the view is the buffer. */
+    private static String member(View view, String field) {
+        return view.member() != null ? view.member() : view.layout() != null ? field : null;
+    }
+
+    // ---- which members of its HAT buffer parameters a function writes (for HatWrites)
+
+    private uk.ac.manchester.tornado.tc.ir.Inst lastStore;
+    private final java.util.Set<uk.ac.manchester.tornado.tc.ir.Inst> memberStores = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private final List<String[]> writes = new ArrayList<>();
+
+    /** Records this function's writes to its buffer parameters: by member where known, else all of the buffer. */
+    private void recordWrites() {
+        var method = context.method();
+        if (method == null) {
+            return;
+        }
+        HatWrites.analysed(method);
+        writes.forEach(w -> HatWrites.member(method, Integer.parseInt(w[0]), w[1]));
+        for (var block : function.blocks()) {
+            for (var inst : block.insts()) {
+                boolean writesMemory = inst.opcode() instanceof Opcode.ArrayStore && !memberStores.contains(inst)
+                        || inst.opcode() instanceof Opcode.Intrinsic(var n) && (n.startsWith("tile.store") || n.startsWith("tile.atomic") || n.startsWith("tornado.atomic")
+                                || n.startsWith("tornado.mma.store") || n.equals("tornado.async_copy") || n.equals("tornado.vector.store_param"));
+                if (writesMemory) {
+                    for (var operand : inst.operands()) {
+                        var param = bufferParams.get(operand);
+                        if (param != null) {
+                            HatWrites.all(method, param);
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -108,24 +108,26 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
    - **How it works:**
      - The backend injects buffer tracking into compute methods (`ComputeTracking`).
      - A buffer is uploaded only when the host has written it, or when another kernel's plan holds the current copy.
-     - It comes back when the host reads it. A read of a scalar member (`grid.width()`) copies back only that member's bytes.
+     - It comes back when the host reads it.
      - When the compute method returns, results are copied back (with `HAT=MC`, only when the program asks: `accelerator.preAccess(buffer)` or `cc.copyOutOnExit(...)`).
-   - **Results** (`LifeBench`, 1024 x 1024, RTX 4090, every result checked against Java):
+   - **TornadoVM fixes this needed** (#1308): copies back on demand came from the graph's device instead of the task's, and a partial copy back made every later copy of the object partial.
+
+2. **Done: a low-overhead dispatch path for HAT's compute loops.**
+   - **Member-level analysis.** The translator records which members of each HAT buffer a kernel writes, through the helpers it passes buffers to (`HatWrites`). A host read of a member no kernel wrote needs no copy at all: Life's `grid.width()` between generations. A read of a scalar member that was written copies back only that member's bytes.
+   - **CUDA graphs:** `-Dtornado.hat.cudaGraph=true` launches each kernel's plan through a CUDA graph. HAT's tests pass 154/156 with it, as without.
+   - **Results** (`LifeBench`, 1024 x 1024, RTX 4090, best of 30 rounds of 100 generations; every grid identical to Java's):
 
      | Backend | Generations per second |
      |---|---:|
-     | TornadoVM, before (copies every dispatch) | 2898 |
-     | TornadoVM, now | **9351** (`HAT=MC`: 9422) |
-     | HAT's CUDA backend | 2247 |
-     | HAT's CUDA backend with `HAT=MC` | 4147 |
+     | TornadoVM, copies every dispatch (`-Dtornado.hat.resident=false`) | 3914 |
+     | TornadoVM, now | **17653** |
+     | TornadoVM, `HAT=MC` | **20174** |
+     | TornadoVM, CUDA graphs | 19501 |
+     | HAT's CUDA backend | 2332 |
+     | HAT's CUDA backend, `HAT=MC` | 4841 |
 
-   - **Options:** `-Dtornado.hat.resident=false` (the old behaviour), `-Dtornado.hat.memberCopies=false` (whole-buffer copies), `-Dtornado.hat.traceResidency=true` (print every upload and copy back).
-   - **TornadoVM fixes this needed** (also in their own PR): copies back on demand came from the graph's device instead of the task's, and a partial copy back made every later copy of the object partial.
-
-2. **A low-overhead dispatch path for HAT's compute loops.** A Life generation now costs about 107 µs against a 7 µs kernel.
-   - A HAT program that dispatches in a tight loop (`ComputeLife.steps`) goes through a TornadoVM task graph and execution plan for each dispatch: plan lookup, transfers, then execute.
-   - **Goal:** after the first dispatch, a dispatch is one kernel launch with no host synchronisation unless the host reads results. That could mean capturing a HAT compute loop as one TornadoVM graph (or a CUDA graph), or a direct launch path that bypasses the task graph for HAT.
-   - Measure it against the per-generation numbers above.
+   - **What remains:** a generation costs about 50 µs against a 7 µs kernel. Most of it is the synchronisation of each blocking execution, since the host updates the control struct between generations. Going further needs asynchronous executions in TornadoVM.
+   - **Options:** `-Dtornado.hat.resident=false`, `-Dtornado.hat.memberCopies=false`, `-Dtornado.hat.traceResidency=true`, `-Dtornado.hat.cudaGraph=true`.
 
 3. **Game of Life with its window.** Run HAT's `life` demo (Swing viewer) on TornadoVM on a machine with a display. Compare generations per second against HAT's backends, with the compute loop adapting to the viewer's frame rate. The headless benchmark above already gives identical grids on TornadoVM.
 

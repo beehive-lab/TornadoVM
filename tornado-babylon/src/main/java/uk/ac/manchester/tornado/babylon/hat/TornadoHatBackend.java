@@ -66,6 +66,9 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
     /** {@code -Dtornado.hat.strictFP=true}: IEEE division/sqrt and no contraction (plan.withStrictFloatingPoint()). */
     private static final boolean STRICT_FP = Boolean.getBoolean("tornado.hat.strictFP");
 
+    /** {@code -Dtornado.hat.cudaGraph=true}: each kernel's plan launches through a CUDA graph (CUDA devices). */
+    private static final boolean CUDA_GRAPH = Boolean.getBoolean("tornado.hat.cudaGraph");
+
     /** {@code -Dtornado.hat.resident=false}: copy every buffer to the device and back on every dispatch. */
     private static final boolean RESIDENT = !"false".equals(System.getProperty("tornado.hat.resident"));
 
@@ -120,6 +123,8 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         /** That plan's last execution, to copy the buffer back with. */
         uk.ac.manchester.tornado.api.TornadoExecutionResult result;
         boolean hostCurrent = true;
+        /** The members kernels may have written since the host was current; null: any of them. */
+        java.util.Set<String> dirty = new java.util.HashSet<>();
     }
 
     private final java.util.Map<Object, Residence> residences = new java.util.IdentityHashMap<>();
@@ -137,6 +142,7 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         if (!r.hostCurrent) {
             r.result.transferToHost(r.object);
             r.hostCurrent = true;
+            r.dirty = new java.util.HashSet<>();
             if (TRACE) {
                 System.err.println("[hat residency] copied back " + r.object.getSize() + " bytes");
             }
@@ -168,6 +174,9 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         var r = residences.get(b);
         if (r == null || r.hostCurrent) {
             return;
+        }
+        if (MEMBER_COPIES && r.dirty != null && !r.dirty.contains(member)) {
+            return; // no kernel wrote this member since the host had it
         }
         long[] range = indexed || !MEMBER_COPIES ? null : ComputeTracking.scalarMember(b, member);
         if (range == null) {
@@ -281,6 +290,12 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
                 if (written[i]) {
                     r.hostCurrent = false;
                     r.result = result;
+                    var members = uk.ac.manchester.tornado.babylon.tc.HatWrites.written(kernel, i);
+                    if (members == null || r.dirty == null) {
+                        r.dirty = null;
+                    } else {
+                        r.dirty.addAll(members);
+                    }
                 }
             }
         }
@@ -372,6 +387,9 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         plan.withGridScheduler(new GridScheduler("hat.t", tile ? tileGrid(range) : workerGrid(range)));
         if (STRICT_FP) {
             plan.withStrictFloatingPoint();
+        }
+        if (CUDA_GRAPH) {
+            plan.withCUDAGraph();
         }
         return new Dispatch(plan, buffers, segments, resident, resident ? written(kernel) : null, new boolean[1]);
     }
