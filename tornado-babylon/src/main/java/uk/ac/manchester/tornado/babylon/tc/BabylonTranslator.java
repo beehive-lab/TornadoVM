@@ -115,6 +115,18 @@ final class BabylonTranslator {
      * private slot, read on every use, so a mutation is seen wherever the Java reference is.
      */
     private final Map<Value, uk.ac.manchester.tornado.tc.ir.Value> vectorSlots = new HashMap<>();
+    private final java.util.Set<Value> storedArrays = new java.util.HashSet<>();
+    private uk.ac.manchester.tornado.tc.ir.Block entryTc;
+
+    /** A private slot for a vector, allocated in the entry block (before its first instruction). */
+    private uk.ac.manchester.tornado.tc.ir.Value slotFor(Type.VectorType type) {
+        var insts = entryTc.insts();
+        var at = insts.isEmpty() ? new IrBuilder(entryTc) : IrBuilder.insertingBefore(insts.get(0));
+        return at.alloca(AddressSpace.PRIVATE, type.element(), type.length());
+    }
+
+    /** Vector parameters of the kernel updated in place: their TC parameters. */
+    private final Map<Value, uk.ac.manchester.tornado.tc.ir.Value> mutatedParams = new LinkedHashMap<>();
     /** The builder of the op being translated: reading a mutable vector loads its slot there. */
     private IrBuilder current;
     /** Initial values of {@code @Parallel} loop variables ({@link Markers#parallel}). */
@@ -163,14 +175,32 @@ final class BabylonTranslator {
             if (block.isEntryBlock()) {
                 continue;
             }
+            var order = new ArrayList<Value>();
+            paramOrder.put(block, order);
             for (var p : block.parameters()) {
-                if (!aliases.containsKey(p)) {
-                    values.put(p, blocks.get(block).addArg(valueType(p.type()), ""));
+                if (aliases.containsKey(p)) {
+                    continue;
                 }
+                if (descriptor(p.type()).startsWith("[")) {
+                    // created by the first branch translated into the block, typed as its incoming value: an
+                    // array in the model can be a TC vector (an MMA fragment) or a pointer (a local array)
+                    deferredParams.add(p);
+                    continue;
+                }
+                values.put(p, blocks.get(block).addArg(isEnum(p.type()) ? Type.I32 : valueType(p.type()), ""));
+                order.add(p);
             }
         }
+        // Arrays written element by element: if one turns out to be a TC vector (an MMA fragment), it
+        // lives in a private slot, so its lanes can be written at any index.
+        model.elements().forEach(e -> {
+            if (e instanceof JavaOp.ArrayAccessOp.ArrayStoreOp store) {
+                storedArrays.add(store.operands().get(0));
+            }
+        });
         // Mutated HAT vectors get their private slots first, in the entry block.
         var entryBuilder = new IrBuilder(blocks.get(entry));
+        entryTc = blocks.get(entry);
         model.elements().forEach(e -> {
             if (e instanceof JavaOp.InvokeOp invoke && invoke.hasReceiver() && invoke.operands().size() >= 2 && isMutation(invoke)) {
                 var vector = invoke.operands().get(0);
@@ -184,8 +214,15 @@ final class BabylonTranslator {
             var b = new IrBuilder(blocks.get(block));
             current = b;
             for (var p : block.parameters()) {
+                if (!vectorSlots.containsKey(p) && storedArrays.contains(p) && values.get(p) instanceof uk.ac.manchester.tornado.tc.ir.Value pv && pv.type() instanceof Type.VectorType vec) {
+                    vectorSlots.put(p, slotFor(vec));
+                }
                 if (vectorSlots.containsKey(p)) {
-                    storeVector(b, vectorSlots.get(p), values.remove(p));
+                    var arg = values.remove(p);
+                    if (block.isEntryBlock()) {
+                        mutatedParams.put(p, arg);
+                    }
+                    storeVector(b, vectorSlots.get(p), arg);
                 }
             }
             for (var op : block.ops()) {
@@ -269,7 +306,14 @@ final class BabylonTranslator {
         return implementsByName(c.getSuperclass(), name);
     }
 
+    private boolean isEnum(CodeType type) {
+        return type instanceof JavaType j && !j.toNominalDescriptor().isPrimitive() && !j.toNominalDescriptor().isArray() && context.load(j) instanceof Class<?> c && c.isEnum();
+    }
+
     private Type parameterType(CodeType type) {
+        if (isEnum(type)) {
+            return Type.I32; // an enum is its ordinal in kernels
+        }
         if (isHatKernelContext(type)) {
             return Frontend.typeOf(TORNADO_KERNEL_CONTEXT);
         }
@@ -300,7 +344,7 @@ final class BabylonTranslator {
 
     private uk.ac.manchester.tornado.tc.ir.Value v(Value value) {
         if (vectorSlots.containsKey(value) && !values.containsKey(value)) {
-            return loadVector(current, vectorSlots.get(value), (Type.VectorType) valueType(value.type()));
+            return loadVector(current, vectorSlots.get(value), (Type.VectorType) valueTypeOfSlot(value));
         }
         var tc = values.get(value);
         if (tc == null && views.containsKey(value)) {
@@ -320,7 +364,28 @@ final class BabylonTranslator {
         return out;
     }
 
+    /** Values that are MMA operand fragments (A or B): packed registers, whose elements cannot be read or written. */
+    private final java.util.Set<Value> operandFragments = new java.util.HashSet<>();
+
+    /** The bytecode frontend's rules for tensor-core fragments: accumulators only, at a constant index within the fragment. */
+    private long fragmentLane(Value array, uk.ac.manchester.tornado.tc.ir.Value index, int length) {
+        if (operandFragments.contains(array)) {
+            throw new Unsupported("TC-E1010", "elements of an MMA operand fragment (A or B) cannot be read; only accumulator fragments can");
+        }
+        var lane = uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(index);
+        if (lane.isEmpty() || lane.getAsLong() < 0 || lane.getAsLong() >= length) {
+            throw new Unsupported("TC-E1010", "fragment elements can only be read at a constant index within the fragment");
+        }
+        return lane.getAsLong();
+    }
+
     private void define(Op op, uk.ac.manchester.tornado.tc.ir.Value value) {
+        if (op.result() != null && value instanceof Inst producer && producer.opcode() instanceof Opcode.Intrinsic(var name) && (name.contains(".load_a") || name.contains(".load_b"))) {
+            operandFragments.add(op.result());
+        }
+        if (op.result() != null && value != null && value.type() instanceof Type.VectorType vec && storedArrays.contains(op.result()) && !vectorSlots.containsKey(op.result())) {
+            vectorSlots.put(op.result(), slotFor(vec));
+        }
         if (op.result() != null && value != null) {
             if (vectorSlots.containsKey(op.result())) {
                 storeVector(current, vectorSlots.get(op.result()), value);
@@ -350,6 +415,25 @@ final class BabylonTranslator {
             case JavaOp.ArrayAccessOp.ArrayLoadOp load when isView(load.operands().get(0)) -> define(op, viewLoad(b, load));
             case JavaOp.ArrayAccessOp.ArrayStoreOp store when isView(store.operands().get(0)) -> viewStore(b, store);
             case JavaOp.ArrayLengthOp length when arrayViews.containsKey(length.operands().get(0)) -> define(op, viewLength(b, arrayViews.get(length.operands().get(0))));
+            case JavaOp.ArrayAccessOp.ArrayLoadOp load when vectorSlots.containsKey(load.operands().get(0)) && !values.containsKey(load.operands().get(0)) -> {
+                var slot = vectorSlots.get(load.operands().get(0));
+                var type = (Type.VectorType) valueTypeOfSlot(load.operands().get(0));
+                long lane = fragmentLane(load.operands().get(0), v(load.operands().get(1)), type.length());
+                define(op, widen(b, b.load(elementAddress(b, slot, b.constInt(Type.I32, lane), type.element()), type.element()), valueType(load.resultType())));
+            }
+            case JavaOp.ArrayAccessOp.ArrayStoreOp store when vectorSlots.containsKey(store.operands().get(0)) && !values.containsKey(store.operands().get(0)) -> {
+                var slot = vectorSlots.get(store.operands().get(0));
+                var type = (Type.VectorType) valueTypeOfSlot(store.operands().get(0));
+                long lane = fragmentLane(store.operands().get(0), v(store.operands().get(1)), type.length());
+                b.store(elementAddress(b, slot, b.constInt(Type.I32, lane), type.element()), narrow(b, v(store.operands().get(2)), type.element()));
+            }
+            case JavaOp.ArrayAccessOp.ArrayLoadOp load when values.get(load.operands().get(0)) instanceof uk.ac.manchester.tornado.tc.ir.Value vec && vec.type() instanceof Type.VectorType vt -> {
+                long lane = fragmentLane(load.operands().get(0), v(load.operands().get(1)), vt.length());
+                var value = b.intrinsic("tornado.vector.lane", Immediates.of("lane", lane), vt.element(), List.of(vec));
+                define(op, widen(b, value, valueType(load.resultType())));
+            }
+            case JavaOp.ArrayLengthOp length when values.get(length.operands().get(0)) instanceof uk.ac.manchester.tornado.tc.ir.Value vec && vec.type() instanceof Type.VectorType vt ->
+                define(op, b.constInt(Type.I32, vt.length()));
             case JavaOp.ArrayAccessOp.ArrayLoadOp load -> define(op, arrayLoad(b, v(load.operands().get(0)), v(load.operands().get(1)), valueType(load.resultType()),
                     descriptor(load.resultType()).equals("C")));
             case JavaOp.ArrayAccessOp.ArrayStoreOp store -> arrayStore(b, v(store.operands().get(0)), v(store.operands().get(1)), v(store.operands().get(2)));
@@ -358,6 +442,11 @@ final class BabylonTranslator {
                 define(op, array.type() instanceof Type.PointerType ? Frontend.localArrayLength(b, array) : b.arrayLength(array));
             }
             case JavaOp.FieldAccessOp.FieldLoadOp field -> define(op, fieldLoad(b, field));
+            case JavaOp.FieldAccessOp.FieldStoreOp field when !field.operands().isEmpty() && field.operands().size() == 2 -> {
+                var object = v(field.operands().get(0));
+                var memory = memoryOrValueType(field.fieldReference().type());
+                b.fieldStore(object, field.fieldReference().name(), narrow(b, v(field.operands().get(1)), memory));
+            }
             case JavaOp.InvokeOp invoke -> define(op, invoke(b, invoke));
             case JavaOp.NewOp n -> define(op, newValue(b, n));
             case CoreOp.BranchOp br -> {
@@ -368,6 +457,13 @@ final class BabylonTranslator {
             case CoreOp.ConditionalBranchOp cbr when carryTileDims(cbr.trueBranch()) && carryTileDims(cbr.falseBranch()) -> b.condBr(v(cbr.predicateOperand()), blocks.get(cbr.trueBranch().targetBlock()), branchArgs(cbr.trueBranch()),
                     blocks.get(cbr.falseBranch().targetBlock()), branchArgs(cbr.falseBranch()));
             case CoreOp.ReturnOp ret -> {
+                // A vector parameter updated in place: a kernel writes it back (the host copies it out).
+                mutatedParams.forEach((param, arg) -> {
+                    if (!kernel) {
+                        throw new Unsupported("TC-E1003", "a device function cannot update a vector parameter in place");
+                    }
+                    b.intrinsic("tornado.vector.store_param", Type.VOID, List.of(arg, loadVector(b, vectorSlots.get(param), (Type.VectorType) arg.type())));
+                });
                 if (ret.operands().isEmpty()) {
                     b.ret();
                 } else {
@@ -541,15 +637,29 @@ final class BabylonTranslator {
             return api.get().value().orElseThrow();
         }
         if (!op.operands().isEmpty()) {
-            throw new Unsupported("TC-E1003", "instance field " + ref.name() + " is not supported by the Babylon frontend yet");
+            // A field of an object parameter, as the bytecode frontend reads it (getfield).
+            var object = v(op.operands().get(0));
+            if (!(object.type() instanceof Type.ObjectType)) {
+                throw new Unsupported("TC-E1003", "instance field " + ref.name() + " of a " + object.type() + " is not supported in kernels");
+            }
+            var loaded = b.fieldLoad(object, ref.name(), memoryOrValueType(ref.type()));
+            return switch (descriptor(ref.type())) {
+                case "Z" -> b.icmp(IntPredicate.NE, loaded, b.constInt(Type.I8, 0)); // code models keep booleans as i1
+                case "C" -> b.convert(ConvertOp.ZEXT, loaded, Type.I32);
+                case "B", "S" -> b.convert(ConvertOp.SEXT, loaded, Type.I32);
+                default -> loaded;
+            };
         }
         // A static final field: its value, as the bytecode frontend folds computed constants.
         try {
             var owner = context.load((JavaType) ref.refType());
             var field = owner.getDeclaredField(ref.name());
             if (field.isEnumConstant()) {
-                // Enum constants are their ordinals in kernels, as in the bytecode frontend.
-                return b.constInt(Type.I32, ((Enum<?>) field.get(null)).ordinal());
+                // Enum constants are their ordinals in kernels, as in the bytecode frontend (read without
+                // field access, so an enum in another module works too).
+                @SuppressWarnings({ "unchecked", "rawtypes" })
+                int ordinal = Enum.valueOf((Class) owner, ref.name()).ordinal();
+                return b.constInt(Type.I32, ordinal);
             }
             if (!Modifier.isFinal(field.getModifiers()) || !field.getType().isPrimitive()) {
                 throw new Unsupported("TC-E1003", "static field " + ref.name() + " is not a primitive constant");
@@ -617,7 +727,17 @@ final class BabylonTranslator {
             if (api.get().receiver().isPresent()) {
                 updateReceiver(b, operands.get(0), api.get().receiver().get());
             }
-            return api.get().value().orElse(null);
+            var result = api.get().value().orElse(null);
+            if (result != null && descriptor(op.resultType()).equals("Z") && !result.type().equals(Type.I1)) {
+                // an intrinsic answering a boolean as an int (isNaN, warp votes): code models keep booleans as i1
+                result = b.icmp(IntPredicate.NE, result, b.constInt(result.type(), 0));
+            }
+            if (result != null && result.type() instanceof Type.PointerType && op.resultType() instanceof jdk.incubator.code.dialect.java.ArrayType array) {
+                // a local array (KernelContext.allocateFloatLocalArray(n)): indexed through its element type
+                localArrays.put(result, descriptor(array.componentType()).length() == 1 ? memoryType(primitive(array.componentType()))
+                        : Frontend.typeOf(descriptor(array.componentType())));
+            }
+            return result;
         }
         if (op.hasReceiver() && name.equals("ordinal") && operands.size() == 1 && context.load((JavaType) ref.refType()) instanceof Class<?> c && c.isEnum()) {
             return v(operands.get(0));
@@ -638,10 +758,13 @@ final class BabylonTranslator {
                 return math(b, base, args(operands), valueType(op.resultType()));
             }
         }
-        if (owner.equals("java.lang.Math")) {
+        if (owner.equals("java.lang.Math") && MATH.contains(name)) {
             return math(b, name, args(operands), valueType(op.resultType()));
         }
-        if (op.hasReceiver() && !(v(operands.get(0)).type() instanceof Type.ObjectType o && !o.equals(uk.ac.manchester.tornado.tc.ir.ApiTypes.KERNEL_CONTEXT))) {
+        // Instance calls compiled as device functions with the receiver first, as the bytecode frontend
+        // does: on objects (vectors, collections, fields' owners), on an enum (its ordinal) and the
+        // KernelContext methods whose Java body is their device semantics (swizzled loads and stores).
+        if (op.hasReceiver() && !(v(operands.get(0)).type() instanceof Type.ObjectType || isEnum(operands.get(0).type()))) {
             throw new Unsupported("TC-E1003", "instance call " + owner + "." + name + " is not supported by the Babylon frontend yet");
         }
         // A static call, or a call on an object (a TornadoVM vector collection, ...): a device function,
@@ -659,7 +782,18 @@ final class BabylonTranslator {
                 }
             }
             context.callee(method, calleeName);
-            return b.call(calleeName, valueType(op.resultType()), args(operands));
+            if (method.isAnnotationPresent(jdk.incubator.code.Reflect.class)) {
+                return b.call(calleeName, valueType(op.resultType()), args(operands));
+            }
+            // From bytecode: booleans travel as ints, as on the JVM stack.
+            var callArgs = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+            for (var a : args(operands)) {
+                callArgs.add(a.type().equals(Type.I1) ? b.convert(ConvertOp.ZEXT, a, Type.I32) : a);
+            }
+            if (descriptor(op.resultType()).equals("Z")) {
+                return b.icmp(IntPredicate.NE, b.call(calleeName, Type.I32, callArgs), b.constInt(Type.I32, 0));
+            }
+            return b.call(calleeName, valueType(op.resultType()), callArgs);
         } catch (ReflectiveOperationException e) {
             throw new Unsupported("TC-E1007", "called method " + owner + "." + name + " cannot be resolved: " + e);
         }
@@ -680,7 +814,8 @@ final class BabylonTranslator {
             if (array.dimensions() != 1 || op.operands().size() != 1) {
                 throw new Unsupported("TC-E1003", "only one-dimensional local arrays are supported in kernels");
             }
-            var element = memoryType(context.load(array.componentType()) instanceof Class<?> c && !c.isPrimitive() ? c : primitive(array.componentType()));
+            var element = descriptor(array.componentType()).length() == 1 ? memoryType(primitive(array.componentType()))
+                    : Frontend.typeOf(descriptor(array.componentType())); // HalfFloat[] fragments: f16
             var local = Frontend.localArray(b, AddressSpace.PRIVATE, element, v(op.operands().get(0)));
             localArrays.put(local, element);
             return local;
@@ -690,6 +825,30 @@ final class BabylonTranslator {
         var descriptor = ctor.signature().parameterTypes().stream().map(BabylonTranslator::descriptor).collect(java.util.stream.Collectors.joining("", "(", ")V"));
         return Frontend.apiNew(b, owner, descriptor, args(op.operands()))
                 .orElseThrow(() -> new Unsupported("TC-E1003", "new " + owner + descriptor + " is not supported in kernels"));
+    }
+
+    /** A field's type as stored: byte, short and char keep their width (the bytecode frontend's field types). */
+    private static Type memoryOrValueType(CodeType type) {
+        return switch (descriptor(type)) {
+            case "B", "Z" -> Type.I8;
+            case "S", "C" -> Type.I16;
+            default -> valueType(type);
+        };
+    }
+
+    /** A slot-backed vector's type: its slot's element and count. */
+    private Type valueTypeOfSlot(Value value) {
+        var slot = (Inst) vectorSlots.get(value);
+        var alloca = (Opcode.Alloca) slot.opcode();
+        return new Type.VectorType(alloca.element(), alloca.count());
+    }
+
+    /** A sub-int element widened to an int value, as Java reads it. */
+    private static uk.ac.manchester.tornado.tc.ir.Value widen(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value value, Type type) {
+        if ((value.type().equals(Type.I8) || value.type().equals(Type.I16)) && type.equals(Type.I32)) {
+            return b.convert(ConvertOp.SEXT, value, Type.I32);
+        }
+        return value;
     }
 
     private static Class<?> primitive(CodeType type) {
@@ -709,8 +868,23 @@ final class BabylonTranslator {
     /** A method named in a model, resolved with access to its declaring class (kernels often sit in private nested types). */
     private Method resolve(MethodRef ref) throws ReflectiveOperationException {
         var owner = context.load((JavaType) ref.refType());
-        var lookup = owner == null ? java.lang.invoke.MethodHandles.lookup() : java.lang.invoke.MethodHandles.privateLookupIn(owner, java.lang.invoke.MethodHandles.lookup());
-        return ref.resolveToMethod(lookup);
+        if (owner != null) {
+            try {
+                return ref.resolveToMethod(java.lang.invoke.MethodHandles.privateLookupIn(owner, java.lang.invoke.MethodHandles.lookup()));
+            } catch (IllegalAccessException notOpen) {
+                // another module (TornadoMath, java.lang.Integer, ...) that does not open its package: its public methods
+            }
+        }
+        // A public method of a class this module cannot open: find it by name and parameter classes.
+        if (owner == null) {
+            throw new ClassNotFoundException(ref.refType().toString());
+        }
+        var parameters = new ArrayList<Class<?>>();
+        for (var t : ref.signature().parameterTypes()) {
+            var d = descriptor(t);
+            parameters.add(d.length() == 1 ? primitive(t) : context.load((JavaType) t));
+        }
+        return owner.getMethod(ref.name(), parameters.toArray(Class<?>[]::new));
     }
 
     /**
@@ -1179,14 +1353,29 @@ final class BabylonTranslator {
         return aliases.getOrDefault(value, value);
     }
 
-    /** A branch's arguments, without those for alias parameters. */
+    /** Block parameters in the order of their TC block arguments; array-typed ones are created late (deferredParams). */
+    private final Map<Block, List<Value>> paramOrder = new HashMap<>();
+    private final java.util.Set<Value> deferredParams = new java.util.HashSet<>();
+
+    /** A branch's arguments in its target's TC argument order, without those for alias parameters. */
     private List<uk.ac.manchester.tornado.tc.ir.Value> branchArgs(Block.Reference ref) {
-        var out = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
-        var params = ref.targetBlock().parameters();
-        for (int k = 0; k < ref.arguments().size(); k++) {
-            if (!aliases.containsKey(params.get(k))) {
-                out.add(v(ref.arguments().get(k)));
+        var target = ref.targetBlock();
+        var params = target.parameters();
+        for (int k = 0; k < params.size(); k++) {
+            var p = params.get(k);
+            if (deferredParams.contains(p) && !values.containsKey(p)) {
+                var incoming = v(ref.arguments().get(k));
+                var arg = blocks.get(target).addArg(incoming.type(), "");
+                values.put(p, arg);
+                if (localArrays.containsKey(incoming)) {
+                    localArrays.put(arg, localArrays.get(incoming));
+                }
+                paramOrder.get(target).add(p);
             }
+        }
+        var out = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+        for (var p : paramOrder.get(target)) {
+            out.add(v(ref.arguments().get(params.indexOf(p))));
         }
         return out;
     }
@@ -1606,6 +1795,10 @@ final class BabylonTranslator {
         }
         throw new Unsupported("TC-E1003", "HAT buffer element " + c + " is not supported");
     }
+
+    /** java.lang.Math methods with a TC intrinsic; the others are compiled from their Java bodies. */
+    private static final java.util.Set<String> MATH = java.util.Set.of("sqrt", "exp", "log", "sin", "cos", "tan", "tanh", "abs", "floor", "ceil", "rint", "atan", "asin", "acos",
+            "min", "max", "pow", "fma", "atan2");
 
     private static Inst math(IrBuilder b, String name, List<uk.ac.manchester.tornado.tc.ir.Value> args, Type type) {
         return switch (name) {

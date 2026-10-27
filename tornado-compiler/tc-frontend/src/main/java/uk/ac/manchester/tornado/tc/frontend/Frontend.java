@@ -384,9 +384,7 @@ public final class Frontend {
             case Bindings.ArraySize(var type) -> Optional.of(new ApiResult(Optional.of(b.arrayLength(args.get(0), type))));
             case Bindings.Convert(var op, var result) -> Optional.of(new ApiResult(Optional.of(b.convert(op, args.get(args.size() - 1), result))));
             case Bindings.Identity i -> Optional.of(new ApiResult(Optional.of(args.get(0))));
-            case Bindings.SharedArray(var element) -> args.get(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n) && n > 0
-                    ? Optional.of(new ApiResult(Optional.of(b.alloca(AddressSpace.SHARED, element, (int) n))))
-                    : Optional.empty();
+            case Bindings.SharedArray(var element) -> value(localArray(b, AddressSpace.SHARED, element, args.get(1)));
             case Bindings.HalfBits h -> value(b.convert(ConvertOp.SEXT, b.convert(ConvertOp.BITCAST, args.get(0), Type.I16), Type.I32));
             case Bindings.HalfArith(var op) -> value(b.convert(ConvertOp.FTRUNC,
                     b.binary(op, b.convert(ConvertOp.FEXT, args.get(0), Type.F32), b.convert(ConvertOp.FEXT, args.get(1), Type.F32)), Type.F16));
