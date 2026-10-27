@@ -98,9 +98,14 @@ public class TornadoHatBackend extends Backend {
         }
     }
 
+    /**
+     * A HAT tile kernel: one CUDA Tile block per tile ({@code ceil(global / tile)} along each
+     * dimension), with the 1x1x1 block shape CUDA Tile requires. TC compiles it to CUDA Tile C++,
+     * so it runs on the CUDA backend only.
+     */
     @Override
     public void dispatchTile(KernelCallGraph kernelCallGraph, NDRange ndRange, Object... dispatchContextAndArgs) {
-        throw new UnsupportedOperationException("HAT tile kernels (" + kernelCallGraph.callDag.entryPoint.method().getName() + ") are not supported by the TornadoVM backend yet");
+        dispatchKernel(kernelCallGraph, ndRange, dispatchContextAndArgs);
     }
 
     /** One execution plan per kernel, buffers, scalar values and range: compiled once, launched on every dispatch. */
@@ -158,6 +163,30 @@ public class TornadoHatBackend extends Backend {
     }
 
     private static WorkerGrid workerGrid(NDRange range) {
+        if (range.hasTile()) {
+            // As HAT's own backends: one block per local (or tile) extent along each dimension; with a
+            // warp flag on X the blocks are numbered along X only (a kernel swizzles BIDX() itself).
+            int[] global = extents(range.global());
+            int[] per = range.hasLocal() ? extents(range.local()) : extents(range.tile());
+            int[] blocks = new int[global.length];
+            for (int d = 0; d < global.length; d++) {
+                blocks[d] = ceil(global[d], per[d]);
+            }
+            if (range.hasWarp() && range.warp() instanceof NDRange.Warp2D w && w.x() || range.hasWarp() && range.warp() instanceof NDRange.Warp3D w3 && w3.x()) {
+                int all = 1;
+                for (int b : blocks) {
+                    all *= b;
+                }
+                blocks = new int[] { all };
+            }
+            WorkerGrid tiles = switch (blocks.length) {
+                case 1 -> new WorkerGrid1D(blocks[0]);
+                case 2 -> new WorkerGrid2D(blocks[0], blocks[1]);
+                default -> new WorkerGrid3D(blocks[0], blocks[1], blocks[2]);
+            };
+            tiles.setLocalWork(1, 1, 1);
+            return tiles;
+        }
         WorkerGrid grid = switch (range.global()) {
             case NDRange.Global1D g -> new WorkerGrid1D(g.x());
             case NDRange.Global2D g -> new WorkerGrid2D(g.x(), g.y());
@@ -174,6 +203,25 @@ public class TornadoHatBackend extends Backend {
             }
         }
         return grid;
+    }
+
+    private static int[] extents(Object dims) {
+        return switch (dims) {
+            case NDRange.Global1D g -> new int[] { g.x() };
+            case NDRange.Global2D g -> new int[] { g.x(), g.y() };
+            case NDRange.Global3D g -> new int[] { g.x(), g.y(), g.z() };
+            case NDRange.Local1D l -> new int[] { l.x() };
+            case NDRange.Local2D l -> new int[] { l.x(), l.y() };
+            case NDRange.Local3D l -> new int[] { l.x(), l.y(), l.z() };
+            case NDRange.Tile1D t -> new int[] { t.x() };
+            case NDRange.Tile2D t -> new int[] { t.x(), t.y() };
+            case NDRange.Tile3D t -> new int[] { t.x(), t.y(), t.z() };
+            default -> throw new IllegalArgumentException("unknown range " + dims);
+        };
+    }
+
+    private static int ceil(int n, int d) {
+        return (n + d - 1) / d;
     }
 
     /**

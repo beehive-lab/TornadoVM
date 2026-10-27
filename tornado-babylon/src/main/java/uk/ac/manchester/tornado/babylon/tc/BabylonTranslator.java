@@ -158,12 +158,15 @@ final class BabylonTranslator {
             }
             index++;
         }
+        findVirtualParams(body);
         for (var block : body.blocks()) {
             if (block.isEntryBlock()) {
                 continue;
             }
             for (var p : block.parameters()) {
-                values.put(p, blocks.get(block).addArg(valueType(p.type()), ""));
+                if (!aliases.containsKey(p)) {
+                    values.put(p, blocks.get(block).addArg(valueType(p.type()), ""));
+                }
             }
         }
         // Mutated HAT vectors get their private slots first, in the entry block.
@@ -175,7 +178,9 @@ final class BabylonTranslator {
                 vectorSlots.computeIfAbsent(vector, x -> entryBuilder.alloca(AddressSpace.PRIVATE, type.element(), type.length()));
             }
         });
-        for (var block : body.blocks()) {
+        // Reverse post-order: every value is translated before the blocks that use it (inlined code
+        // can put a continuation block before the blocks that branch to it).
+        for (var block : reversePostOrder(body)) {
             var b = new IrBuilder(blocks.get(block));
             current = b;
             for (var p : block.parameters()) {
@@ -192,6 +197,38 @@ final class BabylonTranslator {
             throw new Unsupported(problems.get(0).code(), problems.get(0).message());
         }
         return function;
+    }
+
+    private static List<Block> reversePostOrder(jdk.incubator.code.Body body) {
+        var post = new ArrayList<Block>();
+        var seen = new java.util.HashSet<Block>();
+        var stack = new java.util.ArrayDeque<Object[]>();
+        stack.push(new Object[] { body.entryBlock(), 0 });
+        seen.add(body.entryBlock());
+        while (!stack.isEmpty()) {
+            var top = stack.peek();
+            var block = (Block) top[0];
+            var successors = block.successors();
+            int next = (int) top[1];
+            if (next < successors.size()) {
+                top[1] = next + 1;
+                var target = successors.get(next).targetBlock();
+                if (seen.add(target)) {
+                    stack.push(new Object[] { target, 0 });
+                }
+            } else {
+                post.add(block);
+                stack.pop();
+            }
+        }
+        java.util.Collections.reverse(post);
+        // unreachable blocks keep their place after the reachable ones
+        for (var block : body.blocks()) {
+            if (!seen.contains(block)) {
+                post.add(block);
+            }
+        }
+        return post;
     }
 
     private Loc location(Op op) {
@@ -254,6 +291,7 @@ final class BabylonTranslator {
             case String d when HAT_F16_TYPES.contains(d) -> Type.F16;
             case String d when HAT_BF16_TYPES.contains(d) -> Type.I32;
             case String d when vectorLanes(d) > 0 -> new Type.VectorType(Type.F32, vectorLanes(d));
+            case "Lhat/types/Tile;" -> uk.ac.manchester.tornado.tc.ir.ApiTypes.TILE;
             default -> Frontend.typeOf(descriptor(type));
         };
     }
@@ -304,6 +342,11 @@ final class BabylonTranslator {
             case JavaOp.ComplOp compl -> define(op, b.unary(UnaryOp.NOT, v(compl.operands().get(0))));
             case JavaOp.NotOp not -> define(op, b.binary(BinaryOp.XOR, v(not.operands().get(0)), b.constInt(Type.I1, 1)));
             case JavaOp.ConvOp conv -> define(op, convert(b, conv));
+            case JavaOp.ArrayAccessOp.ArrayLoadOp load when ranges.containsKey(resolve(load.operands().get(0))) -> define(op, b.add(ranges.get(resolve(load.operands().get(0)))[0], v(load.operands().get(1))));
+            case JavaOp.ArrayLengthOp length when ranges.containsKey(resolve(length.operands().get(0))) -> {
+                var r = ranges.get(resolve(length.operands().get(0)));
+                define(op, b.binary(BinaryOp.SUB, r[1], r[0]));
+            }
             case JavaOp.ArrayAccessOp.ArrayLoadOp load when isView(load.operands().get(0)) -> define(op, viewLoad(b, load));
             case JavaOp.ArrayAccessOp.ArrayStoreOp store when isView(store.operands().get(0)) -> viewStore(b, store);
             case JavaOp.ArrayLengthOp length when arrayViews.containsKey(length.operands().get(0)) -> define(op, viewLength(b, arrayViews.get(length.operands().get(0))));
@@ -319,10 +362,11 @@ final class BabylonTranslator {
             case JavaOp.NewOp n -> define(op, newValue(b, n));
             case CoreOp.BranchOp br -> {
                 markParallel(br.branch());
-                b.br(blocks.get(br.branch().targetBlock()), args(br.branch().arguments()));
+                carryTileDims(br.branch());
+                b.br(blocks.get(br.branch().targetBlock()), branchArgs(br.branch()));
             }
-            case CoreOp.ConditionalBranchOp cbr -> b.condBr(v(cbr.predicateOperand()), blocks.get(cbr.trueBranch().targetBlock()), args(cbr.trueBranch().arguments()),
-                    blocks.get(cbr.falseBranch().targetBlock()), args(cbr.falseBranch().arguments()));
+            case CoreOp.ConditionalBranchOp cbr when carryTileDims(cbr.trueBranch()) && carryTileDims(cbr.falseBranch()) -> b.condBr(v(cbr.predicateOperand()), blocks.get(cbr.trueBranch().targetBlock()), branchArgs(cbr.trueBranch()),
+                    blocks.get(cbr.falseBranch().targetBlock()), branchArgs(cbr.falseBranch()));
             case CoreOp.ReturnOp ret -> {
                 if (ret.operands().isEmpty()) {
                     b.ret();
@@ -525,6 +569,9 @@ final class BabylonTranslator {
         if (owner.equals(Markers.class.getName()) && name.equals("parallel")) {
             parallelInits.add(op.result());
             return v(operands.get(0));
+        }
+        if (owner.equals("hat.TileContext") || owner.equals("hat.types.Tile")) {
+            return hatTile(b, op, name);
         }
         if (owner.equals(HAT_KERNEL_CONTEXT)) {
             return hatKernelContext(b, name);
@@ -1085,6 +1132,286 @@ final class BabylonTranslator {
         var up = b.binary(BinaryOp.AND, b.icmp(IntPredicate.NE, round, zero), b.icmp(IntPredicate.NE, b.binary(BinaryOp.OR, lsb, sticky), zero));
         var rounded = b.select(up, b.binary(BinaryOp.ADD, bits, b.constInt(Type.I32, 0x1_0000)), bits);
         return b.binary(BinaryOp.AND, b.binary(BinaryOp.OR, b.binary(BinaryOp.SHR, rounded, b.constInt(Type.I32, 16)), sign), b.constInt(Type.I32, 0xffff));
+    }
+
+    // ---- HAT tiles (TileContext, Tile): CUDA Tile through TC's tile.* intrinsics
+
+    /** The HAT-level dimensions of each tile value (1 or 2): a store partitions its tensor by them. */
+    private final Map<uk.ac.manchester.tornado.tc.ir.Value, List<uk.ac.manchester.tornado.tc.ir.Value>> tileDims = new HashMap<>();
+    /** {@code TileContext.index(...)} and {@code TileContext.shape(...)}: their components, which only other tile calls read. */
+    private final Map<Value, List<uk.ac.manchester.tornado.tc.ir.Value>> tileTuples = new HashMap<>();
+    /** {@code TileContext.irange(start, end)}: an int[] {start, ..., end - 1} that is only iterated. */
+    private final Map<Value, uk.ac.manchester.tornado.tc.ir.Value[]> ranges = new HashMap<>();
+
+    /**
+     * Block parameters that carry a value with no TC value of its own ({@code irange}, {@code index},
+     * {@code shape}): no block argument, and uses read the value they alias.
+     */
+    private final Map<Value, Value> aliases = new HashMap<>();
+
+    private static boolean isVirtual(Value value) {
+        return value instanceof Op.Result r && r.op() instanceof JavaOp.InvokeOp invoke && invoke.invokeReference().refType().toString().equals("hat.TileContext")
+                && java.util.Set.of("irange", "index", "shape").contains(invoke.invokeReference().name());
+    }
+
+    private void findVirtualParams(jdk.incubator.code.Body body) {
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (var block : body.blocks()) {
+                for (var op : block.ops()) {
+                    for (var ref : op.successors()) {
+                        var params = ref.targetBlock().parameters();
+                        for (int k = 0; k < ref.arguments().size(); k++) {
+                            var arg = ref.arguments().get(k);
+                            if ((isVirtual(arg) || aliases.containsKey(arg)) && !aliases.containsKey(params.get(k))) {
+                                aliases.put(params.get(k), aliases.getOrDefault(arg, arg));
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private Value resolve(Value value) {
+        return aliases.getOrDefault(value, value);
+    }
+
+    /** A branch's arguments, without those for alias parameters. */
+    private List<uk.ac.manchester.tornado.tc.ir.Value> branchArgs(Block.Reference ref) {
+        var out = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+        var params = ref.targetBlock().parameters();
+        for (int k = 0; k < ref.arguments().size(); k++) {
+            if (!aliases.containsKey(params.get(k))) {
+                out.add(v(ref.arguments().get(k)));
+            }
+        }
+        return out;
+    }
+
+    /** Loop-carried tiles (an accumulator) keep the dimensions of the tile that enters the loop. */
+    private boolean carryTileDims(Block.Reference branch) {
+        var target = branch.targetBlock();
+        for (int k = 0; k < branch.arguments().size(); k++) {
+            var incoming = values.get(branch.arguments().get(k));
+            var param = values.get(target.parameters().get(k));
+            if (aliases.containsKey(target.parameters().get(k))) {
+                continue;
+            }
+            if (incoming != null && param != null && tileDims.containsKey(incoming)) {
+                tileDims.putIfAbsent(param, tileDims.get(incoming));
+            }
+        }
+        return true;
+    }
+
+    private static int dtype(String name) {
+        return uk.ac.manchester.tornado.tc.tornado.TileTyping.DTYPES.indexOf(name);
+    }
+
+    /**
+     * A HAT tensor (TensorF32, Tensor2DF32, Tensor2DF16) as a strided CUDA Tile view: its array starts
+     * after HAT's header, at an element offset; a 1D tensor is one row.
+     */
+    private uk.ac.manchester.tornado.tc.ir.Value tensorView(IrBuilder b, Value tensor) {
+        var buffer = v(tensor);
+        var index = bufferParams.get(buffer);
+        var layout = index == null ? null : context.bufferLayout(index);
+        if (layout == null || !(layout.memberLayouts().getLast() instanceof SequenceLayout array)) {
+            throw new Unsupported("TC-E1003", "a HAT tile load or store needs a tensor parameter with a known layout");
+        }
+        String dtype;
+        long elementBytes = array.elementLayout().byteSize();
+        if (array.elementLayout() instanceof ValueLayout value && value.carrier() == float.class) {
+            dtype = "F32";
+        } else if (elementBytes == 2) {
+            dtype = "F16";
+        } else {
+            throw new Unsupported("TC-E1003", "HAT tiles over " + array.elementLayout() + " tensors are not supported");
+        }
+        long offset = layout.byteOffset(MemoryLayout.PathElement.groupElement(array.name().orElseThrow())) / elementBytes;
+        var m = field(b, buffer, layout, "m");
+        var two = layout.memberLayouts().stream().anyMatch(l -> l.name().orElse("").equals("n"));
+        var rows = two ? m : b.constInt(Type.I32, 1);
+        var cols = two ? field(b, buffer, layout, "n") : m;
+        return b.intrinsic("tile.view_strided", uk.ac.manchester.tornado.tc.ir.ApiTypes.TENSOR_VIEW,
+                List.of(buffer, b.constInt(Type.I32, dtype(dtype)), b.constInt(Type.I32, offset), rows, cols, cols));
+    }
+
+    private uk.ac.manchester.tornado.tc.ir.Value field(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value buffer, GroupLayout layout, String name) {
+        var at = b.constInt(Type.I64, layout.byteOffset(MemoryLayout.PathElement.groupElement(name)));
+        return b.arrayLoad(buffer, at, memoryType((ValueLayout) layout.select(MemoryLayout.PathElement.groupElement(name))));
+    }
+
+    /** A HAT-level shape or index as CUDA Tile's two extents: 1D (n) is (1, n). */
+    private List<uk.ac.manchester.tornado.tc.ir.Value> rank2(IrBuilder b, List<uk.ac.manchester.tornado.tc.ir.Value> dims, boolean index) {
+        return dims.size() == 1 ? List.of(b.constInt(Type.I32, index ? 0 : 1), dims.get(0)) : dims;
+    }
+
+    private List<uk.ac.manchester.tornado.tc.ir.Value> tuple(IrBuilder b, Value value) {
+        var t = tileTuples.get(resolve(value));
+        return t != null ? t : List.of(v(value));
+    }
+
+    private uk.ac.manchester.tornado.tc.ir.Value tile(IrBuilder b, String intrinsic, List<? extends uk.ac.manchester.tornado.tc.ir.Value> operands,
+            List<uk.ac.manchester.tornado.tc.ir.Value> dims) {
+        var result = b.intrinsic(intrinsic, uk.ac.manchester.tornado.tc.ir.ApiTypes.TILE, operands);
+        tileDims.put(result, dims);
+        return result;
+    }
+
+    private List<uk.ac.manchester.tornado.tc.ir.Value> dims(uk.ac.manchester.tornado.tc.ir.Value tile) {
+        var dims = tileDims.get(tile);
+        if (dims == null) {
+            throw new Unsupported("TC-E1003", "the shape of this HAT tile cannot be followed");
+        }
+        return dims;
+    }
+
+    private uk.ac.manchester.tornado.tc.ir.Value hatTile(IrBuilder b, JavaOp.InvokeOp op, String name) {
+        var operands = op.operands();
+        switch (name) {
+            case "BIDX", "BIDY", "BIDZ" -> {
+                return b.intrinsic("tile.bid", Immediates.of("dim", "XYZ".indexOf(name.charAt(3))), Type.I32, List.of());
+            }
+            case "index", "shape" -> {
+                tileTuples.put(op.result(), args(operands));
+                return null;
+            }
+            case "irange" -> {
+                var a = args(operands);
+                ranges.put(op.result(), a.size() == 1 ? new uk.ac.manchester.tornado.tc.ir.Value[] { b.constInt(Type.I32, 0), a.get(0) }
+                        : new uk.ac.manchester.tornado.tc.ir.Value[] { a.get(0), a.get(1) });
+                return null;
+            }
+            case "ceildiv" -> {
+                if (operands.stream().allMatch(x -> descriptor(x.type()).equals("I"))) {
+                    var a = v(operands.get(0));
+                    var c = v(operands.get(1));
+                    return b.binary(BinaryOp.DIV, b.binary(BinaryOp.SUB, b.binary(BinaryOp.ADD, a, c), b.constInt(Type.I32, 1)), c);
+                }
+            }
+            case "numTiles" -> {
+                // ceil(extent of the tensor along the dimension / tile extent along it)
+                var buffer = v(operands.get(0));
+                var layout = context.bufferLayout(bufferParams.get(buffer));
+                int dim = (int) uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(v(operands.get(1))).orElseThrow(
+                        () -> new Unsupported("TC-E1003", "Tile.numTiles needs a constant dimension"));
+                var extent = field(b, buffer, layout, dim == 0 ? "m" : "n");
+                var shape = tuple(b, operands.get(2));
+                var size = shape.get(Math.min(dim, shape.size() - 1));
+                return b.binary(BinaryOp.DIV, b.binary(BinaryOp.SUB, b.binary(BinaryOp.ADD, extent, size), b.constInt(Type.I32, 1)), size);
+            }
+            case "load" -> {
+                var view = tensorView(b, operands.get(0));
+                var where = tuple(b, operands.get(1));
+                var shape = tuple(b, operands.get(2));
+                var parts = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(view));
+                parts.addAll(rank2(b, shape, false));
+                var partition = b.intrinsic("tile.partition", uk.ac.manchester.tornado.tc.ir.ApiTypes.PARTITION_VIEW, parts);
+                var loadOps = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(partition));
+                loadOps.addAll(rank2(b, where, true));
+                return tile(b, "tile.load", loadOps, shape);
+            }
+            case "store" -> {
+                var view = tensorView(b, operands.get(0));
+                var where = tuple(b, operands.get(1));
+                var value = v(operands.get(2));
+                var parts = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(view));
+                parts.addAll(rank2(b, dims(value), false));
+                var partition = b.intrinsic("tile.partition", uk.ac.manchester.tornado.tc.ir.ApiTypes.PARTITION_VIEW, parts);
+                var storeOps = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(partition, value));
+                storeOps.addAll(rank2(b, where, true));
+                b.intrinsic("tile.store", Type.VOID, storeOps);
+                return null;
+            }
+            case "zeros" -> {
+                var dims = args(operands);
+                var ops = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(b.constInt(Type.I32, dtype("F32"))));
+                ops.addAll(rank2(b, dims, false));
+                return tile(b, "tile.zeros", ops, dims);
+            }
+            case "full" -> {
+                var dims = tuple(b, operands.get(0));
+                var ops = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(b.constInt(Type.I32, dtype("F32")), toF64(b, v(operands.get(1)))));
+                ops.addAll(rank2(b, dims, false));
+                return tile(b, "tile.full", ops, dims);
+            }
+            case "mma" -> {
+                var acc = v(operands.get(2));
+                return tile(b, "tile.mma", List.of(v(operands.get(0)), v(operands.get(1)), acc), dims(acc));
+            }
+            case "transpose" -> {
+                var t = v(operands.get(0));
+                var d = dims(t);
+                return tile(b, "tile.unary.transpose", List.of(t), d.size() == 2 ? List.of(d.get(1), d.get(0)) : d);
+            }
+            case "sum", "min", "max" -> {
+                if (name.equals("min") && operands.stream().allMatch(x -> descriptor(x.type()).equals("I"))) {
+                    // A select, not math.min: CUDA Tile kernels cannot call device functions such as min().
+                    var a = v(operands.get(0));
+                    var c = v(operands.get(1));
+                    return b.select(b.icmp(IntPredicate.SLT, a, c), a, c);
+                }
+                if (operands.size() == 2 && !descriptor(operands.get(0).type()).equals("I")) {
+                    var t = v(operands.get(0));
+                    var d = dims(t);
+                    long axis = uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(v(operands.get(1))).orElseThrow(
+                            () -> new Unsupported("TC-E1003", "Tile." + name + " needs a constant axis"));
+                    var reduced = new ArrayList<>(d);
+                    reduced.set((int) axis, b.constInt(Type.I32, 1));
+                    return tile(b, "tile.reduce." + name, List.of(t, b.constInt(Type.I32, axis + (d.size() == 1 ? 1 : 0))), reduced);
+                }
+            }
+            case "add", "sub", "mul", "truediv" -> {
+                var x = v(operands.get(0));
+                var y = v(operands.get(1));
+                var intrinsic = "tile.binary." + (name.equals("truediv") ? "div" : name);
+                if (tileDims.containsKey(x) && tileDims.containsKey(y)) {
+                    // elementwise, broadcasting extents of 1: the result has the larger extents
+                    var dx = dims(x);
+                    var dy = dims(y);
+                    var d = constantProduct(dx) >= constantProduct(dy) ? dx : dy;
+                    return tile(b, intrinsic, List.of(x, y), d);
+                }
+                var t = tileDims.containsKey(x) ? x : y;
+                var scalar = t == x ? y : x;
+                if (name.equals("mul")) {
+                    return tile(b, "tile.scale", List.of(t, toF64(b, scalar)), dims(t));
+                }
+                var fullOps = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(b.constInt(Type.I32, dtype("F32")), toF64(b, scalar)));
+                fullOps.addAll(rank2(b, dims(t), false));
+                var full = tile(b, "tile.full", fullOps, dims(t));
+                return tile(b, intrinsic, t == x ? List.of(t, full) : List.of(full, t), dims(t));
+            }
+            default -> {
+            }
+        }
+        throw new Unsupported("TC-E1003", "HAT tile operation " + name + " is not supported yet");
+    }
+
+    /** A scalar for a tile operand, as a double; a constant stays a constant (CUDA Tile fill values are literals). */
+    private static uk.ac.manchester.tornado.tc.ir.Value toF64(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value x) {
+        if (x instanceof Inst c && c.opcode() instanceof Opcode.ConstFloat(var value)) {
+            return b.constFloat(Type.F64, value);
+        }
+        if (x instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var value)) {
+            return b.constFloat(Type.F64, value);
+        }
+        if (x.type().equals(Type.F64)) {
+            return x;
+        }
+        return b.convert(x.type().isFloat() ? ConvertOp.FEXT : ConvertOp.I2F, x, Type.F64);
+    }
+
+    private static long constantProduct(List<uk.ac.manchester.tornado.tc.ir.Value> dims) {
+        long p = 1;
+        for (var d : dims) {
+            p *= uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(d).orElse(Long.MAX_VALUE / 4);
+        }
+        return p;
     }
 
     /** HAT half floats: TC f16 values; arithmetic in f32, rounded back, as the bytecode frontend does for HalfFloat. */

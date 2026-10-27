@@ -28,6 +28,7 @@ import jdk.incubator.code.CodeTransformer;
 import jdk.incubator.code.Op;
 import jdk.incubator.code.Reflect;
 import jdk.incubator.code.dialect.core.CoreOp;
+import jdk.incubator.code.dialect.core.Inliner;
 import jdk.incubator.code.dialect.core.SSA;
 import jdk.incubator.code.dialect.java.JavaOp;
 import jdk.incubator.code.dialect.java.JavaType;
@@ -122,7 +123,7 @@ public final class BabylonFrontend implements ModelFrontend {
 
     private static CoreOp.FuncOp lowered(Frontend.BytecodeSource source, Method m) {
         var model = Op.ofMethod(m).orElseThrow(() -> new BabylonTranslator.Unsupported("TC-E1007", m + " has no code model"));
-        var lowered = model.transform(CodeTransformer.LOWERING_TRANSFORMER);
+        var lowered = inlineTileHelpers(m, model.transform(CodeTransformer.LOWERING_TRANSFORMER), 0);
         var parallel = parallelLocals(source, m);
         if (!parallel.isEmpty()) {
             lowered = lowered.transform((builder, op) -> {
@@ -138,7 +139,56 @@ public final class BabylonFrontend implements ModelFrontend {
                 return builder;
             });
         }
-        return SSA.transform(lowered);
+        var ssa = SSA.transform(lowered);
+        if (Boolean.getBoolean("tornado.babylon.dumpModels")) {
+            System.err.println("[TC] Babylon code model of " + m + ", lowered, as TC reads it:\n" + ssa.toText());
+        }
+        return ssa;
+    }
+
+    private static boolean isTile(jdk.incubator.code.CodeType type) {
+        return type instanceof JavaType j && !j.toNominalDescriptor().isPrimitive() && j.toNominalDescriptor().descriptorString().equals("Lhat/types/Tile;");
+    }
+
+    /**
+     * HAT helpers that take or return tiles are inlined into their callers (in the code model): a
+     * tile's shape is part of its CUDA Tile type, and a store needs it, so tiles do not cross calls.
+     */
+    private static CoreOp.FuncOp inlineTileHelpers(Method owner, CoreOp.FuncOp lowered, int depth) {
+        if (depth > 8 || lowered.elements().noneMatch(e -> e instanceof JavaOp.InvokeOp invoke && takesTiles(invoke))) {
+            return lowered;
+        }
+        var inlined = lowered.transform((builder, op) -> {
+            if (op instanceof JavaOp.InvokeOp invoke && takesTiles(invoke)) {
+                Method callee;
+                try {
+                    var lookup = java.lang.invoke.MethodHandles.privateLookupIn(owner.getDeclaringClass(), java.lang.invoke.MethodHandles.lookup());
+                    callee = invoke.invokeReference().resolveToMethod(lookup);
+                } catch (ReflectiveOperationException e) {
+                    throw new BabylonTranslator.Unsupported("TC-E1007", "tile helper " + invoke.invokeReference() + " cannot be resolved: " + e);
+                }
+                var model = Op.ofMethod(callee).orElseThrow(() -> new BabylonTranslator.Unsupported("TC-E1007", callee + " takes tiles but has no code model (@Reflect)"));
+                var args = invoke.operands().stream().map(builder.context()::getValue).toList();
+                var after = Inliner.inline(builder, model.transform(CodeTransformer.LOWERING_TRANSFORMER), args);
+                if (invoke.result() != null && !after.parameters().isEmpty()) {
+                    builder.context().mapValue(invoke.result(), after.parameters().get(0));
+                }
+                return after;
+            }
+            builder.add(op);
+            return builder;
+        });
+        return inlineTileHelpers(owner, inlined, depth + 1);
+    }
+
+    private static boolean takesTiles(JavaOp.InvokeOp invoke) {
+        var ref = invoke.invokeReference();
+        var owner = ref.refType().toString();
+        if (owner.equals("hat.TileContext") || owner.equals("hat.types.Tile")) {
+            return false; // the tile operations themselves
+        }
+        var signature = ref.signature();
+        return isTile(signature.returnType()) || signature.parameterTypes().stream().anyMatch(BabylonFrontend::isTile);
     }
 
     /** Names of the method's locals annotated {@code @Parallel}, from its class file (code models do not keep them). */
