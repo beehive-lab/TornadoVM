@@ -221,7 +221,7 @@ public final class BabylonFrontend implements ModelFrontend {
         var pending = new ArrayDeque<Object[]>();
         try {
             var kernelName = Frontend.kernelName(kernel.getDeclaringClass().getName(), kernel.getName());
-            module.add(BabylonTranslator.translate(lowered(source, kernel), context(loader, kernel, pending), kernelName, true, sourceFile(kernel)));
+            module.add(BabylonTranslator.translate(lowered(source, kernel), context(source, loader, kernel, pending), kernelName, true, sourceFile(kernel)));
             while (!pending.isEmpty()) {
                 var next = pending.poll();
                 var method = (Method) next[0];
@@ -230,7 +230,7 @@ public final class BabylonFrontend implements ModelFrontend {
                     continue;
                 }
                 if (method.isAnnotationPresent(Reflect.class)) {
-                    module.add(BabylonTranslator.translate(lowered(source, method), context(loader, method, pending), name, false, sourceFile(method)));
+                    module.add(BabylonTranslator.translate(lowered(source, method), context(source, loader, method, pending), name, false, sourceFile(method)));
                 } else {
                     var owner = method.getDeclaringClass().getName().replace('.', '/');
                     var fromBytecode = Frontend.translateCallee(source, owner, method.getName(), descriptor(method), name);
@@ -251,7 +251,7 @@ public final class BabylonFrontend implements ModelFrontend {
         return new Frontend.ModuleResult(Optional.of(module), List.of(), () -> Op.ofMethod(kernel).map(m -> m.toText()).orElse(""));
     }
 
-    private static BabylonTranslator.Context context(ClassLoader loader, Method function, ArrayDeque<Object[]> pending) {
+    private static BabylonTranslator.Context context(Frontend.BytecodeSource source, ClassLoader loader, Method function, ArrayDeque<Object[]> pending) {
         return new BabylonTranslator.Context() {
             @Override
             public Class<?> load(JavaType type) {
@@ -270,6 +270,11 @@ public final class BabylonFrontend implements ModelFrontend {
             @Override
             public void callee(Method method, String name) {
                 pending.add(new Object[] { method, name });
+            }
+
+            @Override
+            public Optional<Frontend.MethodRef> deviceKernel(String ownerInternalName, String field) {
+                return source.deviceKernel(ownerInternalName, field);
             }
         };
     }

@@ -84,6 +84,9 @@ final class BabylonTranslator {
 
         /** Called for each {@code call} emitted: the callee must be added to the module. */
         void callee(Method method, String name);
+
+        /** The kernel a {@code static final DeviceKernel} field names (for {@code KernelContext.launch}). */
+        java.util.Optional<Frontend.MethodRef> deviceKernel(String ownerInternalName, String field);
     }
 
     private static final String HAT_KERNEL_CONTEXT = "hat.KernelContext";
@@ -397,6 +400,7 @@ final class BabylonTranslator {
 
     private void translate(IrBuilder b, Op op) {
         switch (op) {
+            case CoreOp.ConstantOp c when c.value() instanceof String text -> strings.put(op.result(), text); // a Debug.printf format
             case CoreOp.ConstantOp c -> define(op, constant(b, c.value(), c.resultType()));
             case JavaOp.BinaryOp bin -> define(op, binary(b, bin));
             case JavaOp.CompareOp cmp -> define(op, compare(b, cmp));
@@ -650,6 +654,13 @@ final class BabylonTranslator {
                 default -> loaded;
             };
         }
+        if (descriptor(ref.type()).equals("Luk/ac/manchester/tornado/api/DeviceKernel;")) {
+            // KernelContext.launch's child kernel: known by name only (dynamic parallelism)
+            var owner = ((JavaType) ref.refType()).toNominalDescriptor().descriptorString();
+            deviceKernels.put(op.result(), context.deviceKernel(owner.substring(1, owner.length() - 1), ref.name())
+                    .orElseThrow(() -> new Unsupported("TC-E1013", "DeviceKernel field " + ref.name() + " cannot be resolved: KernelContext.launch needs a static final field")));
+            return null;
+        }
         // A static final field: its value, as the bytecode frontend folds computed constants.
         try {
             var owner = context.load((JavaType) ref.refType());
@@ -676,6 +687,19 @@ final class BabylonTranslator {
         var owner = ref.refType().toString();
         var name = ref.name();
         var operands = op.operands();
+        if (owner.equals("uk.ac.manchester.tornado.api.exceptions.Debug") && name.equals("printf") && op.isVarArgs()) {
+            var format = strings.get(operands.get(0));
+            if (format == null) {
+                throw new Unsupported("TC-E1013", "Debug.printf needs a constant format string and its arguments passed directly");
+            }
+            // The format is kept as the Java string: each dialect spells (escapes) it itself.
+            b.intrinsic("tornado.printf", Immediates.of("format", format), Type.VOID, args(operands.subList(1, operands.size())));
+            return null;
+        }
+        if (owner.equals("uk.ac.manchester.tornado.api.KernelContext") && (name.equals("launch") || name.equals("launch3D"))) {
+            deviceLaunch(b, op, name);
+            return null;
+        }
         if (owner.equals(Markers.class.getName()) && name.equals("parallel")) {
             parallelInits.add(op.result());
             return v(operands.get(0));
@@ -797,6 +821,53 @@ final class BabylonTranslator {
         } catch (ReflectiveOperationException e) {
             throw new Unsupported("TC-E1007", "called method " + owner + "." + name + " cannot be resolved: " + e);
         }
+    }
+
+    /** String constants: only Debug.printf formats read them. */
+    private final Map<Value, String> strings = new HashMap<>();
+
+    /** {@code static final DeviceKernel} fields read: the child kernels they name. */
+    private final Map<Value, Frontend.MethodRef> deviceKernels = new HashMap<>();
+
+    /**
+     * {@code kc.launch(kernel, [mode,] gridX, blockX, args...)} (or launch3D): a device-side launch of a
+     * child kernel (CUDA dynamic parallelism), as the bytecode frontend emits it.
+     */
+    private void deviceLaunch(IrBuilder b, JavaOp.InvokeOp op, String name) {
+        var operands = op.operands();
+        var child = deviceKernels.get(operands.get(1));
+        if (child == null) {
+            throw new Unsupported("TC-E1013", "the DeviceKernel passed to KernelContext.launch must be read from a static final field");
+        }
+        int next = 2;
+        var mode = "default";
+        if (op.invokeReference().signature().parameterTypes().stream().anyMatch(t -> descriptor(t).equals("Luk/ac/manchester/tornado/api/enums/DeviceLaunchMode;"))) {
+            var ordinal = uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(v(operands.get(next++)))
+                    .orElseThrow(() -> new Unsupported("TC-E1013", "the DeviceLaunchMode of KernelContext.launch must be a constant"));
+            mode = uk.ac.manchester.tornado.api.enums.DeviceLaunchMode.values()[(int) ordinal].name().toLowerCase(java.util.Locale.ROOT);
+        }
+        var one = b.constInt(Type.I32, 1);
+        var launch = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+        if (name.equals("launch3D")) {
+            for (int k = 0; k < 6; k++) {
+                launch.add(v(operands.get(next++)));
+            }
+        } else {
+            launch.addAll(List.of(v(operands.get(next)), one, one, v(operands.get(next + 1)), one, one));
+            next += 2;
+        }
+        if (!op.isVarArgs()) {
+            throw new Unsupported("TC-E1013", "the arguments of KernelContext.launch must be passed directly (as varargs)");
+        }
+        for (var argument : operands.subList(next, operands.size())) {
+            var value = v(argument);
+            if (value.type() instanceof Type.PointerType) {
+                throw new Unsupported("TC-E1014", "a local-memory array cannot be passed to KernelContext.launch: it belongs to the launching block");
+            }
+            launch.add(value);
+        }
+        b.intrinsic("tornado.device_launch", Immediates.of("mode", mode, "callee", child.owner().replace('/', '.') + "." + child.name(), "descriptor", child.descriptor()), Type.VOID,
+                launch);
     }
 
     /** A value-type receiver updated in place: later reads see {@code updated} (through its slot, see isMutation). */
