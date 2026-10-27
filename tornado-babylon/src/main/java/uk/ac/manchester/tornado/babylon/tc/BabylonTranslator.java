@@ -1,21 +1,18 @@
 /*
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.babylon.tc;
@@ -110,6 +107,16 @@ final class BabylonTranslator {
     private final Map<uk.ac.manchester.tornado.tc.ir.Value, Type> deviceArrays = new HashMap<>();
     /** Results of accessors that return a struct inside a HAT buffer. */
     private final Map<Value, View> views = new HashMap<>();
+    /**
+     * HAT vectors that kernels mutate ({@code vA.x(v)} on a {@code Float4.MutableImpl}): each lives in a
+     * private slot, read on every use, so a mutation is seen wherever the Java reference is.
+     */
+    private final Map<Value, uk.ac.manchester.tornado.tc.ir.Value> vectorSlots = new HashMap<>();
+    /** The builder of the op being translated: reading a mutable vector loads its slot there. */
+    private IrBuilder current;
+    /** Results of {@code arrayView()} calls (Java arrays over HAT memory) and of indexing a 2D one by its first index. */
+    private final Map<Value, ArrayView> arrayViews = new HashMap<>();
+    private final Map<Value, Row> rows = new HashMap<>();
     /** F16 elements of HAT local or private memory: their addresses, for {@code value()} / {@code value(short)}. */
     private final Map<Value, uk.ac.manchester.tornado.tc.ir.Value> elementAddresses = new HashMap<>();
 
@@ -150,8 +157,23 @@ final class BabylonTranslator {
                 values.put(p, blocks.get(block).addArg(valueType(p.type()), ""));
             }
         }
+        // Mutated HAT vectors get their private slots first, in the entry block.
+        var entryBuilder = new IrBuilder(blocks.get(entry));
+        model.elements().forEach(e -> {
+            if (e instanceof JavaOp.InvokeOp invoke && invoke.hasReceiver() && invoke.operands().size() == 2
+                    && vectorLanes(invoke.operands().get(0).type()) > 0 && lane(invoke.invokeReference().name()) >= 0) {
+                var vector = invoke.operands().get(0);
+                vectorSlots.computeIfAbsent(vector, x -> entryBuilder.alloca(AddressSpace.PRIVATE, Type.F32, vectorLanes(x.type())));
+            }
+        });
         for (var block : body.blocks()) {
             var b = new IrBuilder(blocks.get(block));
+            current = b;
+            for (var p : block.parameters()) {
+                if (vectorSlots.containsKey(p)) {
+                    storeVector(b, vectorSlots.get(p), values.remove(p));
+                }
+            }
             for (var op : block.ops()) {
                 translate(b.at(location(op)), op);
             }
@@ -217,6 +239,7 @@ final class BabylonTranslator {
             case "D" -> Type.F64;
             case "V" -> Type.VOID;
             case String d when HAT_F16_TYPES.contains(d) -> Type.F16;
+            case String d when vectorLanes(d) > 0 -> new Type.VectorType(Type.F32, vectorLanes(d));
             default -> Frontend.typeOf(descriptor(type));
         };
     }
@@ -224,6 +247,9 @@ final class BabylonTranslator {
     // ---- ops
 
     private uk.ac.manchester.tornado.tc.ir.Value v(Value value) {
+        if (vectorSlots.containsKey(value) && !values.containsKey(value)) {
+            return loadVector(current, vectorSlots.get(value), vectorLanes(value.type()));
+        }
         var tc = values.get(value);
         if (tc == null && views.containsKey(value)) {
             throw new Unsupported("TC-E1003", "a HAT struct (" + views.get(value).layout().name().orElse("?") + ") used as a value is not supported yet");
@@ -244,7 +270,11 @@ final class BabylonTranslator {
 
     private void define(Op op, uk.ac.manchester.tornado.tc.ir.Value value) {
         if (op.result() != null && value != null) {
-            values.put(op.result(), value);
+            if (vectorSlots.containsKey(op.result())) {
+                storeVector(current, vectorSlots.get(op.result()), value);
+            } else {
+                values.put(op.result(), value);
+            }
         }
     }
 
@@ -260,6 +290,9 @@ final class BabylonTranslator {
             case JavaOp.ComplOp compl -> define(op, b.unary(UnaryOp.NOT, v(compl.operands().get(0))));
             case JavaOp.NotOp not -> define(op, b.binary(BinaryOp.XOR, v(not.operands().get(0)), b.constInt(Type.I1, 1)));
             case JavaOp.ConvOp conv -> define(op, convert(b, conv));
+            case JavaOp.ArrayAccessOp.ArrayLoadOp load when isView(load.operands().get(0)) -> define(op, viewLoad(b, load));
+            case JavaOp.ArrayAccessOp.ArrayStoreOp store when isView(store.operands().get(0)) -> viewStore(b, store);
+            case JavaOp.ArrayLengthOp length when arrayViews.containsKey(length.operands().get(0)) -> define(op, viewLength(b, arrayViews.get(length.operands().get(0))));
             case JavaOp.ArrayAccessOp.ArrayLoadOp load -> define(op, arrayLoad(b, v(load.operands().get(0)), v(load.operands().get(1)), valueType(load.resultType()),
                     descriptor(load.resultType()).equals("C")));
             case JavaOp.ArrayAccessOp.ArrayStoreOp store -> arrayStore(b, v(store.operands().get(0)), v(store.operands().get(1)), v(store.operands().get(2)));
@@ -451,6 +484,16 @@ final class BabylonTranslator {
         if (HAT_F16_OWNERS.contains(owner)) {
             return hatF16(b, op, name);
         }
+        if (VECTOR_OWNERS.contains(owner) || (op.hasReceiver() && vectorLanes(operands.get(0).type()) > 0)) {
+            return hatVector(b, op, owner, name);
+        }
+        if (op.hasReceiver() && isHatBuffer(ref.refType()) && vectorView(name) > 0) {
+            return hatVectorView(b, op, name);
+        }
+        if (op.hasReceiver() && name.toLowerCase(java.util.Locale.ROOT).contains("arrayview") && operands.size() == 1) {
+            arrayViews.put(op.result(), arrayView(b, op, name));
+            return null;
+        }
         if (op.hasReceiver() && views.containsKey(operands.get(0))) {
             return fieldAccess(b, op, views.get(operands.get(0)), name);
         }
@@ -552,6 +595,14 @@ final class BabylonTranslator {
         var array = v(op.operands().get(0));
         var element = deviceArrays.get(array);
         var args = op.operands().subList(1, op.operands().size());
+        if (vectorView(name) > 0) {
+            var type = new Type.VectorType(element, vectorView(name));
+            if (name.startsWith("store")) {
+                storeDeviceVector(b, elementAddress(b, array, v(args.get(1)), element), type, v(args.get(0)));
+                return null;
+            }
+            return loadDeviceVector(b, elementAddress(b, array, v(args.get(0)), element), type);
+        }
         if (!name.equals("array") || args.isEmpty() || args.size() > 2) {
             throw new Unsupported("TC-E1003", "HAT device memory accessor " + name + " is not supported yet");
         }
@@ -563,6 +614,289 @@ final class BabylonTranslator {
         }
         b.store(address, narrow(b, v(args.get(1)), element));
         return null;
+    }
+
+    /**
+     * A Java array over HAT memory, from {@code buffer.arrayView()} or a device type's
+     * {@code ...ArrayView()}: indexing it reads and writes the memory, as HAT's own backends do. The
+     * memory is a HAT buffer's array (its last field; a 2D view strides by the first field, e.g.
+     * {@code width}) or HAT local or private memory.
+     */
+    private record ArrayView(uk.ac.manchester.tornado.tc.ir.Value base, boolean device, Type element, boolean unsigned, long offset, long length, String stride, GroupLayout layout,
+            int dimensions) {
+    }
+
+    /** {@code view2d[i]}: a row of a 2D view, indexed next by {@code j}: element {@code j * stride + i}. */
+    private record Row(ArrayView view, uk.ac.manchester.tornado.tc.ir.Value first) {
+    }
+
+    private boolean isView(Value value) {
+        return arrayViews.containsKey(value) || rows.containsKey(value);
+    }
+
+    private ArrayView arrayView(IrBuilder b, JavaOp.InvokeOp op, String name) {
+        int dimensions = op.resultType() instanceof jdk.incubator.code.dialect.java.ArrayType at ? at.dimensions() : 0;
+        if (dimensions < 1 || dimensions > 2) {
+            throw new Unsupported("TC-E1003", "HAT " + name + "() must return a 1D or 2D Java array");
+        }
+        var receiver = v(op.operands().get(0));
+        if (deviceArrays.containsKey(receiver)) {
+            if (dimensions != 1) {
+                throw new Unsupported("TC-E1003", "2D views of HAT local or private memory are not supported");
+            }
+            Type element = deviceArrays.get(receiver);
+            if (op.resultType() instanceof jdk.incubator.code.dialect.java.ArrayType at && vectorLanes(at.componentType()) > 0) {
+                element = new Type.VectorType(element, vectorLanes(at.componentType()));
+            }
+            return new ArrayView(receiver, true, element, false, 0, -1, null, null, 1);
+        }
+        var index = bufferParams.get(receiver);
+        var layout = index == null ? null : context.bufferLayout(index);
+        if (layout == null) {
+            throw new Unsupported("TC-E1003", "HAT " + name + "() on a value that is not a buffer parameter with a known layout");
+        }
+        var members = layout.memberLayouts();
+        if (members.isEmpty() || !(members.getLast() instanceof SequenceLayout array) || !(array.elementLayout() instanceof ValueLayout element)) {
+            throw new Unsupported("TC-E1003", "HAT " + name + "(): the buffer's last field is not an array of primitives");
+        }
+        long offset = layout.byteOffset(MemoryLayout.PathElement.groupElement(array.name().orElseThrow()));
+        String stride = null;
+        if (dimensions == 2) {
+            if (members.size() < 2 || members.getFirst().name().isEmpty()) {
+                throw new Unsupported("TC-E1003", "HAT " + name + "(): a 2D view needs a stride field before the array");
+            }
+            stride = members.getFirst().name().get();
+        }
+        boolean unsigned = element.carrier() == char.class || element.carrier() == boolean.class;
+        var elementType = op.resultType() instanceof jdk.incubator.code.dialect.java.ArrayType at && vectorLanes(at.componentType()) > 0
+                ? new Type.VectorType(memoryType(element), vectorLanes(at.componentType()))
+                : memoryType(element);
+        return new ArrayView(receiver, false, elementType, unsigned, offset, array.elementCount(), stride, layout, dimensions);
+    }
+
+    private uk.ac.manchester.tornado.tc.ir.Value viewLoad(IrBuilder b, JavaOp.ArrayAccessOp.ArrayLoadOp load) {
+        var array = load.operands().get(0);
+        var index = v(load.operands().get(1));
+        if (arrayViews.get(array) instanceof ArrayView view && view.dimensions() == 2) {
+            rows.put(load.result(), new Row(view, index));
+            return null;
+        }
+        var view = arrayViews.containsKey(array) ? arrayViews.get(array) : rows.get(array).view();
+        if (view.element() instanceof Type.VectorType vec) {
+            var at = viewAddress(b, scalarView(view), null, index);
+            return view.device() ? loadDeviceVector(b, at, vec) : loadVectorAt(b, view.base(), at, vec);
+        }
+        var address = viewAddress(b, view, rows.get(array), index);
+        var loaded = view.device() ? b.load(address, view.element()) : b.arrayLoad(view.base(), address, view.element());
+        var type = valueType(load.resultType());
+        if ((loaded.type().equals(Type.I8) || loaded.type().equals(Type.I16)) && type.equals(Type.I32)) {
+            return b.convert(view.unsigned() ? ConvertOp.ZEXT : ConvertOp.SEXT, loaded, Type.I32);
+        }
+        if (loaded.type().equals(Type.I8) && type.equals(Type.I1)) {
+            return b.convert(ConvertOp.TRUNC, loaded, Type.I1);
+        }
+        return loaded;
+    }
+
+    private void viewStore(IrBuilder b, JavaOp.ArrayAccessOp.ArrayStoreOp store) {
+        var array = store.operands().get(0);
+        if (arrayViews.get(array) instanceof ArrayView view && view.dimensions() == 2) {
+            throw new Unsupported("TC-E1003", "storing a row into a 2D HAT array view is not supported");
+        }
+        var view = arrayViews.containsKey(array) ? arrayViews.get(array) : rows.get(array).view();
+        if (view.element() instanceof Type.VectorType vec) {
+            var at = viewAddress(b, scalarView(view), null, v(store.operands().get(1)));
+            if (view.device()) {
+                storeDeviceVector(b, at, vec, v(store.operands().get(2)));
+            } else {
+                storeVectorAt(b, view.base(), at, vec, v(store.operands().get(2)));
+            }
+            return;
+        }
+        var address = viewAddress(b, view, rows.get(array), v(store.operands().get(1)));
+        var value = narrow(b, v(store.operands().get(2)), view.element());
+        if (view.device()) {
+            b.store(address, value);
+        } else {
+            b.arrayStore(view.base(), address, value);
+        }
+    }
+
+    /** The element's address (device memory) or byte offset in the buffer: {@code [j * stride + i]} for a row. */
+    private uk.ac.manchester.tornado.tc.ir.Value viewAddress(IrBuilder b, ArrayView view, Row row, uk.ac.manchester.tornado.tc.ir.Value index) {
+        var linear = index64(b, index);
+        if (row != null) {
+            var stride = b.arrayLoad(view.base(), b.constInt(Type.I64, view.layout().byteOffset(MemoryLayout.PathElement.groupElement(view.stride()))),
+                    memoryType((ValueLayout) view.layout().select(MemoryLayout.PathElement.groupElement(view.stride()))));
+            linear = noSignedWrap(b.add(noSignedWrap(b.binary(BinaryOp.MUL, linear, index64(b, stride))), index64(b, row.first())));
+        }
+        if (view.device()) {
+            return elementAddress(b, view.base(), linear, view.element());
+        }
+        return noSignedWrap(b.add(b.constInt(Type.I64, view.offset()), noSignedWrap(b.binary(BinaryOp.MUL, linear, b.constInt(Type.I64, bytes(view.element()))))));
+    }
+
+    private uk.ac.manchester.tornado.tc.ir.Value viewLength(IrBuilder b, ArrayView view) {
+        if (view.device()) {
+            var alloca = (Inst) view.base();
+            return b.constInt(Type.I32, ((Opcode.Alloca) alloca.opcode()).count());
+        }
+        // HAT's backends read the buffer's length field; the bound layout has the same count.
+        return b.constInt(Type.I32, view.dimensions() == 1 ? view.length() : -1);
+    }
+
+    private static uk.ac.manchester.tornado.tc.ir.Value index64(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value i) {
+        if (i.type().equals(Type.I64)) {
+            return i;
+        }
+        return b.convert(ConvertOp.SEXT, i.type().equals(Type.I32) ? i : b.convert(ConvertOp.SEXT, i, Type.I32), Type.I64);
+    }
+
+    // ---- HAT vectors: Float2, Float4 (hat.types), as TC vectors of f32
+
+    private static final java.util.Set<String> VECTOR_OWNERS = java.util.Set.of("hat.types.Float4", "hat.types.Float4$MutableImpl", "hat.types.Float4$ImmutableImpl",
+            "hat.types.Float2", "hat.types.Float2$MutableImpl", "hat.types.Float2$ImmutableImpl");
+
+    /** Lanes of a HAT vector type (descriptor or code type), 0 if it is not one. */
+    private static int vectorLanes(String descriptor) {
+        return switch (descriptor) {
+            case "Lhat/types/Float4;", "Lhat/types/Float4$MutableImpl;", "Lhat/types/Float4$ImmutableImpl;" -> 4;
+            case "Lhat/types/Float2;", "Lhat/types/Float2$MutableImpl;", "Lhat/types/Float2$ImmutableImpl;" -> 2;
+            default -> 0;
+        };
+    }
+
+    private static int vectorLanes(CodeType type) {
+        return type instanceof JavaType j && !j.toNominalDescriptor().isPrimitive() ? vectorLanes(descriptor(j)) : 0;
+    }
+
+    private static int lane(String name) {
+        return name.length() == 1 ? "xyzw".indexOf(name.charAt(0)) : -1;
+    }
+
+    /** {@code float4View}, {@code storeFloat4View}, {@code float2View}, ...: the lanes, or 0. */
+    private static int vectorView(String name) {
+        return switch (name) {
+            case "float4View", "storeFloat4View" -> 4;
+            case "float2View", "storeFloat2View" -> 2;
+            default -> 0;
+        };
+    }
+
+    private static ArrayView scalarView(ArrayView view) {
+        return new ArrayView(view.base(), view.device(), ((Type.VectorType) view.element()).element(), false, view.offset(), view.length(), null, view.layout(), 1);
+    }
+
+    private static uk.ac.manchester.tornado.tc.ir.Value laneOf(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value vector, int lane) {
+        return b.intrinsic("tornado.vector.lane", Immediates.of("lane", lane), ((Type.VectorType) vector.type()).element(), List.of(vector));
+    }
+
+    private static uk.ac.manchester.tornado.tc.ir.Value make(IrBuilder b, Type.VectorType type, List<uk.ac.manchester.tornado.tc.ir.Value> lanes) {
+        return b.intrinsic("tornado.vector.make", type, lanes);
+    }
+
+    private static uk.ac.manchester.tornado.tc.ir.Value loadVector(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value slot, int lanes) {
+        var values = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+        for (int l = 0; l < lanes; l++) {
+            values.add(b.load(b.pointerOffset(slot, b.constInt(Type.I64, 4L * l)), Type.F32));
+        }
+        return make(b, new Type.VectorType(Type.F32, lanes), values);
+    }
+
+    private static void storeVector(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value slot, uk.ac.manchester.tornado.tc.ir.Value vector) {
+        int lanes = ((Type.VectorType) vector.type()).length();
+        for (int l = 0; l < lanes; l++) {
+            b.store(b.pointerOffset(slot, b.constInt(Type.I64, 4L * l)), laneOf(b, vector, l));
+        }
+    }
+
+    /** The vector whose first lane is at byte offset {@code at} of a buffer. */
+    private static uk.ac.manchester.tornado.tc.ir.Value loadVectorAt(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value buffer, uk.ac.manchester.tornado.tc.ir.Value at, Type.VectorType type) {
+        var values = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+        for (int l = 0; l < type.length(); l++) {
+            values.add(b.arrayLoad(buffer, l == 0 ? at : noSignedWrap(b.add(at, b.constInt(Type.I64, (long) bytes(type.element()) * l))), type.element()));
+        }
+        return make(b, type, values);
+    }
+
+    private static void storeVectorAt(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value buffer, uk.ac.manchester.tornado.tc.ir.Value at, Type.VectorType type,
+            uk.ac.manchester.tornado.tc.ir.Value vector) {
+        for (int l = 0; l < type.length(); l++) {
+            b.arrayStore(buffer, l == 0 ? at : noSignedWrap(b.add(at, b.constInt(Type.I64, (long) bytes(type.element()) * l))), laneOf(b, vector, l));
+        }
+    }
+
+    /** A vector in HAT local or private memory, from the address of its first lane. */
+    private static uk.ac.manchester.tornado.tc.ir.Value loadDeviceVector(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value address, Type.VectorType type) {
+        var values = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+        for (int l = 0; l < type.length(); l++) {
+            values.add(b.load(l == 0 ? address : b.pointerOffset(address, b.constInt(Type.I64, (long) bytes(type.element()) * l)), type.element()));
+        }
+        return make(b, type, values);
+    }
+
+    private static void storeDeviceVector(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value address, Type.VectorType type, uk.ac.manchester.tornado.tc.ir.Value vector) {
+        for (int l = 0; l < type.length(); l++) {
+            b.store(l == 0 ? address : b.pointerOffset(address, b.constInt(Type.I64, (long) bytes(type.element()) * l)), laneOf(b, vector, l));
+        }
+    }
+
+    /** {@code buffer.float4View(i)} and {@code buffer.storeFloat4View(v, i)}: lanes {@code i .. i+3} of the buffer's array. */
+    private uk.ac.manchester.tornado.tc.ir.Value hatVectorView(IrBuilder b, JavaOp.InvokeOp op, String name) {
+        var receiver = v(op.operands().get(0));
+        var index = bufferParams.get(receiver);
+        var layout = index == null ? null : context.bufferLayout(index);
+        if (layout == null || !(layout.memberLayouts().getLast() instanceof SequenceLayout array) || !(array.elementLayout() instanceof ValueLayout element)) {
+            throw new Unsupported("TC-E1003", "HAT " + name + "() on a value that is not a buffer parameter with a known array layout");
+        }
+        var type = new Type.VectorType(memoryType(element), vectorView(name));
+        var view = new ArrayView(receiver, false, type.element(), false, layout.byteOffset(MemoryLayout.PathElement.groupElement(array.name().orElseThrow())), array.elementCount(),
+                null, layout, 1);
+        if (name.startsWith("store")) {
+            storeVectorAt(b, receiver, viewAddress(b, view, null, v(op.operands().get(2))), type, v(op.operands().get(1)));
+            return null;
+        }
+        return loadVectorAt(b, receiver, viewAddress(b, view, null, v(op.operands().get(1))), type);
+    }
+
+    /** Float2/Float4: construction, lanes, lane updates (mutable vectors) and lane-wise arithmetic. */
+    private uk.ac.manchester.tornado.tc.ir.Value hatVector(IrBuilder b, JavaOp.InvokeOp op, String owner, String name) {
+        var operands = op.operands();
+        var args = args(operands);
+        int lane = lane(name);
+        if (op.hasReceiver() && lane >= 0 && args.size() == 1) {
+            return laneOf(b, args.get(0), lane);
+        }
+        if (op.hasReceiver() && lane >= 0 && args.size() == 2) {
+            var slot = vectorSlots.get(operands.get(0));
+            b.store(b.pointerOffset(slot, b.constInt(Type.I64, 4L * lane)), args.get(1));
+            return null;
+        }
+        var resultLanes = vectorLanes(op.resultType());
+        if (name.equals("of") && resultLanes > 0 && args.size() == resultLanes) {
+            return make(b, new Type.VectorType(Type.F32, resultLanes), args);
+        }
+        if (name.equals("makeMutable") && args.size() == 1) {
+            return args.get(0);
+        }
+        BinaryOp kind = switch (name) {
+            case "add" -> BinaryOp.FADD;
+            case "sub" -> BinaryOp.FSUB;
+            case "mul", "sqr" -> BinaryOp.FMUL;
+            case "div" -> BinaryOp.FDIV;
+            default -> null;
+        };
+        if (kind != null && resultLanes > 0) {
+            var x = args.get(0);
+            var y = name.equals("sqr") ? x : args.get(1);
+            var type = (Type.VectorType) x.type();
+            var lanes = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+            for (int l = 0; l < type.length(); l++) {
+                lanes.add(b.binary(kind, laneOf(b, x, l), y.type() instanceof Type.VectorType ? laneOf(b, y, l) : y));
+            }
+            return make(b, type, lanes);
+        }
+        throw new Unsupported("TC-E1003", owner + "." + name + " is not supported on HAT vectors yet");
     }
 
     /** HAT half floats: TC f16 values; arithmetic in f32, rounded back, as the bytecode frontend does for HalfFloat. */

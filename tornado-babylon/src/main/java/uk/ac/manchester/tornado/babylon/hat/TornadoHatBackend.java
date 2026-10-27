@@ -1,21 +1,18 @@
 /*
  * Copyright (c) 2026, APT Group, Department of Computer Science,
  * The University of Manchester. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package uk.ac.manchester.tornado.babylon.hat;
@@ -31,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import hat.ComputeContext;
-import hat.KernelContext;
 import hat.NDRange;
 import hat.backend.Backend;
 import optkl.ifacemapper.Buffer;
@@ -71,24 +67,23 @@ public class TornadoHatBackend extends Backend {
 
     @Override
     public void dispatchCompute(ComputeContext computeContext, Object... args) {
-        try {
-            var compute = computeContext.computeCallGraph().callDag.entryPoint.method();
-            compute.setAccessible(true);
-            compute.invoke(null, args);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        computeContext.invokeWithArgs(args);
     }
 
+    /**
+     * {@code dispatchContextAndArgs[0]} is HAT's dispatch context (the launch shape, which TornadoVM
+     * takes from the worker grid instead); the rest are the kernel's arguments.
+     */
     @Override
-    public void dispatchKernel(KernelCallGraph kernelCallGraph, KernelContext kernelContext, Object... args) {
+    public void dispatchKernel(KernelCallGraph kernelCallGraph, NDRange ndRange, Object... dispatchContextAndArgs) {
         Method kernel = kernelCallGraph.callDag.entryPoint.method();
+        Object[] args = Arrays.copyOfRange(dispatchContextAndArgs, 1, dispatchContextAndArgs.length);
         var parameters = kernel.getParameterTypes();
         if (parameters.length != args.length) {
             throw new IllegalArgumentException(kernel + " takes " + parameters.length + " arguments, given " + args.length);
         }
-        var key = key(kernel, kernelContext.ndRange, parameters, args);
-        var dispatch = plans.computeIfAbsent(key, k -> prepare(kernel, kernelContext.ndRange, parameters, args));
+        var key = key(kernel, ndRange, args);
+        var dispatch = plans.computeIfAbsent(key, k -> prepare(kernel, ndRange, args));
         // HAT memory is the truth between dispatches: in before every launch, out after it.
         for (int i = 0; i < dispatch.buffers().size(); i++) {
             MemorySegment.copy(dispatch.segments().get(i), 0, dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i).byteSize());
@@ -103,20 +98,23 @@ public class TornadoHatBackend extends Backend {
         }
     }
 
+    @Override
+    public void dispatchTile(KernelCallGraph kernelCallGraph, NDRange ndRange, Object... dispatchContextAndArgs) {
+        throw new UnsupportedOperationException("HAT tile kernels (" + kernelCallGraph.callDag.entryPoint.method().getName() + ") are not supported by the TornadoVM backend yet");
+    }
+
     /** One execution plan per kernel, buffers, scalar values and range: compiled once, launched on every dispatch. */
     private record Dispatch(TornadoExecutionPlan plan, List<ByteArray> buffers, List<MemorySegment> segments) {
     }
 
     private final java.util.Map<List<Object>, Dispatch> plans = new java.util.concurrent.ConcurrentHashMap<>();
 
-    private static List<Object> key(Method kernel, NDRange range, Class<?>[] parameters, Object[] args) {
+    private static List<Object> key(Method kernel, NDRange range, Object[] args) {
         var key = new ArrayList<Object>();
         key.add(kernel);
         key.add(range.toString());
         for (int i = 0; i < args.length; i++) {
-            if (parameters[i] == KernelContext.class) {
-                key.add("kc");
-            } else if (args[i] instanceof Buffer buffer) {
+            if (args[i] instanceof Buffer buffer) {
                 var segment = MappableIface.getMemorySegment(buffer);
                 key.add(segment.address() + "+" + segment.byteSize());
             } else {
@@ -126,15 +124,13 @@ public class TornadoHatBackend extends Backend {
         return key;
     }
 
-    private Dispatch prepare(Method kernel, NDRange range, Class<?>[] parameters, Object[] args) {
+    private Dispatch prepare(Method kernel, NDRange range, Object[] args) {
         Object[] tornadoArgs = new Object[args.length];
         List<ByteArray> buffers = new ArrayList<>();
         List<MemorySegment> segments = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             Object a = args[i];
-            if (parameters[i] == KernelContext.class) {
-                tornadoArgs[i] = new uk.ac.manchester.tornado.api.KernelContext();
-            } else if (a instanceof Buffer buffer) {
+            if (a instanceof Buffer buffer) {
                 var segment = MappableIface.getMemorySegment(buffer);
                 HatLayouts.record(kernel, i, (GroupLayout) MappableIface.getLayout(buffer));
                 var bytes = ByteArray.fromSegment(segment);
