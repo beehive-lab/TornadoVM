@@ -91,6 +91,9 @@ final class BabylonTranslator {
     /** HAT's half-float types: F16 and the F16 elements of an F16Array. */
     private static final java.util.Set<String> HAT_F16_TYPES = java.util.Set.of(HAT_F16, "Lhat/buffer/F16Array$F16Impl;");
     private static final java.util.Set<String> HAT_F16_OWNERS = java.util.Set.of("hat.types.F16", "hat.types.S16ImplOfF16", "hat.buffer.F16Array$F16Impl");
+    /** HAT's bfloat16: an int whose low 16 bits are the bfloat16's bits. */
+    private static final java.util.Set<String> HAT_BF16_TYPES = java.util.Set.of("Lhat/types/BF16;", "Lhat/buffer/BF16Array$BF16Impl;");
+    private static final java.util.Set<String> HAT_BF16_OWNERS = java.util.Set.of("hat.types.BF16", "hat.buffer.BF16Array$BF16Impl");
     private static final String TORNADO_KERNEL_CONTEXT = "Luk/ac/manchester/tornado/api/KernelContext;";
     private static final String TORNADO_BYTE_ARRAY = "Luk/ac/manchester/tornado/api/types/arrays/ByteArray;";
 
@@ -239,6 +242,7 @@ final class BabylonTranslator {
             case "D" -> Type.F64;
             case "V" -> Type.VOID;
             case String d when HAT_F16_TYPES.contains(d) -> Type.F16;
+            case String d when HAT_BF16_TYPES.contains(d) -> Type.I32;
             case String d when vectorLanes(d) > 0 -> new Type.VectorType(Type.F32, vectorLanes(d));
             default -> Frontend.typeOf(descriptor(type));
         };
@@ -484,6 +488,9 @@ final class BabylonTranslator {
         if (HAT_F16_OWNERS.contains(owner)) {
             return hatF16(b, op, name);
         }
+        if (HAT_BF16_OWNERS.contains(owner)) {
+            return hatBF16(b, op, name);
+        }
         if (VECTOR_OWNERS.contains(owner) || (op.hasReceiver() && vectorLanes(operands.get(0).type()) > 0)) {
             return hatVector(b, op, owner, name);
         }
@@ -517,6 +524,14 @@ final class BabylonTranslator {
         }
         if (owner.startsWith("uk.ac.manchester.tornado.api.")) {
             throw new Unsupported("TC-E1003", "TornadoVM API call " + owner + "." + name + descriptor + " is not supported by the Babylon frontend yet");
+        }
+        if (owner.equals("hat.HATMath") && name.endsWith("f16")) {
+            var base = name.substring(0, name.length() - 3);
+            var floats = args(operands).stream().map(x -> toF32(b, x)).toList();
+            return b.convert(ConvertOp.FTRUNC, math(b, base, floats, Type.F32), Type.F16);
+        }
+        if (owner.equals("hat.HATMath") && (name.equals("min") || name.equals("max"))) {
+            return math(b, name, args(operands), valueType(op.resultType()));
         }
         if (owner.equals("hat.HATMath")) {
             // cosf/cosd/native_cosf -> math.cos at the argument's precision, as HAT's own backends map
@@ -578,7 +593,7 @@ final class BabylonTranslator {
             var member = members.get(0);
             var clazz = (Class<?>) member.getClass().getMethod("clazz").invoke(member);
             int size = (int) member.getClass().getMethod("size").invoke(member);
-            if (!clazz.isPrimitive() && !clazz.getName().equals("hat.types.F16")) {
+            if (!clazz.isPrimitive() && !clazz.getName().equals("hat.types.F16") && !clazz.getName().equals("hat.types.BF16")) {
                 throw new Unsupported("TC-E1003", "HAT device type " + owner.getSimpleName() + ": array of " + clazz.getSimpleName() + " is not supported yet");
             }
             var element = memoryType(clazz);
@@ -899,6 +914,69 @@ final class BabylonTranslator {
         throw new Unsupported("TC-E1003", owner + "." + name + " is not supported on HAT vectors yet");
     }
 
+    /**
+     * HAT bfloat16s: ints carrying the 16 bits; arithmetic in f32 and rounded back exactly as
+     * {@code BF16.of(float)} rounds (to nearest even, in integer arithmetic, so every backend agrees).
+     * The static helpers follow their Java bodies.
+     */
+    private uk.ac.manchester.tornado.tc.ir.Value hatBF16(IrBuilder b, JavaOp.InvokeOp op, String name) {
+        var operands = op.operands();
+        if (op.hasReceiver() && views.containsKey(operands.get(0))) {
+            return fieldAccess(b, op, views.get(operands.get(0)), name);
+        }
+        var args = args(operands);
+        if (op.hasReceiver() && name.equals("value") && elementAddresses.containsKey(operands.get(0))) {
+            var address = elementAddresses.get(operands.get(0));
+            if (args.size() == 1) {
+                return b.convert(ConvertOp.SEXT, b.load(address, Type.I16), Type.I32);
+            }
+            b.store(address, narrow(b, args.get(1), Type.I16));
+            return null;
+        }
+        if (op.hasReceiver() && name.equals("value") && args.size() == 1) {
+            return b.convert(ConvertOp.SEXT, b.convert(ConvertOp.TRUNC, args.get(0), Type.I16), Type.I32);
+        }
+        var floats = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
+        for (int i = 0; i < operands.size(); i++) {
+            floats.add(HAT_BF16_TYPES.contains(descriptor(operands.get(i).type())) ? bf16ToF32(b, args.get(i)) : args.get(i));
+        }
+        if (args.size() == 2 && java.util.Set.of("add", "sub", "mul", "div").contains(name)) {
+            // BF16.add(BF16, float) divides in HAT's Java: TC compiles what the Java does.
+            boolean addDivides = name.equals("add") && HAT_BF16_TYPES.contains(descriptor(operands.get(0).type())) && descriptor(operands.get(1).type()).equals("F");
+            var kind = switch (addDivides ? "div" : name) {
+                case "add" -> BinaryOp.FADD;
+                case "sub" -> BinaryOp.FSUB;
+                case "mul" -> BinaryOp.FMUL;
+                default -> BinaryOp.FDIV;
+            };
+            return f32ToBF16(b, b.binary(kind, floats.get(0), floats.get(1)));
+        }
+        if (name.equals("bfloat162float") && args.size() == 1) {
+            return floats.get(0);
+        }
+        if ((name.equals("of") || name.equals("float2bfloat16")) && args.size() == 1) {
+            return args.get(0).type().equals(Type.F32) ? f32ToBF16(b, args.get(0)) : args.get(0);
+        }
+        throw new Unsupported("TC-E1003", "hat.types.BF16." + name + " is not supported yet");
+    }
+
+    private static uk.ac.manchester.tornado.tc.ir.Value bf16ToF32(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value bits) {
+        return b.convert(ConvertOp.BITCAST, b.binary(BinaryOp.SHL, bits, b.constInt(Type.I32, 16)), Type.F32);
+    }
+
+    /** {@code BF16.of(float).value()}, as an int. */
+    private static uk.ac.manchester.tornado.tc.ir.Value f32ToBF16(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value f) {
+        var bits = b.convert(ConvertOp.BITCAST, f, Type.I32);
+        var sign = b.binary(BinaryOp.SHR, b.binary(BinaryOp.AND, bits, b.constInt(Type.I32, Integer.MIN_VALUE)), b.constInt(Type.I32, 16));
+        var lsb = b.binary(BinaryOp.AND, bits, b.constInt(Type.I32, 0x1_0000));
+        var round = b.binary(BinaryOp.AND, bits, b.constInt(Type.I32, 0x0_8000));
+        var sticky = b.binary(BinaryOp.AND, bits, b.constInt(Type.I32, 0x0_7FFF));
+        var zero = b.constInt(Type.I32, 0);
+        var up = b.binary(BinaryOp.AND, b.icmp(IntPredicate.NE, round, zero), b.icmp(IntPredicate.NE, b.binary(BinaryOp.OR, lsb, sticky), zero));
+        var rounded = b.select(up, b.binary(BinaryOp.ADD, bits, b.constInt(Type.I32, 0x1_0000)), bits);
+        return b.binary(BinaryOp.AND, b.binary(BinaryOp.OR, b.binary(BinaryOp.SHR, rounded, b.constInt(Type.I32, 16)), sign), b.constInt(Type.I32, 0xffff));
+    }
+
     /** HAT half floats: TC f16 values; arithmetic in f32, rounded back, as the bytecode frontend does for HalfFloat. */
     private uk.ac.manchester.tornado.tc.ir.Value hatF16(IrBuilder b, JavaOp.InvokeOp op, String name) {
         var args = args(op.operands());
@@ -1031,6 +1109,9 @@ final class BabylonTranslator {
                 // A half float ({short value}): also its value, for F16 arithmetic. Unused, it is dead code.
                 return b.convert(ConvertOp.BITCAST, b.arrayLoad(at.buffer(), at.offset(), Type.I16), Type.F16);
             }
+            if (op.resultType() instanceof JavaType j && HAT_BF16_TYPES.contains(descriptor(j))) {
+                return b.convert(ConvertOp.SEXT, b.arrayLoad(at.buffer(), at.offset(), Type.I16), Type.I32);
+            }
             return null;
         }
         throw new Unsupported("TC-E1003", "HAT field " + name + " (" + element + ") is not supported yet");
@@ -1052,6 +1133,9 @@ final class BabylonTranslator {
     private static Type memoryType(Class<?> c) {
         if (c.getName().equals("hat.types.F16")) {
             return Type.F16;
+        }
+        if (c.getName().equals("hat.types.BF16")) {
+            return Type.I16;
         }
         if (c == int.class) {
             return Type.I32;
