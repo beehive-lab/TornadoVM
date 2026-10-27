@@ -20,7 +20,7 @@ SRC=$SDK.src
 rm -rf "$CLASSES" "$SRC" && mkdir -p "$CLASSES" && cp -r "$REPO/tornado-unittests/src/main/java" "$SRC"
 python3 "$ROOT/annotate-static-methods.py" "$SRC"
 RELEASE=$(java -XshowSettings:properties -version 2>&1 | awk '/java.specification.version/{print $3}')
-javac -Xlint:-preview --enable-preview --release "$RELEASE" -nowarn -Xmaxerrs 20 \
+javac -g -Xlint:-preview --enable-preview --release "$RELEASE" -nowarn -Xmaxerrs 20 \
     --module-path "$(ls "$JARS"/*.jar | grep -v tornado-unittests | tr '\n' ':')" \
     --add-modules jdk.incubator.code --add-reads tornado.unittests=jdk.incubator.code \
     -d "$CLASSES" $(find "$SRC" -name '*.java')

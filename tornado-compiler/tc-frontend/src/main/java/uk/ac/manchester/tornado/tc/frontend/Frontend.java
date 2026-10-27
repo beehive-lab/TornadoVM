@@ -470,6 +470,14 @@ public final class Frontend {
      * Empty when {@code T} is not such a type.
      */
     public static Optional<Value> apiNew(IrBuilder b, String owner, String descriptor, List<Value> args) {
+        var collection = Bindings.collection(owner.replace('.', '/'));
+        if (collection.isPresent() && descriptor.equals("(I)V")) {
+            // A local vector collection (new VectorFloat4(n)): private storage of n * width elements.
+            var c = collection.get();
+            var width = b.constInt(Type.I32, c.width());
+            var storage = localArray(b, AddressSpace.PRIVATE, c.element(), b.binary(Opcode.BinaryOp.MUL, args.get(0), width));
+            return Optional.of(b.intrinsic(LocalCollections.NAME, typeOf("L" + owner.replace('.', '/') + ";"), List.of(storage, args.get(0), width)));
+        }
         var binding = Bindings.method(owner.replace('.', '/'), "<init>", descriptor);
         if (binding.isEmpty()) {
             return Optional.empty();
@@ -489,6 +497,34 @@ public final class Frontend {
             case Bindings.AtomicNew a -> Optional.of(b.intrinsic("tornado.atomic_int.new", uk.ac.manchester.tornado.tc.ir.ApiTypes.ATOMIC_INTEGER, List.of(args.isEmpty() ? b.constInt(Type.I32, 0) : args.get(0))));
             default -> Optional.empty();
         };
+    }
+
+    /**
+     * For model frontends: a private or shared array of {@code length} elements ({@code new float[n]}),
+     * as the bytecode frontend allocates it: now if the length is a constant, else pending until value
+     * specialisation makes it one.
+     */
+    public static Value localArray(IrBuilder b, AddressSpace space, Type element, Value length) {
+        if (length instanceof Inst inst && inst.opcode() instanceof Opcode.ConstInt(var v) && v > 0) {
+            return b.alloca(space, element, (int) v);
+        }
+        return b.intrinsic(LocalArrays.PENDING, LocalArrays.pendingImmediates(space, element), new Type.PointerType(space), List.of(length));
+    }
+
+    /** The length of a local array made by {@link #localArray}, as the bytecode frontend reads it. */
+    public static Value localArrayLength(IrBuilder b, Value array) {
+        if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
+            return b.constInt(Type.I32, count);
+        }
+        if (array instanceof Inst inst && LocalArrays.isPending(inst)) {
+            return inst.operand(0);
+        }
+        return b.intrinsic(LocalArrays.LENGTH, Type.I32, List.of(array));
+    }
+
+    /** After a model frontend translated {@code function}: the local arrays' lengths, resolved as the bytecode frontend resolves them. */
+    public static List<Diagnostic> resolveLocalArrays(Function function) {
+        return LocalArrays.resolveLengths(function);
     }
 
     private static Optional<ApiResult> value(Value v) {

@@ -119,6 +119,8 @@ final class BabylonTranslator {
     private IrBuilder current;
     /** Initial values of {@code @Parallel} loop variables ({@link Markers#parallel}). */
     private final java.util.Set<Value> parallelInits = new java.util.HashSet<>();
+    /** Local arrays ({@code new float[n]}): pointer to element type. */
+    private final Map<uk.ac.manchester.tornado.tc.ir.Value, Type> localArrays = new HashMap<>();
     /** HAT local/private memory of a struct-shaped device type: its layout, for the accessors' views. */
     private final Map<uk.ac.manchester.tornado.tc.ir.Value, GroupLayout> deviceStructs = new HashMap<>();
     /** Results of {@code arrayView()} calls (Java arrays over HAT memory) and of indexing a 2D one by its first index. */
@@ -184,6 +186,10 @@ final class BabylonTranslator {
             for (var op : block.ops()) {
                 translate(b.at(location(op)), op);
             }
+        }
+        var problems = Frontend.resolveLocalArrays(function);
+        if (!problems.isEmpty()) {
+            throw new Unsupported(problems.get(0).code(), problems.get(0).message());
         }
         return function;
     }
@@ -304,7 +310,10 @@ final class BabylonTranslator {
             case JavaOp.ArrayAccessOp.ArrayLoadOp load -> define(op, arrayLoad(b, v(load.operands().get(0)), v(load.operands().get(1)), valueType(load.resultType()),
                     descriptor(load.resultType()).equals("C")));
             case JavaOp.ArrayAccessOp.ArrayStoreOp store -> arrayStore(b, v(store.operands().get(0)), v(store.operands().get(1)), v(store.operands().get(2)));
-            case JavaOp.ArrayLengthOp length -> define(op, b.arrayLength(v(length.operands().get(0))));
+            case JavaOp.ArrayLengthOp length -> {
+                var array = v(length.operands().get(0));
+                define(op, array.type() instanceof Type.PointerType ? Frontend.localArrayLength(b, array) : b.arrayLength(array));
+            }
             case JavaOp.FieldAccessOp.FieldLoadOp field -> define(op, fieldLoad(b, field));
             case JavaOp.InvokeOp invoke -> define(op, invoke(b, invoke));
             case JavaOp.NewOp n -> define(op, newValue(b, n));
@@ -439,7 +448,9 @@ final class BabylonTranslator {
     /** Java arrays, and shared arrays from {@code KernelContext.allocate*LocalArray} (pointers). */
     private uk.ac.manchester.tornado.tc.ir.Value arrayLoad(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value array, uk.ac.manchester.tornado.tc.ir.Value index, Type type, boolean charOrBoolean) {
         uk.ac.manchester.tornado.tc.ir.Value loaded;
-        if (array instanceof Inst alloca && alloca.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
+        if (localArrays.containsKey(array)) {
+            loaded = b.load(elementAddress(b, array, index, localArrays.get(array)), localArrays.get(array));
+        } else if (array instanceof Inst alloca && alloca.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
             loaded = b.load(elementAddress(b, array, index, element), element);
         } else {
             loaded = b.arrayLoad(array, index);
@@ -455,6 +466,10 @@ final class BabylonTranslator {
     }
 
     private void arrayStore(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value array, uk.ac.manchester.tornado.tc.ir.Value index, uk.ac.manchester.tornado.tc.ir.Value value) {
+        if (localArrays.containsKey(array)) {
+            b.store(elementAddress(b, array, index, localArrays.get(array)), narrow(b, value, localArrays.get(array)));
+            return;
+        }
         if (array instanceof Inst alloca && alloca.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
             b.store(elementAddress(b, array, index, element), narrow(b, value, element));
             return;
@@ -488,6 +503,10 @@ final class BabylonTranslator {
         try {
             var owner = context.load((JavaType) ref.refType());
             var field = owner.getDeclaredField(ref.name());
+            if (field.isEnumConstant()) {
+                // Enum constants are their ordinals in kernels, as in the bytecode frontend.
+                return b.constInt(Type.I32, ((Enum<?>) field.get(null)).ordinal());
+            }
             if (!Modifier.isFinal(field.getModifiers()) || !field.getType().isPrimitive()) {
                 throw new Unsupported("TC-E1003", "static field " + ref.name() + " is not a primitive constant");
             }
@@ -553,8 +572,8 @@ final class BabylonTranslator {
             }
             return api.get().value().orElse(null);
         }
-        if (owner.startsWith("uk.ac.manchester.tornado.api.")) {
-            throw new Unsupported("TC-E1003", "TornadoVM API call " + owner + "." + name + descriptor + " is not supported by the Babylon frontend yet");
+        if (op.hasReceiver() && name.equals("ordinal") && operands.size() == 1 && context.load((JavaType) ref.refType()) instanceof Class<?> c && c.isEnum()) {
+            return v(operands.get(0));
         }
         if (owner.equals("hat.HATMath") && name.endsWith("f16")) {
             var base = name.substring(0, name.length() - 3);
@@ -575,10 +594,11 @@ final class BabylonTranslator {
         if (owner.equals("java.lang.Math")) {
             return math(b, name, args(operands), valueType(op.resultType()));
         }
-        if (op.hasReceiver()) {
+        if (op.hasReceiver() && !(v(operands.get(0)).type() instanceof Type.ObjectType o && !o.equals(uk.ac.manchester.tornado.tc.ir.ApiTypes.KERNEL_CONTEXT))) {
             throw new Unsupported("TC-E1003", "instance call " + owner + "." + name + " is not supported by the Babylon frontend yet");
         }
-        // A static call into user code: a device function, translated from its model or its bytecode.
+        // A static call, or a call on an object (a TornadoVM vector collection, ...): a device function,
+        // translated from its model or its bytecode and inlined, as the bytecode frontend does.
         try {
             var method = resolve(ref);
             var calleeDescriptor = java.lang.invoke.MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
@@ -609,11 +629,34 @@ final class BabylonTranslator {
 
     /** {@code new T(...)}: TornadoVM value types (HalfFloat, vectors, AtomicInteger) as the bytecode frontend builds them. */
     private uk.ac.manchester.tornado.tc.ir.Value newValue(IrBuilder b, JavaOp.NewOp op) {
+        if (op.resultType() instanceof jdk.incubator.code.dialect.java.ArrayType array) {
+            if (array.dimensions() != 1 || op.operands().size() != 1) {
+                throw new Unsupported("TC-E1003", "only one-dimensional local arrays are supported in kernels");
+            }
+            var element = memoryType(context.load(array.componentType()) instanceof Class<?> c && !c.isPrimitive() ? c : primitive(array.componentType()));
+            var local = Frontend.localArray(b, AddressSpace.PRIVATE, element, v(op.operands().get(0)));
+            localArrays.put(local, element);
+            return local;
+        }
         var ctor = op.constructorReference();
         var owner = ((JavaType) ctor.refType()).toString();
         var descriptor = ctor.signature().parameterTypes().stream().map(BabylonTranslator::descriptor).collect(java.util.stream.Collectors.joining("", "(", ")V"));
         return Frontend.apiNew(b, owner, descriptor, args(op.operands()))
                 .orElseThrow(() -> new Unsupported("TC-E1003", "new " + owner + descriptor + " is not supported in kernels"));
+    }
+
+    private static Class<?> primitive(CodeType type) {
+        return switch (descriptor(type)) {
+            case "Z" -> boolean.class;
+            case "B" -> byte.class;
+            case "S" -> short.class;
+            case "C" -> char.class;
+            case "I" -> int.class;
+            case "J" -> long.class;
+            case "F" -> float.class;
+            case "D" -> double.class;
+            default -> throw new Unsupported("TC-E1003", "local array of " + type + " is not supported in kernels");
+        };
     }
 
     /** A method named in a model, resolved with access to its declaring class (kernels often sit in private nested types). */
