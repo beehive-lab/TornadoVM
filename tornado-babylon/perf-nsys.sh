@@ -14,7 +14,7 @@ rows.sort(key=lambda x: -float(x["Total Time (ns)"]))
 r = rows[0]
 print("%.1f %s %s" % (float(r["Avg (ns)"]) / 1e3, r["Instances"], r["Name"][:50]))'
 }
-for k in 1D 2D 2DLI 2DTILING 2DREGISTERTILING 2DREGISTERTILING_FP16; do
+for k in 1D 2D 2DLI 2DTILING 2DREGISTERTILING 2DREGISTERTILING_V 2DREGISTERTILING_FP16; do
     rm -f table-results-*.csv
     $NSYS profile --trace=cuda -f true -o $OUT/tc-$k ./run.sh -d 1:0 $H/hat-example-matmul-1.0.jar:$H/hat-example-shared-1.0.jar matmul.Main --kernel=$k --size=$SIZE --iterations=$IT > $OUT/tc-$k.log 2>&1
     $NSYS profile --trace=cuda -f true -o $OUT/hat-$k java --enable-preview --add-modules=jdk.incubator.code --enable-native-access=ALL-UNNAMED -Djava.library.path=$H \

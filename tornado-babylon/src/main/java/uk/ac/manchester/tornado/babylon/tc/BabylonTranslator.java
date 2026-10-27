@@ -403,6 +403,9 @@ final class BabylonTranslator {
     private void translate(IrBuilder b, Op op) {
         switch (op) {
             case CoreOp.ConstantOp c when c.value() instanceof String text -> strings.put(op.result(), text); // a Debug.printf format
+            case CoreOp.ConstantOp c when descriptor(c.resultType()).equals("Ljava/lang/Class;") -> {
+                // a class literal (float.class for Tensor.create): compile-time only
+            }
             case CoreOp.ConstantOp c -> define(op, constant(b, c.value(), c.resultType()));
             case JavaOp.BinaryOp bin -> define(op, binary(b, bin));
             case JavaOp.CompareOp cmp -> define(op, compare(b, cmp));
@@ -705,6 +708,9 @@ final class BabylonTranslator {
         if (owner.equals(Markers.class.getName()) && name.equals("parallel")) {
             parallelInits.add(op.result());
             return v(operands.get(0));
+        }
+        if (owner.equals("hat.types.Tensor")) {
+            return hatTensor(b, op, name);
         }
         if (owner.equals("hat.TileContext") || owner.equals("hat.types.Tile")) {
             return hatTile(b, op, name);
@@ -1401,8 +1407,11 @@ final class BabylonTranslator {
     private final Map<Value, Value> aliases = new HashMap<>();
 
     private static boolean isVirtual(Value value) {
-        return value instanceof Op.Result r && r.op() instanceof JavaOp.InvokeOp invoke && invoke.invokeReference().refType().toString().equals("hat.TileContext")
-                && java.util.Set.of("irange", "index", "shape").contains(invoke.invokeReference().name());
+        if (!(value instanceof Op.Result r && r.op() instanceof JavaOp.InvokeOp invoke)) {
+            return false;
+        }
+        var owner = invoke.invokeReference().refType().toString();
+        return owner.equals("hat.TileContext") && java.util.Set.of("irange", "index", "shape").contains(invoke.invokeReference().name()) || owner.equals("hat.types.Tensor");
     }
 
     private void findVirtualParams(jdk.incubator.code.Body body) {
@@ -1680,6 +1689,137 @@ final class BabylonTranslator {
         return p;
     }
 
+    // ---- HAT tensors (Tensor): warp-level 16x16x16 F16 multiply-accumulate on TC's m16n8k16 intrinsics
+
+    /**
+     * A HAT tensor: an operand loaded from a matrix (its fragments are loaded where an mma uses it, as
+     * A or B), or an accumulator kept in a private slot of two m16n8 halves (loop-carried by reference).
+     */
+    private record TensorValue(uk.ac.manchester.tornado.tc.ir.Value matrix, uk.ac.manchester.tornado.tc.ir.Value row, uk.ac.manchester.tornado.tc.ir.Value col,
+            uk.ac.manchester.tornado.tc.ir.Value ld, boolean columnMajor, uk.ac.manchester.tornado.tc.ir.Value accumulator) {
+    }
+
+    private final Map<Value, TensorValue> tensors = new HashMap<>();
+    private final Map<Value, Boolean> tensorLayouts = new HashMap<>();
+
+    private TensorValue tensor(Value value) {
+        var t = tensors.get(resolve(value));
+        if (t == null) {
+            throw new Unsupported("TC-E1003", "this HAT tensor cannot be followed");
+        }
+        return t;
+    }
+
+    private static final Type.VectorType ACC = new Type.VectorType(Type.F32, 4);
+
+    /** The element offset of a HAT buffer's array (its header), in elements. */
+    private uk.ac.manchester.tornado.tc.ir.Value headerElements(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value buffer) {
+        var index = bufferParams.get(buffer);
+        var layout = index == null ? null : context.bufferLayout(index);
+        if (layout == null || !(layout.memberLayouts().getLast() instanceof SequenceLayout array)) {
+            throw new Unsupported("TC-E1003", "a HAT tensor load or store needs a buffer parameter with a known layout");
+        }
+        long offset = layout.byteOffset(MemoryLayout.PathElement.groupElement(array.name().orElseThrow()));
+        return b.constInt(Type.I32, offset / array.elementLayout().byteSize());
+    }
+
+    private uk.ac.manchester.tornado.tc.ir.Value hatTensor(IrBuilder b, JavaOp.InvokeOp op, String name) {
+        var operands = op.operands();
+        switch (name) {
+            case "shape" -> {
+                return null;
+            }
+            case "ofColumnMajor", "ofRowMajor" -> {
+                tensorLayouts.put(op.result(), name.equals("ofColumnMajor"));
+                return null;
+            }
+            case "create", "zeros" -> {
+                var slot = entrySlot(new Type.VectorType(Type.F32, 8));
+                fillSlot(b, slot, b.constFloat(Type.F32, 0.0));
+                tensors.put(op.result(), new TensorValue(null, null, null, null, false, slot));
+                return null;
+            }
+            case "fill" -> {
+                fillSlot(b, tensor(operands.get(0)).accumulator(), v(operands.get(1)));
+                return null;
+            }
+            case "loadF16" -> {
+                var matrix = v(operands.get(0));
+                boolean columnMajor = operands.size() == 6 && Boolean.TRUE.equals(tensorLayouts.get(resolve(operands.get(5))));
+                // HAT's header is folded into the contiguous coordinate (addresses are linear in it)
+                var row = v(operands.get(1));
+                var col = v(operands.get(2));
+                var header = headerElements(b, matrix);
+                if (columnMajor) {
+                    row = b.add(row, header);
+                } else {
+                    col = b.add(col, header);
+                }
+                tensors.put(op.result(), new TensorValue(matrix, row, col, v(operands.get(3)), columnMajor, null));
+                return null;
+            }
+            case "mma" -> {
+                var a = tensor(operands.get(0));
+                var bt = tensor(operands.get(1));
+                var acc = tensor(operands.get(2));
+                if (a.accumulator() != null || bt.accumulator() != null || acc.accumulator() == null) {
+                    throw new Unsupported("TC-E1003", "Tensor.mma takes two loaded tensors and an accumulator");
+                }
+                var fragmentA = b.intrinsic(a.columnMajor() ? "tornado.mma.load_a.global_col" : "tornado.mma.load_a.global", new Type.VectorType(Type.I32, 4),
+                        List.of(a.matrix(), a.row(), a.col(), a.ld()));
+                for (int half = 0; half < 2; half++) {
+                    // B's n columns 8 * half .. 8 * half + 7
+                    var bRow = bt.columnMajor() ? bt.row() : bt.row();
+                    var bCol = b.add(bt.col(), b.constInt(Type.I32, 8 * half));
+                    var fragmentB = b.intrinsic(bt.columnMajor() ? "tornado.mma.load_b.global_col" : "tornado.mma.load_b.global", new Type.VectorType(Type.I32, 2),
+                            List.of(bt.matrix(), bRow, bCol, bt.ld()));
+                    var address = b.pointerOffset(acc.accumulator(), b.constInt(Type.I64, 16L * half));
+                    var c = loadAcc(b, address);
+                    var d = b.intrinsic("tornado.mma.m16n8k16", ACC, List.of(fragmentA, fragmentB, c));
+                    storeVector(b, address, d);
+                }
+                tensors.put(op.result(), acc);
+                return null;
+            }
+            case "store" -> {
+                var matrix = v(operands.get(0));
+                var acc = tensor(operands.get(3));
+                boolean columnMajor = operands.size() == 6 && Boolean.TRUE.equals(tensorLayouts.get(resolve(operands.get(5))));
+                var row = v(operands.get(1));
+                var col = v(operands.get(2));
+                var header = headerElements(b, matrix);
+                if (columnMajor) {
+                    row = b.add(row, header);
+                } else {
+                    col = b.add(col, header);
+                }
+                for (int half = 0; half < 2; half++) {
+                    var d = loadAcc(b, b.pointerOffset(acc.accumulator(), b.constInt(Type.I64, 16L * half)));
+                    b.intrinsic(columnMajor ? "tornado.mma.store_col" : "tornado.mma.store", Type.VOID,
+                            List.of(d, matrix, row, b.add(col, b.constInt(Type.I32, 8 * half)), v(operands.get(4))));
+                }
+                return null;
+            }
+            default -> {
+            }
+        }
+        throw new Unsupported("TC-E1003", "hat.types.Tensor." + name + " is not supported yet");
+    }
+
+    private uk.ac.manchester.tornado.tc.ir.Value entrySlot(Type.VectorType type) {
+        return slotFor(type);
+    }
+
+    private static void fillSlot(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value slot, uk.ac.manchester.tornado.tc.ir.Value value) {
+        for (int l = 0; l < 8; l++) {
+            b.store(b.pointerOffset(slot, b.constInt(Type.I64, 4L * l)), value);
+        }
+    }
+
+    private static uk.ac.manchester.tornado.tc.ir.Value loadAcc(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value address) {
+        return loadVector(b, address, ACC);
+    }
+
     /** HAT half floats: TC f16 values; arithmetic in f32, rounded back, as the bytecode frontend does for HalfFloat. */
     private uk.ac.manchester.tornado.tc.ir.Value hatF16(IrBuilder b, JavaOp.InvokeOp op, String name) {
         var args = args(op.operands());
@@ -1746,6 +1886,9 @@ final class BabylonTranslator {
             if (dim >= 0 && intrinsic != null) {
                 return b.intrinsic(intrinsic, Immediates.of("dim", dim), Type.I32, List.of());
             }
+        }
+        if (name.equals("WRS")) {
+            return b.constInt(Type.I32, 32); // the warp size of the devices HAT's warp operations target (NVIDIA)
         }
         throw new Unsupported("TC-E1003", "hat.KernelContext." + name + " is not supported yet");
     }

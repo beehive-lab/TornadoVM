@@ -85,6 +85,9 @@ public final class Intrinsics {
         // With a byte offset: the tile base moves by that many bytes (a warp's sub-tile).
         TABLE.put(new Key("tornado.mma.load_a.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_a_global"));
         TABLE.put(new Key("tornado.mma.load_b.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_b_global"));
+        // Column-major sources (element (r, c) at [row + r + (col + c) * ld]), for model frontends (HAT's Tensor).
+        TABLE.put(new Key("tornado.mma.load_a.global_col", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a_global_col((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_a_global_col"));
+        TABLE.put(new Key("tornado.mma.load_b.global_col", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_global_col((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_b_global_col"));
         TABLE.put(new Key("tornado.mma.load_a.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) ((const char *) $0 + $2), $1, 2)", "tc_mma_load_a"));
         TABLE.put(new Key("tornado.mma.load_b.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_b"));
         // Swizzled B tiles (fp16, stride-32 permutation: byte b -> b ^ (((b >> 7) & 7) << 4)).
@@ -104,6 +107,7 @@ public final class Intrinsics {
         TABLE.put(new Key("tornado.mma.m16n8k32_e5m2", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k32_e5m2($0, $1, $2)", "tc_mma_m16n8k32_e5m2"));
         TABLE.put(new Key("tornado.mma.m16n8k16", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k16($0, $1, $2)", "tc_mma_m16n8k16"));
         TABLE.put(new Key("tornado.mma.store", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store($0, (float *) ($1), $2, $3, $4)", "tc_mma_store"));
+        TABLE.put(new Key("tornado.mma.store_col", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store_col($0, (float *) ($1), $2, $3, $4)", "tc_mma_store_col"));
         // Atomics: $&0 is the address of the element ($0 is its pointer); typed by the value.
         for (var t : List.of("i32", "i64", "f32", "f64")) {
             cudaTyped("tornado.atomic.add", t, t.equals("i64") ? "atomicAdd((unsigned long long *) $&0, (unsigned long long) $1)" : "atomicAdd($&0, $1)");

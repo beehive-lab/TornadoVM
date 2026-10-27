@@ -79,6 +79,10 @@ public class TornadoHatBackend extends Backend {
      */
     @Override
     public void dispatchKernel(KernelCallGraph kernelCallGraph, NDRange ndRange, Object... dispatchContextAndArgs) {
+        dispatch(kernelCallGraph, ndRange, false, dispatchContextAndArgs);
+    }
+
+    private void dispatch(KernelCallGraph kernelCallGraph, NDRange ndRange, boolean tile, Object... dispatchContextAndArgs) {
         Method kernel = kernelCallGraph.callDag.entryPoint.method();
         Object[] args = Arrays.copyOfRange(dispatchContextAndArgs, 1, dispatchContextAndArgs.length);
         var parameters = kernel.getParameterTypes();
@@ -86,7 +90,8 @@ public class TornadoHatBackend extends Backend {
             throw new IllegalArgumentException(kernel + " takes " + parameters.length + " arguments, given " + args.length);
         }
         var key = key(kernel, ndRange, args);
-        var dispatch = plans.computeIfAbsent(key, k -> prepare(kernel, ndRange, args));
+        key.add(tile);
+        var dispatch = plans.computeIfAbsent(key, k -> prepare(kernel, ndRange, args, tile));
         // HAT memory is the truth between dispatches: in before every launch, out after it.
         for (int i = 0; i < dispatch.buffers().size(); i++) {
             if (dispatch.segments().get(i) != null) {
@@ -112,7 +117,7 @@ public class TornadoHatBackend extends Backend {
      */
     @Override
     public void dispatchTile(KernelCallGraph kernelCallGraph, NDRange ndRange, Object... dispatchContextAndArgs) {
-        dispatchKernel(kernelCallGraph, ndRange, dispatchContextAndArgs);
+        dispatch(kernelCallGraph, ndRange, true, dispatchContextAndArgs);
     }
 
     /** One execution plan per kernel, buffers, scalar values and range: compiled once, launched on every dispatch. */
@@ -136,7 +141,7 @@ public class TornadoHatBackend extends Backend {
         return key;
     }
 
-    private Dispatch prepare(Method kernel, NDRange range, Object[] args) {
+    private Dispatch prepare(Method kernel, NDRange range, Object[] args, boolean tile) {
         Object[] tornadoArgs = new Object[args.length];
         List<ByteArray> buffers = new ArrayList<>();
         List<MemorySegment> segments = new ArrayList<>();
@@ -164,15 +169,15 @@ public class TornadoHatBackend extends Backend {
             graph.transferToHost(DataTransferMode.EVERY_EXECUTION, buffers.toArray());
         }
         var plan = new TornadoExecutionPlan(graph.snapshot());
-        plan.withGridScheduler(new GridScheduler("hat.t", workerGrid(range)));
+        plan.withGridScheduler(new GridScheduler("hat.t", tile ? tileGrid(range) : workerGrid(range)));
         if (STRICT_FP) {
             plan.withStrictFloatingPoint();
         }
         return new Dispatch(plan, buffers, segments);
     }
 
-    private static WorkerGrid workerGrid(NDRange range) {
-        if (range.hasTile()) {
+    private static WorkerGrid tileGrid(NDRange range) {
+        {
             // As HAT's own backends: one block per local (or tile) extent along each dimension; with a
             // warp flag on X the blocks are numbered along X only (a kernel swizzles BIDX() itself).
             int[] global = extents(range.global());
@@ -196,6 +201,32 @@ public class TornadoHatBackend extends Backend {
             tiles.setLocalWork(1, 1, 1);
             return tiles;
         }
+    }
+
+    /**
+     * A kernel's launch: the global range, or, with a tile size (warp-level kernels such as HAT's
+     * Tensor ones), one warp per tile on the axes with a warp flag, as HAT's own backends size it.
+     */
+    private static WorkerGrid workerGrid(NDRange range) {
+        if (range.hasTile()) {
+            int[] global = extents(range.global());
+            int[] tile = extents(range.tile());
+            boolean[] warp = warpFlags(range, global.length);
+            int[] threads = new int[global.length];
+            for (int d = 0; d < global.length; d++) {
+                threads[d] = ceil(global[d], tile[d]) * (warp[d] ? 32 : 1);
+            }
+            WorkerGrid grid = switch (threads.length) {
+                case 1 -> new WorkerGrid1D(threads[0]);
+                case 2 -> new WorkerGrid2D(threads[0], threads[1]);
+                default -> new WorkerGrid3D(threads[0], threads[1], threads[2]);
+            };
+            if (range.hasLocal()) {
+                int[] local = extents(range.local());
+                grid.setLocalWork(local[0], local.length > 1 ? local[1] : 1, local.length > 2 ? local[2] : 1);
+            }
+            return grid;
+        }
         WorkerGrid grid = switch (range.global()) {
             case NDRange.Global1D g -> new WorkerGrid1D(g.x());
             case NDRange.Global2D g -> new WorkerGrid2D(g.x(), g.y());
@@ -212,6 +243,27 @@ public class TornadoHatBackend extends Backend {
             }
         }
         return grid;
+    }
+
+    private static boolean[] warpFlags(NDRange range, int rank) {
+        var flags = new boolean[rank];
+        if (range.hasWarp()) {
+            switch (range.warp()) {
+                case NDRange.Warp1D w -> flags[0] = w.x();
+                case NDRange.Warp2D w -> {
+                    flags[0] = w.x();
+                    flags[1] = w.y();
+                }
+                case NDRange.Warp3D w -> {
+                    flags[0] = w.x();
+                    flags[1] = w.y();
+                    flags[2] = w.z();
+                }
+                default -> {
+                }
+            }
+        }
+        return flags;
     }
 
     private static int[] extents(Object dims) {
