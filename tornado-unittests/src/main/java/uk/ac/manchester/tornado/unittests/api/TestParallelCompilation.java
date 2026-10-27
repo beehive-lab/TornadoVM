@@ -18,6 +18,14 @@
 package uk.ac.manchester.tornado.unittests.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Files;
+import java.util.HashSet;
+import java.util.Set;
+
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordingFile;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +46,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * each task's in-order compilation takes the result. Each test checks that every kernel still does
  * what it does on the JVM: with several graphs run one by one, with pre-compilation, next to a
  * graph the prefetch leaves out (a @Reduce graph is rewritten on its first run), and with strict
- * floating point (the prefetched compilation must be the strict one).
+ * floating point (the prefetched compilation must be the strict one). Compilations are recorded as
+ * {@code tornado.Compile} JFR events.
  *
  * <p>
  * How to run?
@@ -168,6 +177,53 @@ public class TestParallelCompilation extends TornadoTestBase {
         for (int i = 0; i < N; i++) {
             // Strict: the multiply and the add round separately, as on the JVM (no fma).
             assertEquals(Float.floatToRawIntBits(a.get(i) * 3.0f + 0.1f), Float.floatToRawIntBits(out.get(i)), "index " + i);
+        }
+    }
+
+    public static void cube(FloatArray a, FloatArray out) {
+        for (@Parallel int i = 0; i < a.getSize(); i++) {
+            out.set(i, a.get(i) * a.get(i) * a.get(i));
+        }
+    }
+
+    /**
+     * Each kernel's TC compilation is a {@code tornado.Compile} JFR event (phase {@code tc}); with
+     * parallel compilation, the plan's kernels are also compiled in the background first.
+     */
+    @Test
+    public void compilationsAreJfrEvents() throws Exception {
+        var a = new FloatArray(N);
+        a.init(2.0f);
+        var cubed = new FloatArray(N);
+        var squares = new FloatArray(N);
+        var g0 = new TaskGraph("jfr0").transferToDevice(DataTransferMode.EVERY_EXECUTION, a).task("t", TestParallelCompilation::cube, a, cubed)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, cubed);
+        var g1 = new TaskGraph("jfr1").transferToDevice(DataTransferMode.EVERY_EXECUTION, a).task("t", TestParallelCompilation::square, a, squares)
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, squares);
+        var file = Files.createTempFile("tornado-compile", ".jfr");
+        Set<String> inOrder = new HashSet<>();
+        Set<String> background = new HashSet<>();
+        try (var recording = new Recording()) {
+            recording.enable("tornado.Compile");
+            recording.start();
+            try (var plan = new TornadoExecutionPlan(g0.snapshot(), g1.snapshot())) {
+                plan.withAllGraphs().execute();
+            }
+            recording.stop();
+            recording.dump(file);
+            for (var event : RecordingFile.readAllEvents(file)) {
+                if (event.getEventType().getName().equals("tornado.Compile") && "tc".equals(event.getString("phase"))) {
+                    (event.getBoolean("background") ? background : inOrder).add(event.getString("kernel"));
+                }
+            }
+        } finally {
+            Files.deleteIfExists(file);
+        }
+        assertEquals(8.0f, cubed.get(0), 0.0f);
+        assertEquals(5.0f, squares.get(0), 0.0f);
+        assertTrue(inOrder.containsAll(Set.of("TestParallelCompilation.cube", "TestParallelCompilation.square")), "in-order TC compilations: " + inOrder);
+        if (!"false".equals(System.getProperty("tornado.parallel.compile"))) {
+            assertTrue(background.containsAll(Set.of("TestParallelCompilation.cube", "TestParallelCompilation.square")), "background TC compilations: " + background);
         }
     }
 }

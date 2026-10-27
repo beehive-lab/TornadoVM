@@ -206,12 +206,18 @@ public final class CUDACompiler {
                 program.buildStatus = CUDAHandles.Program.BUILD_SUCCESS;
             } else {
                 boolean ok = false;
+                // Named on the Nsight Systems timeline and in JFR: compilations run on several threads.
+                String kernel = kernelName(program.source);
+                var event = uk.ac.manchester.tornado.drivers.common.tc.CompileEvent.begin("nvrtc", kernel, null, Thread.currentThread().getName().startsWith("tornado-compile-"));
+                NVTXAPI.rangePush("nvrtc " + kernel);
                 try {
                     ok = compile(program, arch, options, useCubin) && (!deviceLaunch || linkDeviceRuntime(program, useCubin));
                     if (ok) {
                         IMAGE_CACHE.putIfAbsent(cacheKey, program.binary);
                     }
                 } finally {
+                    NVTXAPI.rangePop();
+                    event.finish();
                     if (mine != null) {
                         mine.complete(ok ? program.binary : null);
                         IN_FLIGHT.remove(cacheKey, mine);
@@ -223,6 +229,14 @@ public final class CUDACompiler {
             }
         }
         return new ImageState(deviceLaunch, gpuArch, maxSupportedArch, fallbackArch, useCubin, archKnown);
+    }
+
+    private static final java.util.regex.Pattern KERNEL = java.util.regex.Pattern.compile("__global__\\s+(?:__launch_bounds__\\([^)]*\\)\\s+)?void\\s+(\\w+)");
+
+    /** The first kernel a CUDA source defines, to name its compilation. */
+    private static String kernelName(String source) {
+        var m = KERNEL.matcher(source);
+        return m.find() ? m.group(1) : "kernel";
     }
 
     public static void build(CUDAHandles.Program program, int device, String userOptions) {

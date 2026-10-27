@@ -107,8 +107,10 @@ public final class TcKernels {
         final boolean workerGrid = taskMeta.isWorkerGridAvailable();
         PREFETCH.execute(() -> {
             try {
-                TcHook.compile(method, arguments, target, batchThreads, numThreads, batchIndexOffset, taskId, strict, workerGrid)
-                        .ifPresent(kernel -> prebuilder.prebuild(kernel.entryName(), kernel.source()));
+                var event = CompileEvent.begin("tc", method.getDeclaringClass().getSimpleName() + "." + method.getName(), taskId, true);
+                var compiled = TcHook.compile(method, arguments, target, batchThreads, numThreads, batchIndexOffset, taskId, strict, workerGrid);
+                event.finish();
+                compiled.ifPresent(kernel -> prebuilder.prebuild(kernel.entryName(), kernel.source()));
             } catch (Throwable ignored) {
                 // Reported by the in-order compilation.
             }
@@ -141,8 +143,10 @@ public final class TcKernels {
         TornadoProfiler profiler = executable.getProfiler();
         long tcStart = System.nanoTime();
         profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
+        var event = CompileEvent.begin("tc", method.getDeclaringClass().getSimpleName() + "." + method.getName(), taskMeta.getId(), false);
         var kernel = TcHook.compile(method, executable.getArguments(), target, executable.getBatchThreads(), taskMeta.getNumThreads(),
                 (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint(), taskMeta.isWorkerGridAvailable()).orElseThrow();
+        event.finish();
         profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
         long tcNanos = System.nanoTime() - tcStart;
         if (TornadoOptions.FEATURE_EXTRACTION && deviceContext != null) {
