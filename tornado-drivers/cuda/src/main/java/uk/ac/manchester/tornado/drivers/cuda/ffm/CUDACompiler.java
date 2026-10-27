@@ -255,13 +255,16 @@ public final class CUDACompiler {
      * Compiles {@code source} for the device into the in-process image cache, without loading it:
      * a later {@link #build} of the same source, device and options then only loads the module.
      * Thread-safe; used to compile a plan's kernels in parallel before they first run.
+     *
+     * @return the image, or null if the source did not compile
      */
-    public static void prebuild(String source, long deviceHandle, String userOptions) {
+    public static byte[] prebuild(String source, long deviceHandle, String userOptions) {
         CUDAHandles.Device boxed = CUDAHandles.resolve(deviceHandle, CUDAHandles.Device.class);
         if (boxed == null) {
-            return;
+            return null;
         }
-        compileImage(new CUDAHandles.Program(0, source, null), boxed.device(), userOptions);
+        var program = new CUDAHandles.Program(0, source, null);
+        return compileImage(program, boxed.device(), userOptions) == null ? null : program.binary;
     }
 
 

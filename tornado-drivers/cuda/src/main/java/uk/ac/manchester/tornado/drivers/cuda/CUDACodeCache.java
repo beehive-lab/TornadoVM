@@ -157,7 +157,10 @@ public class CUDACodeCache {
     }
 
     private void storeCachedModule(Path cacheFile, CUDAProgram program, String entryPoint) {
-        final byte[] image = program.getModuleImage();
+        storeImage(cacheFile, program.getModuleImage(), entryPoint);
+    }
+
+    private void storeImage(Path cacheFile, byte[] image, String entryPoint) {
         if (image == null || image.length == 0) {
             return;
         }
@@ -241,13 +244,22 @@ public class CUDACodeCache {
             return;
         }
         final String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.CUDA);
+        Path moduleCacheFile = null;
         if (CUDA_CODE_CACHE_ENABLE) {
             final String key = moduleCacheKey(source, compilerFlags, false);
-            if (key != null && Files.exists(resolveModuleCacheDirectory().resolve(entryPoint + "-" + key + CUBIN_SUFFIX))) {
-                return;
+            if (key != null) {
+                moduleCacheFile = resolveModuleCacheDirectory().resolve(entryPoint + "-" + key + CUBIN_SUFFIX);
+                if (Files.exists(moduleCacheFile)) {
+                    return;
+                }
             }
         }
-        CUDACompiler.prebuild(new String(source, StandardCharsets.UTF_8), deviceContext.getDeviceId(), compilerFlags);
+        final byte[] image = CUDACompiler.prebuild(new String(source, StandardCharsets.UTF_8), deviceContext.getDeviceId(), compilerFlags);
+        // Stored now, not only when the kernel is installed: a plan's graphs that a run does not
+        // execute would otherwise be compiled again by every later run's prefetch.
+        if (moduleCacheFile != null && image != null) {
+            storeImage(moduleCacheFile, image, entryPoint);
+        }
     }
 
     public CUDAInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {
