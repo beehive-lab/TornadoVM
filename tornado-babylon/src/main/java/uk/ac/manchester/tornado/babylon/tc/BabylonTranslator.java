@@ -117,6 +117,8 @@ final class BabylonTranslator {
     private final Map<Value, uk.ac.manchester.tornado.tc.ir.Value> vectorSlots = new HashMap<>();
     /** The builder of the op being translated: reading a mutable vector loads its slot there. */
     private IrBuilder current;
+    /** Initial values of {@code @Parallel} loop variables ({@link Markers#parallel}). */
+    private final java.util.Set<Value> parallelInits = new java.util.HashSet<>();
     /** HAT local/private memory of a struct-shaped device type: its layout, for the accessors' views. */
     private final Map<uk.ac.manchester.tornado.tc.ir.Value, GroupLayout> deviceStructs = new HashMap<>();
     /** Results of {@code arrayView()} calls (Java arrays over HAT memory) and of indexing a 2D one by its first index. */
@@ -165,10 +167,10 @@ final class BabylonTranslator {
         // Mutated HAT vectors get their private slots first, in the entry block.
         var entryBuilder = new IrBuilder(blocks.get(entry));
         model.elements().forEach(e -> {
-            if (e instanceof JavaOp.InvokeOp invoke && invoke.hasReceiver() && invoke.operands().size() == 2
-                    && vectorLanes(invoke.operands().get(0).type()) > 0 && lane(invoke.invokeReference().name()) >= 0) {
+            if (e instanceof JavaOp.InvokeOp invoke && invoke.hasReceiver() && invoke.operands().size() >= 2 && isMutation(invoke)) {
                 var vector = invoke.operands().get(0);
-                vectorSlots.computeIfAbsent(vector, x -> entryBuilder.alloca(AddressSpace.PRIVATE, Type.F32, vectorLanes(x.type())));
+                var type = (Type.VectorType) valueType(vector.type());
+                vectorSlots.computeIfAbsent(vector, x -> entryBuilder.alloca(AddressSpace.PRIVATE, type.element(), type.length()));
             }
         });
         for (var block : body.blocks()) {
@@ -254,7 +256,7 @@ final class BabylonTranslator {
 
     private uk.ac.manchester.tornado.tc.ir.Value v(Value value) {
         if (vectorSlots.containsKey(value) && !values.containsKey(value)) {
-            return loadVector(current, vectorSlots.get(value), vectorLanes(value.type()));
+            return loadVector(current, vectorSlots.get(value), (Type.VectorType) valueType(value.type()));
         }
         var tc = values.get(value);
         if (tc == null && views.containsKey(value)) {
@@ -305,7 +307,11 @@ final class BabylonTranslator {
             case JavaOp.ArrayLengthOp length -> define(op, b.arrayLength(v(length.operands().get(0))));
             case JavaOp.FieldAccessOp.FieldLoadOp field -> define(op, fieldLoad(b, field));
             case JavaOp.InvokeOp invoke -> define(op, invoke(b, invoke));
-            case CoreOp.BranchOp br -> b.br(blocks.get(br.branch().targetBlock()), args(br.branch().arguments()));
+            case JavaOp.NewOp n -> define(op, newValue(b, n));
+            case CoreOp.BranchOp br -> {
+                markParallel(br.branch());
+                b.br(blocks.get(br.branch().targetBlock()), args(br.branch().arguments()));
+            }
             case CoreOp.ConditionalBranchOp cbr -> b.condBr(v(cbr.predicateOperand()), blocks.get(cbr.trueBranch().targetBlock()), args(cbr.trueBranch().arguments()),
                     blocks.get(cbr.falseBranch().targetBlock()), args(cbr.falseBranch().arguments()));
             case CoreOp.ReturnOp ret -> {
@@ -316,6 +322,19 @@ final class BabylonTranslator {
                 }
             }
             default -> throw new Unsupported("TC-E1003", "code model op " + op.getClass().getSimpleName() + " is not supported by the Babylon frontend yet");
+        }
+    }
+
+    /** A branch that passes a {@code @Parallel} variable's initial value enters its loop: tag the header as the bytecode frontend does. */
+    private void markParallel(Block.Reference branch) {
+        var arguments = branch.arguments();
+        for (int k = 0; k < arguments.size(); k++) {
+            if (parallelInits.contains(arguments.get(k))) {
+                var header = blocks.get(branch.targetBlock());
+                if (header.attributes().stream().noneMatch(a -> a.name().equals("parallel"))) {
+                    header.addAttribute(uk.ac.manchester.tornado.tc.ir.Attribute.of("parallel", "iv", k));
+                }
+            }
         }
     }
 
@@ -484,6 +503,10 @@ final class BabylonTranslator {
         var owner = ref.refType().toString();
         var name = ref.name();
         var operands = op.operands();
+        if (owner.equals(Markers.class.getName()) && name.equals("parallel")) {
+            parallelInits.add(op.result());
+            return v(operands.get(0));
+        }
         if (owner.equals(HAT_KERNEL_CONTEXT)) {
             return hatKernelContext(b, name);
         }
@@ -525,6 +548,9 @@ final class BabylonTranslator {
                 + descriptor(signature.returnType());
         var api = Frontend.apiCall(b, owner, name, descriptor, !op.hasReceiver(), args(operands));
         if (api.isPresent()) {
+            if (api.get().receiver().isPresent()) {
+                updateReceiver(b, operands.get(0), api.get().receiver().get());
+            }
             return api.get().value().orElse(null);
         }
         if (owner.startsWith("uk.ac.manchester.tornado.api.")) {
@@ -570,6 +596,24 @@ final class BabylonTranslator {
         } catch (ReflectiveOperationException e) {
             throw new Unsupported("TC-E1007", "called method " + owner + "." + name + " cannot be resolved: " + e);
         }
+    }
+
+    /** A value-type receiver updated in place: later reads see {@code updated} (through its slot, see isMutation). */
+    private void updateReceiver(IrBuilder b, Value receiver, uk.ac.manchester.tornado.tc.ir.Value updated) {
+        var slot = vectorSlots.get(receiver);
+        if (slot == null) {
+            throw new Unsupported("TC-E9003", "an in-place update of a value that has no slot: " + receiver);
+        }
+        storeVector(b, slot, updated);
+    }
+
+    /** {@code new T(...)}: TornadoVM value types (HalfFloat, vectors, AtomicInteger) as the bytecode frontend builds them. */
+    private uk.ac.manchester.tornado.tc.ir.Value newValue(IrBuilder b, JavaOp.NewOp op) {
+        var ctor = op.constructorReference();
+        var owner = ((JavaType) ctor.refType()).toString();
+        var descriptor = ctor.signature().parameterTypes().stream().map(BabylonTranslator::descriptor).collect(java.util.stream.Collectors.joining("", "(", ")V"));
+        return Frontend.apiNew(b, owner, descriptor, args(op.operands()))
+                .orElseThrow(() -> new Unsupported("TC-E1003", "new " + owner + descriptor + " is not supported in kernels"));
     }
 
     /** A method named in a model, resolved with access to its declaring class (kernels often sit in private nested types). */
@@ -820,19 +864,32 @@ final class BabylonTranslator {
         return b.intrinsic("tornado.vector.make", type, lanes);
     }
 
-    private static uk.ac.manchester.tornado.tc.ir.Value loadVector(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value slot, int lanes) {
+    private static uk.ac.manchester.tornado.tc.ir.Value loadVector(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value slot, Type.VectorType type) {
         var values = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>();
-        for (int l = 0; l < lanes; l++) {
-            values.add(b.load(b.pointerOffset(slot, b.constInt(Type.I64, 4L * l)), Type.F32));
+        for (int l = 0; l < type.length(); l++) {
+            values.add(b.load(b.pointerOffset(slot, b.constInt(Type.I64, (long) bytes(type.element()) * l)), type.element()));
         }
-        return make(b, new Type.VectorType(Type.F32, lanes), values);
+        return make(b, type, values);
     }
 
     private static void storeVector(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value slot, uk.ac.manchester.tornado.tc.ir.Value vector) {
-        int lanes = ((Type.VectorType) vector.type()).length();
-        for (int l = 0; l < lanes; l++) {
-            b.store(b.pointerOffset(slot, b.constInt(Type.I64, 4L * l)), laneOf(b, vector, l));
+        var type = (Type.VectorType) vector.type();
+        for (int l = 0; l < type.length(); l++) {
+            b.store(b.pointerOffset(slot, b.constInt(Type.I64, (long) bytes(type.element()) * l)), laneOf(b, vector, l));
         }
+    }
+
+    /**
+     * Whether {@code invoke} updates its receiver, a vector, in place: a HAT vector's lane setter
+     * ({@code vA.x(v)}) or a TornadoVM vector's {@code set}/{@code setX}/{@code fill}.
+     */
+    private static boolean isMutation(JavaOp.InvokeOp invoke) {
+        var receiver = invoke.operands().get(0).type();
+        var name = invoke.invokeReference().name();
+        if (vectorLanes(receiver) > 0) {
+            return lane(name) >= 0;
+        }
+        return valueType(receiver) instanceof Type.VectorType && (name.startsWith("set") || name.equals("fill"));
     }
 
     /** The vector whose first lane is at byte offset {@code at} of a buffer. */
@@ -894,7 +951,7 @@ final class BabylonTranslator {
         }
         if (op.hasReceiver() && lane >= 0 && args.size() == 2) {
             var slot = vectorSlots.get(operands.get(0));
-            b.store(b.pointerOffset(slot, b.constInt(Type.I64, 4L * lane)), args.get(1));
+            b.store(b.pointerOffset(slot, b.constInt(Type.I64, (long) bytes(Type.F32) * lane)), args.get(1));
             return null;
         }
         var resultLanes = vectorLanes(op.resultType());
