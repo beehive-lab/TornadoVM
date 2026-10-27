@@ -57,7 +57,7 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
  *
  * <p>
  * {@link #tune} keeps the tasks whose device has a registered {@link AutoTuneSearchStrategy}, runs the
- * graph once so that every global work size is known, then benchmarks the candidate local sizes of each
+ * graph only the first time so that every global work size is known, then benchmarks the candidate local sizes of each
  * task that is not in {@link AutoTuneCache}: warm-up runs, then measured runs of the whole graph, scored
  * by the median of the configured {@link AutoTuneMetric}. The lowest score wins, and the winners are
  * returned as a {@link GridScheduler}.
@@ -73,6 +73,13 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
  * <p>
  * Called from {@code TornadoTaskGraph.checkAutoTuneOn}. An instance must not be shared between
  * concurrent {@link #tune} calls.
+ * </p>
+ * 
+ * <p>
+ * {@code tune} is called on every {@code execute()} of a plan with auto-tuning enabled. A task already in
+ * {@link AutoTuneCache} is not benchmarked again: its cached local size is returned straight away, so only the
+ * first execution of a graph pays for tuning. Tuning runs the graph many times, so kernels with side effects
+ * (for example ones that update their input in place) see those extra runs.
  * </p>
  */
 public final class AutoTuner {
@@ -114,7 +121,7 @@ public final class AutoTuner {
      * @return the tuned grids (empty if every eligible task failed), or {@code null} if no task is eligible.
      */
     public GridScheduler tune(TornadoTaskGraphInterface taskGraph, List<String> taskIds, ExecutorFrame executorFrame) {
-        logger.info("Auto-tuning %d candidate task(s)", taskIds.size());
+        logger.debug("Auto-tuning %d candidate task(s)", taskIds.size());
         this.userGridScheduler = executorFrame.getGridScheduler();
         List<EligibleTask> eligibleTasks = filterEligibleTasks(taskIds, taskGraph);
 
@@ -122,21 +129,24 @@ public final class AutoTuner {
             logger.warn("No eligible tasks for auto-tuning out of %d candidate(s)", taskIds.size());
             return null;
         }
-        // Probe run: executes the graph once so each task's global work size is populated.
-        taskGraph.execute(executorFrame);
+        // Probe run: executes the graph once so each task's global work size is populated.It is skipped once
+        // the sizes are known, so it happens at most once per task graph.
+        if (! globalWorkSizesKnown(eligibleTasks)){
+            taskGraph.execute(executorFrame);
+        }
         GridScheduler effectiveGridScheduler = new GridScheduler();
         long timeBudgetMillis = config.getTimeBudgetMillis();
         long deadlineNanos = (timeBudgetMillis <= 0) ? Long.MAX_VALUE : System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeBudgetMillis);
 
         for (EligibleTask eligibleTask : eligibleTasks) {
             try{
-                long[] globalWorkSize = resolveGlobalWorkSize(eligibleTask.task());
+                long[] globalWorkSize = resolveGlobalWorkSize(eligibleTask.task()).clone();
                 logger.debug("Autotuning task %s with global work size %s", eligibleTask.taskId(), Arrays.toString(globalWorkSize));
                 Optional<AutoTuneResult> cached = checkCache(eligibleTask.taskId(), eligibleTask.device(), kernelSignatureHash(eligibleTask.task()), globalWorkSize);
                 AutoTuneResult result;
                 if (cached.isPresent()) {
                     result = cached.get();
-                    logger.info("Using cached auto-tune result for %s: local work = %s (%d ns)", eligibleTask.taskId(), arrayToString(result.getWinningLocalWork()), result.getMedianTimeNanos());
+                    logger.debug("Using cached auto-tune result for %s: local work = %s (%d ns)", eligibleTask.taskId(), arrayToString(result.getWinningLocalWork()), result.getMedianTimeNanos());
                 } else {
                     result=taskTuner(eligibleTask, globalWorkSize, taskGraph, executorFrame, deadlineNanos);
                 }
@@ -286,6 +296,18 @@ private static boolean usesKernelContext(SchedulableTask task) {
             }
         }
         return globalWork;
+    }
+
+    /** Whether every eligible task already has a valid global work size, i.e. the graph has run before. */
+    private boolean globalWorkSizesKnown(List<EligibleTask> eligibleTasks) {
+        for (EligibleTask eligibleTask : eligibleTasks) {
+            try {
+                resolveGlobalWorkSize(eligibleTask.task());
+            } catch (RuntimeException e) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static long[] trimTrailingOnes(long[] size) {
@@ -444,12 +466,19 @@ private static boolean usesKernelContext(SchedulableTask task) {
         return userGridScheduler.get(task.getId());
     }
     
-    
     private Optional<AutoTuneResult> checkCache(String taskId, TornadoDevice device, long kernelSignatureHash, long[] globalWorkSize) {
-        return AutoTuneCache.get(device, taskId, kernelSignatureHash, globalWorkSize);
-    }
+    return AutoTuneCache.get(device, taskId, kernelSignatureHash, globalWorkSize);
+}
 
-    /** The hash of the method's string form for a task built from a Java method, {@code 0} for any other task. */
+private void storeInCache(AutoTuneResult result) {
+    AutoTuneCache.put(result);
+}
+    
+    // private Optional<AutoTuneResult> checkCache(String taskId, TornadoDevice device, long kernelSignatureHash, long[] globalWorkSize) {
+    //     return AutoTuneCache.get(device, taskId, kernelSignatureHash, globalWorkSize);
+    // }
+
+    /** The hash of the method's string form for a task built from a Java method, {@code 0} for any other task. It identifies the kernel by its method, so it does not notice a changed body of the same method within one JVM. */
     private static long kernelSignatureHash(SchedulableTask task) {
         if (task instanceof CompilableTask compilableTask) {
             return compilableTask.getMethod().toString().hashCode();
@@ -457,9 +486,9 @@ private static boolean usesKernelContext(SchedulableTask task) {
         return 0L;
     }
 
-    private void storeInCache(AutoTuneResult result) {
-        AutoTuneCache.put(result);
-    }
+    // private void storeInCache(AutoTuneResult result) {
+    //     AutoTuneCache.put(result);
+    // }
 
     /**
      * Formats an {@code int[]} candidate (or {@code null}, meaning
