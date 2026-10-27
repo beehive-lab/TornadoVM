@@ -20,7 +20,7 @@ print(f"{v[0]/1e6:.1f} {statistics.median(v[len(v)//2:])/1e6:.3f}" if v else "- 
 PY
 }
 printf '%-24s %-14s %10s %12s %s\n' kernel backend first_ms median_ms check
-for k in 1D 2D 2DLI 2DTILING 2DREGISTERTILING 2DREGISTERTILING_FP16; do
+for k in 1D 2D 2DLI 2DTILING 2DREGISTERTILING 2DREGISTERTILING_V 2DREGISTERTILING_FP16; do
     for be in tornado-cuda tornado-opencl hat-cuda hat-opencl; do
         log=$OUT/$k.$be.log; rm -f table-results-mxm-*.csv
         case $be in

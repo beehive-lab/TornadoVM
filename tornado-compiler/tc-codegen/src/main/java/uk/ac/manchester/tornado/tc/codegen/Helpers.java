@@ -142,6 +142,32 @@ final class Helpers {
                       return r;
                     }
                     """),
+            // A from a column-major matrix (element (r, c) at a[row + r + (col + c) * ld]): the register pairs
+            // run along k, which is strided here, so each half is a 16-bit load.
+            Map.entry("tc_mma_load_a_global_col", """
+                    __device__ static inline int4 tc_mma_load_a_global_col(const unsigned short *a, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      int r = row + (int) (lane >> 2), c = col + (int) ((lane & 3u) << 1);
+                      int v[4];
+                      for (int i = 0; i < 4; i++) {
+                        int rr = r + 8 * (i & 1), cc = c + 8 * (i >> 1);
+                        v[i] = (int) a[rr + (long long) cc * ld] | ((int) a[rr + (long long) (cc + 1) * ld] << 16);
+                      }
+                      return make_int4(v[0], v[1], v[2], v[3]);
+                    }
+                    """),
+            // B from a column-major matrix (element (k, n) at b[row + k + (col + n) * ld]): already the
+            // fragment's layout (k pairs contiguous for each column n), so one 32-bit load per register.
+            Map.entry("tc_mma_load_b_global_col", """
+                    __device__ static inline int2 tc_mma_load_b_global_col(const unsigned short *b, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      const unsigned short *p = b + (long long) (col + (int) (lane >> 2)) * ld + row + (int) ((lane & 3u) << 1);
+                      int2 r;
+                      r.x = *(const int *) p;
+                      r.y = *(const int *) (p + 8);
+                      return r;
+                    }
+                    """),
             // B: a k x 8 row-major half tile (rows of 16 bytes), transposed by ldmatrix into the two B registers.
             Map.entry("tc_mma_load_b", """
                     __device__ static inline int2 tc_mma_load_b(const int *tile, int k) {
@@ -243,6 +269,16 @@ final class Helpers {
                       c[r * ld + k + 1] = d.y;
                       c[(r + 8) * ld + k] = d.z;
                       c[(r + 8) * ld + k + 1] = d.w;
+                    }
+                    """),
+            Map.entry("tc_mma_store_col", """
+                    __device__ static inline void tc_mma_store_col(float4 d, float *c, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      int r = row + (int) (lane >> 2), k = col + (int) ((lane & 3u) << 1);
+                      c[r + (long long) k * ld] = d.x;
+                      c[r + (long long) (k + 1) * ld] = d.y;
+                      c[r + 8 + (long long) k * ld] = d.z;
+                      c[r + 8 + (long long) (k + 1) * ld] = d.w;
                     }
                     """),
             // cp.async (PTX ISA 7.0, sm_80): .ca caches the 4-byte copy in L1, .cg (16 bytes only) bypasses it.

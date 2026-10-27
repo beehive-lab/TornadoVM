@@ -67,10 +67,10 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 | `HATMath` (`maxf16`, `cosf`, `native_sinf`, …) | TC math intrinsics at the argument's precision |
 | Tiles (`TileContext.load/store/index/shape/irange/BIDX`, `Tile.zeros/full/add/…/mma/transpose/sum/min/max/numTiles/ceildiv`) | CUDA Tile through TC's `tile.*` IR: a tensor is a strided view past HAT's header; 1D tiles are 1 x n; helpers that take tiles are inlined |
 | `dispatchTile` | one CUDA Tile block per tile, numbered as HAT's backends number them (a warp flag on X flattens them) |
+| `Tensor` (16 x 16 x 16 F16 multiply-accumulate: `create`/`zeros`/`fill`, `loadF16` and `store` row- or column-major, `mma`), `WRS()` | two m16n8k16 tensor-core operations per `mma`; operand fragments are loaded where the `mma` uses them (as A or B), accumulators live in a private slot; column-major loads and stores are TC intrinsics added for this (`tornado.mma.load_a.global_col`, `load_b.global_col`, `store_col`). CUDA only |
 
-**Not supported yet:** HAT's `Tensor` (warp-level WMMA) and `WRS()`. Mixed row/column-major loads
-need a column-major B-fragment load that TC's MMA intrinsics do not have. CUDA Tile kernels run on
-CUDA only (TC refuses them elsewhere with TC-E4010).
+**Limits:** CUDA Tile and tensor-core kernels run on CUDA only (TC refuses tiles elsewhere with
+TC-E4010). HAT tensors are loaded where `mma` uses them rather than where `loadF16` is called.
 
 ## Build and run
 
@@ -118,9 +118,9 @@ Options:
 
 | Device | TornadoVM (TC) | HAT's own backend |
 |---|---|---|
-| RTX 4090, CUDA | **150** pass, 2 expected-precision (as HAT), 4 `Tensor` unsupported | 130 pass, 6 fail, 4 expected-precision, some classes not launched |
-| RTX 4090, OpenCL | **134** pass; 18 tile tests refused (CUDA Tile is CUDA-only), FlashAttention F16 hits an NVIDIA OpenCL compiler error (beehive-lab/TornadoVM#1297), 4 `Tensor` | 133 pass, 21 fail, 2 expected-precision |
-| Intel UHD 770, OpenCL | **132** pass; the rest are tiles, `Tensor`, and 4 kernels using `Math.exp` in double precision on a device without FP64 (TC-E4012) | not run |
+| RTX 4090, CUDA | **154** pass, 2 expected-precision (the values HAT's own backends give) | 130 pass, 6 fail, 4 expected-precision, some classes not launched |
+| RTX 4090, OpenCL | **134** pass; 18 tile and 4 tensor tests refused (CUDA only), FlashAttention F16 hits an NVIDIA OpenCL compiler error (beehive-lab/TornadoVM#1297) | 133 pass, 21 fail, 2 expected-precision |
+| Intel UHD 770, OpenCL | **132** pass; the rest are tiles and tensors (CUDA only) and 4 kernels using `Math.exp` in double precision on a device without FP64 (TC-E4012) | not run |
 
 The expected-precision tests (`test_bfloat16_14`, `testNbody`) give exactly the values HAT's own
 backends give.
@@ -134,7 +134,6 @@ launch configurations are compared test by test.
 ### HAT's examples (`hat-sweep.sh`, RTX 4090 CUDA)
 
 squares, mandel, matmul (MT, 1D, 1DFC, 2D, 2DLI, 2DTILING, 2DREGISTERTILING,
-2DREGISTERTILING_V, 2DREGISTERTILING_FP16, strict-FP FP16), dft and flash-attention pass. matmul
-2DLIF16 prints the same values as HAT's own OpenCL backend (`66.481575 != 63.870296`): the example's
-check ignores the F16 rounding of each product. HAT's CUDA backend is further off. `tensors` needs
-`Tensor`.
+2DREGISTERTILING_V, 2DREGISTERTILING_FP16, strict-FP FP16), dft, flash-attention and tensors pass.
+matmul 2DLIF16 prints the same values as HAT's own OpenCL backend (`66.481575 != 63.870296`): the
+example's check ignores the F16 rounding of each product. HAT's CUDA backend is further off.
