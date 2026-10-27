@@ -117,6 +117,8 @@ final class BabylonTranslator {
     private final Map<Value, uk.ac.manchester.tornado.tc.ir.Value> vectorSlots = new HashMap<>();
     /** The builder of the op being translated: reading a mutable vector loads its slot there. */
     private IrBuilder current;
+    /** HAT local/private memory of a struct-shaped device type: its layout, for the accessors' views. */
+    private final Map<uk.ac.manchester.tornado.tc.ir.Value, GroupLayout> deviceStructs = new HashMap<>();
     /** Results of {@code arrayView()} calls (Java arrays over HAT memory) and of indexing a 2D one by its first index. */
     private final Map<Value, ArrayView> arrayViews = new HashMap<>();
     private final Map<Value, Row> rows = new HashMap<>();
@@ -507,6 +509,9 @@ final class BabylonTranslator {
         if (op.hasReceiver() && isHatBuffer(ref.refType())) {
             return hatBufferAccess(b, op, name);
         }
+        if (op.hasReceiver() && values.get(operands.get(0)) instanceof uk.ac.manchester.tornado.tc.ir.Value memory && deviceStructs.containsKey(memory)) {
+            return fieldAccess(b, op, new View(memory, b.constInt(Type.I64, 0), deviceStructs.get(memory)), name);
+        }
         if (op.hasReceiver() && deviceArrays.containsKey(v(operands.get(0)))) {
             return deviceArrayAccess(b, op, name);
         }
@@ -587,19 +592,24 @@ final class BabylonTranslator {
             var schema = schemaField.get(null);
             var root = schema.getClass().getField("root").get(schema);
             var members = (List<?>) root.getClass().getMethod("members").invoke(root);
-            if (members.size() != 1 || !members.get(0).getClass().getSimpleName().equals("Array")) {
-                throw new Unsupported("TC-E1003", "HAT device type " + owner.getSimpleName() + ": only a schema with one array member is supported yet");
+            if (members.size() == 1 && members.get(0).getClass().getSimpleName().equals("Array")) {
+                var member = members.get(0);
+                var clazz = (Class<?>) member.getClass().getMethod("clazz").invoke(member);
+                int size = (int) member.getClass().getMethod("size").invoke(member);
+                var nested = (List<?>) member.getClass().getMethod("members").invoke(member);
+                if (nested.isEmpty() && (clazz.isPrimitive() || clazz.getName().equals("hat.types.F16") || clazz.getName().equals("hat.types.BF16"))) {
+                    var element = memoryType(clazz);
+                    var array = b.alloca(space, element, size);
+                    deviceArrays.put(array, element);
+                    return array;
+                }
             }
-            var member = members.get(0);
-            var clazz = (Class<?>) member.getClass().getMethod("clazz").invoke(member);
-            int size = (int) member.getClass().getMethod("size").invoke(member);
-            if (!clazz.isPrimitive() && !clazz.getName().equals("hat.types.F16") && !clazz.getName().equals("hat.types.BF16")) {
-                throw new Unsupported("TC-E1003", "HAT device type " + owner.getSimpleName() + ": array of " + clazz.getSimpleName() + " is not supported yet");
-            }
-            var element = memoryType(clazz);
-            var array = b.alloca(space, element, size);
-            deviceArrays.put(array, element);
-            return array;
+            // Any other schema (structs, arrays of structs): memory laid out as its MemoryLayout, read through views.
+            var layout = DeviceLayouts.of(owner);
+            long words = (layout.byteSize() + 7) / 8;
+            var memory = b.alloca(space, Type.I64, (int) Math.max(1, words));
+            deviceStructs.put(memory, layout);
+            return memory;
         } catch (ReflectiveOperationException | NullPointerException e) {
             throw new Unsupported("TC-E1003", "HAT device type " + ref.refType() + " has no readable deviceSchema: " + e);
         }
@@ -1092,14 +1102,14 @@ final class BabylonTranslator {
         if (element instanceof ValueLayout scalar) {
             var memory = memoryType(scalar);
             if (rest.isEmpty()) {
-                var loaded = b.arrayLoad(at.buffer(), at.offset(), memory);
+                var loaded = memLoad(b, at.buffer(), at.offset(), memory);
                 // Sub-int fields widen to int, as Java values do (char unsigned, others signed).
                 return memory.equals(Type.I8) || memory.equals(Type.I16)
                         ? b.convert(scalar.carrier() == char.class || scalar.carrier() == boolean.class ? ConvertOp.ZEXT : ConvertOp.SEXT, loaded, Type.I32)
                         : loaded;
             }
             var value = v(rest.get(0));
-            b.arrayStore(at.buffer(), at.offset(), value.type().equals(memory) ? value
+            memStore(b, at.buffer(), at.offset(), value.type().equals(memory) ? value
                     : b.convert(value.type().equals(Type.I1) ? ConvertOp.ZEXT : ConvertOp.TRUNC, value, memory));
             return null;
         }
@@ -1107,14 +1117,31 @@ final class BabylonTranslator {
             views.put(op.result(), new View(at.buffer(), at.offset(), group));
             if (op.resultType() instanceof JavaType j && HAT_F16_TYPES.contains(descriptor(j))) {
                 // A half float ({short value}): also its value, for F16 arithmetic. Unused, it is dead code.
-                return b.convert(ConvertOp.BITCAST, b.arrayLoad(at.buffer(), at.offset(), Type.I16), Type.F16);
+                return b.convert(ConvertOp.BITCAST, memLoad(b, at.buffer(), at.offset(), Type.I16), Type.F16);
             }
             if (op.resultType() instanceof JavaType j && HAT_BF16_TYPES.contains(descriptor(j))) {
-                return b.convert(ConvertOp.SEXT, b.arrayLoad(at.buffer(), at.offset(), Type.I16), Type.I32);
+                return b.convert(ConvertOp.SEXT, memLoad(b, at.buffer(), at.offset(), Type.I16), Type.I32);
             }
             return null;
         }
         throw new Unsupported("TC-E1003", "HAT field " + name + " (" + element + ") is not supported yet");
+    }
+
+    /** A load at a byte offset: of a HAT buffer (a ByteArray parameter) or of HAT local/private memory (an alloca). */
+    private static uk.ac.manchester.tornado.tc.ir.Value memLoad(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value memory, uk.ac.manchester.tornado.tc.ir.Value offset, Type type) {
+        return isAlloca(memory) ? b.load(b.pointerOffset(memory, offset), type) : b.arrayLoad(memory, offset, type);
+    }
+
+    private static void memStore(IrBuilder b, uk.ac.manchester.tornado.tc.ir.Value memory, uk.ac.manchester.tornado.tc.ir.Value offset, uk.ac.manchester.tornado.tc.ir.Value value) {
+        if (isAlloca(memory)) {
+            b.store(b.pointerOffset(memory, offset), value);
+        } else {
+            b.arrayStore(memory, offset, value);
+        }
+    }
+
+    private static boolean isAlloca(uk.ac.manchester.tornado.tc.ir.Value value) {
+        return value instanceof Inst inst && inst.opcode() instanceof Opcode.Alloca;
     }
 
     private static uk.ac.manchester.tornado.tc.ir.Inst noSignedWrap(uk.ac.manchester.tornado.tc.ir.Inst inst) {
