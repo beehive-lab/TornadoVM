@@ -29,7 +29,11 @@ import jdk.incubator.code.Op;
 import jdk.incubator.code.Reflect;
 import jdk.incubator.code.dialect.core.CoreOp;
 import jdk.incubator.code.dialect.core.SSA;
+import jdk.incubator.code.dialect.java.JavaOp;
 import jdk.incubator.code.dialect.java.JavaType;
+import jdk.incubator.code.dialect.java.MethodRef;
+import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
+import uk.ac.manchester.tornado.tc.frontend.classfile.TypeAnnotations;
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.frontend.ModelFrontend;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
@@ -62,7 +66,7 @@ public final class BabylonFrontend implements ModelFrontend {
         } catch (ClassNotFoundException | LinkageError e) {
             return Optional.empty();
         }
-        if (kernel == null || !kernel.isAnnotationPresent(Reflect.class)) {
+        if (kernel == null || !(kernel.isAnnotationPresent(Reflect.class) || MODE.equals("babylon") && Op.ofMethod(kernel).isPresent())) {
             return Optional.empty();
         }
         boolean hat = Arrays.stream(kernel.getParameterTypes()).anyMatch(t -> t.getName().startsWith("hat."));
@@ -88,9 +92,50 @@ public final class BabylonFrontend implements ModelFrontend {
         return MethodType.methodType(m.getReturnType(), m.getParameterTypes()).toMethodDescriptorString();
     }
 
-    private static CoreOp.FuncOp lowered(Method m) {
+    private static CoreOp.FuncOp lowered(Frontend.BytecodeSource source, Method m) {
         var model = Op.ofMethod(m).orElseThrow(() -> new BabylonTranslator.Unsupported("TC-E1007", m + " has no code model"));
-        return SSA.transform(model.transform(CodeTransformer.LOWERING_TRANSFORMER));
+        var lowered = model.transform(CodeTransformer.LOWERING_TRANSFORMER);
+        var parallel = parallelLocals(source, m);
+        if (!parallel.isEmpty()) {
+            lowered = lowered.transform((builder, op) -> {
+                if (op instanceof CoreOp.VarOp var && parallel.contains(var.varName()) && !var.isUninitialized()
+                        && (var.varValueType().equals(JavaType.INT) || var.varValueType().equals(JavaType.LONG))) {
+                    var marker = MethodRef.method(Markers.class, "parallel", var.varValueType().equals(JavaType.INT) ? int.class : long.class,
+                            var.varValueType().equals(JavaType.INT) ? int.class : long.class);
+                    var marked = builder.add(JavaOp.invoke(marker, builder.context().getValue(var.initOperand())));
+                    builder.context().mapValue(var.result(), builder.add(CoreOp.var(var.varName(), var.varValueType(), marked)));
+                    return builder;
+                }
+                builder.add(op);
+                return builder;
+            });
+        }
+        return SSA.transform(lowered);
+    }
+
+    /** Names of the method's locals annotated {@code @Parallel}, from its class file (code models do not keep them). */
+    private static java.util.Set<String> parallelLocals(Frontend.BytecodeSource source, Method m) {
+        var owner = m.getDeclaringClass().getName().replace('.', '/');
+        var classFile = source.classFile(owner);
+        if (classFile.isEmpty()) {
+            return java.util.Set.of();
+        }
+        var code = classFile.get().method(m.getName(), descriptor(m)).flatMap(ClassFile.Method::code);
+        if (code.isEmpty() || code.get().typeAnnotations() == null) {
+            return java.util.Set.of();
+        }
+        var names = new java.util.HashSet<String>();
+        for (var a : TypeAnnotations.locals(code.get().typeAnnotations(), classFile.get().constants())) {
+            if (!a.descriptor().equals("Luk/ac/manchester/tornado/api/annotations/Parallel;")) {
+                continue;
+            }
+            for (var local : code.get().locals()) {
+                if (local.slot() == a.slot() && local.startBci() < a.startBci() + a.length() && a.startBci() < local.startBci() + local.length()) {
+                    names.add(local.name());
+                }
+            }
+        }
+        return names;
     }
 
     private static Frontend.ModuleResult translateModule(Frontend.BytecodeSource source, ClassLoader loader, Method kernel) {
@@ -98,7 +143,7 @@ public final class BabylonFrontend implements ModelFrontend {
         var pending = new ArrayDeque<Object[]>();
         try {
             var kernelName = Frontend.kernelName(kernel.getDeclaringClass().getName(), kernel.getName());
-            module.add(BabylonTranslator.translate(lowered(kernel), context(loader, kernel, pending), kernelName, true, sourceFile(kernel)));
+            module.add(BabylonTranslator.translate(lowered(source, kernel), context(loader, kernel, pending), kernelName, true, sourceFile(kernel)));
             while (!pending.isEmpty()) {
                 var next = pending.poll();
                 var method = (Method) next[0];
@@ -107,7 +152,7 @@ public final class BabylonFrontend implements ModelFrontend {
                     continue;
                 }
                 if (method.isAnnotationPresent(Reflect.class)) {
-                    module.add(BabylonTranslator.translate(lowered(method), context(loader, method, pending), name, false, sourceFile(method)));
+                    module.add(BabylonTranslator.translate(lowered(source, method), context(loader, method, pending), name, false, sourceFile(method)));
                 } else {
                     var owner = method.getDeclaringClass().getName().replace('.', '/');
                     var fromBytecode = Frontend.translateCallee(source, owner, method.getName(), descriptor(method), name);
