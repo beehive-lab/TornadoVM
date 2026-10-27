@@ -29,9 +29,11 @@ import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -143,13 +145,50 @@ public class OCLCodeCache {
         }
     }
 
+    /** Programs built ahead of installation (prefetchSource), by build flags and source. */
+    private final ConcurrentHashMap<String, CompletableFuture<OCLProgram>> prebuilt = new ConcurrentHashMap<>();
+
+    private static String prebuiltKey(String flags, byte[] source) {
+        return (flags == null ? "" : flags) + "\n" + new String(source, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Creates and builds a program for {@code source} on the calling (background) thread; the
+     * installSource of the same source and flags then takes it instead of building its own.
+     */
+    public void prefetchSource(String flags, byte[] source) {
+        if (isInputSourceSPIRVBinary(source)) {
+            return;
+        }
+        var future = new CompletableFuture<OCLProgram>();
+        if (prebuilt.putIfAbsent(prebuiltKey(flags, source), future) != null) {
+            return;
+        }
+        try {
+            OCLProgram program = deviceContext.createProgramWithSource(source, new long[] { source.length });
+            program.build(flags);
+            future.complete(program.getStatus(deviceContext.getDeviceId()) == CL_BUILD_SUCCESS ? program : null);
+        } catch (Throwable e) {
+            future.complete(null);
+        }
+    }
+
+    /** The program prefetchSource built for this source and flags, waiting for it if it is building. */
+    private OCLProgram takePrebuilt(String flags, byte[] source) {
+        var future = prebuilt.remove(prebuiltKey(flags, source));
+        return future == null ? null : future.join();
+    }
+
     public OCLInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {
 
         logger.info("Installing code for %s into code cache", entryPoint);
 
         boolean isSPIRVBinary = isInputSourceSPIRVBinary(source);
+        final OCLProgram ready = isSPIRVBinary ? null : takePrebuilt(meta.getCompilerFlags(TornadoVMBackendType.OPENCL), source);
         final OCLProgram program;
-        if (isSPIRVBinary) {
+        if (ready != null) {
+            program = ready;
+        } else if (isSPIRVBinary) {
             program = deviceContext.createProgramWithIL(source, new long[] { source.length });
         } else {
             program = deviceContext.createProgramWithSource(source, new long[] { source.length });
@@ -173,7 +212,9 @@ public class OCLCodeCache {
             RuntimeUtilities.dumpKernel(source);
         }
         logger.debug("\tOpenCL compiler flags = %s", meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
-        program.build(meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
+        if (ready == null) {
+            program.build(meta.getCompilerFlags(TornadoVMBackendType.OPENCL));
+        }
         final OCLBuildStatus status = program.getStatus(deviceContext.getDeviceId());
         logger.debug("\tOpenCL compilation status = %s", status.toString());
 

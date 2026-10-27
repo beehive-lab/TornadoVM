@@ -27,6 +27,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -47,6 +48,9 @@ public final class CUDACompiler {
      * no collision risk.
      */
     private static final Map<String, byte[]> IMAGE_CACHE = new ConcurrentHashMap<>();
+
+    /** Images being compiled, by the same key: a second request waits for the first. */
+    private static final Map<String, CompletableFuture<byte[]>> IN_FLIGHT = new ConcurrentHashMap<>();
 
     /**
      * How this NVRTC resolves {@code #include <cuda_fp16.h>} and friends. Whether it can do so on
@@ -78,7 +82,17 @@ public final class CUDACompiler {
      *     whitespace-separated NVRTC options from {@code tornado.cuda.compiler.flags} or
      *     {@code withCompilerFlags(CUDA, ...)}, appended last so they override the defaults.
      */
-    public static void build(CUDAHandles.Program program, int device, String userOptions) {
+    /** What {@link #compileImage} decided: how to load the image it left in the program. */
+    private record ImageState(boolean deviceLaunch, int gpuArch, int maxSupportedArch, int fallbackArch, boolean useCubin, boolean archKnown) {
+    }
+
+    /**
+     * Compiles the program's CUDA C for the device with NVRTC (or reuses an image compiled, or being
+     * compiled, for the same source, architecture and options) and leaves the image in
+     * {@code program.binary}. Needs no CUDA context, so it may run on any thread. Returns null on a
+     * failure, recorded in the program's status and log.
+     */
+    private static ImageState compileImage(CUDAHandles.Program program, int device, String userOptions) {
         List<String> options = splitOptions(userOptions);
 
         // A kernel that launches kernels from the device (CUDA Dynamic Parallelism) must be
@@ -153,7 +167,7 @@ public final class CUDACompiler {
                         + ". This typically happens when CUDA 13+ is used with an older GPU: CUDA 13 removed Pascal/Volta and earlier (sm_50..sm_72). "
                         + "Install a CUDA Toolkit old enough to still target sm_" + gpuArch + " (CUDA 12.8 is the last release supporting Pascal), or use a newer GPU (Turing sm_75 or later).";
                 System.out.println(LOG_PREFIX + program.log);
-                return;
+                return null;
             }
 
             String arch;
@@ -175,24 +189,67 @@ public final class CUDACompiler {
             // asked for, which made withCompilerFlags() a no-op after the first call.
             String cacheKey = arch + "\n" + String.join(" ", options) + "\n" + program.source;
             byte[] cached = IMAGE_CACHE.get(cacheKey);
+            CompletableFuture<byte[]> mine = null;
+            if (cached == null) {
+                // Another thread (a prefetch) may be compiling the same image: wait for it rather
+                // than compile it twice. A failed compilation yields null and is redone here, so
+                // the failure is reported on this program.
+                mine = new CompletableFuture<>();
+                CompletableFuture<byte[]> running = IN_FLIGHT.putIfAbsent(cacheKey, mine);
+                if (running != null) {
+                    mine = null;
+                    cached = running.join();
+                }
+            }
             if (cached != null) {
                 program.binary = cached;
                 program.buildStatus = CUDAHandles.Program.BUILD_SUCCESS;
-            } else if (!compile(program, arch, options, useCubin)) {
-                return;
-            } else if (deviceLaunch && !linkDeviceRuntime(program, useCubin)) {
-                return;
             } else {
-                IMAGE_CACHE.putIfAbsent(cacheKey, program.binary);
+                boolean ok = false;
+                try {
+                    ok = compile(program, arch, options, useCubin) && (!deviceLaunch || linkDeviceRuntime(program, useCubin));
+                    if (ok) {
+                        IMAGE_CACHE.putIfAbsent(cacheKey, program.binary);
+                    }
+                } finally {
+                    if (mine != null) {
+                        mine.complete(ok ? program.binary : null);
+                        IN_FLIGHT.remove(cacheKey, mine);
+                    }
+                }
+                if (!ok) {
+                    return null;
+                }
             }
         }
+        return new ImageState(deviceLaunch, gpuArch, maxSupportedArch, fallbackArch, useCubin, archKnown);
+    }
 
+    public static void build(CUDAHandles.Program program, int device, String userOptions) {
+        ImageState state = compileImage(program, device, userOptions);
+        if (state == null) {
+            return;
+        }
         // Also for a pre-built or cached image, which never went through the compile above.
-        if (deviceLaunch || linksDeviceRuntime(program.binary)) {
+        if (state.deviceLaunch() || linksDeviceRuntime(program.binary)) {
             applyPendingLaunchLimit(program);
         }
-        loadModule(program, gpuArch, maxSupportedArch, fallbackArch, useCubin, archKnown);
+        loadModule(program, state.gpuArch(), state.maxSupportedArch(), state.fallbackArch(), state.useCubin(), state.archKnown());
     }
+
+    /**
+     * Compiles {@code source} for the device into the in-process image cache, without loading it:
+     * a later {@link #build} of the same source, device and options then only loads the module.
+     * Thread-safe; used to compile a plan's kernels in parallel before they first run.
+     */
+    public static void prebuild(String source, long deviceHandle, String userOptions) {
+        CUDAHandles.Device boxed = CUDAHandles.resolve(deviceHandle, CUDAHandles.Device.class);
+        if (boxed == null) {
+            return;
+        }
+        compileImage(new CUDAHandles.Program(0, source, null), boxed.device(), userOptions);
+    }
+
 
     /**
      * Runs NVRTC over the program's source, retrying once with explicit toolkit include paths when

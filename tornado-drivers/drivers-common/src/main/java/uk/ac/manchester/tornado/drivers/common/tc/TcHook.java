@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,6 +47,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
 import uk.ac.manchester.tornado.tc.tornado.AtomicSlots;
+import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
 import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
 /**
@@ -125,17 +127,14 @@ public final class TcHook {
     private static final AtomicInteger GENERIC = new AtomicInteger();
 
     /** What a compilation leaves for later tasks (not its stages). */
-    private record Compiled(String source, String entryName, long nanos, List<uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics,
+    record Compiled(String source, String entryName, long nanos, List<ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics,
             KernelFeatures features, String task, boolean taskInSource) {
     }
 
-    /** Most recent compilations; a model's layers share one entry per kernel. */
-    private static final Map<Key, Compiled> COMPILATIONS = java.util.Collections.synchronizedMap(new java.util.LinkedHashMap<>(64, 0.75f, true) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<Key, Compiled> eldest) {
-            return size() > 2048;
-        }
-    });
+    /** Compilations by key, finished or running; a model's layers share one entry per kernel. */
+    private static final Map<Key, CompletableFuture<Compiled>> COMPILATIONS = new ConcurrentHashMap<>();
+
+    private static final int MAX_COMPILATIONS = 4096;
     private static final Map<String, AtomicInteger> REFUSED = new ConcurrentHashMap<>();
 
     static {
@@ -216,19 +215,44 @@ public final class TcHook {
 
     /** The memoised compilation for {@code key}, or a new one. */
     private static Optional<Compiled> compileOrReuse(String name, Class<?> owner, ClassLoader loader, String descriptor, TcOptions options, Key key, String taskId) {
-        var compiled = MEMOIZE ? COMPILATIONS.get(key) : null;
-        if (compiled != null && (!compiled.taskInSource() || compiled.task().equals(taskId))) {
+        Compiled compiled = null;
+        CompletableFuture<Compiled> mine = null;
+        if (MEMOIZE) {
+            // An earlier task, or a prefetch on another thread, may have compiled (or be compiling)
+            // the same key: wait for it. A failed compilation yields null and is redone here, so the
+            // refusal is raised on this thread.
+            mine = new CompletableFuture<>();
+            var existing = COMPILATIONS.putIfAbsent(key, mine);
+            if (existing != null) {
+                mine = null;
+                compiled = existing.join();
+                if (compiled != null && compiled.taskInSource() && !compiled.task().equals(taskId)) {
+                    compiled = null; // the source names its task (a device launch): compile for this one
+                }
+            }
+        }
+        if (compiled != null) {
             REUSED.incrementAndGet();
             if (VERBOSE) {
                 System.out.printf("[TC] reused %s (same method and facts as an earlier task)%n", name);
             }
             return Optional.of(compiled);
         }
-        var result = compileNew(name, owner, loader, key.method().getName(), descriptor, key.target(), options, key.facts());
-        if (result.isPresent() && MEMOIZE) {
-            COMPILATIONS.put(key, result.get());
+        Optional<Compiled> result = Optional.empty();
+        try {
+            result = compileNew(name, owner, loader, key.method().getName(), descriptor, key.target(), options, key.facts());
+            return result;
+        } finally {
+            if (mine != null) {
+                mine.complete(result.orElse(null));
+                if (result.isEmpty()) {
+                    COMPILATIONS.remove(key, mine);
+                } else if (COMPILATIONS.size() > MAX_COMPILATIONS) {
+                    // Bounded: drop finished entries (running ones are being waited for).
+                    COMPILATIONS.values().removeIf(CompletableFuture::isDone);
+                }
+            }
         }
-        return result;
     }
 
     /**

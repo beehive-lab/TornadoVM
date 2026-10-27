@@ -22,6 +22,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus.CL_BUILD_SUCCESS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
@@ -228,6 +229,25 @@ public class CUDACodeCache {
             final Path outDir = resolveCacheDirectory();
             program.dumpBinaries(outDir.toAbsolutePath() + "/" + entryPoint);
         }
+    }
+
+    /**
+     * NVRTC-compiles {@code source} into the compiler's in-process image cache, on the calling
+     * (background) thread, unless the module cache on disk already has it. The later
+     * {@link #installSource} of the same source then finds the image and only loads the module.
+     */
+    public void prefetchSource(TaskDataContext meta, String entryPoint, byte[] source) {
+        if (isInputSourceSPIRVBinary(source) || CUDATileCompiler.isTileSource(source)) {
+            return;
+        }
+        final String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.CUDA);
+        if (CUDA_CODE_CACHE_ENABLE) {
+            final String key = moduleCacheKey(source, compilerFlags, false);
+            if (key != null && Files.exists(resolveModuleCacheDirectory().resolve(entryPoint + "-" + key + CUBIN_SUFFIX))) {
+                return;
+            }
+        }
+        CUDACompiler.prebuild(new String(source, StandardCharsets.UTF_8), deviceContext.getDeviceId(), compilerFlags);
     }
 
     public CUDAInstalledCode installSource(TaskDataContext meta, String id, String entryPoint, byte[] source) {

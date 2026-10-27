@@ -155,4 +155,11 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
     default void makeCurrent() {
     }
 
+
+    /**
+     * Compiles {@code source} in the background into the in-process image cache (unless the module
+     * cache on disk has it already), so that installing it later only loads the module.
+     */
+    default void prefetchSource(long executionPlanId, TaskDataContext meta, String entryPoint, byte[] source) {
+    }
 }
