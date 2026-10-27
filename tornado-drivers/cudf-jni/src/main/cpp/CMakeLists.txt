@@ -132,7 +132,8 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -fPIC -Wno-deprecated-declarations")
 
-add_library(tornado-cudf SHARED source/tornado_cudf.cpp)
+# glibc_compat.cpp keeps the shim loadable on a glibc older than the build host's.
+add_library(tornado-cudf SHARED source/tornado_cudf.cpp source/glibc_compat.cpp)
 
 # The vendored CCCL first, so it wins over the toolkit's.
 target_include_directories(tornado-cudf PRIVATE
