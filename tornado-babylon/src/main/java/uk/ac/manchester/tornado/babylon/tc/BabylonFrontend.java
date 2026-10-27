@@ -75,7 +75,16 @@ public final class BabylonFrontend implements ModelFrontend {
         if (Boolean.getBoolean("tornado.tc.verbose")) {
             System.err.println("[TC] Babylon frontend: " + kernel.getDeclaringClass().getName() + "." + kernel.getName() + " from its code model");
         }
-        return Optional.of(translateModule(source, loader, kernel));
+        var event = new uk.ac.manchester.tornado.babylon.Events.Translate();
+        event.begin();
+        var module = translateModule(source, loader, kernel);
+        event.end();
+        if (event.shouldCommit()) {
+            event.kernel = kernel.getDeclaringClass().getSimpleName() + "." + kernel.getName();
+            event.operations = Op.ofMethod(kernel).map(m -> (int) m.elements().count()).orElse(0);
+            event.commit();
+        }
+        return Optional.of(module);
     }
 
     /**
