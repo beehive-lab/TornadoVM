@@ -102,6 +102,31 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 | `dispatchTile` | one CUDA Tile block per tile, numbered as HAT's backends number them (a warp flag on X flattens them) |
 | `Tensor` (16 x 16 x 16 F16 multiply-accumulate: `create`/`zeros`/`fill`, `loadF16` and `store` row- or column-major, `mma`), `WRS()` | two m16n8k16 tensor-core operations per `mma`; operand fragments are loaded where the `mma` uses them (as A or B), accumulators live in a private slot; column-major loads and stores are TC intrinsics added for this (`tornado.mma.load_a.global_col`, `load_b.global_col`, `store_col`). CUDA only |
 
+## High-priority milestones
+
+1. **Keep HAT buffers on the device between dispatches (minimise copies).**
+   - **Today:** every HAT dispatch on TornadoVM copies its buffers to the device and back, and synchronises. In HAT's Game of Life (`examples/src/lifebench/LifeBench.java`, 1024 x 1024, RTX 4090), the kernel takes 7.0 µs per generation but a generation costs about 362 µs end to end. About 200 µs of that is stream synchronisation around the copies.
+   - **Goal:** transfer a buffer only when the host has written it since the last dispatch, and copy it back only when the host reads it, using HAT's buffer state. The kernel time bounds this at more than 10x.
+   - **Current numbers** (generations per second, final grid checked against Java):
+
+     | Backend | Generations per second | Final grid |
+     |---|---:|---|
+     | TornadoVM (this PR) | 2766 | matches Java |
+     | HAT's CUDA backend | 2242 | matches Java |
+     | HAT's CUDA backend with its minimise-copies mode | 3888 | host copy not updated at the end of the run |
+
+2. **A low-overhead dispatch path for HAT's compute loops.**
+   - A HAT program that dispatches in a tight loop (`ComputeLife.steps`) goes through a TornadoVM task graph and execution plan for each dispatch: plan lookup, transfers, then execute.
+   - **Goal:** after the first dispatch, a dispatch is one kernel launch with no host synchronisation unless the host reads results. That could mean capturing a HAT compute loop as one TornadoVM graph (or a CUDA graph), or a direct launch path that bypasses the task graph for HAT.
+   - Measure it against the per-generation numbers above.
+
+3. **Game of Life with its window.** Run HAT's `life` demo (Swing viewer) on TornadoVM on a machine with a display. Compare generations per second against HAT's backends, with the compute loop adapting to the viewer's frame rate. The headless benchmark above already gives identical grids on TornadoVM.
+
+4. **Interface-mapped data for TornadoVM.**
+   - **Today:** TornadoVM programs describe data with native arrays (`FloatArray`, ...) or explicit memory layouts. HAT's interface mapping (`Buffer`/`Struct` interfaces with a `Schema`, e.g. `Universe` with `Body` structs) hides the layout behind Java interfaces.
+   - **What exists:** `HatTasks` already lets TornadoVM task graphs consume such buffers.
+   - **Goal:** make interface-mapped buffers first-class in TornadoVM's API, so they can be passed to `TaskGraph.task` and used in TornadoVM kernels without `HatTasks`. TC already compiles their accessors from bound layouts.
+
 ## Current limitations
 
 **In this module (TornadoVM and TC):**
