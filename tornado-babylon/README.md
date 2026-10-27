@@ -74,21 +74,52 @@ TC-E4010). HAT tensors are loaded where `mma` uses them rather than where `loadF
 
 ## Build and run
 
-Needs:
-- a Babylon JDK at `$BABYLON/build/linux-x86_64-server-release/images/jdk` (`env.sh`; override with
-  `BABYLON=` / `BABYLON_JDK=`);
-- HAT built in `$BABYLON/hat/build` (`cd $BABYLON/hat && mvn package`);
-- a TornadoVM SDK of this branch (`make jdk22plus BACKEND=opencl,cuda`).
+Tested on Linux x86-64 with an RTX 4090 (CUDA 12.6 toolkit, driver for CUDA 13) and an Intel UHD 770.
+
+**1. A Babylon JDK** ([openjdk/babylon](https://github.com/openjdk/babylon), branch `code-reflection`;
+tested at `87aaaa4b0`). Its boot JDK is JDK 26:
 
 ```bash
-source ../setvars.sh                      # this branch's SDK
-./build.sh                                # build/tornado-babylon.jar + build/examples
+git clone -b code-reflection https://github.com/openjdk/babylon.git ~/src/babylon
+cd ~/src/babylon
+bash configure --with-boot-jdk=$HOME/.sdkman/candidates/java/26.0.1-open   # e.g. sdk install java 26.0.1-open
+make images                         # build/linux-x86_64-server-release/images/jdk
+```
 
-# A HAT program on TornadoVM (-d <driver>:<device>; CUDA is 1:0 here, OpenCL 0:0 / 0:1):
+**2. HAT**, in the same checkout, with that JDK (needs Maven and CMake):
+
+```bash
+cd ~/src/babylon/hat
+JAVA_HOME=~/src/babylon/build/linux-x86_64-server-release/images/jdk mvn clean package   # jars in hat/build
+```
+
+**3. This TornadoVM branch**, with JDK 25 (`sdk install java 25.0.2-open`):
+
+```bash
+cd TornadoVM                                  # this branch
+export JAVA_HOME=~/.sdkman/candidates/java/25.0.2-open
+make jdk22plus BACKEND=opencl,cuda            # or BACKEND=opencl / BACKEND=cuda
+source setvars.sh
+```
+
+**4. Build this module and run.** `env.sh` points at the Babylon checkout: set `BABYLON=~/src/babylon`
+(default `~/src/babylon-new`), or `BABYLON_JDK=` to a built Babylon JDK.
+
+```bash
+cd tornado-babylon
+export BABYLON=~/src/babylon
+./build.sh                                    # build/tornado-babylon.jar + build/examples
+tornado --devices                             # driver:device numbers; here CUDA is 1:0, OpenCL 0:0 / 0:1
+
+# An unmodified HAT program on TornadoVM:
 H=$BABYLON/hat/build
 ./run.sh -d 1:0 $H/hat-example-matmul-1.0.jar:$H/hat-example-shared-1.0.jar matmul.Main --kernel=2DTILING --check --size=256
 
-# TornadoVM @Reflect kernels from their code models:
+# HAT's own unit tests on TornadoVM (all of them, or some classes):
+./hat-tests.sh -d 1:0
+./hat-tests.sh -d 0:0 TestMatMul TestFlashAttention
+
+# TornadoVM @Reflect kernels compiled from their code models:
 source ./env.sh
 java @build/tornado.args --enable-preview --add-modules=jdk.incubator.code -Dtornado.tc.frontend=babylon \
      -cp build/tornado-babylon.jar:build/examples reflect.ReflectKernels
@@ -119,7 +150,7 @@ Options:
 | Device | TornadoVM (TC) | HAT's own backend |
 |---|---|---|
 | RTX 4090, CUDA | **154** pass, 2 expected-precision (the values HAT's own backends give) | 130 pass, 6 fail, 4 expected-precision, some classes not launched |
-| RTX 4090, OpenCL | **134** pass; 18 tile and 4 tensor tests refused (CUDA only), FlashAttention F16 hits an NVIDIA OpenCL compiler error (beehive-lab/TornadoVM#1297) | 133 pass, 21 fail, 2 expected-precision |
+| RTX 4090, OpenCL | **135** pass, 2 expected-precision; 15 tile and 4 tensor tests refused (CUDA only) | 133 pass, 21 fail, 2 expected-precision |
 | Intel UHD 770, OpenCL | **132** pass; the rest are tiles and tensors (CUDA only) and 4 kernels using `Math.exp` in double precision on a device without FP64 (TC-E4012) | not run |
 
 The expected-precision tests (`test_bfloat16_14`, `testNbody`) give exactly the values HAT's own
@@ -137,3 +168,28 @@ squares, mandel, matmul (MT, 1D, 1DFC, 2D, 2DLI, 2DTILING, 2DREGISTERTILING,
 2DREGISTERTILING_V, 2DREGISTERTILING_FP16, strict-FP FP16), dft, flash-attention and tensors pass.
 matmul 2DLIF16 prints the same values as HAT's own OpenCL backend (`66.481575 != 63.870296`): the
 example's check ignores the F16 rounding of each product. HAT's CUDA backend is further off.
+
+## Performance
+
+HAT's matrix-multiply example, 1024 x 1024 floats, RTX 4090, 30 iterations (`perf-nsys.sh`, `perf.sh`):
+the same HAT kernels compiled by TC on TornadoVM, and by HAT's own CUDA and OpenCL backends.
+
+| Kernel | TC kernel time (CUDA) | HAT CUDA kernel time | TC end to end, median | HAT CUDA end to end | HAT OpenCL end to end |
+|---|---:|---:|---:|---:|---:|
+| 1D | 18.1 ms | 37.2 ms | 18.9 ms | 37.7 ms | 394 ms |
+| 2D | 1.79 ms | 1.79 ms | 2.97 ms | 2.95 ms | 351 ms |
+| 2DLI | 428 µs | 444 µs | 1.58 ms | 1.63 ms | 65.3 ms |
+| 2DTILING | 332 µs | 334 µs | 1.50 ms | 1.58 ms | 29.0 ms |
+| 2DREGISTERTILING | 78.7 µs | 76.0 µs | 1.24 ms | 1.25 ms | 11.4 ms |
+| 2DREGISTERTILING_V | 112.8 µs | 79.6 µs | 1.27 ms | 1.24 ms | 8.7 ms |
+| 2DREGISTERTILING_FP16 | 202 µs | 58.8 µs (result wrong) | 0.87 ms | 0.77 ms (wrong) | 7.7 ms |
+
+- Kernel time is the mean of Nsight Systems' CUDA kernel records; end to end is the example's own
+  timing of a dispatch, including transfers. TornadoVM on OpenCL (same GPU) takes 1.03-1.48x its CUDA
+  end-to-end times.
+- The kernels are on par except three. **1D** is 2.1x faster with TC (not investigated). **2DREGISTERTILING_V** is 1.42x slower: TC loads each lane of a
+  `Float4` view from a HAT buffer separately (four 32-bit loads, not one 128-bit load). **FP16** is
+  3.4x slower: TC gives Java's results (each half operation rounded as `F16`'s Java methods round,
+  in f32 arithmetic), and the faster HAT CUDA kernel's result fails the example's check.
+- The first dispatch costs 0.55-0.60 s on TornadoVM against 0.16-0.23 s with HAT's CUDA backend: the
+  plan, the TC compilation and NVRTC. Later dispatches reuse the plan.
