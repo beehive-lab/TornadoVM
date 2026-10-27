@@ -154,11 +154,11 @@ To add a check, write the kernel in `Kernels` (or an IR file for a backend check
 `Checks.all()` that runs it, runs the same method on the JVM and compares; `Check.needs` names the
 capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to run it.
 
-## Start-up: parallel compilation
+## Start-up: parallel compilation and the TC cache
 
 A kernel is compiled twice before it first runs: TC turns the Java method into CUDA C, OpenCL C or
 MSL, and the device's compiler (NVRTC, `clBuildProgram`) turns that into a binary. In an LLM those
-compilations are most of the time to the first token. They run in parallel:
+compilations are most of the time to the first token. Two things cut them:
 
 - **Parallel compilation.** Before a plan first runs a kernel (`withPreCompilation()`, or its first
   `execute()`, whichever comes first), it starts compiling the kernels of every graph on a pool of
@@ -167,9 +167,15 @@ compilations are most of the time to the first token. They run in parallel:
   A background compilation that fails is redone, and reported, in order. Graphs whose kernels are
   not known before they run (batched graphs, `@Reduce` graphs, which are rewritten on the first
   run) compile in order as before. CUDA and OpenCL; Metal compiles in order.
+- **The TC cache** keeps TC's compilations on disk, so a later run does not run TC again for a
+  kernel it compiled before (CUDA kernels are also kept on disk as modules, so a second run then
+  compiles nothing). An entry is used only when the TC build, the method, the target, the options,
+  the argument facts and the `tornado.tc.*` properties are the same, and when every class file,
+  static final value and enum the compilation read still reads the same: a changed kernel, callee
+  or constant compiles again.
 
-jitLLM, Qwen3.8-27B Q4_0 on an RTX 4090, launch to first token on a first run (empty module
-cache): 8.75 s -> 5.83 s.
+jitLLM, Qwen3.8-27B Q4_0 on an RTX 4090, launch to first token: 8.75 s -> 5.83 s on a first run
+(empty caches), 5.21 s -> 4.49 s on a second run.
 
 ## Tools
 
@@ -202,8 +208,10 @@ plug in as a `Backend` service.
 | `tornado.tc.verify=each` | verify the IR after every pass and stage instead of once at the end (the default); names the pass that broke it |
 | `tornado.tc.memoize=false` | compile every task, even when an earlier one had the same method and facts |
 | `tornado.tc.varyingScalars=<n>` | a scalar argument that takes `n` (default 3) different values across tasks of one kernel is compiled as a runtime value; `0` specialises every value |
-| `tornado.parallel.compile=false` | compile a plan's kernels one by one, when each first runs ([start-up](#start-up-parallel-compilation)) |
+| `tornado.parallel.compile=false` | compile a plan's kernels one by one, when each first runs ([start-up](#start-up-parallel-compilation-and-the-tc-cache)) |
 | `tornado.parallel.compile.threads=N` | background compilation threads (default: cores, at most 8) |
+| `tornado.tc.cache=false` | do not keep TC's compilations on disk |
+| `tornado.tc.cache.dir=DIR` | where they are kept (default `$TORNADOVM_HOME/var/tc-cache`) |
 | `tornado.tc.compileTimes=true` | per task, TC and driver compile time; totals at exit |
 | `--printKernel` (launcher flag) | print the generated source |
 

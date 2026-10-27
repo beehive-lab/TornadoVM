@@ -79,6 +79,7 @@ public final class TcHook {
 
     private static final AtomicInteger COMPILED = new AtomicInteger();
     private static final AtomicInteger REUSED = new AtomicInteger();
+    private static final AtomicInteger FROM_DISK = new AtomicInteger();
 
     /**
      * Everything a compilation reads: the method (its class and loader), the target, the options and
@@ -293,9 +294,23 @@ public final class TcHook {
 
     private static Optional<Compiled> compileNew(String name, Class<?> owner, ClassLoader loader, String methodName, String descriptor, TargetCaps target, TcOptions options,
             List<ValueSpecialisation.Fact> facts) {
+        var live = Frontend.BytecodeSource.classLoader(loader);
+        var diskKey = TcDiskCache.key(owner.getName(), methodName, descriptor, target, options, facts);
+        if (diskKey.isPresent()) {
+            long start = System.nanoTime();
+            var cached = TcDiskCache.load(diskKey.get(), live);
+            if (cached.isPresent()) {
+                FROM_DISK.incrementAndGet();
+                if (VERBOSE) {
+                    System.out.printf("[TC] loaded %s from the TC cache in %.2f ms%n", name, (System.nanoTime() - start) / 1e6);
+                }
+                return cached;
+            }
+        }
+        var recording = diskKey.isPresent() ? new TcDiskCache.Recording(live) : null;
         TcCompiler.Compilation c;
         try {
-            c = TcCompiler.compileJava(Frontend.BytecodeSource.classLoader(loader), owner.getName(), methodName, descriptor, target, options, facts);
+            c = TcCompiler.compileJava(recording != null ? recording : live, owner.getName(), methodName, descriptor, target, options, facts);
         } catch (RuntimeException | StackOverflowError e) {
             // An internal TC failure becomes a diagnostic, reported like any other.
             if (VERBOSE) {
@@ -315,7 +330,11 @@ public final class TcHook {
             System.out.printf("[TC] compiled %s in %.2f ms%n", name, c.nanos() / 1e6);
         }
         boolean taskInSource = c.source().contains(uk.ac.manchester.tornado.tc.codegen.CEmitter.DEVICE_LAUNCH_LABEL);
-        return Optional.of(new Compiled(c.source(), c.entryName(), c.nanos(), c.domain(), c.atomics(), c.features(), options.task(), taskInSource));
+        var compiled = new Compiled(c.source(), c.entryName(), c.nanos(), c.domain(), c.atomics(), c.features(), options.task(), taskInSource);
+        if (recording != null) {
+            TcDiskCache.store(diskKey.get(), recording.reads(), compiled);
+        }
+        return Optional.of(compiled);
     }
 
     /** The kernel for one task: the launch domain depends on the task's thread count, not only on the code. */
@@ -411,6 +430,6 @@ public final class TcHook {
         var reasons = new TreeMap<String, Integer>();
         REFUSED.forEach((k, v) -> reasons.put(k, v.get()));
         int refused = reasons.values().stream().mapToInt(Integer::intValue).sum();
-        System.out.println("[TC] kernels compiled by TC: " + COMPILED.get() + ", reused: " + REUSED.get() + ", refused: " + refused + " " + reasons + ", generic in varying scalars: " + GENERIC.get());
+        System.out.println("[TC] kernels compiled by TC: " + COMPILED.get() + ", reused: " + REUSED.get() + ", from the TC cache: " + FROM_DISK.get() + ", refused: " + refused + " " + reasons + ", generic in varying scalars: " + GENERIC.get());
     }
 }
