@@ -55,7 +55,19 @@ public final class TcAccessProvider implements KernelAccess.Provider {
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         try {
-            return TcCompiler.writesLoopIndex(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor);
+            // Kept in the TC cache across runs, like the access analysis.
+            var live = Frontend.BytecodeSource.classLoader(loader);
+            var diskKey = TcDiskCache.analysisKey("loop-index", owner.getName(), method.getName(), descriptor);
+            var cached = diskKey.flatMap(key -> TcDiskCache.loadAnalysis(key, live));
+            if (cached.isPresent() && cached.get().length == 1) {
+                return Optional.of(cached.get()[0] != 0);
+            }
+            var recording = diskKey.isPresent() ? new TcDiskCache.Recording(live) : null;
+            var writes = TcCompiler.writesLoopIndex(recording != null ? recording : live, owner.getName(), method.getName(), descriptor);
+            if (recording != null && writes.isPresent()) {
+                TcDiskCache.storeAnalysis(diskKey.get(), recording.reads(), new int[] { writes.get() ? 1 : 0 });
+            }
+            return writes;
         } catch (RuntimeException | StackOverflowError e) {
             return Optional.empty();
         }
@@ -79,7 +91,19 @@ public final class TcAccessProvider implements KernelAccess.Provider {
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         try {
-            return TcCompiler.access(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor).map(bits -> {
+            // The analysis runs the frontend over the method's bytecode, for every task of a cold run:
+            // kept in the TC cache across runs, valid while the bytecode it read is unchanged.
+            var live = Frontend.BytecodeSource.classLoader(loader);
+            var diskKey = TcDiskCache.analysisKey("access", owner.getName(), method.getName(), descriptor);
+            Optional<int[]> analysed = diskKey.flatMap(key -> TcDiskCache.loadAnalysis(key, live));
+            if (analysed.isEmpty()) {
+                var recording = diskKey.isPresent() ? new TcDiskCache.Recording(live) : null;
+                analysed = TcCompiler.access(recording != null ? recording : live, owner.getName(), method.getName(), descriptor);
+                if (recording != null && analysed.isPresent()) {
+                    TcDiskCache.storeAnalysis(diskKey.get(), recording.reads(), analysed.get());
+                }
+            }
+            return analysed.map(bits -> {
                 var access = new Access[bits.length];
                 for (int i = 0; i < bits.length; i++) {
                     access[i] = switch (bits[i]) {

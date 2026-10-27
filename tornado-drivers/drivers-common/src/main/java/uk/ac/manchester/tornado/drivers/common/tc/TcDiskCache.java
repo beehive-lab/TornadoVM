@@ -114,6 +114,69 @@ final class TcDiskCache {
         return Optional.of(sha256(text.toString().getBytes(StandardCharsets.UTF_8)));
     }
 
+    /**
+     * The entry's name for an analysis of a method that the runtime asks for every task it builds
+     * ({@code kind}: "access", how it reads and writes each parameter; "loop-index", whether it writes
+     * its parallel loop index); empty when the cache cannot be used.
+     */
+    static Optional<String> analysisKey(String kind, String owner, String method, String descriptor) {
+        if (!ENABLED) {
+            return Optional.empty();
+        }
+        Optional<String> build = fingerprint();
+        if (build.isEmpty()) {
+            return Optional.empty();
+        }
+        var text = new StringBuilder();
+        text.append(VERSION).append('\n').append(build.get()).append('\n').append(kind).append('\n');
+        text.append(owner).append('.').append(method).append(descriptor).append('\n');
+        new TreeMap<>(System.getProperties()).forEach((k, v) -> {
+            String name = k.toString();
+            if (name.startsWith("tornado.tc.") || name.startsWith("tornado.enable.")) {
+                text.append(name).append('=').append(v).append('\n');
+            }
+        });
+        return Optional.of(sha256(text.toString().getBytes(StandardCharsets.UTF_8)));
+    }
+
+    /** The analysis result stored under {@code key}, if what the analysis read is unchanged. */
+    static Optional<int[]> loadAnalysis(String key, Frontend.BytecodeSource live) {
+        Path file = directory.resolve(key + ".analysis");
+        if (!Files.isRegularFile(file)) {
+            return Optional.empty();
+        }
+        try {
+            var p = new Properties();
+            try (InputStream in = Files.newInputStream(file)) {
+                p.load(in);
+            }
+            var reads = new TreeMap<String, String>();
+            p.stringPropertyNames().stream().filter(n -> n.startsWith("read.")).forEach(n -> reads.put(n.substring(5), p.getProperty(n)));
+            if (!unchanged(reads, live)) {
+                return Optional.empty();
+            }
+            return Optional.of(split(p.getProperty("bits"), ',').stream().mapToInt(Integer::parseInt).toArray());
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    static void storeAnalysis(String key, Map<String, String> reads, int[] bits) {
+        try {
+            Files.createDirectories(directory);
+            var p = new Properties();
+            p.setProperty("bits", String.join(",", java.util.Arrays.stream(bits).mapToObj(String::valueOf).toList()));
+            reads.forEach((k, v) -> p.setProperty("read." + k, v));
+            Path temporary = Files.createTempFile(directory, key, ".tmp");
+            try (OutputStream out = Files.newOutputStream(temporary)) {
+                p.store(out, null);
+            }
+            Files.move(temporary, directory.resolve(key + ".analysis"), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException | RuntimeException e) {
+            // A cache that cannot be written only costs the next run an analysis.
+        }
+    }
+
     /** A rendering that does not depend on map iteration order (Map.of differs between runs). */
     private static String canonical(Object value) {
         if (value == null) {

@@ -17,6 +17,7 @@
  */
 package uk.ac.manchester.tornado.drivers.common.tc;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -134,6 +135,21 @@ public class TcDiskCacheTest {
         statics.put("pkg/Consts.SCALE", 2.5f);
         classes.remove("pkg/Kernels");
         assertTrue(TcDiskCache.load(key, live).isEmpty(), "the kernel class is gone");
+    }
+
+    /** Per-method analyses (access, loop index) are kept like compilations, and invalidated the same way. */
+    @Test
+    public void anAnalysisRoundTripsUntilItsClassChanges() {
+        String access = TcDiskCache.analysisKey("access", "pkg.Kernels", "add", "(LA;)V").orElseThrow();
+        String loopIndex = TcDiskCache.analysisKey("loop-index", "pkg.Kernels", "add", "(LA;)V").orElseThrow();
+        assertNotEquals(access, loopIndex, "each analysis has its own entry");
+        var recording = new TcDiskCache.Recording(live);
+        recording.classBytes("pkg/Kernels");
+        TcDiskCache.storeAnalysis(access, recording.reads(), new int[] { 1, 2, 3 });
+        assertArrayEquals(new int[] { 1, 2, 3 }, TcDiskCache.loadAnalysis(access, live).orElseThrow());
+        assertTrue(TcDiskCache.loadAnalysis(loopIndex, live).isEmpty(), "not stored");
+        classes.put("pkg/Kernels", "kernel v2".getBytes(StandardCharsets.UTF_8));
+        assertTrue(TcDiskCache.loadAnalysis(access, live).isEmpty(), "the kernel changed");
     }
 
     @Test
