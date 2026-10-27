@@ -60,7 +60,8 @@ public class LifeBench {
         // the generation is in the first slice: from = 0, to = w * h
         control.from(0);
         control.to(w * h);
-        System.out.println("backend: " + accelerator.backend.getClass().getSimpleName() + ", " + w + " x " + h + ", " + gens + " generations a round");
+        String backend = accelerator.backend.getClass().getSimpleName() + (accelerator.config().minimizeCopies() ? " (HAT=MC)" : "");
+        System.out.println("backend: " + backend + ", " + w + " x " + h + ", " + gens + " generations a round");
         int g = gens;
         accelerator.compute((@Reflect Compute) cc -> ComputeLife.steps(cc, control, grid, g)); // warm-up: compiles
         long best = Long.MAX_VALUE;
@@ -70,6 +71,13 @@ public class LifeBench {
             best = Math.min(best, System.nanoTime() - start);
         }
         System.out.printf("best round: %.1f ms, %.0f generations per second%n", best / 1e6, gens / (best / 1e9));
+
+        // With HAT=MC results stay on the device until the program asks for them (HAT's own backends
+        // refuse the call without MC).
+        if (accelerator.config().minimizeCopies()) {
+            accelerator.preAccess(control);
+            accelerator.preAccess(grid);
+        }
 
         // check: the same number of generations in Java
         int total = gens * (rounds + 1);

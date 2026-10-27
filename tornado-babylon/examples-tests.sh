@@ -36,6 +36,8 @@ for dev in "${DEVICES[@]}"; do
     fi
     run "$dev" "HatTasksChecks" ./run.sh -d "$dev" build/examples hattasks.HatTasksChecks
     run "$dev" "NBodyTaskGraph" ./run.sh -d "$dev" build/examples hattasks.NBodyTaskGraph 2048 10
+    run "$dev" "LifeBench (resident buffers)" ./run.sh -d "$dev" "$HAT_BUILD/hat-example-life-1.0.jar:build/examples" lifebench.LifeBench 256 256 20 3
+    TC_JVM=-DHAT=MC run "$dev" "LifeBench (HAT=MC)" ./run.sh -d "$dev" "$HAT_BUILD/hat-example-life-1.0.jar:build/examples" lifebench.LifeBench 256 256 20 3
     if [[ "$backend" == *CUDA* && "$backend" != *OPENCL* ]]; then
         run "$dev" "TileExamples 256" ./run.sh -d "$dev" build/examples tiles.TileExamples 256
         run "$dev" "TileExamples 1000 (ragged edges)" ./run.sh -d "$dev" build/examples tiles.TileExamples 1000
