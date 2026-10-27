@@ -129,7 +129,26 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
    - **What remains:** a generation costs about 50 µs against a 7 µs kernel. Most of it is the synchronisation of each blocking execution, since the host updates the control struct between generations. Going further needs asynchronous executions in TornadoVM.
    - **Options:** `-Dtornado.hat.resident=false`, `-Dtornado.hat.memberCopies=false`, `-Dtornado.hat.traceResidency=true`, `-Dtornado.hat.cudaGraph=true`.
 
-3. **Game of Life with its window.** Run HAT's `life` demo (Swing viewer) on TornadoVM on a machine with a display. Compare generations per second against HAT's backends, with the compute loop adapting to the viewer's frame rate. The headless benchmark above already gives identical grids on TornadoVM.
+3. **Done: Game of Life with its window.**
+   - `lifebench.LifeWindow` runs HAT's `life` demo as `life.Main` does: the real Swing `Viewer`, the demo's pattern (a 10018 x 6798 grid) and its compute loop. The loop refreshes the window at its frame rate (5 frames per second) and runs generations in between. The harness skips the start button and reports generations per second over 10 s.
+   - **Results** (RTX 4090, window on an X server):
+
+     | Backend | Generations per second |
+     |---|---:|
+     | TornadoVM | **2409** |
+     | TornadoVM, `HAT=MC` | 2399 |
+     | TornadoVM, copies every dispatch | 65 |
+     | HAT's CUDA backend | 53 |
+     | HAT's CUDA backend, `HAT=MC` | 103 |
+
+     At this size a copy is 68 MB, so keeping the grid on the device is what counts. The window's refresh copies the grid back and re-uploads it 5 times per second.
+   - **Run it without a display:** use Xvfb, here in a container that shares its X socket:
+     ```bash
+     docker run -d --name hat-xvfb --rm -v /tmp/.X11-unix:/tmp/.X11-unix ubuntu:22.04 \
+         bash -c "apt-get update -qq && apt-get install -y -qq xvfb && Xvfb :77 -screen 0 1600x1200x24 -ac -nolisten tcp"
+     H=$BABYLON/hat/build
+     DISPLAY=:77 ./run.sh -d 1:0 $H/hat-example-life-1.0.jar:$H/hat-example-shared-1.0.jar:build/examples lifebench.LifeWindow 10
+     ```
 
 4. **Interface-mapped data for TornadoVM.**
    - **Today:** TornadoVM programs describe data with native arrays (`FloatArray`, ...) or explicit memory layouts. HAT's interface mapping (`Buffer`/`Struct` interfaces with a `Schema`, e.g. `Universe` with `Body` structs) hides the layout behind Java interfaces.
