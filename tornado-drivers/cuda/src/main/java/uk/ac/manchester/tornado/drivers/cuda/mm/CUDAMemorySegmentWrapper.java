@@ -278,7 +278,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
                 new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
             }
         } else if (segment != null && pin) {
-            if (deviceContext.getPlatformContext().getPinnedMemoryRegistry().pin(segment, segment.byteSize())) {
+            if (deviceContext.getPlatformContext().getPinnedMemoryRegistry().pin(reference, segment, segment.byteSize())) {
                 pinnedHostPointer = segment.address();
             }
         }
