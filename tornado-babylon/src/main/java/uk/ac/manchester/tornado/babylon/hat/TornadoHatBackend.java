@@ -89,9 +89,15 @@ public class TornadoHatBackend extends Backend {
         if (parameters.length != args.length) {
             throw new IllegalArgumentException(kernel + " takes " + parameters.length + " arguments, given " + args.length);
         }
+        var event = new uk.ac.manchester.tornado.babylon.Events.Dispatch();
+        event.begin();
         var key = key(kernel, ndRange, args);
         key.add(tile);
-        var dispatch = plans.computeIfAbsent(key, k -> prepare(kernel, ndRange, args, tile));
+        boolean[] built = new boolean[1];
+        var dispatch = plans.computeIfAbsent(key, k -> {
+            built[0] = true;
+            return prepare(kernel, ndRange, args, tile);
+        });
         // HAT memory is the truth between dispatches: in before every launch, out after it.
         for (int i = 0; i < dispatch.buffers().size(); i++) {
             if (dispatch.segments().get(i) != null) {
@@ -107,6 +113,14 @@ public class TornadoHatBackend extends Backend {
             if (dispatch.segments().get(i) != null) {
                 MemorySegment.copy(dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i), 0, dispatch.segments().get(i).byteSize());
             }
+        }
+        event.end();
+        if (event.shouldCommit()) {
+            event.kernel = kernel.getDeclaringClass().getSimpleName() + "." + kernel.getName();
+            event.range = String.valueOf(ndRange);
+            event.tile = tile;
+            event.newPlan = built[0];
+            event.commit();
         }
     }
 

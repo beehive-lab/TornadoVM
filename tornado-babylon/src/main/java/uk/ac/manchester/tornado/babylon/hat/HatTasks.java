@@ -110,6 +110,17 @@ public final class HatTasks {
 
     private TaskGraph add(TaskGraph graph, String id, Serializable kernel, Object... args) {
         Method method = method(kernel);
+        if (method.isSynthetic()) {
+            throw new IllegalArgumentException("a HAT kernel is given as a method reference to a static @Reflect method (Kernels::step), not as a lambda: "
+                    + "the body of a lambda has no code model");
+        }
+        if (!java.lang.reflect.Modifier.isStatic(method.getModifiers())) {
+            throw new IllegalArgumentException("HAT kernel " + method.getName() + " must be static");
+        }
+        if (jdk.incubator.code.Op.ofMethod(method).isEmpty()) {
+            throw new IllegalArgumentException("HAT kernel " + method.getDeclaringClass().getSimpleName() + "." + method.getName()
+                    + " has no code model: annotate it @Reflect (jdk.incubator.code.Reflect)");
+        }
         Object[] tornadoArgs = Arrays.copyOf(args, args.length);
         for (int i = 0; i < args.length; i++) {
             if (args[i] instanceof Buffer buffer) {

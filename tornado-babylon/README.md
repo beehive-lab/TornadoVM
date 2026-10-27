@@ -98,12 +98,38 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 | `F16`, `BF16` | `f16`, and bfloat16 as the bits in an int; arithmetic in f32 and rounded back exactly as the Java bodies round (bfloat16: to nearest even, in integer arithmetic) |
 | `Float2`, `Float4` (`float4View`, `storeFloat4View`, `float4ArrayView`, lanes, `of`, `makeMutable`, `add`/`sub`/`mul`/`div`) | TC vectors; a mutated vector (`vA.x(v)`) lives in a private slot |
 | `HATMath` (`maxf16`, `cosf`, `native_sinf`, …) | TC math intrinsics at the argument's precision |
-| Tiles (`TileContext.load/store/index/shape/irange/BIDX`, `Tile.zeros/full/add/…/mma/transpose/sum/min/max/numTiles/ceildiv`) | CUDA Tile through TC's `tile.*` IR: a tensor is a strided view past HAT's header; 1D tiles are 1 x n; helpers that take tiles are inlined |
+| Tiles (`TileContext.load/store/index/shape/irange/BIDX`, `Tile.zeros/full/add/sub/mul/truediv/mma/transpose/sum/min/max/numTiles/ceildiv/arange/reshape/permute`) | CUDA Tile through TC's `tile.*` IR: a tensor is a strided view past HAT's header; 1D tiles are 1 x n; elementwise operations broadcast extents of 1 (a (1, n) row over an (m, n) tile); tiles at the edge of a tensor are masked (zero-padded reads, no writes past it); helpers that take tiles are inlined |
 | `dispatchTile` | one CUDA Tile block per tile, numbered as HAT's backends number them (a warp flag on X flattens them) |
 | `Tensor` (16 x 16 x 16 F16 multiply-accumulate: `create`/`zeros`/`fill`, `loadF16` and `store` row- or column-major, `mma`), `WRS()` | two m16n8k16 tensor-core operations per `mma`; operand fragments are loaded where the `mma` uses them (as A or B), accumulators live in a private slot; column-major loads and stores are TC intrinsics added for this (`tornado.mma.load_a.global_col`, `load_b.global_col`, `store_col`). CUDA only |
 
-**Limits:** CUDA Tile and tensor-core kernels run on CUDA only (TC refuses tiles elsewhere with
-TC-E4010). HAT tensors are loaded where `mma` uses them rather than where `loadF16` is called.
+## Current limitations
+
+**In this module (TornadoVM and TC):**
+
+- **CUDA only:** CUDA Tile (`dispatchTile`) and tensor-core (`Tensor`) kernels run on CUDA devices only. Elsewhere TC refuses them with TC-E4010 or TC-E4002.
+- **Power-of-two tile extents (TC-E3401).** This is a CUDA Tile rule. To reduce a whole row or column of any length, load it as the next power of two; the edge is zero-padded (`examples/src/tiles/TileExamples.java`, `rowSum`).
+- **`Tile.permute`:** only the identity and the 2D transpose (1, 0).
+- **`Tile.arange`:** yields F32 values.
+- **`Float4` views** of HAT buffers are loaded lane by lane, not as one 128-bit load. HAT's 2DREGISTERTILING_V is 1.42x slower than with HAT's CUDA backend.
+- **HAT tensors:** an operand is loaded where `mma` uses it, not where `loadF16` is called.
+- **Double precision:** kernels that use it are refused on devices without FP64 (TC-E4012), for example `Math.exp` on doubles on an Intel UHD 770.
+- **First dispatch:** 0.5-0.6 s for the plan, TC and NVRTC (or nvcc for CUDA Tile); HAT's own CUDA backend takes 0.16-0.23 s. Later dispatches reuse the plan. While a plan is built, a kernel's code model is translated up to three times (access analysis, loop-index check, compilation), about 2 ms each once warm.
+- **`HatTasks`:** buffers must come from an `Accelerator` on `TornadoHatBackend`. A kernel is a method reference to a static `@Reflect` method; a lambda is refused with a clear message.
+- **`@Parallel` loops** in TornadoVM kernels compiled from their code models need class files compiled with `-g`.
+
+**In HAT itself** (HAT's own checks, before any backend; the same on HAT's CUDA and OpenCL backends):
+
+- A literal written in a `compute` lambda arrives as `null`; only captured values are passed. Use variables: `int tile = 256; accelerator.compute(cc -> k(cc, a, tile))`.
+- Tile kernels cannot take `float` parameters (`Illegal parameter type float`).
+- HAT's tile type checker refuses:
+  - a tile times a scalar (`Tile.mul(tile, 0.5f)`);
+  - `Tile.truediv` of two tiles;
+  - `Tile.max(tile, axis)`;
+  - an `arange` tile combined with a loaded tile.
+
+  Tile-by-tile `add`/`sub`/`mul`, `sum` over each axis, `mma`, `transpose`, `reshape` and `permute` pass the checker.
+- `TestNbody` updates body positions inside the kernel that also reads them (a race). Its expected-precision result is the same on HAT's own backends.
+- Babylon is an OpenJDK project branch, not a JDK release, and HAT's API is still changing. This module is tested with `code-reflection` at `87aaaa4b0`.
 
 ## Build and run
 
@@ -177,6 +203,7 @@ Options:
 | `./hat-tests.sh [-d dev] [Class[#method] ...]` | HAT's own unit tests (`hat/tests`, through HAT's test engine) on TornadoVM; a class whose JVM dies is rerun one method per JVM |
 | `./hat-sweep.sh [dev ...]` | HAT's example programs, validated by their `--check` or against HAT's own CUDA output |
 | `./reflect-all-sdk.sh` | a copy of the SDK whose unit tests are compiled by Babylon's javac with every static method `@Reflect`, to run the whole TornadoVM unit-test suite with kernels from their code models |
+| `./examples-tests.sh [dev ...]` | the self-checking examples on every device: `ReflectKernels` (with and without a CUDA graph), `HatTasksChecks` (10 checks of HAT kernels in task graphs: next to plain TornadoVM tasks, shared buffers, 2D, CUDA graphs, misuse), `NBodyTaskGraph`, and `TileExamples` (10 tile kernels at 256 and at a ragged 1000, CUDA only) |
 
 ### HAT's unit tests (156 tests in 30 classes)
 
@@ -201,6 +228,34 @@ squares, mandel, matmul (MT, 1D, 1DFC, 2D, 2DLI, 2DTILING, 2DREGISTERTILING,
 2DREGISTERTILING_V, 2DREGISTERTILING_FP16, strict-FP FP16), dft, flash-attention and tensors pass.
 matmul 2DLIF16 prints the same values as HAT's own OpenCL backend (`66.481575 != 63.870296`): the
 example's check ignores the F16 rounding of each product. HAT's CUDA backend is further off.
+
+## Profiling
+
+`profile.sh` runs any HAT program, or TornadoVM program through this module, under a profiler, and
+prints a summary. The recordings stay in `build/profile/`.
+
+```bash
+H=$BABYLON/hat/build
+CP=$H/hat-example-matmul-1.0.jar:$H/hat-example-shared-1.0.jar
+./profile.sh jfr  -d 1:0 $CP matmul.Main --kernel=2DTILING --size=512 --iterations=20
+./profile.sh nsys -d 1:0 $CP matmul.Main --kernel=2DTILING --size=512 --iterations=20
+NCU_COUNT=5 ./profile.sh ncu -d 1:0 $CP matmul.Main --kernel=2DTILING --size=512 --iterations=5
+```
+
+- **JFR.** This module records two events:
+  - `tornado.hat.Dispatch`: kernel, range, tile or not, and whether this dispatch built the plan;
+  - `tornado.babylon.Translate`: kernel and code-model size.
+
+  Together with TornadoVM's `tornado.Compile` (where the SDK records it) and CPU samples, the summary looks like:
+  ```
+  HAT dispatch                                     n   first ms  later mean ms  later min ms
+  Main.matrixMultiplyKernel2DTiling               20     470.03          0.386         0.340
+  code models translated: 3, 20.6 ms in total
+  CPU samples: TornadoVM runtime/driver 49%, application/JDK 31%, HAT core 9%, Babylon code reflection 7%, TC compiler 3%, HAT backend 1%
+  ```
+  The recording also opens in JDK Mission Control.
+- **Nsight Systems:** GPU kernel and CUDA API tables. Kernels carry TC's names, `<Class>_<method>`, for example `Main_matrixMultiplyKernel2DTiling`.
+- **Nsight Compute:** per kernel, duration, SM and DRAM throughput, achieved occupancy and registers per thread. For example, 2DTILING at 512: 46.9 µs, SM 85.8%, DRAM 4.6%, occupancy 74.8%, 39 registers. `NCU_KERNEL=<regex>` selects kernels.
 
 ## Performance
 
