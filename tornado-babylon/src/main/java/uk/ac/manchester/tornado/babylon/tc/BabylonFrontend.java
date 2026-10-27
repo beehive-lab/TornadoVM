@@ -284,6 +284,11 @@ public final class BabylonFrontend implements ModelFrontend {
             public Optional<Frontend.MethodRef> deviceKernel(String ownerInternalName, String field) {
                 return source.deviceKernel(ownerInternalName, field);
             }
+
+            @Override
+            public Method method() {
+                return function;
+            }
         };
     }
 
