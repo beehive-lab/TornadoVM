@@ -14,5 +14,5 @@ echo "built build/tornado-babylon.jar"
 # The @Reflect TornadoVM-API example (examples/src), into build/examples.
 rm -rf build/examples && mkdir -p build/examples
 javac -Xlint:-preview --enable-preview --release "$(java -XshowSettings:properties -version 2>&1 | awk '/java.specification.version/{print $3}')" \
-    --add-modules jdk.incubator.code -cp "$CP:build/classes" -d build/examples $(find examples/src -name '*.java')
+    --add-modules jdk.incubator.code -cp "$CP:build/classes:$HAT_BUILD/hat-example-life-1.0.jar" -d build/examples $(find examples/src -name '*.java')
 echo "built build/examples"
