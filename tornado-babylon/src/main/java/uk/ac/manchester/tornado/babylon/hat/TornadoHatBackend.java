@@ -58,8 +58,11 @@ public class TornadoHatBackend extends Backend {
     private static final boolean STRICT_FP = Boolean.getBoolean("tornado.hat.strictFP");
 
     public TornadoHatBackend() {
-        super(java.lang.foreign.Arena.global(), MethodHandles.lookup(), hat.Config.fromEnvOrProperty());
+        super(new HeaderArena(), MethodHandles.lookup(), hat.Config.fromEnvOrProperty());
     }
+
+    /** {@code -Dtornado.hat.zeroCopy=false}: copy HAT buffers into TornadoVM arrays on every dispatch instead. */
+    private static final boolean ZERO_COPY = !"false".equals(System.getProperty("tornado.hat.zeroCopy"));
 
     @Override
     public void computeContextHandoff(ComputeContext computeContext) {
@@ -86,7 +89,9 @@ public class TornadoHatBackend extends Backend {
         var dispatch = plans.computeIfAbsent(key, k -> prepare(kernel, ndRange, args));
         // HAT memory is the truth between dispatches: in before every launch, out after it.
         for (int i = 0; i < dispatch.buffers().size(); i++) {
-            MemorySegment.copy(dispatch.segments().get(i), 0, dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i).byteSize());
+            if (dispatch.segments().get(i) != null) {
+                MemorySegment.copy(dispatch.segments().get(i), 0, dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i).byteSize());
+            }
         }
         try {
             dispatch.plan().execute();
@@ -94,7 +99,9 @@ public class TornadoHatBackend extends Backend {
             throw new RuntimeException("TornadoVM could not run HAT kernel " + kernel.getName() + ": " + e.getMessage(), e);
         }
         for (int i = 0; i < dispatch.buffers().size(); i++) {
-            MemorySegment.copy(dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i), 0, dispatch.segments().get(i).byteSize());
+            if (dispatch.segments().get(i) != null) {
+                MemorySegment.copy(dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i), 0, dispatch.segments().get(i).byteSize());
+            }
         }
     }
 
@@ -138,10 +145,12 @@ public class TornadoHatBackend extends Backend {
             if (a instanceof Buffer buffer) {
                 var segment = MappableIface.getMemorySegment(buffer);
                 HatLayouts.record(kernel, i, (GroupLayout) MappableIface.getLayout(buffer));
-                var bytes = ByteArray.fromSegment(segment);
+                var inPlace = ZERO_COPY && arena() instanceof HeaderArena headers ? headers.tornadoSegment(segment) : java.util.Optional.<MemorySegment>empty();
+                var bytes = inPlace.isPresent() ? ByteArray.fromSegmentShallow(inPlace.get()) : ByteArray.fromSegment(segment);
                 tornadoArgs[i] = bytes;
                 buffers.add(bytes);
-                segments.add(segment);
+                // wrapped in place: nothing to copy around the launch
+                segments.add(inPlace.isPresent() ? null : segment);
             } else {
                 tornadoArgs[i] = a;
             }

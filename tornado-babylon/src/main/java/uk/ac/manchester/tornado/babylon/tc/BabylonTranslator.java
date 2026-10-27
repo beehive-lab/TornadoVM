@@ -138,6 +138,8 @@ final class BabylonTranslator {
     private final Map<uk.ac.manchester.tornado.tc.ir.Value, Type> localArrays = new HashMap<>();
     /** HAT local/private memory of a struct-shaped device type: its layout, for the accessors' views. */
     private final Map<uk.ac.manchester.tornado.tc.ir.Value, GroupLayout> deviceStructs = new HashMap<>();
+    /** The memory type at each recorded element address (half floats are stored as half, not punned as short). */
+    private final Map<uk.ac.manchester.tornado.tc.ir.Value, Type> elementTypes = new HashMap<>();
     /** Results of {@code arrayView()} calls (Java arrays over HAT memory) and of indexing a 2D one by its first index. */
     private final Map<Value, ArrayView> arrayViews = new HashMap<>();
     private final Map<Value, Row> rows = new HashMap<>();
@@ -883,7 +885,7 @@ final class BabylonTranslator {
     private uk.ac.manchester.tornado.tc.ir.Value newValue(IrBuilder b, JavaOp.NewOp op) {
         if (op.resultType() instanceof jdk.incubator.code.dialect.java.ArrayType array) {
             if (array.dimensions() != 1 || op.operands().size() != 1) {
-                throw new Unsupported("TC-E1003", "only one-dimensional local arrays are supported in kernels");
+                throw new Unsupported("TC-E1002", "only one-dimensional local arrays are supported in kernels"); // the bytecode frontend's code for them
             }
             var element = descriptor(array.componentType()).length() == 1 ? memoryType(primitive(array.componentType()))
                     : Frontend.typeOf(descriptor(array.componentType())); // HalfFloat[] fragments: f16
@@ -976,6 +978,9 @@ final class BabylonTranslator {
                 var clazz = (Class<?>) member.getClass().getMethod("clazz").invoke(member);
                 int size = (int) member.getClass().getMethod("size").invoke(member);
                 var nested = (List<?>) member.getClass().getMethod("members").invoke(member);
+                // An array of primitives or half floats without a nested schema. Half floats declared with
+                // their value field (array("a", n, half -> half.field("value"))) take the struct path below,
+                // which NVIDIA's OpenCL compiles (it refuses private half[] arrays).
                 if (nested.isEmpty() && (clazz.isPrimitive() || clazz.getName().equals("hat.types.F16") || clazz.getName().equals("hat.types.BF16"))) {
                     var element = memoryType(clazz);
                     var array = b.alloca(space, element, size);
@@ -1013,6 +1018,7 @@ final class BabylonTranslator {
         var address = elementAddress(b, array, v(args.get(0)), element);
         if (args.size() == 1) {
             elementAddresses.put(op.result(), address);
+            elementTypes.put(address, element);
             var loaded = b.load(address, element);
             return element.equals(Type.I8) || element.equals(Type.I16) ? b.convert(ConvertOp.SEXT, loaded, Type.I32) : loaded;
         }
@@ -1683,11 +1689,14 @@ final class BabylonTranslator {
         }
         if (op.hasReceiver() && name.equals("value") && elementAddresses.containsKey(op.operands().get(0))) {
             var address = elementAddresses.get(op.operands().get(0));
+            boolean half = Type.F16.equals(elementTypes.get(address));
             if (args.size() == 1) {
-                return b.convert(ConvertOp.SEXT, b.load(address, Type.I16), Type.I32);
+                var loaded = half ? b.convert(ConvertOp.BITCAST, b.load(address, Type.F16), Type.I16) : b.load(address, Type.I16);
+                return b.convert(ConvertOp.SEXT, loaded, Type.I32);
             }
             var bits = args.get(1);
-            b.store(address, bits.type().equals(Type.I16) ? bits : b.convert(ConvertOp.TRUNC, bits, Type.I16));
+            var shortBits = bits.type().equals(Type.I16) ? bits : b.convert(ConvertOp.TRUNC, bits, Type.I16);
+            b.store(address, half ? b.convert(ConvertOp.BITCAST, shortBits, Type.F16) : shortBits);
             return null;
         }
         if (op.hasReceiver() && name.equals("value") && args.size() == 1) {
