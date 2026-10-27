@@ -69,14 +69,42 @@ public final class BabylonFrontend implements ModelFrontend {
         if (kernel == null || !(kernel.isAnnotationPresent(Reflect.class) || MODE.equals("babylon") && Op.ofMethod(kernel).isPresent())) {
             return Optional.empty();
         }
-        boolean hat = Arrays.stream(kernel.getParameterTypes()).anyMatch(t -> t.getName().startsWith("hat."));
-        if (!hat && !MODE.equals("babylon")) {
+        if (!MODE.equals("babylon") && !isHat(kernel)) {
             return Optional.empty();
         }
         if (Boolean.getBoolean("tornado.tc.verbose")) {
             System.err.println("[TC] Babylon frontend: " + kernel.getDeclaringClass().getName() + "." + kernel.getName() + " from its code model");
         }
         return Optional.of(translateModule(source, loader, kernel));
+    }
+
+    /**
+     * A HAT kernel: a parameter is a HAT buffer or other mapped interface (user buffers, such as a
+     * {@code ComplexArray}, live in the user's package), or the kernel calls into HAT ({@code GIX()}).
+     */
+    private static boolean isHat(Method kernel) {
+        for (var t : kernel.getParameterTypes()) {
+            if (t.getName().startsWith("hat.") || implementsByName(t, "optkl.ifacemapper.MappableIface")) {
+                return true;
+            }
+        }
+        return Op.ofMethod(kernel).map(model -> model.elements().anyMatch(e -> e instanceof JavaOp.InvokeOp invoke
+                && invoke.invokeReference().refType().toString().startsWith("hat."))).orElse(false);
+    }
+
+    private static boolean implementsByName(Class<?> c, String name) {
+        if (c == null) {
+            return false;
+        }
+        if (c.getName().equals(name)) {
+            return true;
+        }
+        for (var i : c.getInterfaces()) {
+            if (implementsByName(i, name)) {
+                return true;
+            }
+        }
+        return implementsByName(c.getSuperclass(), name);
     }
 
     private static Method find(Class<?> owner, String name, String descriptor) {

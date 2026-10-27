@@ -42,5 +42,6 @@ for DEV in "${DEVICES[@]}"; do
     # Half precision with strict FP: no multiply-add contraction before rounding to half (OpenCL defaults to -cl-mad-enable)
     TC_JVM=-Dtornado.hat.strictFP=true run matmul-FP16-strictFP matmul matmul.Main check --kernel=2DREGISTERTILING_FP16 --check --size=256 --iterations=2
     run dft dft dft.Main check --check --size=1024 --iterations=2
+    run flashattention flash-attention flashattention.Main check --check --iterations=2
     run tensors tensors tensors.Main check --check --iterations=2
 done
