@@ -177,30 +177,28 @@ public class TornadoHatBackend extends Backend {
     }
 
     private static WorkerGrid tileGrid(NDRange range) {
-        {
-            // As HAT's own backends: one block per local (or tile) extent along each dimension; with a
-            // warp flag on X the blocks are numbered along X only (a kernel swizzles BIDX() itself).
-            int[] global = extents(range.global());
-            int[] per = range.hasLocal() ? extents(range.local()) : extents(range.tile());
-            int[] blocks = new int[global.length];
-            for (int d = 0; d < global.length; d++) {
-                blocks[d] = ceil(global[d], per[d]);
-            }
-            if (range.hasWarp() && range.warp() instanceof NDRange.Warp2D w && w.x() || range.hasWarp() && range.warp() instanceof NDRange.Warp3D w3 && w3.x()) {
-                int all = 1;
-                for (int b : blocks) {
-                    all *= b;
-                }
-                blocks = new int[] { all };
-            }
-            WorkerGrid tiles = switch (blocks.length) {
-                case 1 -> new WorkerGrid1D(blocks[0]);
-                case 2 -> new WorkerGrid2D(blocks[0], blocks[1]);
-                default -> new WorkerGrid3D(blocks[0], blocks[1], blocks[2]);
-            };
-            tiles.setLocalWork(1, 1, 1);
-            return tiles;
+        // As HAT's own backends: one block per local (or tile) extent along each dimension; with a
+        // warp flag on X the blocks are numbered along X only (a kernel swizzles BIDX() itself).
+        int[] global = extents(range.global());
+        int[] per = range.hasLocal() ? extents(range.local()) : extents(range.tile());
+        int[] blocks = new int[global.length];
+        for (int d = 0; d < global.length; d++) {
+            blocks[d] = ceil(global[d], per[d]);
         }
+        if (range.hasWarp() && range.warp() instanceof NDRange.Warp2D w && w.x() || range.hasWarp() && range.warp() instanceof NDRange.Warp3D w3 && w3.x()) {
+            int all = 1;
+            for (int b : blocks) {
+                all *= b;
+            }
+            blocks = new int[] { all };
+        }
+        WorkerGrid tiles = switch (blocks.length) {
+            case 1 -> new WorkerGrid1D(blocks[0]);
+            case 2 -> new WorkerGrid2D(blocks[0], blocks[1]);
+            default -> new WorkerGrid3D(blocks[0], blocks[1], blocks[2]);
+        };
+        tiles.setLocalWork(1, 1, 1);
+        return tiles;
     }
 
     /**
