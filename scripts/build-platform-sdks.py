@@ -43,10 +43,9 @@ reports the wanted major. Among several, Temurin is preferred (matching the
 release script's sdkman lookup), then the newest patch.
 
 Usage (from the TornadoVM repository root):
-  python3 scripts/build-platform-sdks.py                 # version from pom.xml, e.g. v8.0.0
   python3 scripts/build-platform-sdks.py --version v8.0.0 --output-dir /opt/release-archives
-  python3 scripts/build-platform-sdks.py --detect-only   # just print the JDKs it would use
-  python3 scripts/build-platform-sdks.py --draft-release-test true   # tag not created yet: build origin/master
+  python3 scripts/build-platform-sdks.py --version v8.0.0 --detect-only   # just print the JDKs it would use
+  python3 scripts/build-platform-sdks.py --version v8.0.0 --draft-release-test true   # tag not created yet: build origin/master
 
 Any option not listed here (e.g. --skip-windows-executables) is passed through
 to build-release-sdks.py.
@@ -243,23 +242,14 @@ def pick_jdk(profile, major, found, override):
 # Entry point
 # ---------------------------------------------------------------------------
 
-def pom_version():
-    try:
-        with open("pom.xml", encoding="utf-8") as f:
-            match = re.search(r"<artifactId>tornado</artifactId>\s*<version>([^<]+)</version>", f.read())
-        return f"v{match.group(1).strip()}" if match else None
-    except OSError:
-        return None
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Detect JDK 21 and JDK 25 and build every TornadoVM SDK for this platform.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    parser.add_argument("--version", default=None, metavar="VERSION",
-                        help="Release tag to build (default: v<version> from pom.xml).")
+    parser.add_argument("--version", required=True, metavar="VERSION",
+                        help="Release tag to build, e.g. v8.0.0 (the leading v may be left out).")
     parser.add_argument("--output-dir", default="release-sdks", metavar="DIR",
                         help="Root directory for the archives (default: release-sdks/).")
     parser.add_argument("--jdk21-home", default=None, metavar="PATH",
@@ -278,10 +268,8 @@ def main():
         error("bin/compile not found. Run this script from the TornadoVM repository root.")
         sys.exit(1)
 
-    version = args.version or pom_version()
-    if not version:
-        error("Could not read the version from pom.xml; pass --version vX.Y.Z.")
-        sys.exit(1)
+    # The release tags are vX.Y.Z; the development pom version (${revision}) names no tag.
+    version = args.version if args.version.startswith("v") else f"v{args.version}"
 
     info("Searching for JDKs ...")
     found = discover_jdks()
