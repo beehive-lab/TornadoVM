@@ -87,7 +87,19 @@ public class ReflectKernels {
         scheduler.addWorkerGrid("s.sum", grid);
         ImmutableTaskGraph itg = graph.snapshot();
         try (var plan = new TornadoExecutionPlan(itg)) {
-            plan.withGridScheduler(scheduler).execute();
+            plan.withGridScheduler(scheduler);
+            // -Dreflect.device=driver:device, -Dreflect.cudaGraph=true (a CUDA device)
+            String device = System.getProperty("reflect.device");
+            if (device != null) {
+                String[] d = device.split(":");
+                plan.withDevice(TornadoExecutionPlan.getDevice(Integer.parseInt(d[0]), Integer.parseInt(d[1])));
+            }
+            if (Boolean.getBoolean("reflect.cudaGraph")) {
+                plan.withCUDAGraph();
+            }
+            for (int r = 0; r < 3; r++) {
+                plan.execute();
+            }
         }
         int bad = 0;
         for (int i = 0; i < n; i++) {

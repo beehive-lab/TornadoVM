@@ -19,6 +19,39 @@ GPU programming model built on it. This module lets TornadoVM consume both:
 Nothing here imports Graal or JVMCI, and no native code is involved: HAT's own native backends are
 not used. TC is the only compiler.
 
+## HAT kernels in TornadoVM task graphs
+
+`HatTasks` puts HAT kernels, over HAT buffers and their structs, into ordinary TornadoVM task graphs.
+They run next to other tasks, with TornadoVM's transfers, grid schedulers and execution plans, CUDA
+graphs included (`examples/src/hattasks/NBodyTaskGraph.java`):
+
+```java
+var accelerator = new Accelerator(MethodHandles.lookup(), Backend.FIRST); // TornadoHatBackend
+Universe universe = Universe.create(accelerator, n);                      // HAT buffer of Body structs
+F32Array energy = F32Array.create(accelerator, n);
+
+var hat = HatTasks.on(accelerator);
+var graph = new TaskGraph("nbody").transferToDevice(DataTransferMode.FIRST_EXECUTION, hat.of(universe));
+hat.task(graph, "accelerate", NBodyTaskGraph::accelerate, universe, 1f, 0.005f);   // @Reflect HAT kernels
+hat.task(graph, "move", NBodyTaskGraph::move, universe, 0.005f);
+hat.task(graph, "energy", NBodyTaskGraph::energy, universe, energy);
+graph.transferToHost(DataTransferMode.EVERY_EXECUTION, hat.of(energy));
+
+var grid = new GridScheduler("nbody.accelerate", new WorkerGrid1D(n));
+grid.addWorkerGrid("nbody.move", new WorkerGrid1D(n));
+grid.addWorkerGrid("nbody.energy", new WorkerGrid1D(n));
+try (var plan = new TornadoExecutionPlan(graph.snapshot())) {
+    plan.withDevice(TornadoExecutionPlan.getDevice(1, 0)).withGridScheduler(grid).withCUDAGraph();
+    for (int s = 0; s < steps; s++) {
+        plan.execute();
+    }
+}
+```
+
+`hat.of(buffer)` is the buffer's TornadoVM object, over its memory in place, and the same object every
+time. RTX 4090, 4096 bodies: 0.311 ms a step, or 0.259 ms with a CUDA graph. Results match plain Java
+to 4.8e-7 (relative), on CUDA, OpenCL and the UHD 770.
+
 ## How it fits
 
 ```
