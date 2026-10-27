@@ -148,6 +148,18 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
         };
     }
 
+    /**
+     * How class files are read, for reports: the JDK's reader (with TC's own for the classes it refuses,
+     * under {@code auto}), or one reader only.
+     */
+    public static String readerDescription() {
+        return switch (SELECTED) {
+            case "tc" -> "TC reader";
+            case "jdk" -> "JDK reader";
+            default -> JdkReader.INSTANCE != null ? "JDK reader, TC reader for classes it refuses" : "TC reader (the JDK reader needs JDK 24+)";
+        };
+    }
+
     /** Parses {@code bytes} with {@code reader}. */
     public static ClassFile parse(byte[] bytes, Reader reader) {
         if (reader == Reader.JDK) {

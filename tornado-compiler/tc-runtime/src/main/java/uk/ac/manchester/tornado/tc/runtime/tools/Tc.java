@@ -94,7 +94,7 @@ public final class Tc {
         }
         System.out.print(c.source());
         if (stats) {
-            System.err.printf("[TC] %s: %.2f ms (class files: %s reader first)%n", c.entryName(), c.nanos() / 1e6, ClassFile.reader());
+            System.err.printf("[TC] %s: %.2f ms (class files: %s)%n", c.entryName(), c.nanos() / 1e6, ClassFile.readerDescription());
         }
         return 0;
     }
