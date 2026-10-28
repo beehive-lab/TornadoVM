@@ -18,6 +18,7 @@
 module tornado.api {
     requires java.management;
     exports uk.ac.manchester.tornado.api;
+    uses uk.ac.manchester.tornado.api.ObjectAdapter;
     exports uk.ac.manchester.tornado.api.annotations;
     exports uk.ac.manchester.tornado.api.common;
     exports uk.ac.manchester.tornado.api.enums;

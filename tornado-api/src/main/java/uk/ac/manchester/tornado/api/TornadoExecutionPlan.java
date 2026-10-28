@@ -835,7 +835,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      */
     public TornadoExecutionPlan transferToDevice(Object... objects) {
-        tornadoExecutor.transferDataToDevice(executionFrame, objects);
+        tornadoExecutor.transferDataToDevice(executionFrame, ObjectAdapters.adapt(objects));
         return this;
     }
 
