@@ -130,6 +130,7 @@ __KOTLIN_TEST_MODULE__ = "tornado.kotlin.unittests"
 __TEST_THE_KOTLIN_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.kotlin.unittests.api.TestKotlinApi"),
     TestEntry("uk.ac.manchester.tornado.kotlin.unittests.compiler.TestKotlinCompilerSupport"),
+    TestEntry("uk.ac.manchester.tornado.kotlin.unittests.features.TestKotlinFeatures"),
     TestEntry("uk.ac.manchester.tornado.kotlin.unittests.loops.TestParallelFor"),
     TestEntry("uk.ac.manchester.tornado.kotlin.unittests.hybrid.TestKotlinHybridApi"),
     TestEntry("uk.ac.manchester.tornado.kotlin.unittests.tile.TestKotlinTiles"),
