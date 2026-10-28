@@ -156,7 +156,7 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
      - to `transferToDevice` and `transferToHost`;
      - to `TornadoExecutionResult.transferToHost` and `TornadoExecutionPlan.transferToDevice`.
    - Buffers are Java interfaces with a `Schema`, structs included, and no layout written by hand.
-   - **How:** TornadoVM's new `ObjectAdapter` service (its own PR, #ADAPTER) lets a library stand objects in for TornadoVM objects. This module installs `HatObjectAdapter`: a buffer becomes a `ByteArray` over its own memory, and the kernel parameter that receives it gets its layout, so TC compiles the kernel's accessors from its code model. `TornadoBuffers.allocate` allocates such buffers for TornadoVM.
+   - **How:** TornadoVM's new `ObjectAdapter` service (its own PR, #1309) lets a library stand objects in for TornadoVM objects. This module installs `HatObjectAdapter`: a buffer becomes a `ByteArray` over its own memory, and the kernel parameter that receives it gets its layout, so TC compiles the kernel's accessors from its code model. `TornadoBuffers.allocate` allocates such buffers for TornadoVM.
    - **Example** (`examples/src/interfacemapped/InterfaceMappedParticles.java`):
      ```java
      public interface Particles extends Buffer {
