@@ -82,7 +82,8 @@ public final class TcKernels {
         TornadoProfiler profiler = executable.getProfiler();
         profiler.start(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
         var kernel = TcHook.compile(method, executable.getArguments(), target, executable.getBatchThreads(), taskMeta.getNumThreads(),
-                (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint(), taskMeta.isWorkerGridAvailable()).orElseThrow();
+                (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint(), taskMeta.isWorkerGridAvailable(),
+                taskMeta.isDynamicShapes()).orElseThrow();
         profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
         if (TornadoOptions.FEATURE_EXTRACTION && deviceContext != null) {
             emitFeatures(method, kernel.features(), deviceContext);
@@ -100,7 +101,51 @@ public final class TcKernels {
                 ATOMIC_PARAMETERS.put(method, new HashMap<>(atomics.params()));
             }
         }
+        var shared = kernel;
+        if (kernel.generic()) {
+            kernel = TcHook.settled(method, kernel);
+        }
         var installed = installer.install(kernel.entryName(), kernel.source());
+        int maxThreads = installed.maxThreadsPerBlock();
+        if (kernel.generic() && maxThreads < target.maxWorkGroupSize() && TcHook.unsettled(method, shared)) {
+            // Code shared across tasks can need more registers than a task's own specialisation, and so
+            // allow smaller blocks; the task's block is only known at launch. Compare once with this
+            // task's specialisation: when it allows larger blocks, bound the shared code to them, and
+            // keep the specialisation only when the bound does not take.
+            var own = TcHook.compileSpecialised(method, executable.getArguments(), target, executable.getBatchThreads(), taskMeta.getNumThreads(),
+                    (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint(), taskMeta.isWorkerGridAvailable());
+            if (own.isPresent()) {
+                var ownInstalled = installer.install(own.get().entryName(), own.get().source());
+                int ownThreads = ownInstalled.maxThreadsPerBlock();
+                installed.invalidate();
+                if (ownThreads <= maxThreads) {
+                    // the task's code stays the shared kernel, installed again as the latest for its id
+                    TcHook.settle(method, target, taskMeta.isStrictFloatingPoint(), kernel, false);
+                    ownInstalled.invalidate();
+                    installed = installer.install(kernel.entryName(), kernel.source());
+                } else {
+                    var bounded = TcHook.bounded(kernel, ownThreads);
+                    var boundedInstalled = bounded.isPresent() ? installer.install(bounded.get().entryName(), bounded.get().source()) : null;
+                    if (boundedInstalled != null && boundedInstalled.maxThreadsPerBlock() >= ownThreads) {
+                        TcHook.settle(method, target, taskMeta.isStrictFloatingPoint(), kernel, false, ownThreads);
+                        ownInstalled.invalidate();
+                        kernel = bounded.get();
+                        installed = boundedInstalled;
+                    } else {
+                        TcHook.settle(method, target, taskMeta.isStrictFloatingPoint(), kernel, true);
+                        kernel = own.get();
+                        kernel.domain().ifPresent(taskMeta::setDomain);
+                        installed = ownInstalled;
+                        if (boundedInstalled != null) {
+                            // the specialisation installed again as the latest for its id
+                            boundedInstalled.invalidate();
+                            ownInstalled.invalidate();
+                            installed = installer.install(kernel.entryName(), kernel.source());
+                        }
+                    }
+                }
+            }
+        }
         profiler.stop(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
         profiler.sum(ProfilerType.TOTAL_DRIVER_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
         if (REPORT_COMPILE_TIMES) {

@@ -160,6 +160,9 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
     /** Require the host's floating-point rounding for every task in this graph. */
     void withStrictFloatingPoint();
 
+    /** Share TC kernels across array lengths for every task in this graph. */
+    void withDynamicShapes();
+
     void mapOnDeviceMemoryRegion(Object destArray, Object srcArray, long offset, TornadoTaskGraphInterface taskGraphSrc);
 
     void updateObjectAccess();
