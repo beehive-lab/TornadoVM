@@ -161,4 +161,27 @@ public class TcDiskCacheTest {
         TcDiskCache.store(key, Map.of(), deviceLaunch);
         assertTrue(TcDiskCache.load(key, live).isEmpty());
     }
+
+    @Test
+    public void theLeastRecentlyUsedEntriesGoBeyondTheBound() throws Exception {
+        TcDiskCache.maxEntriesForTests(3);
+        try {
+            var keys = new java.util.ArrayList<String>();
+            for (int n = 1; n <= 3; n++) {
+                String key = key(List.of(new Fact.Length(n)));
+                TcDiskCache.store(key, Map.of(), compiled());
+                java.nio.file.Files.setLastModifiedTime(dir.resolve(key + ".tc"), java.nio.file.attribute.FileTime.fromMillis(1_000_000L * n));
+                keys.add(key);
+            }
+            assertTrue(TcDiskCache.load(keys.get(0), live).isPresent(), "a hit renews the oldest entry");
+            String newest = key(List.of(new Fact.Length(4)));
+            TcDiskCache.store(newest, Map.of(), compiled());
+            assertTrue(java.nio.file.Files.exists(dir.resolve(keys.get(0) + ".tc")));
+            assertTrue(java.nio.file.Files.notExists(dir.resolve(keys.get(1) + ".tc")), "the least recently used entry is removed");
+            assertTrue(java.nio.file.Files.exists(dir.resolve(keys.get(2) + ".tc")));
+            assertTrue(java.nio.file.Files.exists(dir.resolve(newest + ".tc")));
+        } finally {
+            TcDiskCache.maxEntriesForTests(4096);
+        }
+    }
 }

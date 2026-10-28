@@ -105,14 +105,24 @@ public final class TcKernels {
         final String taskId = taskMeta.getId();
         final boolean strict = taskMeta.isStrictFloatingPoint();
         final boolean workerGrid = taskMeta.isWorkerGridAvailable();
+        // Decided here, in task order: the background compile must generate what the in-order one would.
+        try {
+            TcHook.decide(method, arguments, target, batchThreads, batchIndexOffset, taskId, strict, workerGrid);
+        } catch (RuntimeException e) {
+            return; // the in-order compilation reports it
+        }
         PREFETCH.execute(() -> {
             try {
                 var event = CompileEvent.begin("tc", method.getDeclaringClass().getSimpleName() + "." + method.getName(), taskId, true);
                 var compiled = TcHook.compile(method, arguments, target, batchThreads, numThreads, batchIndexOffset, taskId, strict, workerGrid);
                 event.finish();
                 compiled.ifPresent(kernel -> prebuilder.prebuild(kernel.entryName(), kernel.source()));
-            } catch (Throwable ignored) {
-                // Reported by the in-order compilation.
+            } catch (Throwable e) {
+                // The in-order compilation repeats the work and reports its failures; one specific to
+                // the background thread or to the driver's prebuild is visible with tornado.tc.verbose.
+                if (Boolean.getBoolean("tornado.tc.verbose")) {
+                    System.err.println("[TC] background compilation of " + taskId + " failed: " + e);
+                }
             }
         });
     }

@@ -248,6 +248,24 @@ public class OCLCodeCache {
             code.invalidate();
         }
         cache.clear();
+        releasePrebuilt();
+    }
+
+    /**
+     * Releases the programs a prefetch built that no installation took: the prefetch covers every
+     * graph of a plan, including graphs a run never executes. One still building is released when
+     * its build ends.
+     */
+    private void releasePrebuilt() {
+        var left = new java.util.ArrayList<>(prebuilt.values());
+        prebuilt.clear();
+        for (var future : left) {
+            future.thenAccept(program -> {
+                if (program != null) {
+                    program.cleanup();
+                }
+            });
+        }
     }
 
     public boolean isCached(String key) {
