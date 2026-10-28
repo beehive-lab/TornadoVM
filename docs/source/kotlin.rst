@@ -205,6 +205,30 @@ runs a tile kernel on the JVM. Tile tasks need the CUDA backend; the examples ``
 ``TileMatrixMultiply`` and ``TileSoftmax`` (package ``uk.ac.manchester.tornado.kotlin.examples.tile``)
 fall back to the JVM elsewhere.
 
+Current limitations
+*******************
+
+* **Kotlin/JVM only.** Kotlin/Native, Kotlin/JS and Kotlin Multiplatform targets are not supported.
+* **Opt-in SDKs only.** The Kotlin modules are only in SDKs built with ``make KOTLIN=1``; the
+  default SDK does not ship them.
+* **Kernels are top-level functions.** Member functions of classes and ``object``\ s are instance
+  methods and cannot be kernels. Pass kernels as direct references (``::kernel``) or lambdas at the
+  ``task`` call site; a function reference stored in a variable first cannot be compiled.
+* **No** ``@Parallel``. kotlinc does not keep annotations on local variables. Use ``parallelFor``,
+  or ``KernelContext``, instead. As in Java, a parallel loop must start at a constant.
+* **No object allocation in kernels**, as in Java. Ranges with ``step`` or ``downTo`` create
+  progression objects and call the Kotlin standard library, so write strided and descending loops
+  as ``while`` loops. A plain ``for (i in a until b)`` loop is fine.
+* **No** ``suspend`` **kernels.** Coroutines cannot run on the device.
+* ``jvmTarget`` **must not be lower than the API's.** ``parallelFor`` and the Tile operators are
+  ``inline``, so code using them must target JVM 21 or newer with a ``-jdk21`` SDK, and JVM 22 or
+  newer with a ``-jdk22plus`` SDK.
+* **Modules with kernels must be open** (or open their kernel packages), as for Java.
+* **Backend-specific features stay backend-specific.** Tile tasks (``TileContext``) and library
+  tasks (``libraryTask``) need the CUDA backend, as in Java. Adding a tile task on another backend
+  fails while the graph is built, so check the backend first. Tile shapes must be compile-time
+  constants (literals or ``const val``).
+
 Examples and tests
 ******************
 

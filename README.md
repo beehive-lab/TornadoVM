@@ -137,6 +137,21 @@ WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, no
 
 ---
 
+## Kotlin
+
+Kernels can also be written in **Kotlin**. Kotlin compiles to JVM bytecode, so Kotlin kernels run on the same backends as Java ones, through a Kotlin API with task-graph builders, `Int` thread indices, `parallelFor`, and `Tile` operators for the TileContext API. Build it with `make KOTLIN=1`.
+
+```kotlin
+fun vectorAdd(context: KernelContext, a: TFloatArray, b: TFloatArray, c: TFloatArray) {
+    val i = context.globalIdX
+    if (i < c.size) c[i] = a[i] + b[i]
+}
+```
+
+[Kotlin guide, including current limitations →](tornado-kotlin/README.md) · [documentation](docs/source/kotlin.rst)
+
+---
+
 ## 🟩 The NVIDIA ecosystem, native to Java
 
 On NVIDIA hardware, TornadoVM is an open-source on-ramp to the whole CUDA software stack, callable from the same `TaskGraph` you already use. Generated kernels and native library calls **share TornadoVM-managed device buffers on one CUDA stream**, so a JIT-compiled kernel can feed a cuBLAS call and consume its output with no extra copies and no host synchronization.
