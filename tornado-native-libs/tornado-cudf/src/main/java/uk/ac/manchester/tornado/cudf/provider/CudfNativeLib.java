@@ -472,7 +472,8 @@ public final class CudfNativeLib {
 
     static void load() {
         if (!isAvailable()) {
-            throw new TornadoRuntimeException("[ERROR] Unable to load the cuDF shim. Build libtornado-cudf.so against RAPIDS libcudf -- see tornado-native-libs/tornado-cudf/README.md -- and put it on the library path.");
+            throw new TornadoRuntimeException("[ERROR] Unable to load the cuDF shim. Build libtornado-cudf.so against RAPIDS libcudf "
+                    + "-- see tornado-native-libs/tornado-cudf/README.md -- and put it on the library path.");
         }
     }
 
