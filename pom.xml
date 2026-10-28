@@ -592,16 +592,6 @@
         <module>tornado-unittests</module>
         <module>tornado-assembly</module>
         <module>tornado-api</module>
-        <module>tornado-cublas</module>
-        <module>tornado-clblast</module>
-        <module>tornado-curand</module>
-        <module>tornado-cufft</module>
-        <module>tornado-cudnn</module>
-        <module>tornado-cusparse</module>
-        <module>tornado-cudf</module>
-        <module>tornado-cutlass</module>
-        <module>tornado-cuvs</module>
-        <module>tornado-mlx</module>
-        <module>tornado-nccl</module>
+        <module>tornado-native-libs</module>
     </modules>
 </project>

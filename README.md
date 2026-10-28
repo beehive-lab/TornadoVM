@@ -168,7 +168,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 }
 ```
 
-Library bindings are discovered via Java `ServiceLoader`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
+Library bindings are discovered via Java `ServiceLoader`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. All library modules (cuBLAS, cuFFT, cuDNN, cuSPARSE, cuRAND, cuDF, CUTLASS, cuVS, NCCL, CLBlast, Apple MLX) live in [`tornado-native-libs/`](tornado-native-libs/README.md). TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -211,7 +211,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 
 - min **JDK 21** — `JAVA_HOME` must point to it
 - GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, or macOS for Metal)
-- For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; for cuDF, RAPIDS libcudf (see `tornado-cudf/README.md`); on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
+- For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; for cuDF, RAPIDS libcudf (see `tornado-native-libs/tornado-cudf/README.md`); on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
 
 ### Install via SDKMAN!
 

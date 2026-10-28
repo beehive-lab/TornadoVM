@@ -352,7 +352,7 @@ new TaskGraph("layer")
     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 ```
 
-See [`tornado-mlx/README.md`](tornado-mlx/README.md) for the full operation list and benchmarks.
+See [`tornado-native-libs/tornado-mlx/README.md`](tornado-native-libs/tornado-mlx/README.md) for the full operation list and benchmarks.
 
 ### 3.9 NCCL — multi-GPU collectives and point-to-point (`nvidia/nccl`)
 
@@ -361,7 +361,7 @@ Collectives and point-to-point transfers across GPUs, in one process or several,
 device, and the collective is a library task in every rank's task graph. NCCL reads and writes the
 TornadoVM buffers directly, on the plan's stream, so the data stays on the GPUs between the kernels
 around it. The design and the full API are described in
-[`tornado-nccl/ARCHITECTURE.md`](tornado-nccl/ARCHITECTURE.md).
+[`tornado-native-libs/tornado-nccl/ARCHITECTURE.md`](tornado-native-libs/tornado-nccl/ARCHITECTURE.md).
 
 | Factory | Operation |
 |---|---|
@@ -671,7 +671,9 @@ tornado-test -V uk.ac.manchester.tornado.unittests.cutlass.TestCutlass
 ## 9. Write your own provider
 
 Adding a library needs **no core-runtime changes** — it is a module pair
-discovered via `java.util.ServiceLoader`. Four steps (mirror `tornado-cudnn`):
+discovered via `java.util.ServiceLoader`. Four steps (mirror
+`tornado-native-libs/tornado-cudnn`; the module goes next to it under `tornado-native-libs/`,
+see the checklist in [`tornado-native-libs/README.md`](tornado-native-libs/README.md)):
 
 **1. Factory** — build a `LibraryTaskDescriptor`:
 
@@ -737,10 +739,10 @@ open module tornado.mylib {
 **4. Native binding** — bind the library's calls with `java.lang.foreign`
 directly in `MyNativeLib.java` (see `CuBlasNativeLib`): a `SymbolLookup`
 resolved at class-init time and one downcall handle per entry point, no
-separate module or build step. Only add a `tornado-drivers/mylib-jni` CMake
+separate module or build step. Only add a `tornado-native-libs/mylib-jni` CMake
 module (see `cudnn-jni` for a host library, `cutlass-jni` for one that
-compiles device code) under the `cuda-backend` profile — plus wiring in the
-root `pom.xml`, the `tornado-drivers` profile, `tornado-assembly`
+compiles device code) under the `cuda-backend` profile — plus wiring in
+`tornado-native-libs/pom.xml`'s `cuda-backend` profile, `tornado-assembly`
 (`assembly.xml` + `pom.xml`), and `tornado.py` (`--add-modules`) — when the
 library needs actual compiled C/C++, not just a symbol table.
 
@@ -792,7 +794,8 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 ## See also
 
 - `docs/source/hybrid-api.rst` — architecture reference (SPI internals).
-- Per-provider READMEs: `tornado-cublas/`, `tornado-cufft/`, `tornado-cudnn/`,
+- Per-provider READMEs (index: [`tornado-native-libs/README.md`](tornado-native-libs/README.md)), under
+  `tornado-native-libs/`: `tornado-cublas/`, `tornado-cufft/`, `tornado-cudnn/`,
   `tornado-cutlass/`, `tornado-cusparse/`, `tornado-cuvs/`, `tornado-mlx/`.
 - Unit tests double as worked examples:
   `tornado-unittests/.../unittests/{cublas,cufft,cudnn,cusparse,cutlass,cuvs,mlx}/`.

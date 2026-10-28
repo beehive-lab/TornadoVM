@@ -6,8 +6,8 @@ description: Use NVIDIA NCCL from TornadoVM (tornado-nccl module) — multi-GPU 
 # NCCL with TornadoVM
 
 `tornado-nccl` runs NCCL operations as **library tasks** on TornadoVM device buffers, so a multi-GPU
-step (kernel → collective → kernel) stays on the GPUs. Read `tornado-nccl/ARCHITECTURE.md` for the
-design and full API, and `tornado-nccl/README.md` for a short tour. This skill is the working recipe.
+step (kernel → collective → kernel) stays on the GPUs. Read `tornado-native-libs/tornado-nccl/ARCHITECTURE.md` for the
+design and full API, and `tornado-native-libs/tornado-nccl/README.md` for a short tour. This skill is the working recipe.
 
 ## The model in four rules
 

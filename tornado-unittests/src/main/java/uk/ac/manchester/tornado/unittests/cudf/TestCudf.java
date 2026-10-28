@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
  *
  * <p>
  * Skipped unless the {@code libtornado-cudf.so} shim has been built, which is the usual case --
- * see {@code tornado-cudf/README.md}. Skipping rather than failing is the same contract every
+ * see {@code tornado-native-libs/tornado-cudf/README.md}. Skipping rather than failing is the same contract every
  * other library test here has: the binding is only exercisable where the library exists.
  */
 public class TestCudf extends TornadoTestBase {
