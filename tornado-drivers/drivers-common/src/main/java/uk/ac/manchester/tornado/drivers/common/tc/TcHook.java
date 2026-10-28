@@ -87,7 +87,7 @@ public final class TcHook {
      * layouts, batches, worker grids). The task id is left out: it reaches the code only through
      * device-launch labels, and an entry that printed one is reused only for the same task.
      */
-    private record Key(Method method, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
+    record Key(Method method, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
     }
 
     /** A kernel's tasks with their scalar values left out. */
@@ -100,14 +100,35 @@ public final class TcHook {
     }
 
     /** The scalar values the tasks of one shape have had, and whether its kernel compiles without them. */
-    private static final class Scalars {
+    static final class Scalars {
         private final Map<Integer, java.util.Set<Number>> values = new java.util.HashMap<>();
         /** The launch domain of the first, specialised, compilation: generic code must launch the same. */
         private List<uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering.Domain> domain;
         private boolean specialiseAlways;
+        /** Each task's decision, made once: compiling a task again (after its prefetch) must not change it. */
+        private final Map<List<ValueSpecialisation.Fact>, java.util.BitSet> decisions = new java.util.HashMap<>();
+        /** The first task of this shape compiled specialised: generic code must launch as it does. */
+        private Key firstSpecialised;
+
+        /**
+         * The positions to compile as runtime values for the task with these facts, decided the first
+         * time it is seen (in plan order: the prefetch decides on the dispatching thread) and the same
+         * from then on, whatever thread asks.
+         */
+        synchronized java.util.BitSet decide(Key key) {
+            var decided = decisions.get(key.facts());
+            if (decided == null) {
+                decided = observe(key.facts());
+                decisions.put(key.facts(), decided);
+                if (decided.isEmpty() && firstSpecialised == null) {
+                    firstSpecialised = key;
+                }
+            }
+            return specialiseAlways ? new java.util.BitSet() : (java.util.BitSet) decided.clone();
+        }
 
         /** Records the task's scalar values; returns the positions to compile as runtime values. */
-        synchronized java.util.BitSet observe(List<ValueSpecialisation.Fact> facts) {
+        private java.util.BitSet observe(List<ValueSpecialisation.Fact> facts) {
             var varying = new java.util.BitSet();
             for (int i = 0; i < facts.size(); i++) {
                 if (facts.get(i) instanceof ValueSpecialisation.Fact.Scalar(var value)) {
@@ -120,7 +141,7 @@ public final class TcHook {
                     }
                 }
             }
-            return specialiseAlways ? new java.util.BitSet() : varying;
+            return varying;
         }
     }
 
@@ -184,16 +205,13 @@ public final class TcHook {
             boolean strictFloatingPoint, boolean workerGrid) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         var facts = TcArguments.facts(method, arguments, batchThreads, batchIndexOffset);
-        if (workerGrid) {
-            facts.add(new ValueSpecialisation.Fact.WorkerGrid());
-        }
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
-        var key = new Key(method, target, options.withTask("?"), List.copyOf(facts));
-        var scalars = MEMOIZE && VARYING_SCALARS > 0 ? SCALARS.computeIfAbsent(Shape.of(key), k -> new Scalars()) : null;
-        var varying = scalars != null ? scalars.observe(key.facts()) : new java.util.BitSet();
+        var key = key(method, target, options, facts, workerGrid);
+        var scalars = scalars(key);
+        var varying = scalars != null ? scalars.decide(key) : new java.util.BitSet();
         if (!varying.isEmpty()) {
             var generic = generic(name, owner, loader, descriptor, options, key, varying, scalars, taskId);
             if (generic.isPresent()) {
@@ -212,6 +230,34 @@ public final class TcHook {
             }
         }
         return kernel(name, result.get(), facts, numThreads);
+    }
+
+    private static Key key(Method method, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts, boolean workerGrid) {
+        var all = new java.util.ArrayList<>(facts);
+        if (workerGrid) {
+            all.add(new ValueSpecialisation.Fact.WorkerGrid());
+        }
+        return new Key(method, target, options.withTask("?"), List.copyOf(all));
+    }
+
+    private static Scalars scalars(Key key) {
+        return MEMOIZE && VARYING_SCALARS > 0 ? SCALARS.computeIfAbsent(Shape.of(key), k -> new Scalars()) : null;
+    }
+
+    /**
+     * Records, on the calling thread, whether this task will be compiled specialised on its scalar
+     * arguments or with them as runtime values. A plan's prefetch calls it in task order before handing
+     * the compilation to a background thread, so the decisions, and the code generated, do not depend
+     * on how the compile threads are scheduled.
+     */
+    public static void decide(Method method, Object[] arguments, TargetCaps target, long batchThreads, long batchIndexOffset, String taskId, boolean strictFloatingPoint,
+            boolean workerGrid) {
+        var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
+        var key = key(method, target, options, TcArguments.facts(method, arguments, batchThreads, batchIndexOffset), workerGrid);
+        var scalars = scalars(key);
+        if (scalars != null) {
+            scalars.decide(key);
+        }
     }
 
     /** The memoised compilation for {@code key}, or a new one. */
@@ -273,8 +319,30 @@ public final class TcHook {
         } catch (RuntimeException | Error e) {
             result = Optional.empty();
         }
+        // The guard needs the launch domain of the specialised kernel: with compilations on several
+        // threads the generic one can finish first, so obtain it (from the memo, or by compiling).
+        List<ParallelLoopLowering.Domain> reference;
+        Key first;
         synchronized (scalars) {
-            if (result.isEmpty() || (scalars.domain != null && !scalars.domain.equals(result.get().domain()))) {
+            reference = scalars.domain;
+            first = scalars.firstSpecialised;
+        }
+        if (reference == null && first != null && result.isPresent()) {
+            try {
+                var specialised = compileOrReuse(name, owner, loader, descriptor, options, first, taskId);
+                if (specialised.isPresent()) {
+                    synchronized (scalars) {
+                        if (scalars.domain == null) {
+                            scalars.domain = specialised.get().domain();
+                        }
+                    }
+                }
+            } catch (RuntimeException | Error e) {
+                // no reference: the generic kernel is not used (below)
+            }
+        }
+        synchronized (scalars) {
+            if (result.isEmpty() || scalars.domain == null || !scalars.domain.equals(result.get().domain())) {
                 scalars.specialiseAlways = true;
                 COMPILATIONS.remove(genericKey);
                 if (VERBOSE) {
