@@ -22,9 +22,6 @@ import java.lang.foreign.GroupLayout;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Map;
 
 import hat.Accelerator;
 import optkl.ifacemapper.Buffer;
@@ -59,7 +56,6 @@ import uk.ac.manchester.tornado.babylon.tc.HatLayouts;
  */
 public final class HatTasks {
 
-    private final Map<Buffer, ByteArray> objects = Collections.synchronizedMap(new IdentityHashMap<>());
     private final HeaderArena arena;
 
     private HatTasks(HeaderArena arena) {
@@ -77,11 +73,10 @@ public final class HatTasks {
 
     /** The TornadoVM object for {@code buffer}, over its memory in place, for transfers and task arguments. */
     public ByteArray of(Buffer buffer) {
-        return objects.computeIfAbsent(buffer, b -> {
-            var segment = MappableIface.getMemorySegment(b);
-            return ByteArray.fromSegmentShallow(arena.tornadoSegment(segment)
-                    .orElseThrow(() -> new IllegalArgumentException("this HAT buffer was not allocated by the Accelerator HatTasks.on was given")));
-        });
+        if (HeaderArena.find(MappableIface.getMemorySegment(buffer)).isEmpty()) {
+            throw new IllegalArgumentException("this HAT buffer was not allocated by an Accelerator on TornadoHatBackend, or by TornadoBuffers");
+        }
+        return HatObjectAdapter.objectFor(buffer);
     }
 
     public <A> TaskGraph task(TaskGraph graph, String id, Task1<A> kernel, A a) {
@@ -133,7 +128,7 @@ public final class HatTasks {
     }
 
     /** The static method a kernel reference ({@code Kernels::step}) names. */
-    private static Method method(Serializable reference) {
+    static Method method(Serializable reference) {
         try {
             Method writeReplace = reference.getClass().getDeclaredMethod("writeReplace");
             writeReplace.setAccessible(true);
