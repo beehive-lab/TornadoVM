@@ -255,6 +255,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
     TestEntry("uk.ac.manchester.tornado.unittests.matrices.TestMatrixTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestAPI"),
+    TestEntry("uk.ac.manchester.tornado.unittests.api.TestUnderDemandTransfers"),
     TestEntry("uk.ac.manchester.tornado.unittests.warmup.TestWarmUp"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestInitDataTypes"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.TestMemoryLimit"),
