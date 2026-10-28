@@ -68,6 +68,9 @@ public class TestTileMasking extends TornadoTestBase {
 
     private static final int ROW_WIDTH = 256;
 
+    /** Row pitch of the strided output in the ragged-store test: 128 columns of gap after each row of 100. */
+    private static final int PITCH = 228;
+
     /** See {@link TestTileAttention} for why this is not {@code -inf}. */
     private static final float NEGATIVE_LIMIT = -1.0e30f;
 
@@ -124,6 +127,30 @@ public class TestTileMasking extends TornadoTestBase {
         Tile zeros = tc.zeros(DType.F32, 1, ROW_WIDTH);
         Tile hits = tc.select(tc.greaterThan(x, threshold), ones, zeros);
         ov.store(tc.sum(hits, 1), row, 0);
+    }
+
+    /**
+     * Unmasked {@code load} and {@code store} with tiles wider than the rows (128 over 100
+     * columns): the code generator must select the masked forms (zero-padded reads, dropped
+     * out-of-bounds writes), as {@link PartitionView} documents, since the extents are not
+     * provably divisible by the tile shape.
+     */
+    public static void raggedRowSums(TileContext tc, FloatArray in, FloatArray sums, int rows, int columns) {
+        PartitionView iv = tc.partition(tc.view(in, rows, columns), 1, 128);
+        PartitionView ov = tc.partition(tc.view(sums, rows, 1), 1, 1);
+        int row = tc.bidX();
+        ov.store(tc.sum(iv.load(row, 0), 1), row, 0);
+    }
+
+    /**
+     * out += 2 * in over rows of 100 columns stored 228 apart: the 128 columns between rows belong to
+     * no tile, so a store past the end of a row is seen there whatever order the blocks run in.
+     */
+    public static void raggedCopy(TileContext tc, FloatArray in, FloatArray out, int rows, int columns) {
+        PartitionView iv = tc.partition(tc.view(in, rows, columns), 1, 128);
+        PartitionView ov = tc.partition(tc.viewStrided(out, 0, rows, columns, PITCH), 1, 128);
+        int row = tc.bidX();
+        ov.store(tc.add(ov.load(row, 0), tc.scale(iv.load(row, 0), 2.0)), row, 0);
     }
 
     /** Row minimum and row product, the two reductions that arrived with the comparisons. */
@@ -276,6 +303,49 @@ public class TestTileMasking extends TornadoTestBase {
         GridScheduler grid = new GridScheduler(taskId, worker);
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
             plan.withGridScheduler(grid).execute();
+        }
+    }
+
+    @Test
+    public void testUnmaskedLoadOfRaggedRowsIsPadded() throws TornadoExecutionPlanException {
+        final int rows = 64;
+        final int columns = 100;
+        FloatArray in = randomRows(rows, columns, 711);
+        FloatArray sums = new FloatArray(rows);
+
+        run("ragged.k", new TaskGraph("ragged") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .task("k", TestTileMasking::raggedRowSums, new TileContext(), in, sums, rows, columns) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, sums), rows);
+
+        for (int r = 0; r < rows; r++) {
+            float expected = 0;
+            for (int c = 0; c < columns; c++) {
+                expected += in.get(r * columns + c);
+            }
+            assertEquals(expected, sums.get(r), 1e-3, "row " + r);
+        }
+    }
+
+    @Test
+    public void testUnmaskedStoreOfRaggedRowsStaysInside() throws TornadoExecutionPlanException {
+        final int rows = 64;
+        final int columns = 100;
+        final float guard = -12345.0f;
+        FloatArray in = randomRows(rows, columns, 712);
+        FloatArray out = new FloatArray(rows * PITCH);
+        out.init(guard);
+
+        run("raggedCopy.k", new TaskGraph("raggedCopy") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in, out) //
+                .task("k", TestTileMasking::raggedCopy, new TileContext(), in, out, rows, columns) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out), rows);
+
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < PITCH; c++) {
+                float expected = c < columns ? guard + 2.0f * in.get(r * columns + c) : guard;
+                assertEquals(expected, out.get(r * PITCH + c), 1e-2, "row " + r + ", column " + c + (c < columns ? "" : " (between rows)"));
+            }
         }
     }
 

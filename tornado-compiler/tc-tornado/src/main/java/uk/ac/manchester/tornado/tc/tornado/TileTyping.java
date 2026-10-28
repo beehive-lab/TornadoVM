@@ -114,8 +114,46 @@ public final class TileTyping {
                 if (inst.opcode() instanceof Opcode.Intrinsic(var name) && name.startsWith("tile.atomic.")) {
                     atomicOperands(inst, name);
                 }
+                if (inst.opcode() instanceof Opcode.Intrinsic(var name) && (name.equals("tile.load") || name.equals("tile.store")) && !fits(inst.operand(0))) {
+                    // CUDA Tile does not bounds-check the unmasked forms: a partial tile at the edge
+                    // of the tensor would read garbage or write past it. The masked forms zero-pad
+                    // reads and drop out-of-bounds writes (PartitionView's documented contract).
+                    inst.setOpcode(new Opcode.Intrinsic(name + "_masked"));
+                }
             }
         }
+    }
+
+    /**
+     * Whether every tile of {@code partition} lies inside its tensor: each extent of the view is a
+     * constant (after specialisation) that the tile shape divides.
+     */
+    private static boolean fits(Value partition) {
+        if (!(partition instanceof Inst p && p.type() instanceof TileType tile && p.operand(0) instanceof Inst view
+                && view.opcode() instanceof Opcode.Intrinsic(var viewName))) {
+            return false;
+        }
+        int first = view.immediates().has("elem") ? 1 : 2;
+        List<Value> extents;
+        if (viewName.equals("tile.view")) {
+            extents = view.operands().subList(first, view.operands().size());
+        } else if (viewName.equals("tile.view_strided")) {
+            // (array[, dtype], offset, rows, columns, row stride)
+            extents = view.operands().subList(first + 1, first + 3);
+        } else {
+            return false;
+        }
+        var shape = tile.shape();
+        if (extents.size() != shape.size()) {
+            return false;
+        }
+        for (int i = 0; i < shape.size(); i++) {
+            var extent = uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(extents.get(i));
+            if (extent.isEmpty() || extent.getAsLong() % shape.get(i) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
