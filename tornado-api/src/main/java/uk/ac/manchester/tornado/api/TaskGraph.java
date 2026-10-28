@@ -108,7 +108,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph addTask(TaskPackage taskPackage) {
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -150,7 +150,7 @@ public class TaskGraph implements TaskGraphInterface {
                     "The kernel method must be static, but " + method + " is not. A Method carries "
                             + "no receiver, so an instance method has no object to be invoked on.");
         }
-        taskGraphImpl.addTask(TaskPackage.createPackage(id, method, args));
+        addAdapted(TaskPackage.createPackage(id, method, args));
         return this;
     }
 
@@ -167,7 +167,7 @@ public class TaskGraph implements TaskGraphInterface {
     public TaskGraph task(String id, Task code) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -186,7 +186,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1> TaskGraph task(String id, Task1<T1> code, T1 arg) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -207,7 +207,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2> TaskGraph task(String id, Task2<T1, T2> code, T1 arg1, T2 arg2) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -230,7 +230,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3> TaskGraph task(String id, Task3<T1, T2, T3> code, T1 arg1, T2 arg2, T3 arg3) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -255,7 +255,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4> TaskGraph task(String id, Task4<T1, T2, T3, T4> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -282,7 +282,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5> TaskGraph task(String id, Task5<T1, T2, T3, T4, T5> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -311,7 +311,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5, T6> TaskGraph task(String id, Task6<T1, T2, T3, T4, T5, T6> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -342,7 +342,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5, T6, T7> TaskGraph task(String id, Task7<T1, T2, T3, T4, T5, T6, T7> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -375,7 +375,7 @@ public class TaskGraph implements TaskGraphInterface {
     public <T1, T2, T3, T4, T5, T6, T7, T8> TaskGraph task(String id, Task8<T1, T2, T3, T4, T5, T6, T7, T8> code, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -411,7 +411,7 @@ public class TaskGraph implements TaskGraphInterface {
             T9 arg9) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -449,7 +449,7 @@ public class TaskGraph implements TaskGraphInterface {
             T8 arg8, T9 arg9, T10 arg10) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -489,7 +489,7 @@ public class TaskGraph implements TaskGraphInterface {
             T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -531,7 +531,7 @@ public class TaskGraph implements TaskGraphInterface {
             T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -575,7 +575,7 @@ public class TaskGraph implements TaskGraphInterface {
             T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -621,7 +621,7 @@ public class TaskGraph implements TaskGraphInterface {
             T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -669,7 +669,7 @@ public class TaskGraph implements TaskGraphInterface {
             T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -679,7 +679,7 @@ public class TaskGraph implements TaskGraphInterface {
             T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -689,7 +689,7 @@ public class TaskGraph implements TaskGraphInterface {
             T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16, T17 arg17) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -699,7 +699,7 @@ public class TaskGraph implements TaskGraphInterface {
             T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16, T17 arg17, T18 arg18) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -709,7 +709,7 @@ public class TaskGraph implements TaskGraphInterface {
             T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16, T17 arg17, T18 arg18, T19 arg19) {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -720,7 +720,7 @@ public class TaskGraph implements TaskGraphInterface {
         checkTaskName(id);
         TaskPackage taskPackage = TaskPackage.createPackage(id, code, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19,
                 arg20);
-        taskGraphImpl.addTask(taskPackage);
+        addAdapted(taskPackage);
         return this;
     }
 
@@ -970,7 +970,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph transferToDevice(final int mode, Object... objects) {
-        taskGraphImpl.transferToDevice(mode, objects);
+        taskGraphImpl.transferToDevice(mode, ObjectAdapters.adapt(objects));
         return this;
     }
 
@@ -988,13 +988,13 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph consumeFromDevice(String uniqueTaskGraphName, Object... objects) {
-        taskGraphImpl.consumeFromDevice(uniqueTaskGraphName, objects);
+        taskGraphImpl.consumeFromDevice(uniqueTaskGraphName, ObjectAdapters.adapt(objects));
         return this;
     }
 
     @Override
     public TaskGraph consumeFromDevice(Object... objects) {
-        taskGraphImpl.consumeFromDevice(this.taskGraphName, objects);
+        taskGraphImpl.consumeFromDevice(this.taskGraphName, ObjectAdapters.adapt(objects));
         return this;
     }
 
@@ -1024,7 +1024,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph transferToHost(final int mode, Object... objects) {
-        taskGraphImpl.transferToHost(mode, objects);
+        taskGraphImpl.transferToHost(mode, ObjectAdapters.adapt(objects));
         return this;
     }
 
@@ -1044,7 +1044,7 @@ public class TaskGraph implements TaskGraphInterface {
      */
     @Override
     public TaskGraph persistOnDevice(Object... objects) {
-        taskGraphImpl.transferToHost(DataTransferMode.UNDER_DEMAND, objects);
+        taskGraphImpl.transferToHost(DataTransferMode.UNDER_DEMAND, ObjectAdapters.adapt(objects));
         return this;
     }
 
@@ -1318,4 +1318,10 @@ public class TaskGraph implements TaskGraphInterface {
         return this;
     }
 
+
+    /** Adds a task, its arguments adapted by the installed {@link ObjectAdapter}s. */
+    private void addAdapted(TaskPackage taskPackage) {
+        ObjectAdapters.adaptTask(taskPackage);
+        taskGraphImpl.addTask(taskPackage);
+    }
 }
