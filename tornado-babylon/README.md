@@ -197,6 +197,10 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 - **`HatTasks`:** buffers must come from an `Accelerator` on `TornadoHatBackend`. A kernel is a method reference to a static `@Reflect` method; a lambda is refused with a clear message.
 - **`@Parallel` loops** in TornadoVM kernels compiled from their code models need class files compiled with `-g`.
 
+- **Buffer residency:**
+  - Host accesses are tracked in the compute method HAT dispatches (as HAT's own backends do). A call from it to another method that receives buffers counts as writing them.
+  - A kernel that writes a buffer through array views, vector stores, tiles or atomics, or a helper compiled from bytecode, counts as writing all of that buffer.
+
 **In HAT itself** (HAT's own checks, before any backend; the same on HAT's CUDA and OpenCL backends):
 
 - A literal written in a `compute` lambda arrives as `null`; only captured values are passed. Use variables: `int tile = 256; accelerator.compute(cc -> k(cc, a, tile))`.
