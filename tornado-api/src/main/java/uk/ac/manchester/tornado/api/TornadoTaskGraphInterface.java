@@ -103,6 +103,13 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void withPreCompilation(ExecutorFrame executionPackage);
 
+    /**
+     * Starts compiling this graph's tasks on background threads; a later compilation of the same
+     * task (withPreCompilation, or the first execution) waits for the result instead of compiling.
+     */
+    default void prefetchCompilations(ExecutorFrame executionPackage) {
+    }
+
     void freeDeviceMemory();
 
     void syncRuntimeTransferToHost(Object... objects);

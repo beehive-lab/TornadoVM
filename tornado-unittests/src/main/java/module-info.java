@@ -4,6 +4,7 @@ open module tornado.unittests {
     requires org.junit.platform.suite.api;
     requires transitive tornado.api;
     requires tornado.runtime;
+    requires jdk.jfr;
     requires tornado.cublas;
     requires tornado.clblast;
     requires tornado.curand;

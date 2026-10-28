@@ -70,6 +70,13 @@ public interface TornadoXPUDevice extends TornadoDevice {
     TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task);
 
     /**
+     * Starts compiling {@code task} on a background thread, ahead of its {@link #installCode}; a
+     * backend without such support ignores the call.
+     */
+    default void prefetch(long executionPlanId, SchedulableTask task) {
+    }
+
+    /**
      * It checks if the specified schedulable task is in full Just-In-Time (JIT)
      * mode.
      *

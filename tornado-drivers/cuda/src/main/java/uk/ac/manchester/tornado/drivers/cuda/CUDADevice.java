@@ -54,7 +54,6 @@ public class CUDADevice implements CUDATargetDevice {
     private final long devicePtr;
     private final int index;
 
-    private final ByteBuffer buffer;
     private String name;
     private int deviceEndianLittle;
     private String openCLVersion;
@@ -87,8 +86,6 @@ public class CUDADevice implements CUDATargetDevice {
     public CUDADevice(int index, long devicePointer) {
         this.index = index;
         this.devicePtr = devicePointer;
-        this.buffer = ByteBuffer.allocate(MAX_BUFFER_SIZE);
-        this.buffer.order(CUDADriver.BYTE_ORDER);
         initialValues();
         obtainDeviceProperties();
     }
@@ -311,7 +308,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (deviceType != CUDADeviceType.Unknown) {
             return deviceType;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_TYPE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_TYPE.getValue());
         long type = buffer.getLong();
         deviceType = CUDADeviceType.toDeviceType(type);
         return deviceType;
@@ -319,7 +316,7 @@ public class CUDADevice implements CUDATargetDevice {
 
     public int getDeviceVendorId() {
         if (deviceVendorID == INIT_VALUE) {
-            queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VENDOR_ID.getValue());
+            ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VENDOR_ID.getValue());
             deviceVendorID = buffer.getInt();
         }
         return deviceVendorID;
@@ -329,20 +326,20 @@ public class CUDADevice implements CUDATargetDevice {
         if (deviceMemoryBaseAlignment != INIT_VALUE) {
             return deviceMemoryBaseAlignment;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MEM_BASE_ADDR_ALIGN.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MEM_BASE_ADDR_ALIGN.getValue());
         deviceMemoryBaseAlignment = buffer.getInt();
         return deviceMemoryBaseAlignment;
     }
 
     public boolean isDeviceAvailable() {
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_AVAILABLE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_AVAILABLE.getValue());
         return (buffer.get() == 1);
     }
 
     @Override
     public String getDeviceName() {
         if (name == null) {
-            queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_NAME.getValue());
+            ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_NAME.getValue());
             try {
                 name = new String(buffer.array(), "ASCII").trim();
             } catch (UnsupportedEncodingException e) {
@@ -357,7 +354,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (deviceVendorName != null) {
             return deviceVendorName;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VENDOR.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VENDOR.getValue());
         try {
             deviceVendorName = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {
@@ -371,7 +368,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (driverVersion != null) {
             return driverVersion;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DRIVER_VERSION.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DRIVER_VERSION.getValue());
         try {
             driverVersion = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {
@@ -382,7 +379,7 @@ public class CUDADevice implements CUDATargetDevice {
 
     public String getDeviceVersion() {
         if (deviceVersion == null) {
-            queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VERSION.getValue());
+            ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VERSION.getValue());
             try {
                 deviceVersion = new String(buffer.array(), "ASCII").trim();
             } catch (UnsupportedEncodingException e) {
@@ -394,7 +391,7 @@ public class CUDADevice implements CUDATargetDevice {
 
     public String getDeviceOpenCLCVersion() {
         if (openCLVersion == null) {
-            queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_OPENCL_C_VERSION.getValue());
+            ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_OPENCL_C_VERSION.getValue());
             try {
                 openCLVersion = new String(buffer.array(), "ASCII").trim();
             } catch (UnsupportedEncodingException e) {
@@ -408,7 +405,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (deviceExtensions != null) {
             return deviceExtensions;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_EXTENSIONS.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_EXTENSIONS.getValue());
         try {
             deviceExtensions = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {
@@ -436,7 +433,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (maxComputeUnits != -1) {
             return maxComputeUnits;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_COMPUTE_UNITS.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_COMPUTE_UNITS.getValue());
         maxComputeUnits = buffer.getInt();
         return maxComputeUnits;
     }
@@ -446,7 +443,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (deviceMaxClockFrequency != INIT_VALUE) {
             return deviceMaxClockFrequency;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_CLOCK_FREQUENCY.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_CLOCK_FREQUENCY.getValue());
         deviceMaxClockFrequency = buffer.getInt();
         return deviceMaxClockFrequency;
     }
@@ -456,7 +453,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (maxAllocationSize != -1) {
             return maxAllocationSize;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_MEM_ALLOC_SIZE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_MEM_ALLOC_SIZE.getValue());
         maxAllocationSize = buffer.getLong();
         return maxAllocationSize;
     }
@@ -466,7 +463,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (globalMemorySize != -1) {
             return globalMemorySize;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_GLOBAL_MEM_SIZE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_GLOBAL_MEM_SIZE.getValue());
         globalMemorySize = buffer.getLong();
         return globalMemorySize;
     }
@@ -476,7 +473,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (localMemorySize != -1) {
             return localMemorySize;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_LOCAL_MEM_SIZE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_LOCAL_MEM_SIZE.getValue());
         localMemorySize = buffer.getLong();
         return localMemorySize;
     }
@@ -485,7 +482,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (maxWorkItemDimensions != -1) {
             return maxWorkItemDimensions;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS.getValue());
         maxWorkItemDimensions = buffer.getInt();
         return maxWorkItemDimensions;
     }
@@ -499,7 +496,7 @@ public class CUDADevice implements CUDATargetDevice {
 
         final int elements = getDeviceMaxWorkItemDimensions();
 
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_WORK_ITEM_SIZES.getValue());
         buffer.rewind();
         maxWorkItemSizes = new long[elements];
         for (int i = 0; i < elements; i++) {
@@ -509,7 +506,7 @@ public class CUDADevice implements CUDATargetDevice {
     }
 
     private int getDeviceMaxWorkGroupSize_0() {
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_WORK_GROUP_SIZE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_WORK_GROUP_SIZE.getValue());
         maxWorkGroupSize = buffer.getInt();
         return maxWorkGroupSize;
     }
@@ -533,13 +530,13 @@ public class CUDADevice implements CUDATargetDevice {
         if (maxConstantBufferSize != -1) {
             return maxConstantBufferSize;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE.getValue());
         maxConstantBufferSize = buffer.getLong();
         return maxConstantBufferSize;
     }
 
     private long getDoubleFPConfig() {
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_DOUBLE_FP_CONFIG.getValue());
         return buffer.getLong();
     }
 
@@ -555,7 +552,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (singleFPConfig != -1) {
             return singleFPConfig;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_SINGLE_FP_CONFIG.getValue());
         singleFPConfig = buffer.getLong();
         return singleFPConfig;
     }
@@ -564,13 +561,13 @@ public class CUDADevice implements CUDATargetDevice {
         if (deviceAddressBits != INIT_VALUE) {
             return deviceAddressBits;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_ADDRESS_BITS.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_ADDRESS_BITS.getValue());
         deviceAddressBits = buffer.getInt();
         return deviceAddressBits;
     }
 
     public boolean hasDeviceUnifiedMemory() {
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_HOST_UNIFIED_MEMORY.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_HOST_UNIFIED_MEMORY.getValue());
         return buffer.getInt() == CUDADriver.CL_TRUE;
     }
 
@@ -578,13 +575,13 @@ public class CUDADevice implements CUDATargetDevice {
         if (localMemoryType != null) {
             return localMemoryType;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_LOCAL_MEM_TYPE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_LOCAL_MEM_TYPE.getValue());
         localMemoryType = CUDALocalMemType.toLocalMemType(buffer.getInt());
         return localMemoryType;
     }
 
     private int getDeviceEndianLittle() {
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_ENDIAN_LITTLE.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_ENDIAN_LITTLE.getValue());
         deviceEndianLittle = buffer.getInt();
         return deviceEndianLittle;
     }
@@ -616,7 +613,7 @@ public class CUDADevice implements CUDATargetDevice {
     @Override
     public int getAsyncEngineCount() {
         if (asyncEngineCount == INIT_VALUE) {
-            queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_ASYNC_ENGINE_COUNT.getValue());
+            ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_ASYNC_ENGINE_COUNT.getValue());
             asyncEngineCount = buffer.getInt();
         }
         return asyncEngineCount;
@@ -625,7 +622,7 @@ public class CUDADevice implements CUDATargetDevice {
     @Override
     public boolean supportsConcurrentKernels() {
         if (concurrentKernels == INIT_VALUE) {
-            queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_CONCURRENT_KERNELS.getValue());
+            ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.TORNADO_DEVICE_CONCURRENT_KERNELS.getValue());
             concurrentKernels = buffer.getInt();
         }
         return concurrentKernels != 0;
@@ -643,7 +640,7 @@ public class CUDADevice implements CUDATargetDevice {
         if (version != null) {
             return version;
         }
-        queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VERSION.getValue());
+        ByteBuffer buffer = queryOpenCLAPI(CUDADeviceInfo.CL_DEVICE_VERSION.getValue());
         try {
             version = new String(buffer.array(), "ASCII").trim();
         } catch (UnsupportedEncodingException e) {
@@ -652,10 +649,16 @@ public class CUDADevice implements CUDATargetDevice {
         return version;
     }
 
-    private synchronized void queryOpenCLAPI(int value) {
-        Arrays.fill(buffer.array(), (byte) 0);
-        buffer.clear();
-        clGetDeviceInfo(devicePtr, value, buffer.array());
+    /**
+     * Queries one device property into a buffer of its own. Properties are read from several threads
+     * (kernels compile in parallel); a buffer shared by all queries let one query read another's bytes
+     * and cache them (e.g. a version string without its space: deviceVersion threw
+     * ArrayIndexOutOfBoundsException).
+     */
+    private ByteBuffer queryOpenCLAPI(int value) {
+        ByteBuffer result = ByteBuffer.allocate(MAX_BUFFER_SIZE).order(CUDADriver.BYTE_ORDER);
+        clGetDeviceInfo(devicePtr, value, result.array());
+        return result;
     }
 
     @Override

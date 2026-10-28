@@ -85,6 +85,7 @@ class TornadoExecutor {
     }
 
     void execute(ExecutorFrame executionPackage) {
+        prefetchOnce(executionPackage);
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             immutableTaskGraph.execute(executionPackage);
             // The next graph's consumeFromDevice without a producer name imports from the graph
@@ -117,7 +118,29 @@ class TornadoExecutor {
         }
     }
 
+    /** -Dtornado.parallel.compile=false compiles a plan's tasks one after the other, on the calling thread. */
+    private static final boolean PARALLEL_COMPILE = Boolean.parseBoolean(System.getProperty("tornado.parallel.compile", "true"));
+
+    /** Whether the plan's compilations were started (prefetchOnce). */
+    private boolean prefetched;
+
+    /**
+     * Before the plan first compiles anything (withPreCompilation, or its first execute, whichever
+     * comes first): starts compiling the kernels of every graph of the plan on background threads,
+     * including graphs not selected with withGraph(). The in-order compilation of each task then
+     * waits for its result, so the kernels of all graphs compile in parallel.
+     */
+    private void prefetchOnce(ExecutorFrame executorFrame) {
+        if (!PARALLEL_COMPILE || prefetched) {
+            return;
+        }
+        prefetched = true;
+        List<ImmutableTaskGraph> all = subgraphList != null ? subgraphList : immutableTaskGraphList;
+        all.forEach(immutableTaskGraph -> immutableTaskGraph.prefetchCompilations(executorFrame));
+    }
+
     void withPreCompilation(ExecutorFrame executorFrame) {
+        prefetchOnce(executorFrame);
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withPreCompilation(executorFrame));
     }
 
@@ -462,6 +485,7 @@ class TornadoExecutor {
     }
 
     private void runForWarmUp(ExecutorFrame executorFrame) {
+        prefetchOnce(executorFrame);
         immutableTaskGraphList.forEach(immutableTaskGraph -> {
             immutableTaskGraph.execute(executorFrame);
             // Update state for all task-graphs within the execution plan: the graph that just ran

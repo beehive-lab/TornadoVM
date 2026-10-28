@@ -22,6 +22,7 @@ package uk.ac.manchester.tornado.drivers.opencl.runtime;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -229,6 +230,27 @@ public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice, Torna
         return atomicsBuffer;
     }
 
+    @Override
+    public void prefetch(long executionPlanId, SchedulableTask task) {
+        if (!(task instanceof CompilableTask executable)) {
+            return;
+        }
+        final OCLDeviceContextInterface deviceContext = getDeviceContext();
+        if (deviceContext.isCached(executionPlanId, task.getId(), executable.getMethod().getName())) {
+            return;
+        }
+        final String flags = executable.meta().getCompilerFlags(TornadoVMBackendType.OPENCL);
+        TcKernels.prefetch(executable, tcTarget(), (entry, source) -> deviceContext.prefetchSource(executionPlanId, buildFlags(flags, source), source));
+    }
+
+    /** The build flags compileTask uses for {@code source}: strict when the kernel turns contraction off. */
+    private static String buildFlags(String flags, byte[] source) {
+        if (flags != null && new String(source, StandardCharsets.UTF_8).contains("#pragma OPENCL FP_CONTRACT OFF")) {
+            return TornadoTaskGraph.strictOpenCLFlags(flags);
+        }
+        return flags;
+    }
+
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final OCLDeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;
@@ -243,7 +265,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice, Torna
             // Intel compilers drop exactly those roundings.
             var meta = executable.meta();
             var flags = meta.getCompilerFlags(TornadoVMBackendType.OPENCL);
-            if (flags != null && new String(source, java.nio.charset.StandardCharsets.UTF_8).contains("#pragma OPENCL FP_CONTRACT OFF")) {
+            if (flags != null && new String(source, StandardCharsets.UTF_8).contains("#pragma OPENCL FP_CONTRACT OFF")) {
                 meta.setCompilerFlags(TornadoVMBackendType.OPENCL, TornadoTaskGraph.strictOpenCLFlags(flags));
             }
             return deviceContext.installCode(executionPlanId, meta, task.getId(), entry, source);

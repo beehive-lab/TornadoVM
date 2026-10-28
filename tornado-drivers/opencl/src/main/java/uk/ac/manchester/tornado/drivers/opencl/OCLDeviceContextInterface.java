@@ -77,4 +77,11 @@ public interface OCLDeviceContextInterface extends TornadoDeviceContext {
 
     OCLProgram createProgramWithIL(byte[] binary, long[] lengths);
 
+
+    /**
+     * Creates and builds a program for {@code source} with {@code buildFlags} on the calling
+     * (background) thread; installing the same source with the same flags later uses that program.
+     */
+    default void prefetchSource(long executionPlanId, String buildFlags, byte[] source) {
+    }
 }

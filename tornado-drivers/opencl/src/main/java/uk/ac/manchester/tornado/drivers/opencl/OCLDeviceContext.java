@@ -615,10 +615,13 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     }
 
     private OCLCodeCache getOCLCodeCache(long executionPlanId) {
-        if (!codeCache.containsKey(executionPlanId)) {
-            codeCache.put(executionPlanId, new OCLCodeCache(this));
-        }
-        return codeCache.get(executionPlanId);
+        // Atomic: background compilations (prefetch) ask for the plan's cache too.
+        return codeCache.computeIfAbsent(executionPlanId, id -> new OCLCodeCache(this));
+    }
+
+    @Override
+    public void prefetchSource(long executionPlanId, String buildFlags, byte[] source) {
+        getOCLCodeCache(executionPlanId).prefetchSource(buildFlags, source);
     }
 
     @Override
