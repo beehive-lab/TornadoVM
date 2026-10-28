@@ -199,6 +199,15 @@ public final class CUDACompiler {
                 if (running != null) {
                     mine = null;
                     cached = running.join();
+                } else {
+                    // Another thread may have finished this image (and left IN_FLIGHT) between the
+                    // miss above and our registration: take its image instead of compiling again.
+                    cached = IMAGE_CACHE.get(cacheKey);
+                    if (cached != null) {
+                        mine.complete(cached);
+                        IN_FLIGHT.remove(cacheKey, mine);
+                        mine = null;
+                    }
                 }
             }
             if (cached != null) {
