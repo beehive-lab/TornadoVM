@@ -227,15 +227,28 @@ public class HatTasksChecks {
             expect(hat.of(data) == hat.of(data), "hat.of returned two objects for one buffer");
         });
 
-        check("a buffer of another Accelerator", () -> {
-            var other = new Accelerator(MethodHandles.lookup(), Backend.FIRST);
-            var foreign = F32Array.create(other, 16);
+        check("a buffer outside TornadoVM's arenas", () -> {
+            var foreign = F32Array.create(optkl.util.carriers.ArenaAndLookupCarrier.of(MethodHandles.lookup(), java.lang.foreign.Arena.ofAuto()), 16);
             try {
                 hat.of(foreign);
                 throw new AssertionError("no error");
             } catch (IllegalArgumentException expected) {
-                expect(expected.getMessage().contains("not allocated by the Accelerator"), "message: " + expected.getMessage());
+                expect(expected.getMessage().contains("not allocated by an Accelerator on TornadoHatBackend"), "message: " + expected.getMessage());
             }
+        });
+
+        check("a buffer of another TornadoVM Accelerator", () -> {
+            var other = new Accelerator(MethodHandles.lookup(), Backend.FIRST);
+            var data = F32Array.create(other, n);
+            var graph = new TaskGraph("otherAcc").transferToDevice(DataTransferMode.EVERY_EXECUTION, hat.of(data));
+            hat.task(graph, "addOne", HatTasksChecks::addOne, data);
+            graph.transferToHost(DataTransferMode.EVERY_EXECUTION, hat.of(data));
+            try (var plan = new TornadoExecutionPlan(graph.snapshot())) {
+                plan.withDevice(device).withGridScheduler(new GridScheduler("otherAcc.addOne", new WorkerGrid1D(n))).execute();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            expect(data.array(5) == 1f, "data[5] = " + data.array(5));
         });
 
         check("a lambda, not a method reference", () -> {

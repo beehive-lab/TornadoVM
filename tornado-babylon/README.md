@@ -150,10 +150,37 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
      DISPLAY=:77 ./run.sh -d 1:0 $H/hat-example-life-1.0.jar:$H/hat-example-shared-1.0.jar:build/examples lifebench.LifeWindow 10
      ```
 
-4. **Interface-mapped data for TornadoVM.**
-   - **Today:** TornadoVM programs describe data with native arrays (`FloatArray`, ...) or explicit memory layouts. HAT's interface mapping (`Buffer`/`Struct` interfaces with a `Schema`, e.g. `Universe` with `Body` structs) hides the layout behind Java interfaces.
-   - **What exists:** `HatTasks` already lets TornadoVM task graphs consume such buffers.
-   - **Goal:** make interface-mapped buffers first-class in TornadoVM's API, so they can be passed to `TaskGraph.task` and used in TornadoVM kernels without `HatTasks`. TC already compiles their accessors from bound layouts.
+4. **Done: interface-mapped data in TornadoVM's API.**
+   - HAT's interface-mapped buffers can be passed to TornadoVM as they are, with no `HatTasks` and no HAT `Accelerator`:
+     - to `TaskGraph.task` (as arguments of TornadoVM kernels);
+     - to `transferToDevice` and `transferToHost`;
+     - to `TornadoExecutionResult.transferToHost` and `TornadoExecutionPlan.transferToDevice`.
+   - Buffers are Java interfaces with a `Schema`, structs included, and no layout written by hand.
+   - **How:** TornadoVM's new `ObjectAdapter` service (its own PR, #ADAPTER) lets a library stand objects in for TornadoVM objects. This module installs `HatObjectAdapter`: a buffer becomes a `ByteArray` over its own memory, and the kernel parameter that receives it gets its layout, so TC compiles the kernel's accessors from its code model. `TornadoBuffers.allocate` allocates such buffers for TornadoVM.
+   - **Example** (`examples/src/interfacemapped/InterfaceMappedParticles.java`):
+     ```java
+     public interface Particles extends Buffer {
+         int length();
+         interface Particle extends Struct { float x(); float y(); float vx(); float vy(); void x(float x); /* ... */ }
+         Particle particle(long index);
+         Schema<Particles> schema = Schema.of(Particles.class, p -> p.arrayLen("length").array("particle", q -> q.fields("x", "y", "vx", "vy")));
+     }
+
+     @Reflect
+     public static void step(KernelContext context, Particles particles, float dt) {   // a TornadoVM kernel
+         Particles.Particle p = particles.particle(context.globalIdx);
+         p.x(p.x() + p.vx() * dt);
+         // ...
+     }
+
+     Particles particles = TornadoBuffers.allocate(MethodHandles.lookup(), Particles.schema, n);
+     var graph = new TaskGraph("particles")
+             .transferToDevice(DataTransferMode.FIRST_EXECUTION, particles)
+             .task("step", InterfaceMappedParticles::step, new KernelContext(), particles, dt)
+             .task("energy", InterfaceMappedParticles::energy, new KernelContext(), particles, energy)   // energy: a FloatArray
+             .transferToHost(DataTransferMode.UNDER_DEMAND, particles);
+     ```
+     100,000 particles, 50 steps: identical to Java within 8.7e-8 on CUDA, OpenCL RTX 4090 and OpenCL UHD 770.
 
 ## Current limitations
 

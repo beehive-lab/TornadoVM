@@ -36,7 +36,8 @@ final class HeaderArena implements Arena {
     private static final long RESERVED = 64;
 
     private final Arena delegate = Arena.ofShared();
-    private final Map<Long, MemorySegment> tornadoSegments = new ConcurrentHashMap<>();
+    /** Every HeaderArena's allocations: start address to TornadoVM header + data. */
+    private static final Map<Long, MemorySegment> tornadoSegments = new ConcurrentHashMap<>();
 
     @Override
     public MemorySegment allocate(long byteSize, long byteAlignment) {
@@ -50,6 +51,11 @@ final class HeaderArena implements Arena {
 
     /** For a buffer allocated here (starting at {@code segment}), its memory with the TornadoVM header in front. */
     Optional<MemorySegment> tornadoSegment(MemorySegment segment) {
+        return find(segment);
+    }
+
+    /** For a buffer allocated in any HeaderArena, its memory with the TornadoVM header in front. */
+    static Optional<MemorySegment> find(MemorySegment segment) {
         var whole = tornadoSegments.get(segment.address());
         return whole != null && whole.byteSize() - TornadoNativeArray.ARRAY_HEADER == segment.byteSize() ? Optional.of(whole) : Optional.empty();
     }
