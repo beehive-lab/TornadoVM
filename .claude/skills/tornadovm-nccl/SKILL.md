@@ -6,8 +6,8 @@ description: Use NVIDIA NCCL from TornadoVM (tornado-nccl module) — multi-GPU 
 # NCCL with TornadoVM
 
 `tornado-nccl` runs NCCL operations as **library tasks** on TornadoVM device buffers, so a multi-GPU
-step (kernel → collective → kernel) stays on the GPUs. Read `tornado-nccl/ARCHITECTURE.md` for the
-design and full API, and `tornado-nccl/README.md` for a short tour. This skill is the working recipe.
+step (kernel → collective → kernel) stays on the GPUs. Read `tornado-native-libs/tornado-nccl/ARCHITECTURE.md` for the
+design and full API, and `tornado-native-libs/tornado-nccl/README.md` for a short tour. This skill is the working recipe.
 
 ## The model in four rules
 
@@ -146,4 +146,4 @@ tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclGroup [
 - Anything that can block in NCCL needs thought about abort: `ncclCommAbort` cannot run on a thread
   that is still capturing, and blocks while an instantiated graph uses the communicator.
 - Register new tests in `tornado-assembly/src/bin/tornado-test`, and update `README.md`,
-  `ARCHITECTURE.md` and `HYBRID_API_GUIDE.md` §3.9.
+  `ARCHITECTURE.md` and `tornado-native-libs/HYBRID_API_GUIDE.md` §3.9.

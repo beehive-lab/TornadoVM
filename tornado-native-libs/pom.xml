@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.beehive-lab</groupId>
+        <artifactId>tornado</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <artifactId>tornado-native-libs</artifactId>
+    <name>tornado-native-libs</name>
+    <description>Aggregator for the TornadoVM library-task modules and their native shims</description>
+    <packaging>pom</packaging>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- Aggregator only: no module inherits from this pom. Each library module keeps
+         io.github.beehive-lab:tornado as its parent (relativePath ../../pom.xml) and each native
+         shim keeps tornado-drivers (relativePath ../../tornado-drivers/pom.xml), so the POMs
+         published to Maven Central are the same as before the modules were grouped here. This
+         pom is not in deploy-maven-central.yml's -pl list and is never published. -->
+    <modules>
+        <module>tornado-cublas</module>
+        <module>tornado-clblast</module>
+        <module>tornado-curand</module>
+        <module>tornado-cufft</module>
+        <module>tornado-cudnn</module>
+        <module>tornado-cusparse</module>
+        <module>tornado-cudf</module>
+        <module>tornado-cutlass</module>
+        <module>tornado-cuvs</module>
+        <module>tornado-mlx</module>
+        <module>tornado-nccl</module>
+    </modules>
+
+    <profiles>
+        <profile>
+            <id>cuda-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <!-- Native shims built with CMake; they need the CUDA toolkit and ship only in the SDK. -->
+            <modules>
+                <module>cudnn-jni</module>
+                <module>cudf-jni</module>
+                <module>cutlass-jni</module>
+            </modules>
+        </profile>
+    </profiles>
+</project>

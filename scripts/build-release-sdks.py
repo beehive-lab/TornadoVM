@@ -473,9 +473,25 @@ def patch_worktree_fix_pyinstaller(worktree_path):
     ok("Patched worktree config_utils.py to fix PyInstaller dist-path check.")
 
 
+def _native_shim_dir(tree, module):
+    """
+    Relative path of a native shim module (e.g. "cutlass-jni") in a source tree.
+
+    The shims moved from tornado-drivers/ to tornado-native-libs/; a worktree checked out from an
+    older tag still has them under tornado-drivers/. Returns the layout found in `tree`, or the
+    current one if neither exists.
+    """
+    for parent in ("tornado-native-libs", "tornado-drivers"):
+        rel = os.path.join(parent, module)
+        if os.path.isdir(os.path.join(tree, rel)):
+            return rel
+    return os.path.join("tornado-native-libs", module)
+
+
 def patch_worktree_fix_cutlass(worktree_path):
     """
-    Patch tornado-drivers/cutlass-jni/src/main/cpp/CMakeLists.txt in the
+    Patch tornado-native-libs/cutlass-jni/src/main/cpp/CMakeLists.txt (tornado-drivers/cutlass-jni
+    on older tags) in the
     worktree so its CUTLASS fetch uses git sparse-checkout instead of a plain
     FetchContent git clone.
 
@@ -506,7 +522,7 @@ def patch_worktree_fix_cutlass(worktree_path):
     touch the repository or the published tag itself.
     """
     cmake_path = os.path.join(
-        worktree_path, "tornado-drivers", "cutlass-jni", "src", "main", "cpp", "CMakeLists.txt"
+        worktree_path, _native_shim_dir(worktree_path, "cutlass-jni"), "src", "main", "cpp", "CMakeLists.txt"
     )
     if not os.path.isfile(cmake_path):
         warn("cutlass-jni/CMakeLists.txt not found in worktree — cannot patch CUTLASS fetch.")
@@ -587,19 +603,21 @@ def patch_worktree_glibc_compat(worktree_path, repo_root):
     A tag that already has the file is left alone.
     """
     for module, target in _GLIBC_COMPAT_SHIMS.items():
-        rel_dir = os.path.join("tornado-drivers", module, "src", "main", "cpp")
-        compat_rel = os.path.join(rel_dir, "source", "glibc_compat.cpp")
-        cmake_path = os.path.join(worktree_path, rel_dir, "CMakeLists.txt")
+        # The worktree's tag and this checkout may keep the shims in different directories.
+        cpp_dir = os.path.join(worktree_path, _native_shim_dir(worktree_path, module), "src", "main", "cpp")
+        cmake_path = os.path.join(cpp_dir, "CMakeLists.txt")
+        compat_dst = os.path.join(cpp_dir, "source", "glibc_compat.cpp")
         if not os.path.isfile(cmake_path):
             continue
-        if os.path.isfile(os.path.join(worktree_path, compat_rel)):
+        if os.path.isfile(compat_dst):
             continue
+        compat_rel = os.path.join(_native_shim_dir(repo_root, module), "src", "main", "cpp", "source", "glibc_compat.cpp")
         compat_src = os.path.join(repo_root, compat_rel)
         if not os.path.isfile(compat_src):
             warn(f"{compat_rel} not found in {repo_root} — cannot patch {module}; "
                  f"its shim may need a newer glibc than the release floor.")
             continue
-        shutil.copy2(compat_src, os.path.join(worktree_path, compat_rel))
+        shutil.copy2(compat_src, compat_dst)
         # Appended at the end: the shim's CMakeLists returns early when its library is missing,
         # in which case the target does not exist and nothing is added.
         with open(cmake_path, "a", encoding="utf-8") as f:

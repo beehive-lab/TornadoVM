@@ -8,11 +8,11 @@ distributions.
 
   lib/libtornado-cutlass.so   CUTLASS v3.5.1           BSD-3-Clause
                               https://github.com/NVIDIA/cutlass
-                              (tornado-drivers/cutlass-jni)
+                              (tornado-native-libs/cutlass-jni)
 
   lib/libtornado-cudnn.so     cudnn-frontend v1.25.0   MIT
                               https://github.com/NVIDIA/cudnn-frontend
-                              (tornado-drivers/cudnn-jni)
+                              (tornado-native-libs/cudnn-jni)
 
                               JSON for Modern C++      MIT
                               (nlohmann/json, bundled in cudnn-frontend)

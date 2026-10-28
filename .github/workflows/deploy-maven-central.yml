@@ -11,9 +11,9 @@ name: 4 - Deploy Maven Central [auto]
 # The deployed modules are portable pure-Java: tornado-api (including the
 # cuTile TileContext API), tornado-runtime, tornado-matrices, the CUDA backend
 # tornado-drivers-cuda (which compiles cuTile kernels) with its parent and
-# tornado-drivers-common, the CUDA library bindings tornado-cublas/-cudnn/
-# -cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs/-nccl, the OpenCL CLBlast bindings
-# tornado-clblast, and the Apple MLX bindings tornado-mlx.
+# tornado-drivers-common, and the library bindings under tornado-native-libs/: the
+# CUDA ones tornado-cublas/-cudnn/-cufft/-curand/-cusparse/-cudf/-cutlass/-cuvs/-nccl,
+# the OpenCL CLBlast bindings tornado-clblast, and the Apple MLX bindings tornado-mlx.
 # The bindings load the NVIDIA, CLBlast, or Apple MLX libraries
 # through java.lang.foreign at run time; the native *-jni shims some of them use
 # are built per platform and ship only in the SDK. Each module is still deployed once PER JDK PROFILE
@@ -152,8 +152,10 @@ jobs:
       - name: Deploy to Maven Central
         if: ${{ inputs.draft_release_test != true }}
         run: |
-          # cuda-backend only puts tornado-drivers/cuda in the reactor; -pl keeps the native
-          # *-jni shims (CMake, need the CUDA toolkit) out, and they stay in the SDK.
+          # cuda-backend puts tornado-drivers/cuda and the native tornado-native-libs/*-jni shims
+          # in the reactor; -pl keeps the shims (CMake, need the CUDA toolkit) out, and they stay
+          # in the SDK. The tornado-native-libs aggregator pom is not listed either: no module
+          # inherits from it, so -am does not pull it in and it is never published.
           # The deploy must run on Maven's single-threaded builder, so .mvn/maven.config's -T1.5C
           # is dropped for this checkout only (never committed). A parallel build has ~11 modules
           # reach maven-gpg-plugin at once, and gpg-agent fails some with "signing failed: Cannot
@@ -165,7 +167,7 @@ jobs:
           sed -i '/^-T/d' .mvn/maven.config
           mvn clean deploy \
             -P${{ matrix.jdk }},cuda-backend,release \
-            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-cublas,tornado-clblast,tornado-cudnn,tornado-cufft,tornado-curand,tornado-cusparse,tornado-cudf,tornado-cutlass,tornado-cuvs,tornado-nccl,tornado-mlx \
+            -pl tornado-api,tornado-runtime,tornado-matrices,tornado-drivers/cuda,tornado-native-libs/tornado-cublas,tornado-native-libs/tornado-clblast,tornado-native-libs/tornado-cudnn,tornado-native-libs/tornado-cufft,tornado-native-libs/tornado-curand,tornado-native-libs/tornado-cusparse,tornado-native-libs/tornado-cudf,tornado-native-libs/tornado-cutlass,tornado-native-libs/tornado-cuvs,tornado-native-libs/tornado-nccl,tornado-native-libs/tornado-mlx \
             -am \
             -DskipTests \
             --batch-mode

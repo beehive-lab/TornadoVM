@@ -77,7 +77,7 @@ The binding and provider tests require no GPU or CLBlast installation:
 
 .. code:: bash
 
-   mvn -Pjdk21 -pl tornado-clblast -am test -DskipTests=false -Dtest=CLBlastTest,CLBlastBindingsTest -Dsurefire.failIfNoSpecifiedTests=false
+   mvn -Pjdk21 -pl tornado-native-libs/tornado-clblast -am test -DskipTests=false -Dtest=CLBlastTest,CLBlastBindingsTest -Dsurefire.failIfNoSpecifiedTests=false
 
 Example: cuBLAS (dense linear algebra)
 ---------------------------------------
@@ -218,7 +218,7 @@ Widening any of those is more entry points rather than a different design.
    tornado-test -V uk.ac.manchester.tornado.unittests.cudf.TestCudf
 
 Unlike the other providers, cuDF needs RAPIDS ``libcudf`` rather than a CUDA
-Toolkit component — see ``tornado-cudf/README.md`` for the install recipe. Without
+Toolkit component — see ``tornado-native-libs/tornado-cudf/README.md`` for the install recipe. Without
 it the module loads, reports itself unavailable, and the tests skip.
 
 Performance
@@ -342,8 +342,8 @@ example tests.
 See also
 --------
 
-`HYBRID_API_GUIDE.md <https://github.com/beehive-lab/TornadoVM/blob/master/HYBRID_API_GUIDE.md>`__
-(repository root) is a complete, example-driven guide to every provider
+`HYBRID_API_GUIDE.md <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-native-libs/HYBRID_API_GUIDE.md>`__
+(in ``tornado-native-libs/``) is a complete, example-driven guide to every provider
 (cuBLAS, cuBLASLt, cuFFT, cuDNN, cuSPARSE, CUTLASS): factory tables, code
 snippets, composition patterns, CUDA-Graph usage, build/install
 requirements, CLI flags, a "write your own provider" walkthrough, and a
