@@ -7,7 +7,7 @@ name: 5 - Publish SDKMAN [auto]
 # _set_jdk_in_name rename fixup):
 #
 #   tornadovm-<version>-<jdk>-<backend_label>-<platform_dir>.zip
-#     e.g. tornadovm-4.0.1-jdk21-opencl-linux-amd64.zip
+#     e.g. tornadovm-4.0.1-jdk25plus-opencl-linux-amd64.zip
 #
 # and re-derived here as `tornadovm-<version>-<jdk>-<variant>.zip` (variant
 # already equals <backend_label>-<platform_dir>). A "Verify asset exists"
@@ -55,46 +55,24 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # ---- jdk21 ----
-          - jdk: jdk21
+          # ---- jdk25plus (one SDK, covers every JDK from 25 up) ----
+          - jdk: jdk25plus
             sdk_suffix: full
             platform: LINUX_64
             variant: full-linux-amd64
-          - jdk: jdk21
+          - jdk: jdk25plus
             sdk_suffix: opencl
             platform: LINUX_64
             variant: opencl-linux-amd64
-          - jdk: jdk21
+          - jdk: jdk25plus
             sdk_suffix: opencl
             platform: MAC_ARM64
             variant: opencl-mac-aarch64
-          - jdk: jdk21
+          - jdk: jdk25plus
             sdk_suffix: metal
             platform: MAC_ARM64
             variant: metal-mac-aarch64
-          - jdk: jdk21
-            sdk_suffix: cuda
-            platform: LINUX_64
-            variant: cuda-linux-amd64
-
-          # ---- jdk22plus (one SDK, covers every JDK from 22 up) ----
-          - jdk: jdk22plus
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
-          - jdk: jdk22plus
-            sdk_suffix: opencl
-            platform: LINUX_64
-            variant: opencl-linux-amd64
-          - jdk: jdk22plus
-            sdk_suffix: opencl
-            platform: MAC_ARM64
-            variant: opencl-mac-aarch64
-          - jdk: jdk22plus
-            sdk_suffix: metal
-            platform: MAC_ARM64
-            variant: metal-mac-aarch64
-          - jdk: jdk22plus
+          - jdk: jdk25plus
             sdk_suffix: cuda
             platform: LINUX_64
             variant: cuda-linux-amd64
@@ -159,10 +137,9 @@ jobs:
     runs-on: [ self-hosted, Linux, x64 ]
     needs: publish-to-sdkman
 
-    # jdk21 + opencl remains the SDKMAN default, matching the pre-unification
-    # convention (this job has no matrix of its own — it runs once, after every
-    # publish-to-sdkman leg finishes, and always targets the jdk21-opencl
-    # coordinate directly below, independent of which matrix leg ran last).
+    # jdk25plus + opencl is the SDKMAN default (this job has no matrix of its
+    # own — it runs once, after every publish-to-sdkman leg finishes, and always
+    # targets the jdk25plus-opencl coordinate directly below, independent of which matrix leg ran last).
     if: >
       github.repository == 'beehive-lab/TornadoVM' &&
       (
@@ -180,7 +157,7 @@ jobs:
           set -euo pipefail
 
           VERSION="${TAG#v}"
-          DEFAULT_VERSION="${VERSION}-jdk21-opencl"
+          DEFAULT_VERSION="${VERSION}-jdk25plus-opencl"
 
           echo "default_version=${DEFAULT_VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -267,7 +244,7 @@ jobs:
           set -euo pipefail
           BASE="https://repo.maven.apache.org/maven2/io/github/beehive-lab"
           DEADLINE=$(( $(date +%s) + 3 * 3600 ))
-          for jdk in jdk21 jdk22plus; do
+          for jdk in jdk25plus; do
             for artifact in tornado-api tornado-runtime tornado-matrices tornado-drivers-cuda; do
               URL="${BASE}/${artifact}/${VERSION}-${jdk}/${artifact}-${VERSION}-${jdk}.pom"
               until curl -fsSI -o /dev/null "$URL"; do
@@ -303,12 +280,12 @@ jobs:
           done
 
       # docker-tornadovm's build-test-push-docker.yml is workflow_dispatch-only (it
-      # needs explicit platform/push_images/build_jdk22plus inputs and runs on
+      # needs explicit platform/push_images/build_jdk25plus inputs and runs on
       # self-hosted GPU runners, so a bare repository_dispatch listener isn't a fit).
       # push_images=true here means a successful run also pushes the new images
       # publicly to the beehivelab Docker Hub org and commits the version bump back to
-      # that repo — intentional, not a dry run. build_jdk22plus stays off: those images
-      # remain best-effort/experimental (see that repo's jdk22plus Dockerfiles).
+      # that repo — intentional, not a dry run. build_jdk25plus stays off: those images
+      # remain best-effort/experimental (see that repo's jdk25plus Dockerfiles).
       - name: Dispatch docker-tornadovm build/test/push
         env:
           GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
@@ -320,5 +297,5 @@ jobs:
             --repo beehive-lab/docker-tornadovm \
             -f version="${TAG}" \
             -f platform=all \
-            -f build_jdk22plus=false \
+            -f build_jdk25plus=false \
             -f push_images=true

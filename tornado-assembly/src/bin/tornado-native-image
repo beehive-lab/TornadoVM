@@ -29,7 +29,7 @@ done
 main=$1; shift
 out=${out:-$(echo "$main" | sed 's/.*\.//' | tr 'A-Z' 'a-z')}
 if grep -q 'tornado.jdk.preview=true' "$TORNADOVM_HOME/etc/tornado.jdk" 2>/dev/null; then
-  echo "this SDK was built with --enable-preview for JDK 21; build a jdk22plus SDK for native images" >&2; exit 2
+  echo "this SDK was built with --enable-preview; build a jdk25plus SDK for native images" >&2; exit 2
 fi
 
 jars=$TORNADOVM_HOME/share/java/tornado

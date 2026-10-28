@@ -2,7 +2,7 @@
 # invocations that don't go through the `tornado` launcher (see BUILD_AND_RUN.md,
 # "Maven Build + Java with Argfile").
 #
-# Regenerated from a real jdk21/opencl,cuda build's `tornado --generate-argfile` output -
+# Regenerated from a real jdk25plus/opencl,cuda build's `tornado --generate-argfile` output -
 # do not hand-edit; the exact flags (module names, --enable-native-access) depend on the
 # backends TornadoVM was built with. To refresh this file or produce one for other backends:
 #   source setvars.sh && tornado --generate-argfile
@@ -14,7 +14,6 @@
 
 
 -server
---enable-preview
 -Djava.library.path=${TORNADOVM_HOME}/lib
 --module-path .:${TORNADOVM_HOME}/share/java/tornado
 -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph

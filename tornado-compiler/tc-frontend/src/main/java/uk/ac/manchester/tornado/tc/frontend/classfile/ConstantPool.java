@@ -17,12 +17,22 @@
  */
 package uk.ac.manchester.tornado.tc.frontend.classfile;
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.StringEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.Optional;
 
 /**
- * The constant pool of a class file (JVMS §4.4). Entries are kept as small records; long and double
- * entries occupy two slots as the specification requires.
+ * The constant pool of a class file (JVMS section 4.4), looked up by the indices that bytecode operands carry.
+ * A thin view over the {@code java.lang.classfile} pool.
  */
 public final class ConstantPool {
 
@@ -30,132 +40,70 @@ public final class ConstantPool {
     public record MemberRef(String owner, String name, String descriptor) {
     }
 
-    private sealed interface Entry {
-    }
-
-    private record Utf8(String value) implements Entry {
-    }
-
-    private record IntValue(int value) implements Entry {
-    }
-
-    private record FloatValue(float value) implements Entry {
-    }
-
-    private record LongValue(long value) implements Entry {
-    }
-
-    private record DoubleValue(double value) implements Entry {
-    }
-
-    private record ClassRef(int name) implements Entry {
-    }
-
-    private record StringRef(int value) implements Entry {
-    }
-
-    private record Member(int owner, int nameAndType) implements Entry {
-    }
-
-    private record NameAndType(int name, int descriptor) implements Entry {
-    }
-
-    private record MethodHandleRef(int kind, int reference) implements Entry {
-    }
-
-    private record InvokeDynamicRef(int bootstrap, int nameAndType) implements Entry {
-    }
-
-    private record Other(int tag) implements Entry {
-    }
-
     /** An {@code invokedynamic} site: bootstrap-method index, name and descriptor. */
     public record DynamicSite(int bootstrap, String name, String descriptor) {
     }
 
-    private final Entry[] entries;
+    private final java.lang.classfile.constantpool.ConstantPool pool;
 
-    private ConstantPool(Entry[] entries) {
-        this.entries = entries;
+    ConstantPool(java.lang.classfile.constantpool.ConstantPool pool) {
+        this.pool = pool;
     }
 
-    static ConstantPool read(DataInputStream in) throws IOException {
-        int count = in.readUnsignedShort();
-        var entries = new Entry[count];
-        for (int i = 1; i < count; i++) {
-            int tag = in.readUnsignedByte();
-            entries[i] = switch (tag) {
-                case 1 -> new Utf8(in.readUTF());
-                case 3 -> new IntValue(in.readInt());
-                case 4 -> new FloatValue(in.readFloat());
-                case 5 -> new LongValue(in.readLong());
-                case 6 -> new DoubleValue(in.readDouble());
-                case 7 -> new ClassRef(in.readUnsignedShort());
-                case 8 -> new StringRef(in.readUnsignedShort());
-                case 9, 10, 11 -> new Member(in.readUnsignedShort(), in.readUnsignedShort());
-                case 12 -> new NameAndType(in.readUnsignedShort(), in.readUnsignedShort());
-                case 15 -> new MethodHandleRef(in.readUnsignedByte(), in.readUnsignedShort());
-                case 16, 19, 20 -> {
-                    in.readUnsignedShort();
-                    yield new Other(tag);
-                }
-                case 18 -> new InvokeDynamicRef(in.readUnsignedShort(), in.readUnsignedShort());
-                case 17 -> {
-                    in.readUnsignedShort();
-                    in.readUnsignedShort();
-                    yield new Other(tag);
-                }
-                default -> throw new ClassFormatException("unknown constant-pool tag " + tag + " at index " + i);
-            };
-            if (tag == 5 || tag == 6) {
-                i++; // eight-byte constants take two entries
-            }
+    private PoolEntry entry(int index) {
+        try {
+            return pool.entryByIndex(index);
+        } catch (IllegalArgumentException e) {
+            throw new ClassFormatException("bad constant-pool index " + index + ": " + e.getMessage());
         }
-        return new ConstantPool(entries);
     }
 
     public String utf8(int index) {
-        if (entries[index] instanceof Utf8(var value)) {
-            return value;
+        if (entry(index) instanceof Utf8Entry utf8) {
+            return utf8.stringValue();
         }
         throw new ClassFormatException("constant " + index + " is not UTF-8");
     }
 
     public String className(int index) {
-        if (entries[index] instanceof ClassRef(var name)) {
-            return utf8(name);
+        if (entry(index) instanceof ClassEntry c) {
+            return c.asInternalName();
         }
         throw new ClassFormatException("constant " + index + " is not a class");
     }
 
     public MemberRef member(int index) {
-        if (entries[index] instanceof Member(var owner, var nameAndType) && entries[nameAndType] instanceof NameAndType(var name, var descriptor)) {
-            return new MemberRef(className(owner), utf8(name), utf8(descriptor));
+        if (entry(index) instanceof MemberRefEntry m) {
+            return memberRef(m);
         }
         throw new ClassFormatException("constant " + index + " is not a field or method reference");
     }
 
     /** The method or field a {@code CONSTANT_MethodHandle} refers to, if {@code index} is one. */
-    public java.util.Optional<MemberRef> methodHandle(int index) {
-        return entries[index] instanceof MethodHandleRef(var kind, var reference) ? java.util.Optional.of(member(reference)) : java.util.Optional.empty();
+    public Optional<MemberRef> methodHandle(int index) {
+        return entry(index) instanceof MethodHandleEntry h ? Optional.of(memberRef(h.reference())) : Optional.empty();
     }
 
     public DynamicSite dynamicSite(int index) {
-        if (entries[index] instanceof InvokeDynamicRef(var bootstrap, var nameAndType) && entries[nameAndType] instanceof NameAndType(var name, var descriptor)) {
-            return new DynamicSite(bootstrap, utf8(name), utf8(descriptor));
+        if (entry(index) instanceof InvokeDynamicEntry d) {
+            return new DynamicSite(d.bootstrapMethodIndex(), d.name().stringValue(), d.type().stringValue());
         }
         throw new ClassFormatException("constant " + index + " is not an invokedynamic site");
     }
 
     /** A loadable constant ({@code ldc}): Integer, Float, Long, Double or String. */
     public Object loadable(int index) {
-        return switch (entries[index]) {
-            case IntValue(var v) -> v;
-            case FloatValue(var v) -> v;
-            case LongValue(var v) -> v;
-            case DoubleValue(var v) -> v;
-            case StringRef(var v) -> utf8(v);
+        return switch (entry(index)) {
+            case IntegerEntry e -> e.intValue();
+            case FloatEntry e -> e.floatValue();
+            case LongEntry e -> e.longValue();
+            case DoubleEntry e -> e.doubleValue();
+            case StringEntry e -> e.stringValue();
             default -> throw new ClassFormatException("constant " + index + " is not loadable by ldc in a kernel");
         };
+    }
+
+    private static MemberRef memberRef(MemberRefEntry m) {
+        return new MemberRef(m.owner().asInternalName(), m.name().stringValue(), m.type().stringValue());
     }
 }

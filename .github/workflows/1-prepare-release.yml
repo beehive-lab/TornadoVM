@@ -1,7 +1,7 @@
 name: 1 - Prepare Release [auto]
 
 # Single unified release line — one branch, one release/<version> branch, one
-# tag, one Maven `<version>` in source control (no more -jdk21/-jdk25 suffix
+# tag, one Maven `<version>` in source control (no -jdkNN suffix
 # or divergent develop/jdk25 branches). JDK-specific identity (SDK archive
 # names, Maven Central coordinates) is applied downstream, after this commit,
 # not baked in here — see build-release-sdks.py and deploy-maven-central.yml.
@@ -37,7 +37,7 @@ jobs:
       actions: write
     timeout-minutes: 15
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
       MAVEN_HOME: /opt/maven
 
     steps:
@@ -78,7 +78,7 @@ jobs:
       - name: Update Maven versions
         run: |
           # NOT `mvn versions:set` - that rewrites every pom's <version>${revision}</version>
-          # to a hard-coded literal, killing the jdk21/jdk22plus profile <revision> overrides so
+          # to a hard-coded literal, killing the jdkNN profile <revision> overrides so
           # every build stamps the same JDK-less version (broke the 6.0.0 -> 6.0.1-dev bump).
           python3 scripts/set-maven-version.py release ${{ env.VERSION }}
           echo "✅ Maven versions updated to ${{ env.VERSION }}"
@@ -107,14 +107,14 @@ jobs:
           # Normalise the supported-JDK range shown right after the version in that
           # same banner. It is otherwise hand-maintained and drifts (it read
           # "(JDK 21 / JDK 25)" long after JDK 26/27 were supported); the release
-          # line supports JDK 21 through JDK 27, so pin it here.
-          sed -i -E "s/(\*\*Latest [Rr]elease:\*\* TornadoVM [0-9]+\.[0-9]+\.[0-9]+ )\([^)]*\)/\1(JDK 21 - JDK 27)/" README.md
+          # line supports JDK 25 and newer, so pin it here.
+          sed -i -E "s/(\*\*Latest [Rr]elease:\*\* TornadoVM [0-9]+\.[0-9]+\.[0-9]+ )\([^)]*\)/\1(JDK 25+)/" README.md
 
           # Update Maven Central dependency versions (io.github.beehive-lab groupId).
-          # Central coordinates are still deployed per-JDK (4.0.1-jdk21, -jdk25, -jdk26,
-          # -jdk27 — see deploy-maven-central.yml), so this only updates the base
+          # Central coordinates carry the JDK profile (4.0.1-jdk25plus — see
+          # deploy-maven-central.yml), so this only updates the base
           # version number; any -jdkNN suffix shown in README examples is preserved.
-          sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+)?(</version>)|\1${{ env.VERSION }}\2\3|g' README.md
+          sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*)?(</version>)|\1${{ env.VERSION }}\2\3|g' README.md
 
           # Update the SDKMAN! per-backend candidate versions in the install table
           # (e.g. `5.2.0-opencl`). The table lists one row per backend without a JDK
@@ -151,14 +151,14 @@ jobs:
         run: |
           if [ -f docs/source/installation.rst ]; then
             # Update Maven dependency versions in the XML examples. Coordinates
-            # here are per-JDK (<version>5.2.0-jdk21</version>, etc. — see
+            # here are per-JDK (<version>5.2.0-jdk25plus</version> — see
             # deploy-maven-central.yml), so preserve the existing -jdkNN suffix
             # (captured as \1) and only bump the leading version number.
-            sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+)?(</version>)|\1${{ env.VERSION }}\2\3|g' docs/source/installation.rst
+            sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*)?(</version>)|\1${{ env.VERSION }}\2\3|g' docs/source/installation.rst
 
             # Update the SDKMAN `sdk install tornadovm X.Y.Z-jdkNN-backend` examples,
             # preserving the existing -jdkNN-backend suffix the same way.
-            sed -i -E 's/(sdk install tornadovm )[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+-(opencl|cuda|metal|full))/\1${{ env.VERSION }}\2/g' docs/source/installation.rst
+            sed -i -E 's/(sdk install tornadovm )[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*-(opencl|cuda|metal|full))/\1${{ env.VERSION }}\2/g' docs/source/installation.rst
 
             # Add new version to "Versions available" list (insert before previous version)
             sed -i "/^\* ${{ env.PREV_VERSION }}$/i\\ * ${{ env.VERSION }}" docs/source/installation.rst
@@ -325,7 +325,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next steps after PR merge:" >> $GITHUB_STEP_SUMMARY
           echo "1. Existing CI will run build & tests" >> $GITHUB_STEP_SUMMARY
-          echo "2. Finalize tags v${{ env.VERSION }}, creates the draft Release, and dispatches build-release-sdks + deploy-maven-central (jdk21+jdk25+jdk26+jdk27 matrix) automatically" >> $GITHUB_STEP_SUMMARY
+          echo "2. Finalize tags v${{ env.VERSION }}, creates the draft Release, and dispatches build-release-sdks + deploy-maven-central (jdk25plus) automatically" >> $GITHUB_STEP_SUMMARY
 
       - name: Commit and push
         if: ${{ inputs.draft_release_test == false }}
@@ -366,7 +366,7 @@ jobs:
 
             ### After merge
             1. CI runs automatically ✅
-            2. Finalize tags \`v${version}\`, creates the draft GitHub Release, and dispatches build-release-sdks + deploy-maven-central (jdk21+jdk25+jdk26+jdk27) automatically
+            2. Finalize tags \`v${version}\`, creates the draft GitHub Release, and dispatches build-release-sdks + deploy-maven-central (jdk25plus) automatically
             3. Merge master → develop
             4. Bump develop to \`${nextDev}\`
             `

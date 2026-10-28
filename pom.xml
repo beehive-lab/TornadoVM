@@ -44,7 +44,7 @@
     </distributionManagement>
 
     <properties>
-        <!-- CI-friendly version: the literal default (jdk21) - each jdkNN profile below overrides
+        <!-- CI-friendly version: the literal default (jdk25plus) - each jdkNN profile below overrides
              this property so `${project.version}` (and everything derived from it - the SDK
              directory/archive name, tornado.release's version= field, Maven Central coordinates)
              correctly reflects the JDK actually being built, with no committed-file mutation
@@ -56,9 +56,9 @@
              scripts/set-maven-version.py, never `mvn versions:set`, which rewrites ${revision} to a
              hard-coded string so every build then stamps the same JDK-less version regardless of
              the active jdkNN profile (that regression is what broke the 6.0.0 to 6.0.1-dev bump:
-             the SDK's tornado-api jar lost its -jdkNN suffix and a jdk21 preview-enabled jar
-             leaked into jdk22plus consumer builds). -->
-        <revision>8.0.1-jdk21-dev</revision>
+             the SDK's tornado-api jar lost its -jdkNN suffix and a jar built for another JDK
+             leaked into consumer builds). -->
+        <revision>8.0.1-jdk25plus-dev</revision>
         <tornado.version>${project.version}</tornado.version>
         <tornado.backend>opencl</tornado.backend>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -121,11 +121,9 @@
                         <version>3.11.0</version>
                         <configuration>
                             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>21</source>
-                            <target>21</target>
+                            <release>25</release>
                             <showDeprecation>true</showDeprecation>
                             <compilerArgs>
-                                <arg>--enable-preview</arg>
                                 <arg>--add-modules</arg>
                                 <arg>ALL-SYSTEM</arg>
                                 <arg>--add-modules=jdk.incubator.vector</arg>
@@ -141,21 +139,15 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>3.6.3</version>
                         <configuration>
-                            <!-- source, matching maven-compiler-plugin's jdk21 profile. -->
-                            <source>21</source>
+                            <!-- source, matching maven-compiler-plugin's jdk25plus profile. -->
+                            <source>25</source>
                             <skip>false</skip>
                             <failOnError>false</failOnError>
 
-                            <!-- Enable preview features -->
                             <additionalJOptions>
-                                <additionalJOption>--enable-preview</additionalJOption>
                                 <additionalJOption>--add-modules=ALL-SYSTEM</additionalJOption>
                                 <additionalJOption>--add-modules=jdk.incubator.vector</additionalJOption>
                             </additionalJOptions>
-
-                            <additionalOptions>
-                                <additionalOption>--enable-preview</additionalOption>
-                            </additionalOptions>
 
                             <!-- Avoid breaking the build -->
                             <failOnError>false</failOnError>
@@ -348,15 +340,24 @@
             </properties>
         </profile>
 
+
         <profile>
-            <id>jdk21</id>
+            <!-- Single target profile for every JDK from 25 upwards. The emitted class files are
+                 portable: one SDK built once runs on 25 and every later JDK. 25 is the floor because
+                 the kernel compiler reads class files with the java.lang.classfile API (final in 24).
+
+                 "release" rather than "source"+"target": source/target links against the build
+                 JDK's platform classes, so a build on a newer JDK could bind an API absent on 25 and
+                 fail at run time; the release flag checks against the JDK 25 signatures. The kernel compiler (TC) reads class files of any
+                 version, so applications may be compiled for any newer release. -->
+            <id>jdk25plus</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <revision>8.0.1-jdk21-dev</revision>
-                <!-- Runtime module access for pure-JVM unit tests (mirrors this profile's compilerArgs). -->
-                <tornado.test.argLine>--enable-preview --add-modules=jdk.incubator.vector</tornado.test.argLine>
+                <revision>8.0.1-jdk25plus-dev</revision>
+                <!-- Runtime module access for the opt-in pure-JVM unit tests. -->
+                <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
             </properties>
             <build>
                 <plugins>
@@ -366,9 +367,28 @@
                         <configuration>
                             <skipTests>${skipTests}</skipTests>
                             <!-- Pure-JVM unit tests, on the classpath. Skipped by default; run with:
-                                 mvn -Pjdk21 -pl tornado-runtime test -DskipTests=false -->
+                                 mvn -Pjdk25plus -pl tornado-runtime test -DskipTests=false -->
                             <useModulePath>false</useModulePath>
                             <argLine>${tornado.test.argLine}</argLine>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <configuration>
+                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                            <release>25</release>
+                            <showDeprecation>true</showDeprecation>
+                            <compilerArgs>
+                                <arg>--add-modules</arg>
+                                <arg>ALL-SYSTEM</arg>
+                                <arg>--add-modules=jdk.incubator.vector</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
+                            </compilerArgs>
                         </configuration>
                     </plugin>
                     <plugin>
@@ -383,27 +403,6 @@
                         <goals>
                             <goal>check</goal>
                         </goals>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.11.0</version>
-                        <configuration>
-                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <source>21</source>
-                            <target>21</target>
-                            <showDeprecation>true</showDeprecation>
-                            <compilerArgs>
-                                <arg>--enable-preview</arg>
-                                <arg>--add-modules</arg>
-                                <arg>ALL-SYSTEM</arg>
-                                <arg>--add-modules=jdk.incubator.vector</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
-                            </compilerArgs>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -422,68 +421,13 @@
             </build>
         </profile>
 
-        <profile>
-            <!-- Single target profile for every JDK from 22 upwards. FFM/Panama is final from 22,
-                 so nothing here needs the enable-preview flag and the emitted class files are
-                 portable: one SDK built once runs on 22 and every later JDK.
-
-                 "release" rather than "source"+"target": source/target links against the build
-                 JDK's platform classes, so a build on a newer JDK could bind an API absent on 22 and
-                 fail at run time; the release flag checks against the JDK 22 signatures. 22 is the
-                 floor of this profile only. The kernel compiler (TC) reads class files of any
-                 version, so applications may be compiled for any newer release. -->
-            <id>jdk22plus</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <properties>
-                <revision>8.0.1-jdk22plus-dev</revision>
-                <!-- Runtime module access for the opt-in pure-JVM unit tests. -->
-                <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <skipTests>${skipTests}</skipTests>
-                            <!-- Pure-JVM unit tests, on the classpath. Skipped by default; run with:
-                                 mvn -Pjdk22plus -pl tornado-runtime test -DskipTests=false -->
-                            <useModulePath>false</useModulePath>
-                            <argLine>${tornado.test.argLine}</argLine>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.11.0</version>
-                        <configuration>
-                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <release>22</release>
-                            <showDeprecation>true</showDeprecation>
-                            <compilerArgs>
-                                <arg>--add-modules</arg>
-                                <arg>ALL-SYSTEM</arg>
-                                <arg>--add-modules=jdk.incubator.vector</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/common-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
-                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
 
     </profiles>
     <build>
         <finalName>${project.artifactId}-${project.version}-${buildNumber}</finalName>
         <plugins>
-            <!-- CI-friendly versions: <revision> in <properties> above (default jdk21, overridden per
-                 jdkNN profile) lets the jdk21 and jdk22plus profiles each drive `${project.version}`
+            <!-- CI-friendly versions: <revision> in <properties> above (default jdk25plus, overridden per
+                 jdkNN profile) lets each jdkNN profile drive `${project.version}`
                  without ever mutating a committed pom.xml. This plugin resolves ${revision} into the concrete
                  version in the POM that actually gets installed/deployed (mvn's own in-reactor
                  resolution already understands ${revision} for module-to-module dependency wiring;

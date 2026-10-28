@@ -24,7 +24,7 @@ Why this exists
 ---------------
 `mvn versions:set -DnewVersion=X` rewrites <version>${revision}</version> (and
 every <parent><version>) to a hard-coded literal in all 22 reactor poms. Once
-that happens the jdk21 / jdk22plus profile <revision> overrides in the root pom
+that happens the jdkNN profile <revision> overrides in the root pom
 are dead, and every build stamps the same JDK-less version regardless of the
 active profile.
 
@@ -32,7 +32,7 @@ That is exactly what shipped right after the 6.0.0 release: the release
 automation ran `versions:set`, the follow-up dev bump ran it again, and develop
 was left with a literal <version>6.0.1-dev</version> everywhere. A locally built
 SDK then produced `tornado-api-6.0.1-dev.jar` with NO -jdkNN suffix, so the
-jdk21 (--enable-preview) jar and the jdk22plus jar overwrote each other in the
+jdk21 (--enable-preview) jar and the jdk25plus jar overwrote each other in the
 same ~/.m2 coordinate and downstream sample-app builds (kfusion, ray-tracer)
 failed with "class file ... uses preview features of Java SE 21".
 
@@ -42,13 +42,13 @@ Modes
 -----
   dev  X.Y.Z-dev
       Every pom's <version> / <parent><version> becomes the literal ${revision}.
-      Root pom <revision> (the default, = jdk21) and the jdk21 profile override
-      become  X.Y.Z-jdk21-dev ; the jdk22plus profile override becomes
-      X.Y.Z-jdk22plus-dev. This is the state `develop` must always be in.
+      Root pom <revision> (the default, = jdk25plus) and the jdk25plus profile
+      override become X.Y.Z-jdk25plus-dev. This is the state `develop` must
+      always be in.
 
   release  X.Y.Z
       Every pom carries the plain literal X.Y.Z (no -jdkNN suffix, no
-      ${revision}). All three root <revision> values are set to X.Y.Z too, so a
+      ${revision}). Both root <revision> values are set to X.Y.Z too, so a
       profile-pinned release build still stamps the plain version.
       scripts/build-release-sdks.py renames each archive with its profile token
       and .github/workflows/deploy-maven-central.yml appends the -jdkNN Maven
@@ -127,20 +127,20 @@ def update_poms(new_body):
             print(f"  {pom.relative_to(REPO_ROOT)}: <version> -> {new_body}")
 
 
-def set_root_revisions(default_rev, jdk21_rev, jdk22plus_rev):
+def set_root_revisions(default_rev, jdk25plus_rev):
     root = REPO_ROOT / "pom.xml"
     text = root.read_text()
     revs = list(re.finditer(r"<revision>[^<]*</revision>", text))
-    if len(revs) != 3:
+    if len(revs) != 2:
         sys.exit(
-            f"pom.xml: expected exactly 3 <revision> elements "
-            f"(default, jdk21 profile, jdk22plus profile), found {len(revs)}"
+            f"pom.xml: expected exactly 2 <revision> elements "
+            f"(default, jdk25plus profile), found {len(revs)}"
         )
-    wanted = [default_rev, jdk21_rev, jdk22plus_rev]
+    wanted = [default_rev, jdk25plus_rev]
     for m, value in zip(reversed(revs), reversed(wanted)):
         text = text[: m.start()] + f"<revision>{value}</revision>" + text[m.end():]
     root.write_text(text)
-    print(f"  pom.xml: <revision> = {default_rev} / {jdk21_rev} / {jdk22plus_rev}")
+    print(f"  pom.xml: <revision> = {default_rev} / {jdk25plus_rev}")
 
 
 def main():
@@ -157,16 +157,15 @@ def main():
         print(f"dev mode: {version}")
         update_poms("${revision}")
         set_root_revisions(
-            default_rev=f"{base}-jdk21-dev",
-            jdk21_rev=f"{base}-jdk21-dev",
-            jdk22plus_rev=f"{base}-jdk22plus-dev",
+            default_rev=f"{base}-jdk25plus-dev",
+            jdk25plus_rev=f"{base}-jdk25plus-dev",
         )
     else:
         if not re.fullmatch(r"\d+\.\d+\.\d+", version):
             sys.exit(f"release version must be X.Y.Z, got: {version}")
         print(f"release mode: {version}")
         update_poms(version)
-        set_root_revisions(version, version, version)
+        set_root_revisions(version, version)
 
     print("Done.")
 

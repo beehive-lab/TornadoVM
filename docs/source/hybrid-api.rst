@@ -77,7 +77,7 @@ The binding and provider tests require no GPU or CLBlast installation:
 
 .. code:: bash
 
-   mvn -Pjdk21 -pl tornado-clblast -am test -DskipTests=false -Dtest=CLBlastTest,CLBlastBindingsTest -Dsurefire.failIfNoSpecifiedTests=false
+   mvn -Pjdk25plus -pl tornado-clblast -am test -DskipTests=false -Dtest=CLBlastTest,CLBlastBindingsTest -Dsurefire.failIfNoSpecifiedTests=false
 
 Example: cuBLAS (dense linear algebra)
 ---------------------------------------

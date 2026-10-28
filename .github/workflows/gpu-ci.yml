@@ -1,4 +1,4 @@
-name: "GPU CI [build each SDK once, test on JDK 21 and 25]"
+name: "GPU CI [build each SDK once, test on JDK 25]"
 
 # Build once per backend, then run that ONE artifact on the JDKs it supports.
 #
@@ -7,16 +7,14 @@ name: "GPU CI [build each SDK once, test on JDK 21 and 25]"
 # every leg rebuilt under the JDK it then tested on, so it only ever verified "built on N, runs
 # on N". Here the build jobs publish an SDK artifact and the test jobs consume it unchanged.
 #
-# Two SDKs exist, and they are not interchangeable:
-#   jdk21      compiled with enable-preview (FFM was a preview API before 22), which pins the
-#              class files to JDK 21 exactly. Tested on 21 only.
-#   jdk22plus  compiled at release 22 with no preview. One artifact for 22 and later; it is
+# One SDK exists:
+#   jdk25plus  compiled at release 25 with no preview. One artifact for 25 and later; it is
 #              tested on JDK 25, the current LTS. The build JDK is pinned in gpu-ci-platform.yml.
-# Each SDK records its own contract in etc/tornado.jdk, and bin/tornado enforces it.
+# The SDK records its contract in etc/tornado.jdk, and bin/tornado enforces it.
 
 # Scope per event (see the plan job, which computes all of it):
 #   pull request to develop   fast tests (--quickPass) on the default device, Linux and macOS,
-#                             all backends, jdk21 SDK on JDK 21 and jdk22plus SDK on JDK 25.
+#                             all backends, jdk25plus SDK on JDK 25.
 #                             Skipped when the change touches documentation or non-CI workflows only.
 #   schedule (nightly)        the same legs against develop, but the full test suite on EVERY
 #                             device each backend reports. 00:00 UTC.
@@ -89,7 +87,7 @@ jobs:
     if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
     env:
-      JAVA_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
+      JAVA_HOME: /opt/jenkins/jdks/jdk-25.0.2
       MAVEN_HOME: /opt/maven
     timeout-minutes: 5
     steps:
@@ -101,9 +99,8 @@ jobs:
           export PATH=$JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
           ./mvnw checkstyle:check
 
-  # Both matrices are computed here rather than written inline, because they are not a plain
-  # cross product: the jdk21 SDK is paired with JDK 21 alone, while the jdk22plus SDK is paired
-  # with JDK 25.
+  # Both matrices are computed here rather than written inline, so the build and test legs of each
+  # target stay on the same runner.
   plan:
     if: github.repository == 'beehive-lab/TornadoVM'
     runs-on: [self-hosted, Linux, x64]
@@ -160,7 +157,7 @@ jobs:
           build = {"linux": [], "macos": []}
           test = {"linux": [], "macos": []}
           for platform, backend, runner in targets:
-              for sdk, jdk in (("jdk21", "jdk21"), ("jdk22plus", "jdk25")):
+              for sdk, jdk in (("jdk25plus", "jdk25"),):
                   build[platform].append(dict(platform=platform, backend=backend,
                                               runner=runner, sdk=sdk))
                   test[platform].append(dict(platform=platform, backend=backend,

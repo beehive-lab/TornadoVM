@@ -170,7 +170,7 @@ jobs:
   build-macos:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_macos == 'true'
-    name: macOS arm64 (jdk21+jdk22plus × opencl+metal)
+    name: macOS arm64 (jdk25plus × opencl+metal)
     runs-on: [self-hosted, macOS, arm64]
     timeout-minutes: 120
     permissions:
@@ -179,11 +179,10 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
-      JDK21_HOME: /opt/jenkins/jdks/jdk-21.0.11+10/Contents/Home
-      # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
-      # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
+      # jdk25plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 25 and is built once for every
+      # JDK from 25 up — any JDK >= 25 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK gpu-ci-platform.yml already uses, not a requirement.
-      JDK22PLUS_HOME: /opt/jenkins/jdks/jdk-25.0.2/Contents/Home
+      JDK25PLUS_HOME: /opt/jenkins/jdks/jdk-25.0.2/Contents/Home
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: macos-arm64
       VENV_PATH: /Users/beehiveUser/venv-build-sdks
@@ -224,8 +223,7 @@ jobs:
             --version "$VERSION_TAG" \
             --output-dir "$RELEASE_ARCHIVES_DIR" \
             --draft-release-test "$DRAFT_RELEASE_TEST" \
-            --jdk21-home "$JDK21_HOME" \
-            --jdk22plus-home "$JDK22PLUS_HOME"
+            --jdk25plus-home "$JDK25PLUS_HOME"
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
@@ -255,7 +253,7 @@ jobs:
   build-linux:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
-    name: Linux x64 (jdk21+jdk22plus × opencl+cuda+full)
+    name: Linux x64 (jdk25plus × opencl+cuda+full)
     runs-on: [self-hosted, Linux, x64, sdk-builder]
     timeout-minutes: 240
     permissions:
@@ -264,11 +262,10 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
-      JDK21_HOME: /opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3
-      # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
-      # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
+      # jdk25plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 25 and is built once for every
+      # JDK from 25 up — any JDK >= 25 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK gpu-ci-platform.yml already uses, not a requirement.
-      JDK22PLUS_HOME: /opt/jenkins/jdks/jdk-25.0.2
+      JDK25PLUS_HOME: /opt/jenkins/jdks/jdk-25.0.2
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: linux-amd64
       VENV_PATH: ${{ github.workspace }}/venv-build-sdks
@@ -334,8 +331,7 @@ jobs:
             --version "$VERSION_TAG" \
             --output-dir "$RELEASE_ARCHIVES_DIR" \
             --draft-release-test "$DRAFT_RELEASE_TEST" \
-            --jdk21-home "$JDK21_HOME" \
-            --jdk22plus-home "$JDK22PLUS_HOME"
+            --jdk25plus-home "$JDK25PLUS_HOME"
 
       - name: Check the CUDA SDKs carry the cuDF shim
         run: |
@@ -398,7 +394,7 @@ jobs:
   build-linux-arm:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux_arm == 'true'
-    name: Linux arm64 (jdk21+jdk22plus × cuda)
+    name: Linux arm64 (jdk25plus × cuda)
     # Only the CUDA SDK is built here (BUILDS["linux-aarch64"] in scripts/build-release-sdks.py).
     runs-on: [self-hosted, Linux, ARM64, sdk-builder]
     timeout-minutes: 240
@@ -408,11 +404,10 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
-      JDK21_HOME: /opt/jdks/21.0.12-tem
-      # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
-      # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
+      # jdk25plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 25 and is built once for every
+      # JDK from 25 up — any JDK >= 25 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK build-test-platform.yml already uses, not a requirement.
-      JDK22PLUS_HOME: /opt/jdks/25.0.4.1+1-tem
+      JDK25PLUS_HOME: /opt/jdks/25.0.4.1+1-tem
       RELEASE_ARCHIVES_DIR: /opt/release-archives
       PLATFORM_DIR: linux-aarch64
       VENV_PATH: ${{ github.workspace }}/venv-build-sdks
@@ -478,8 +473,7 @@ jobs:
             --version "$VERSION_TAG" \
             --output-dir "$RELEASE_ARCHIVES_DIR" \
             --draft-release-test "$DRAFT_RELEASE_TEST" \
-            --jdk21-home "$JDK21_HOME" \
-            --jdk22plus-home "$JDK22PLUS_HOME"
+            --jdk25plus-home "$JDK25PLUS_HOME"
 
       - name: Check the CUDA SDKs carry the cuDF shim
         run: |
@@ -542,7 +536,7 @@ jobs:
   build-windows:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_windows == 'true'
-    name: Windows x64 (jdk21+jdk22plus × opencl+cuda)
+    name: Windows x64 (jdk25plus × opencl+cuda)
     runs-on: [self-hosted, Windows, x64]
     timeout-minutes: 240
     permissions:
@@ -551,11 +545,10 @@ jobs:
       VERSION: ${{ needs.preflight.outputs.version }}
       VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
       DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
-      JDK21_HOME: 'C:\jdks\jdk21'
-      # jdk22plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 22 and is built once for every
-      # JDK from 22 up — any JDK >= 22 here produces an identical artifact, so this is pinned to
+      # jdk25plus (bin/compile's SDK_JDK_CONTRACT) floors at JDK 25 and is built once for every
+      # JDK from 25 up — any JDK >= 25 here produces an identical artifact, so this is pinned to
       # 25 purely to match the build JDK gpu-ci-platform.yml already uses, not a requirement.
-      JDK22PLUS_HOME: 'C:\jdks\jdk25'
+      JDK25PLUS_HOME: 'C:\jdks\jdk25'
       RELEASE_ARCHIVES_DIR: 'C:\release-archives'
       PLATFORM_DIR: windows-amd64
       VENV_PATH: '${{ github.workspace }}\venv-build-sdks'
@@ -615,8 +608,7 @@ jobs:
             --version %VERSION_TAG% ^
             --output-dir "%RELEASE_ARCHIVES_DIR%" ^
             --draft-release-test %DRAFT_RELEASE_TEST% ^
-            --jdk21-home "%JDK21_HOME%" ^
-            --jdk22plus-home "%JDK22PLUS_HOME%"
+            --jdk25plus-home "%JDK25PLUS_HOME%"
 
       - name: List produced archives
         shell: cmd
@@ -684,7 +676,7 @@ jobs:
             echo "|---------|--------|"
             echo "| [${{ needs.preflight.outputs.version_tag }}](https://github.com/${{ github.repository }}/releases/tag/${{ needs.preflight.outputs.version_tag }}) | Published |"
             echo ""
-            echo "Downstream: \`deploy-maven-central.yml\` dispatched explicitly by mark-version-built below (one run, jdk21+jdk22plus matrix); \`publish-archives-to-sdkman.yml\` follows once that deploy succeeds."
+            echo "Downstream: \`deploy-maven-central.yml\` dispatched explicitly by mark-version-built below (one run, jdk25plus); \`publish-archives-to-sdkman.yml\` follows once that deploy succeeds."
           } >> "$GITHUB_STEP_SUMMARY"
 
   mark-version-built:
@@ -748,4 +740,4 @@ jobs:
             --repo "${{ github.repository }}" \
             -f tag="$tag" \
             -f draft_release_test="${{ needs.preflight.outputs.draft_release_test }}"
-          echo "Dispatched Maven Central deploy (single run, jdk21+jdk22plus matrix)."
+          echo "Dispatched Maven Central deploy (single run, jdk25plus)."

@@ -73,7 +73,7 @@ def define_and_get_internal_maven_content(xml_templates_directory, project_direc
     xml_internal_maven_build_content_directory = os.path.join(xml_templates_directory, "maven_template.xml")
     xml_internal_maven_build_content = read_template(xml_internal_maven_build_content_directory)
 
-    java_profile = "jdk21"
+    java_profile = "jdk25plus"
 
     xml_backend_profiles = generate_backend_profiles_as_xml_entries(backend_profiles)
 

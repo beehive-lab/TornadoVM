@@ -18,20 +18,20 @@
 #
 
 """
-Detect a JDK 21 and a JDK 25 on this machine and build every release SDK for
+Detect a JDK 25 (or newer) on this machine and build every release SDK for
 the current platform with them.
 
 This is a thin wrapper around scripts/build-release-sdks.py, which owns the
 per-platform build matrix (macOS: opencl, metal; Linux x64: opencl, cuda, full;
 Linux aarch64: cuda; Windows: opencl, cuda), the worktree checkout and the
-jdk21/jdk22plus filename stamping. This script only finds the two JDK homes and
-passes them as --jdk21-home / --jdk22plus-home, so it works with any vendor and
+jdk25plus filename stamping. This script only finds the JDK home and passes it
+as --jdk25plus-home, so it works with any vendor and
 install location rather than only sdkman Temurin (which is all the release
 script looks for), and on Windows without typing the paths.
 
 JDK homes are searched, in order of preference:
-  1. JDK21_HOME / JDK25_HOME (or JDK22PLUS_HOME) environment variables
-  2. --jdk21-home / --jdk22plus-home given to this script (used as-is)
+  1. JDK25_HOME (or JDK25PLUS_HOME) environment variables
+  2. --jdk25plus-home given to this script (used as-is)
   3. JAVA_HOME and the `java` on PATH
   4. sdkman (~/.sdkman/candidates/java), /usr/libexec/java_home on macOS
   5. Common install roots: /opt/jdks, /opt/jenkins/jdks, /opt/java, /usr/lib/jvm,
@@ -77,15 +77,13 @@ def error(msg): print(f"{RED}[ERROR]{RESET} {msg}", file=sys.stderr, flush=True)
 IS_WINDOWS = platform.system() == "Windows"
 IS_MACOS = platform.system() == "Darwin"
 
-# Wanted JDK major per release-script profile. jdk22plus accepts any JDK >= 22 and
+# Wanted JDK major per release-script profile. jdk25plus accepts any JDK >= 25 and
 # produces an identical artifact; 25 is the pinned build JDK the CI workflows use.
 PROFILES = {
-    "jdk21": 21,
-    "jdk22plus": 25,
+    "jdk25plus": 25,
 }
 ENV_VARS = {
-    "jdk21": ["JDK21_HOME"],
-    "jdk22plus": ["JDK25_HOME", "JDK22PLUS_HOME"],
+    "jdk25plus": ["JDK25_HOME", "JDK25PLUS_HOME"],
 }
 
 
@@ -226,7 +224,7 @@ def pick_jdk(profile, major, found, override):
         if not described:
             error(f"{profile}: {override} is not a JDK (no bin/javac or no 'release' file).")
             return None
-        if described[0] != major and not (profile == "jdk22plus" and described[0] >= 22):
+        if described[0] != major and not (profile == "jdk25plus" and described[0] >= 25):
             error(f"{profile}: {override} is JDK {described[1]}, but JDK {major} is required.")
             return None
         return home
@@ -244,7 +242,7 @@ def pick_jdk(profile, major, found, override):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Detect JDK 21 and JDK 25 and build every TornadoVM SDK for this platform.",
+        description="Detect a JDK 25 and build every TornadoVM SDK for this platform.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -252,10 +250,8 @@ def parse_args():
                         help="Release tag to build, e.g. v8.0.0 (the leading v may be left out).")
     parser.add_argument("--output-dir", default="release-sdks", metavar="DIR",
                         help="Root directory for the archives (default: release-sdks/).")
-    parser.add_argument("--jdk21-home", default=None, metavar="PATH",
-                        help="Use this JDK 21 instead of detecting one.")
-    parser.add_argument("--jdk22plus-home", "--jdk25-home", dest="jdk22plus_home", default=None, metavar="PATH",
-                        help="Use this JDK (>= 22, normally 25) instead of detecting one.")
+    parser.add_argument("--jdk25plus-home", "--jdk25-home", dest="jdk25plus_home", default=None, metavar="PATH",
+                        help="Use this JDK (>= 25) instead of detecting one.")
     parser.add_argument("--detect-only", action="store_true",
                         help="Print the detected JDKs and the command, then exit without building.")
     return parser.parse_known_args()
@@ -278,7 +274,7 @@ def main():
             print(f"          JDK {major:<3} {v:<14} {implementor or '?':<28} {home}")
 
     homes = {}
-    overrides = {"jdk21": args.jdk21_home, "jdk22plus": args.jdk22plus_home}
+    overrides = {"jdk25plus": args.jdk25plus_home}
     for profile, major in PROFILES.items():
         explicit = overrides[profile] or any(os.environ.get(env) for env in ENV_VARS[profile])
         home = pick_jdk(profile, major, found, overrides[profile])
@@ -292,7 +288,7 @@ def main():
                  f"Set {ENV_VARS[profile][0]} or pass --{profile}-home.")
 
     if not homes:
-        error("Neither a JDK 21 nor a JDK 25 was found. Nothing to build.")
+        error("No JDK 25 or newer was found. Nothing to build.")
         sys.exit(1)
 
     script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "build-release-sdks.py")

@@ -24,68 +24,43 @@ ifneq ($(UNSUPPORTED_BACKENDS),)
 $(error [ERROR] Unsupported backends specified in BACKEND: $(subst $(SPACE),$(COMMA)$(SPACE),$(UNSUPPORTED_BACKENDS)). Supported backends: $(subst $(SPACE),$(COMMA)$(SPACE),$(SUPPORTED_BACKENDS)))
 endif
 
-# JDK profile used by the `sdk` and `test-nogpu` targets
-# { jdk21, jdk22plus }, derived from JAVA_HOME rather than hardcoded.
-#
-# It has to be derived: bin/compile checks that JAVA_HOME matches the requested profile, so a fixed
-# default of jdk21 can only ever fail once JAVA_HOME is a newer JDK -- and it fails confusingly,
-# because the goal that failed (`sdk`) is not the profile the user named. `make jdk22plus sdk` is
-# two independent goals, and the second one does not inherit the first one's profile.
-#
-# Override explicitly with:  make sdk JDK=<jdk21|jdk22plus> BACKEND=<backends>
-# or use the sdk-jdkNN targets below, which pin the profile and ignore this variable.
-JDK ?= $(shell v=$$("$${JAVA_HOME:-/nonexistent}/bin/java" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -1); \
-               if [ "$$v" = "21" ] || [ -z "$$v" ]; then echo jdk21; else echo jdk22plus; fi)
+# JDK profile used by the `sdk` and `test-nogpu` targets. TornadoVM builds for JDK 25 and newer
+# only, so there is one profile, jdk25plus; jdk25/jdk26/jdk27 are accepted as aliases.
+# Override explicitly with:  make sdk JDK=jdk25plus BACKEND=<backends>
+JDK ?= jdk25plus
+JDK_PROFILE = jdk25plus
 
-# jdk25/jdk26/jdk27 no longer exist as Maven profiles: one jdk22plus profile serves every JDK
-# from 22 up. Map the legacy names onto it so `JDK=jdk25` and CI callers keep working.
-JDK_PROFILE = $(if $(filter jdk21,$(JDK)),$(JDK),jdk22plus)
-
-build jdk21:
-	bin/compile --jdk jdk21 --backend $(BACKEND)
-
-rebuild-deps-jdk21:
-	bin/compile --jdk jdk21 --rebuild --backend $(BACKEND)
-
-# One SDK for every JDK from 22 up. jdk25/jdk26/jdk27 are kept as aliases so existing
+# One SDK for every JDK from 25 up. jdk25/jdk26/jdk27 are kept as aliases so existing
 # scripts and muscle memory keep working; they all produce the same artifact.
-jdk22plus jdk25 jdk26 jdk27:
-	bin/compile --jdk jdk22plus --backend $(BACKEND)
+build jdk25plus jdk25 jdk26 jdk27:
+	bin/compile --jdk jdk25plus --backend $(BACKEND)
 
-rebuild-deps-jdk22plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
-	bin/compile --jdk jdk22plus --rebuild --backend $(BACKEND)
+rebuild-deps rebuild-deps-jdk25plus rebuild-deps-jdk25 rebuild-deps-jdk26 rebuild-deps-jdk27:
+	bin/compile --jdk jdk25plus --rebuild --backend $(BACKEND)
 
-mvn-single-threaded-jdk21:
-	bin/compile --jdk jdk21 --backend $(BACKEND) --mvn_single_threaded
-
-mvn-single-threaded-jdk22plus:
-	bin/compile --jdk jdk22plus --backend $(BACKEND) --mvn_single_threaded
+mvn-single-threaded-jdk25plus:
+	bin/compile --jdk jdk25plus --backend $(BACKEND) --mvn_single_threaded
 
 
 metal:
-	bin/compile --jdk jdk21 --backend metal,opencl
+	bin/compile --jdk jdk25plus --backend metal,opencl
 
 cuda:
-	bin/compile --jdk jdk21 --backend cuda
+	bin/compile --jdk jdk25plus --backend cuda
 
 sdk:
 	bin/compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)
 
-sdk-jdk21:
-	bin/compile --jdk jdk21 --sdk --backend $(BACKEND)
-
-sdk-jdk22plus:
-	bin/compile --jdk jdk22plus --sdk --backend $(BACKEND)
+sdk-jdk25plus:
+	bin/compile --jdk jdk25plus --sdk --backend $(BACKEND)
 
 checkstyle:
 	./mvnw checkstyle:check
 
 # The unit tests that need no GPU: TC's (the compiler's lit file tests and API tests; every build
 # runs them too) and tornado-api/tornado-runtime's. The JDK profiles skip surefire elsewhere, so force
-# it on here. `clean` + `-am` rebuilds the modules in one reactor so stale class files from another
-# JDK profile (jdk21 compiles at 21, jdk22plus at 22) never reach the test classpath; the target is
-# safe to run right after a different profile's build. Override the profile with JDK=jdk22plus
-# (JDK is declared once, near BACKEND, at the top of this file). `test-reflection` is the old name.
+# it on here. `clean` + `-am` rebuilds the modules in one reactor so stale class files from an
+# older build never reach the test classpath. `test-reflection` is the old name.
 TC_MODULES = tornado-compiler/tc-check,tornado-compiler/tc-ir,tornado-compiler/tc-frontend,tornado-compiler/tc-opt,tornado-compiler/tc-lower,tornado-compiler/tc-codegen,tornado-compiler/tc-tornado,tornado-compiler/tc-runtime,tornado-compiler/tc-debug
 test-nogpu:
 	./mvnw -P$(JDK_PROFILE) -pl tornado-api,tornado-runtime,$(TC_MODULES) -am clean test -DskipTests=false

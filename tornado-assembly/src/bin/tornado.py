@@ -82,8 +82,8 @@ __NCCL_MODULE__ = "tornado.nccl"
 # JAVA FLAGS
 # ########################################################
 __JAVA_BASE_OPTIONS__ = "-server "
-# Only an SDK compiled with enable-preview needs it at run time (the jdk21 profiles: FFM was a
-# preview API before JDK 22). Appending it unconditionally would switch preview APIs on JVM-wide
+# Only an SDK compiled with enable-preview needs it at run time (SDKs built for JDK 21, where FFM
+# was a preview API; current SDKs are not). Appending it unconditionally would switch preview APIs on JVM-wide
 # for SDKs that contain no preview class files at all.
 __JAVA_PREVIEW_OPTION__ = "--enable-preview "
 __ENABLE_ASSERTIONS__ = " -ea "
@@ -449,7 +449,7 @@ class TornadoVMRunnerTool():
         """
         contract = os.path.join(self.sdk, "etc", "tornado.jdk")
         if os.path.isfile(contract):
-            floor, preview = 21, True
+            floor, preview = 25, False
             try:
                 with open(contract, "r") as f:
                     for line in f.read().splitlines():
@@ -475,6 +475,8 @@ class TornadoVMRunnerTool():
         # A real SDK that predates etc/tornado.jdk: infer from the artifact version it ships.
         for name in sorted(os.listdir(jars)):
             if name.startswith("tornado-api-"):
+                if "jdk25plus" in name:
+                    return 25, False
                 return (22, False) if "jdk22plus" in name else (21, True)
         return 21, True
 
@@ -486,7 +488,7 @@ class TornadoVMRunnerTool():
                 print("This TornadoVM SDK was built for JDK " + str(self.sdk_jdk_floor)
                       + " with preview features enabled, so it runs on JDK " + str(self.sdk_jdk_floor)
                       + " only (found JDK " + str(self.java_version) + ").")
-                print("Use the jdk22plus SDK for JDK 22 and newer.")
+                print("Use the jdk25plus SDK for JDK 25 and newer.")
                 sys.exit(0)
         elif (self.java_version < self.sdk_jdk_floor):
             print("This TornadoVM SDK requires JDK " + str(self.sdk_jdk_floor)
@@ -1216,7 +1218,7 @@ class TornadoVMRunnerTool():
         # The backends and the library-task providers reach their native libraries through
         # java.lang.foreign rather than a JNI library of their own, and every one of those lookups
         # goes through tornado.runtime. Those are restricted methods, so without this the lookup
-        # fails outright (JDK 21) or warns on every run.
+        # warns on every run.
         javaFlags = javaFlags + __ENABLE_NATIVE_ACCESS__ + __FFM_MODULE__ + " "
         if ("opencl-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + opencl + " "

@@ -25,7 +25,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot()))
 - macOS on Apple silicon with an M4-class GPU (`applegpu_g16`) or newer. On older GPUs every MLX
   library task throws `TornadoLibraryTaskNotSupported`.
 - MLX 0.32.3's kernel library: `brew install mlx` installs `/opt/homebrew/opt/mlx/lib/mlx.metallib`.
-- JDK 21
+- JDK 25 or newer
 
 Operations that MLX runs with its NAX kernels on M5-class GPUs and newer (half and bfloat16 GEMM,
 prefill attention, gathered and segmented matrix products, prefill quantized matmul) throw

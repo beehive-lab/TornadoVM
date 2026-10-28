@@ -12,7 +12,7 @@ Change the IntelliJ maximum memory to 2 GB or more (follow `these instructions <
 
 For IntelliJ to pick up the required TornadoVM dependencies from the `pom.xml` file, go to **View > Tool Windows > Maven**, and select the following profiles:
 
-- **jdk21**
+- **jdk25plus**
 - **cuda-backend**
 - **opencl-backend**
 
@@ -144,12 +144,12 @@ Configuring the Project Structure
 
 a. In the **Project** tab:
 
-   - The *SDK* uses a valid Java version (e.g. OpenJDK 21, GraalVM JDK 21, etc.).
-   - The *Language level* is set to match the Java version (e.g. Java 21).
+   - The *SDK* uses a valid Java version (e.g. OpenJDK 25, GraalVM for JDK 25, etc.).
+   - The *Language level* is set to match the Java version (e.g. Java 25).
 
 b. In the **Modules** tab:
 
-   - Ensure that the *Language level* of every module matches the project level (e.g. Java 21).
+   - Ensure that the *Language level* of every module matches the project level (e.g. Java 25).
 
 Configuring IntelliJ for TornadoVM
 **********************************
@@ -252,7 +252,7 @@ The output will differ depending on the backends you've built. For example, if y
    .. code:: bash
 
       <JAVA_HOME>/bin/java
-      -server --enable-preview -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
+      -server -Djava.library.path=<path-to-TornadoVM-directory>/bin/sdk/lib  --module-path .:<path-to-TornadoVM-directory>/bin/sdk/share/java/tornado
       -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/common-exports --enable-native-access=tornado.runtime
       @<path-to-TornadoVM-directory>/bin/sdk/etc/exportLists/opencl-exports
