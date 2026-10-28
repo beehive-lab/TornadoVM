@@ -60,7 +60,7 @@ final class CuFftNativeLib {
     /** {@code CUFFT_SUCCESS}. */
     private static final int CUFFT_SUCCESS = 0;
 
-    private static final SymbolLookup LIBCUFFT = FFMSupport.loadLibrary("libcufft.so.11", "libcufft.so.10", "libcufft.so", "cufft64_11.dll", "libcufft.dylib");
+    private static final SymbolLookup LIBCUFFT = FFMSupport.loadLibrary("libcufft.so.12", "libcufft.so.11", "libcufft.so.10", "libcufft.so", "cufft64_12.dll", "cufft64_11.dll", "libcufft.dylib");
 
     private static final MethodHandle CUFFT_PLAN_1D;
     private static final MethodHandle CUFFT_PLAN_2D;

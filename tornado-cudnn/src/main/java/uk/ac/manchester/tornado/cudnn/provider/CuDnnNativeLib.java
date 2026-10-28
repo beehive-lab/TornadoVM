@@ -63,7 +63,8 @@ final class CuDnnNativeLib {
     private static final SymbolLookup LIBCUDNN = FFMSupport.loadLibrary("libcudnn.so.9", "libcudnn.so.8", "libcudnn.so", "cudnn64_9.dll", "cudnn64_8.dll", "libcudnn.dylib");
 
     /** The workspace allocation goes through the CUDA runtime, as cuDNN itself does. */
-    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.12", "libcudart.so.11.0", "libcudart.so", "cudart64_12.dll", "libcudart.dylib");
+    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.13", "libcudart.so.12", "libcudart.so.11.0", "libcudart.so",
+            "cudart64_13.dll", "cudart64_12.dll", "libcudart.dylib");
 
     private static final MethodHandle CUDNN_CREATE;
     private static final MethodHandle CUDNN_DESTROY;
@@ -92,6 +93,12 @@ final class CuDnnNativeLib {
     private static final MethodHandle ACTIVATION_FORWARD;
     private static final MethodHandle POOLING_FORWARD;
     private static final MethodHandle CONVOLUTION_FORWARD;
+    private static final MethodHandle GET_CONVOLUTION_BACKWARD_DATA_ALGORITHM_V7;
+    private static final MethodHandle GET_CONVOLUTION_BACKWARD_DATA_WORKSPACE_SIZE;
+    private static final MethodHandle CONVOLUTION_BACKWARD_DATA;
+    private static final MethodHandle GET_CONVOLUTION_BACKWARD_FILTER_ALGORITHM_V7;
+    private static final MethodHandle GET_CONVOLUTION_BACKWARD_FILTER_WORKSPACE_SIZE;
+    private static final MethodHandle CONVOLUTION_BACKWARD_FILTER;
     private static final MethodHandle CUDA_MALLOC;
     private static final MethodHandle CUDA_FREE;
 
@@ -124,6 +131,12 @@ final class CuDnnNativeLib {
             ACTIVATION_FORWARD = null;
             POOLING_FORWARD = null;
             CONVOLUTION_FORWARD = null;
+            GET_CONVOLUTION_BACKWARD_DATA_ALGORITHM_V7 = null;
+            GET_CONVOLUTION_BACKWARD_DATA_WORKSPACE_SIZE = null;
+            CONVOLUTION_BACKWARD_DATA = null;
+            GET_CONVOLUTION_BACKWARD_FILTER_ALGORITHM_V7 = null;
+            GET_CONVOLUTION_BACKWARD_FILTER_WORKSPACE_SIZE = null;
+            CONVOLUTION_BACKWARD_FILTER = null;
         } else {
             CUDNN_CREATE = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_POINTER), "cudnnCreate");
             CUDNN_DESTROY = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG), "cudnnDestroy");
@@ -157,6 +170,19 @@ final class CuDnnNativeLib {
             POOLING_FORWARD = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG), "cudnnPoolingForward");
             CONVOLUTION_FORWARD = FFMSupport.downcall(LIBCUDNN,
                     FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG), "cudnnConvolutionForward");
+            // the backward entry points take the same argument types as their forward counterparts
+            GET_CONVOLUTION_BACKWARD_DATA_ALGORITHM_V7 = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_POINTER, C_POINTER),
+                    "cudnnGetConvolutionBackwardDataAlgorithm_v7");
+            GET_CONVOLUTION_BACKWARD_DATA_WORKSPACE_SIZE = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_POINTER),
+                    "cudnnGetConvolutionBackwardDataWorkspaceSize");
+            CONVOLUTION_BACKWARD_DATA = FFMSupport.downcall(LIBCUDNN,
+                    FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG), "cudnnConvolutionBackwardData");
+            GET_CONVOLUTION_BACKWARD_FILTER_ALGORITHM_V7 = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_POINTER, C_POINTER),
+                    "cudnnGetConvolutionBackwardFilterAlgorithm_v7");
+            GET_CONVOLUTION_BACKWARD_FILTER_WORKSPACE_SIZE = FFMSupport.downcall(LIBCUDNN, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_POINTER),
+                    "cudnnGetConvolutionBackwardFilterWorkspaceSize");
+            CONVOLUTION_BACKWARD_FILTER = FFMSupport.downcall(LIBCUDNN,
+                    FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG, C_POINTER, C_LONG, C_LONG), "cudnnConvolutionBackwardFilter");
         }
         if (LIBCUDART == null) {
             CUDA_MALLOC = null;
@@ -410,6 +436,11 @@ final class CuDnnNativeLib {
         }
     }
 
+    /** What a convolution plan computes: the output, the input gradient, or the filter gradient. */
+    static final int CONV_FORWARD = 0;
+    static final int CONV_BACKWARD_DATA = 1;
+    static final int CONV_BACKWARD_FILTER = 2;
+
     private static final AtomicLong NEXT_CONV_PLAN = new AtomicLong(1);
 
     private static final ConcurrentHashMap<Long, ConvPlan> CONV_PLANS = new ConcurrentHashMap<>();
@@ -417,7 +448,9 @@ final class CuDnnNativeLib {
     /** Size of {@code cudnnConvolutionFwdAlgoPerf_t}, and the offsets of the fields read from it. */
     private static final int ALGO_PERF_BYTES = 48;
     private static final int ALGO_PERF_STATUS = 4;
+    private static final int ALGO_PERF_DETERMINISM = 24;
     private static final int ALGO_PERF_MATH_TYPE = 28;
+    private static final int CUDNN_DETERMINISTIC = 1;
     private static final int ALGO_PERF_COUNT = 8;
 
     /**
@@ -431,6 +464,16 @@ final class CuDnnNativeLib {
      * tensor-core maths; FP16 and NHWC take the algorithm cuDNN's heuristics rank first.
      */
     static long createConvPlan(long handle, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc) {
+        return createConvPlan(handle, n, c, h, w, k, r, s, pad, stride, half, nhwc, CONV_FORWARD);
+    }
+
+    /**
+     * {@link #createConvPlan(long, int, int, int, int, int, int, int, int, int, boolean, boolean)} for
+     * {@code direction}: the forward convolution, the gradient of its input, or the gradient of its
+     * filter, with the sizes of the forward problem. The backward directions take the algorithm
+     * cuDNN's heuristics rank first.
+     */
+    static long createConvPlan(long handle, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc, int direction) {
         if (CREATE_TENSOR_DESCRIPTOR == null) {
             return 0;
         }
@@ -470,15 +513,23 @@ final class CuDnnNativeLib {
                 status = (int) SET_TENSOR_4D_DESCRIPTOR.invokeExact(outputDesc, format, dataType, dims.get(C_INT, 0), dims.get(C_INT, 4), dims.get(C_INT, 8), dims.get(C_INT, 12));
             }
             int algo = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM;
-            if (status == CUDNN_STATUS_SUCCESS && (half || nhwc)) {
-                algo = heuristicAlgorithm(arena, handle, inputDesc, filterDesc, convDesc, outputDesc);
-                if (algo < 0) {
-                    return 0;
-                }
+            if (status == CUDNN_STATUS_SUCCESS && direction == CONV_BACKWARD_DATA) {
+                algo = heuristicAlgorithm(arena, GET_CONVOLUTION_BACKWARD_DATA_ALGORITHM_V7, handle, filterDesc, outputDesc, convDesc, inputDesc);
+            } else if (status == CUDNN_STATUS_SUCCESS && direction == CONV_BACKWARD_FILTER) {
+                algo = heuristicAlgorithm(arena, GET_CONVOLUTION_BACKWARD_FILTER_ALGORITHM_V7, handle, inputDesc, outputDesc, convDesc, filterDesc);
+            } else if (status == CUDNN_STATUS_SUCCESS && (half || nhwc)) {
+                algo = heuristicAlgorithm(arena, GET_CONVOLUTION_FORWARD_ALGORITHM_V7, handle, inputDesc, filterDesc, convDesc, outputDesc);
+            }
+            if (algo < 0) {
+                return 0;
             }
             MemorySegment workspace = FFMSupport.allocateLong(arena);
             if (status == CUDNN_STATUS_SUCCESS) {
-                status = (int) GET_CONVOLUTION_FORWARD_WORKSPACE_SIZE.invokeExact(handle, inputDesc, filterDesc, convDesc, outputDesc, algo, workspace);
+                status = switch (direction) {
+                    case CONV_BACKWARD_DATA -> (int) GET_CONVOLUTION_BACKWARD_DATA_WORKSPACE_SIZE.invokeExact(handle, filterDesc, outputDesc, convDesc, inputDesc, algo, workspace);
+                    case CONV_BACKWARD_FILTER -> (int) GET_CONVOLUTION_BACKWARD_FILTER_WORKSPACE_SIZE.invokeExact(handle, inputDesc, outputDesc, convDesc, filterDesc, algo, workspace);
+                    default -> (int) GET_CONVOLUTION_FORWARD_WORKSPACE_SIZE.invokeExact(handle, inputDesc, filterDesc, convDesc, outputDesc, algo, workspace);
+                };
             }
             if (status != CUDNN_STATUS_SUCCESS) {
                 return 0;
@@ -500,19 +551,23 @@ final class CuDnnNativeLib {
     }
 
     /**
-     * The first algorithm cuDNN's heuristics return that supports the descriptors; its math type is
-     * set on {@code convDesc}. Returns -1 when none does.
+     * The first algorithm cuDNN's heuristics ({@code query}, one of the {@code _v7} queries; the
+     * descriptors in its argument order) return that supports the descriptors; its math type is set
+     * on {@code convDesc}. The backward results have the forward result's layout. With
+     * {@code -Dtornado.cudnn.deterministic=true} only algorithms cuDNN reports as deterministic are
+     * taken. Returns -1 when none qualifies.
      */
-    private static int heuristicAlgorithm(Arena arena, long handle, long inputDesc, long filterDesc, long convDesc, long outputDesc) throws Throwable {
+    private static int heuristicAlgorithm(Arena arena, MethodHandle query, long handle, long desc1, long desc2, long convDesc, long desc3) throws Throwable {
         MemorySegment count = FFMSupport.allocateArray(arena, C_INT, 1);
         MemorySegment perf = arena.allocate((long) ALGO_PERF_BYTES * ALGO_PERF_COUNT, 8);
-        int status = (int) GET_CONVOLUTION_FORWARD_ALGORITHM_V7.invokeExact(handle, inputDesc, filterDesc, convDesc, outputDesc, ALGO_PERF_COUNT, count, perf);
+        int status = (int) query.invokeExact(handle, desc1, desc2, convDesc, desc3, ALGO_PERF_COUNT, count, perf);
         if (status != CUDNN_STATUS_SUCCESS) {
             return -1;
         }
         for (int i = 0; i < count.get(C_INT, 0); i++) {
             MemorySegment result = perf.asSlice((long) i * ALGO_PERF_BYTES, ALGO_PERF_BYTES);
-            if (result.get(C_INT, ALGO_PERF_STATUS) == CUDNN_STATUS_SUCCESS) {
+            boolean deterministic = !Boolean.getBoolean("tornado.cudnn.deterministic") || result.get(C_INT, ALGO_PERF_DETERMINISM) == CUDNN_DETERMINISTIC;
+            if (result.get(C_INT, ALGO_PERF_STATUS) == CUDNN_STATUS_SUCCESS && deterministic) {
                 status = (int) SET_CONVOLUTION_MATH_TYPE.invokeExact(convDesc, result.get(C_INT, ALGO_PERF_MATH_TYPE));
                 return status == CUDNN_STATUS_SUCCESS ? result.get(C_INT, 0) : -1;
             }
@@ -539,6 +594,36 @@ final class CuDnnNativeLib {
         }
     }
 
+    /** dInput = the gradient of the input of the plan's forward convolution, from its filter and dOutput. */
+    static int convBackwardData(long handle, long planPtr, long dFilter, long dOutput, long dInput, long workspacePtr, long workspaceBytes) {
+        ConvPlan plan = CONV_PLANS.get(planPtr);
+        if (plan == null || CONVOLUTION_BACKWARD_DATA == null) {
+            return CUDNN_STATUS_INTERNAL_ERROR;
+        }
+        MemorySegment scalars = unitScalars();
+        try {
+            return (int) CONVOLUTION_BACKWARD_DATA.invokeExact(handle, scalars.asSlice(0, Float.BYTES), plan.filterDesc, dFilter, plan.outputDesc, dOutput, plan.convDesc, plan.algo,
+                    workspacePtr, workspaceBytes, scalars.asSlice(Float.BYTES, Float.BYTES), plan.inputDesc, dInput);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    /** dFilter = the gradient of the filter of the plan's forward convolution, from its input and dOutput. */
+    static int convBackwardFilter(long handle, long planPtr, long dInput, long dOutput, long dFilter, long workspacePtr, long workspaceBytes) {
+        ConvPlan plan = CONV_PLANS.get(planPtr);
+        if (plan == null || CONVOLUTION_BACKWARD_FILTER == null) {
+            return CUDNN_STATUS_INTERNAL_ERROR;
+        }
+        MemorySegment scalars = unitScalars();
+        try {
+            return (int) CONVOLUTION_BACKWARD_FILTER.invokeExact(handle, scalars.asSlice(0, Float.BYTES), plan.inputDesc, dInput, plan.outputDesc, dOutput, plan.convDesc, plan.algo,
+                    workspacePtr, workspaceBytes, scalars.asSlice(Float.BYTES, Float.BYTES), plan.filterDesc, dFilter);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
     static void destroyConvPlan(long planPtr) {
         ConvPlan plan = CONV_PLANS.remove(planPtr);
         if (plan == null) {
@@ -551,12 +636,19 @@ final class CuDnnNativeLib {
     }
 
     /*
-     * The four methods below are the only ones still crossing into a TornadoVM JNI library. They
+     * The five methods below are the only ones still crossing into a TornadoVM JNI library. They
      * are built on cudnn-frontend, a header-only C++ graph API with no C ABI, so java.lang.foreign
      * cannot reach them; see loadSdpaShim.
      */
 
     static native long createSdpaPlan(long handle, int b, int h, int sQ, int sKv, int d, float scale, boolean causal);
+
+    /**
+     * {@link #createSdpaPlan} with explicit element strides: 16 values, the (batch, head, sequence,
+     * dim) strides of q, k, v and then o, so the tensors may be views of larger buffers (a packed
+     * projection, say).
+     */
+    static native long createSdpaPlanStrided(long handle, int b, int h, int sQ, int sKv, int d, float scale, boolean causal, long[] strides);
 
     static native long sdpaPlanWorkspaceBytes(long planPtr);
 

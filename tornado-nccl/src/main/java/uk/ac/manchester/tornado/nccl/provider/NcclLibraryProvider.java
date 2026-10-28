@@ -36,13 +36,40 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * <p>
  * The per-(device, plan) context only records which CUDA device the TornadoVM device is: the
  * communicator is created by the application across several devices, so it cannot be owned by a
- * context that belongs to one of them. NCCL allocates nothing per call, so there is no
- * {@code prepare} step.
+ * context that belongs to one of them. NCCL allocates nothing per call; {@code prepare} only
+ * creates, before any CUDA graph capture, the side stream and events of the collectives started
+ * with {@link Nccl#allReduceInPlaceStart}.
  * </p>
  */
 public final class NcclLibraryProvider implements TornadoLibraryProvider {
 
     private record NcclContext(int ordinal) implements LibraryContext {
+    }
+
+    /** Where a started collective runs (a stream of its own) and the events that fork it from and join it to the plan's stream. */
+    private record Side(long stream, long fork, long join) {
+    }
+
+    /** One side channel per (device, communicator, tag), kept for the process. */
+    private static final java.util.concurrent.ConcurrentHashMap<String, Side> SIDES = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static Side side(int ordinal, long communicator, int tag) {
+        return SIDES.computeIfAbsent(ordinal + "/" + communicator + "/" + tag, k -> {
+            long[] h = NcclNativeLib.createSideChannel();
+            return new Side(h[0], h[1], h[2]);
+        });
+    }
+
+    @Override
+    public void prepare(uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor descriptor, LibraryContext context) {
+        Object[] p = descriptor.getParameters();
+        switch (descriptor.getFunctionName()) {
+            case "allReduceInPlaceStart" -> side(((NcclContext) context).ordinal(), (long) p[0], (int) p[5]);
+            case "allReduceWait" -> side(((NcclContext) context).ordinal(), (long) p[0], (int) p[2]);
+            default -> {
+                // the other calls run on the plan's stream and need nothing
+            }
+        }
     }
 
     /** Whether NCCL can be reached on this host. */
@@ -81,6 +108,16 @@ public final class NcclLibraryProvider implements TornadoLibraryProvider {
                 long buffer = invocation.getDevicePointer(1);
                 NcclNativeLib.allReduce(buffer, buffer, (long) invocation.getArg(4), (int) invocation.getArg(3), (int) invocation.getArg(2), comm, stream);
             }
+            case "allReduceInPlaceStart" -> {
+                long buffer = invocation.getDevicePointer(1);
+                Side s = side(context.ordinal(), (long) invocation.getArg(0), (int) invocation.getArg(5));
+                // fork: the side stream starts after everything enqueued so far; join: recorded when the collective ends
+                NcclNativeLib.eventRecord(s.fork(), stream);
+                NcclNativeLib.streamWaitEvent(s.stream(), s.fork());
+                NcclNativeLib.allReduce(buffer, buffer, (long) invocation.getArg(4), (int) invocation.getArg(3), (int) invocation.getArg(2), comm, s.stream());
+                NcclNativeLib.eventRecord(s.join(), s.stream());
+            }
+            case "allReduceWait" -> NcclNativeLib.streamWaitEvent(stream, side(context.ordinal(), (long) invocation.getArg(0), (int) invocation.getArg(2)).join());
             case "broadcast" -> {
                 long buffer = invocation.getDevicePointer(1);
                 NcclNativeLib.broadcast(buffer, buffer, (long) invocation.getArg(4), (int) invocation.getArg(3), (int) invocation.getArg(2), comm, stream);

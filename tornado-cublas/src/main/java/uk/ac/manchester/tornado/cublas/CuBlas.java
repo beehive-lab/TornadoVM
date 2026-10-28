@@ -23,6 +23,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.LibraryTaskDescriptor;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -425,6 +426,33 @@ public final class CuBlas {
         return new LibraryTaskDescriptor() //
                 .withLibrary(LIBRARY_NAME) //
                 .withFunction("cublasGemmExBF16") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * Mixed-precision matrix-matrix multiplication via {@code cublasGemmEx}: bfloat16 inputs held
+     * as their raw 16-bit patterns in {@link ShortArray}s (the upper half of the FP32 bits), FP32
+     * output, FP32 accumulation ({@code CUBLAS_COMPUTE_32F}) on Tensor Cores. For code that keeps
+     * bfloat16 data as bits, as mixed-precision training does; {@link #cublasGemmExBF16} takes
+     * {@link BFloat16Array}s and writes bfloat16.
+     */
+    public static LibraryTaskDescriptor cublasGemmExBF16FP32(int transa, //
+            int transb, //
+            int m, //
+            int n, //
+            int k, //
+            float alpha, //
+            ShortArray matrixA, //
+            int lda, //
+            ShortArray matrixB, //
+            int ldb, //
+            float beta, //
+            FloatArray matrixC, //
+            int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("cublasGemmExBF16FP32") //
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
                 .withAccess(readOnlyExcept(13, 11, beta));
     }

@@ -165,7 +165,8 @@ public class TcCompilerTest {
         // Float4.mult inlines to make_float4, setY replaces one lane. Only lanes are read, so the
         // canonicaliser takes them straight from the lanes made (y is the 0 setY wrote).
         // The helpers' bytecode comes from the TornadoVM API classes.
-        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource
+                .classpath("../tc-frontend/target/test-classes" + java.io.File.pathSeparator + "../../tornado-api/target/classes");
         var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "vectorValue", TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, java.util.List.of());
         assertTrue(c.succeeded(), c.diagnostics().toString());
         // With math optimisations (the default) the products fuse into fmaf on CUDA.
@@ -288,7 +289,8 @@ public class TcCompilerTest {
     }
 
     private static TcCompiler.Compilation review(String kernel, java.util.List<uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation.Fact> facts) {
-        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes:../../tornado-api/target/classes");
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource
+                .classpath("../tc-frontend/target/test-classes" + java.io.File.pathSeparator + "../../tornado-api/target/classes");
         return TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.RegressionKernels", kernel, TargetCaps.CUDA_SM89, TcOptions.DEFAULTS, facts);
     }
 

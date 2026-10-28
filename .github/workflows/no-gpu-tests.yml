@@ -26,6 +26,9 @@ on:
       - '!**/LICENSE*'
       - '!**/NOTICE*'
       - '!**/THIRD_PARTY_NOTICES*'
+      # Images (README logos, docs figures): nothing a build or test reads.
+      - '!**/*.png'
+      - '!**/*.svg'
       # Release/publishing workflows, issue and PR templates: nothing a build or test reads.
       - '!.github/**'
       # ...except the workflows that make up this CI, so a change to them is exercised.

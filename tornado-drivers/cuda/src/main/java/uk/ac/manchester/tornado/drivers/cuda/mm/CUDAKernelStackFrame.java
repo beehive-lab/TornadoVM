@@ -77,12 +77,12 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
         super(device, bufferId, 0, FRAME_BYTES);
         this.callArguments = new ArrayList<>(numArgs);
         CUDAContext platformContext = device.getPlatformContext();
-        this.hostPointer = platformContext.allocateOffHeapMemory(FRAME_BYTES, HOST_BUFFER_ALIGNMENT);
+        // pinned for asynchronous uploads; the buffer of a freed frame is reused (see acquirePinnedFrame)
+        this.hostPointer = platformContext.acquirePinnedFrame(FRAME_BYTES, HOST_BUFFER_ALIGNMENT);
         if (hostPointer != 0) {
             ByteBuffer direct = platformContext.asByteBuffer(hostPointer, FRAME_BYTES);
             direct.order(device.getByteOrder());
             buffer = direct;
-            platformContext.registerPinnedMemory(hostPointer, FRAME_BYTES);
         }
         buffer.clear();
         this.isValid = true;
@@ -108,10 +108,8 @@ public class CUDAKernelStackFrame extends CUDAByteBuffer implements KernelStackF
         isValid = false;
         deviceSlotsValid = false;
         if (hostPointer != 0) {
-            // Unregister (native side synchronises the context first) BEFORE freeing, so
-            // no stale pin can survive the host buffer.
-            deviceContext.getPlatformContext().unregisterPinnedMemory(hostPointer);
-            deviceContext.getPlatformContext().freeOffHeapMemory(hostPointer);
+            // the pinned buffer goes back to the context for the next frame, still pinned
+            deviceContext.getPlatformContext().releasePinnedFrame(hostPointer, FRAME_BYTES, deviceContext.getDeviceIndex());
             hostPointer = 0;
         }
         deviceContext.getPlatformContext().releaseBuffer(deviceContext.getDeviceIndex(), toBuffer());

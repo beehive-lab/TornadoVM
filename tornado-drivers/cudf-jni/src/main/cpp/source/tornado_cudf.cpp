@@ -36,6 +36,7 @@
  *      unwinding into the JVM aborts the process, so every entry point catches everything and
  *      returns a status. The message is kept for tornado_cudf_last_error.
  */
+#include <algorithm>
 #include <cudf/aggregation.hpp>
 #include <cudf/io/parquet.hpp>
 #include <cudf/io/types.hpp>
@@ -157,8 +158,17 @@ void ensure_pool() {
         // tuned against it. The threshold must be set: RMM's default is UINT64_MAX, which keeps
         // the pool at its high-water mark for good -- one large read or write would then hold that
         // memory away from TornadoVM's buffers for the rest of the process.
-        // TORNADO_CUDF_POOL_RELEASE_MB (default 1024) is what the pool keeps between calls.
+        // TORNADO_CUDF_POOL_RELEASE_MB is what the pool keeps between calls: by default an eighth
+        // of the card, at least 1 GB. A fixed 1 GB sat just under one Parquet read's working set
+        // (a few hundred MB of compressed pages, their decompressed pages and the columns, on
+        // each of several streams), so every read gave its memory back at the synchronization
+        // and allocated it again: a five-column scan of 100M rows ran 1.9x slower (490 vs 262 ms).
         std::size_t release_mb = 1024;
+        std::size_t free_bytes = 0;
+        std::size_t total_bytes = 0;
+        if (cudaMemGetInfo(&free_bytes, &total_bytes) == cudaSuccess) {
+            release_mb = std::max<std::size_t>(release_mb, (total_bytes >> 20) / 8);
+        }
         if (const char* env = std::getenv("TORNADO_CUDF_POOL_RELEASE_MB")) {
             release_mb = std::strtoul(env, nullptr, 10);
         }

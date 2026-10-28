@@ -2,11 +2,11 @@ extern "C" __global__ void add(long *_kernel_context, unsigned char *_constant_r
 {
   int i_11, i_9, i_15, i_14, i_13, i_3, i_4;
   long l_5, l_7, l_6;
-  unsigned long ul_8, ul_10, ul_1, ul_0, ul_2, ul_12;
+  unsigned long long ul_8, ul_10, ul_1, ul_0, ul_2, ul_12;
   // BLOCK 0
-  ul_0  =  (unsigned long) a;
-  ul_1  =  (unsigned long) b;
-  ul_2  =  (unsigned long) c;
+  ul_0  =  (unsigned long long) a;
+  ul_1  =  (unsigned long long) b;
+  ul_2  =  (unsigned long long) c;
   i_3  =  (blockIdx.x*blockDim.x+threadIdx.x);
   // BLOCK 1 MERGES [0 2 ]
   i_4  =  i_3;
