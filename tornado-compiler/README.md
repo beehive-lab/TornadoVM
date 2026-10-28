@@ -211,7 +211,8 @@ plug in as a `Backend` service.
 | `tornado.parallel.compile=false` | compile a plan's kernels one by one, when each first runs ([start-up](#start-up-parallel-compilation-and-the-tc-cache)) |
 | `tornado.parallel.compile.threads=N` | background compilation threads (default: cores, at most 8) |
 | `tornado.tc.cache=false` | do not keep TC's compilations on disk |
-| `tornado.tc.cache.dir=DIR` | where they are kept (default `$TORNADOVM_HOME/var/tc-cache`) |
+| `tornado.tc.cache.dir=DIR` | where they are kept (default `~/.cache/tornadovm/tc-cache`, per user: entries are kernels that run, so do not share a directory others can write to) |
+| `tornado.tc.cache.maxEntries=N` | most entries kept (default 4096; least recently used removed) |
 | `tornado.tc.compileTimes=true` | per task, TC and driver compile time; totals at exit |
 | `--printKernel` (launcher flag) | print the generated source |
 

@@ -60,7 +60,8 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * therefore misses, and the kernel is compiled again.</p>
  *
  * <p>{@code -Dtornado.tc.cache=false} turns it off; {@code -Dtornado.tc.cache.dir} moves it
- * (default {@code $TORNADOVM_HOME/var/tc-cache}). Kernels that launch kernels (their source names
+ * (default {@code ~/.cache/tornadovm/tc-cache}, per user) and {@code -Dtornado.tc.cache.maxEntries}
+ * bounds it (default 4096; the least recently used entries are removed). Kernels that launch kernels (their source names
  * the task) and compilations that dump or report are not cached.</p>
  */
 final class TcDiskCache {
@@ -83,10 +84,22 @@ final class TcDiskCache {
         fingerprint = Optional.of(build);
     }
 
-    private static String defaultDirectory() {
-        String home = System.getenv("TORNADOVM_HOME");
-        return home != null ? home + "/var/tc-cache" : System.getProperty("user.home") + "/.cache/tornadovm/tc-cache";
+    /**
+     * Per user: an entry holds kernel source that is compiled and run, so a cache that other users can
+     * write to (inside a shared SDK, say) would let one user's entry run in another's process.
+     */
+    /** Tests: keep at most {@code max} entries. */
+    static void maxEntriesForTests(int max) {
+        maxEntries = max;
     }
+
+    private static String defaultDirectory() {
+        String cache = System.getenv("XDG_CACHE_HOME");
+        return (cache != null && !cache.isEmpty() ? cache : System.getProperty("user.home") + "/.cache") + "/tornadovm/tc-cache";
+    }
+
+    /** At most this many entries are kept; the least recently used are removed beyond it. */
+    private static volatile int maxEntries = Integer.getInteger("tornado.tc.cache.maxEntries", 4096);
 
     // ---------------------------------------------------------------- key
 
@@ -160,7 +173,11 @@ final class TcDiskCache {
         return f;
     }
 
-    /** SHA-256 over the jars of TC's modules (and of this one): a different TC build never reuses an entry. */
+    /**
+     * A hash over the path, size and modification time of the jars of TC's modules (and of this one):
+     * a different TC build never reuses an entry. Reading the jars themselves cost every JVM, warm
+     * starts included, a full read of them before its first lookup.
+     */
     private static Optional<String> computeFingerprint() {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -175,9 +192,8 @@ final class TcDiskCache {
                 if (!Files.isRegularFile(jar)) {
                     return Optional.empty(); // classes directories: a development build, not cached
                 }
-                try (InputStream in = Files.newInputStream(jar)) {
-                    digest.update(in.readAllBytes());
-                }
+                var attributes = Files.readAttributes(jar, java.nio.file.attribute.BasicFileAttributes.class);
+                digest.update((jar.toAbsolutePath() + "\n" + attributes.size() + "\n" + attributes.lastModifiedTime().toMillis() + "\n").getBytes(StandardCharsets.UTF_8));
             }
             return Optional.of(HexFormat.of().formatHex(digest.digest()));
         } catch (Exception e) {
@@ -285,6 +301,11 @@ final class TcDiskCache {
             split(p.getProperty("atomics.params"), ',').forEach(e -> params.put(Integer.parseInt(e.split("=")[0]), Integer.parseInt(e.split("=")[1])));
             var counts = new EnumMap<KernelFeatures.Feature, Integer>(KernelFeatures.Feature.class);
             split(p.getProperty("features"), ',').forEach(e -> counts.put(KernelFeatures.Feature.valueOf(e.split("=")[0]), Integer.parseInt(e.split("=")[1])));
+            try {
+                Files.setLastModifiedTime(file, java.nio.file.attribute.FileTime.fromMillis(System.currentTimeMillis())); // recently used
+            } catch (IOException e) {
+                // a read-only cache is still used
+            }
             return Optional.of(new TcHook.Compiled(source, p.getProperty("entry"), 0, domain, new AtomicSlots.Info(initial, params), new KernelFeatures(counts), "?", false));
         } catch (Exception e) {
             return Optional.empty(); // unreadable or from another format: compiled again, and rewritten
@@ -310,8 +331,33 @@ final class TcDiskCache {
                 p.store(out, null);
             }
             Files.move(temporary, directory.resolve(key + ".tc"), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            prune();
         } catch (IOException | RuntimeException e) {
             // A cache that cannot be written only costs the next run a compilation.
+        }
+    }
+
+    /** Removes the least recently used entries beyond {@link #maxEntries} (a hit renews an entry's time). */
+    private static void prune() throws IOException {
+        List<Path> entries;
+        try (var files = Files.list(directory)) {
+            entries = files.filter(f -> f.getFileName().toString().endsWith(".tc")).toList();
+        }
+        int max = maxEntries;
+        if (entries.size() <= max) {
+            return;
+        }
+        var byAge = new ArrayList<Map.Entry<Path, Long>>();
+        for (Path entry : entries) {
+            try {
+                byAge.add(Map.entry(entry, Files.getLastModifiedTime(entry).toMillis()));
+            } catch (IOException e) {
+                // removed meanwhile
+            }
+        }
+        byAge.sort(Map.Entry.comparingByValue());
+        for (int i = 0; i < byAge.size() - max; i++) {
+            Files.deleteIfExists(byAge.get(i).getKey());
         }
     }
 
