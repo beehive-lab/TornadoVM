@@ -17,19 +17,19 @@
  */
 package uk.ac.manchester.tornado.tc.frontend.classfile;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.ArrayList;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * A parsed class file, read directly from the format defined in chapter 4 of The Java Virtual
- * Machine Specification. Only what the TC frontend needs is kept: the constant pool, the methods
- * with their {@code Code} attribute, line numbers, local variable names and raw type annotations
- * (where {@code @Parallel} lives). Any class-file version is accepted: unknown attributes are skipped.
+ * A parsed class file, read with the JDK's {@code java.lang.classfile} API. Only what the TC frontend
+ * needs is kept: the constant pool, the methods with their {@code Code} attribute, line numbers, local
+ * variable names and the annotations on local variables (where {@code @Parallel} lives). Any class-file
+ * version the running JDK can load is accepted.
  */
 public record ClassFile(String name, Optional<String> superName, int majorVersion, ConstantPool constants, List<Method> methods, List<BootstrapMethod> bootstrapMethods) {
 
@@ -45,7 +45,7 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
     }
 
     /** The {@code Code} attribute of a method. */
-    public record Code(int maxStack, int maxLocals, byte[] bytes, List<Handler> handlers, List<LineNumber> lines, List<LocalVariable> locals, byte[] typeAnnotations) {
+    public record Code(int maxStack, int maxLocals, byte[] bytes, List<Handler> handlers, List<LineNumber> lines, List<LocalVariable> locals, List<TypeAnnotations.LocalAnnotation> typeAnnotations) {
 
         /** Source line of the instruction at {@code bci}, or {@code -1}. */
         public int lineAt(int bci) {
@@ -82,117 +82,39 @@ public record ClassFile(String name, Optional<String> superName, int majorVersio
     /** Parses {@code bytes}; throws {@link ClassFormatException} for malformed input. */
     public static ClassFile parse(byte[] bytes) {
         try {
-            return read(new DataInputStream(new ByteArrayInputStream(bytes)));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            return read(java.lang.classfile.ClassFile.of().parse(bytes));
+        } catch (IllegalArgumentException e) {
+            throw new ClassFormatException(e.getMessage());
         }
     }
 
-    private static ClassFile read(DataInputStream in) throws IOException {
-        if (in.readInt() != 0xCAFEBABE) {
-            throw new ClassFormatException("not a class file (bad magic number)");
-        }
-        in.readUnsignedShort(); // minor version
-        int major = in.readUnsignedShort();
-        var pool = ConstantPool.read(in);
-        in.readUnsignedShort(); // access flags
-        var name = pool.className(in.readUnsignedShort());
-        int superIndex = in.readUnsignedShort();
-        Optional<String> superName = superIndex == 0 ? Optional.empty() : Optional.of(pool.className(superIndex));
-        int interfaces = in.readUnsignedShort();
-        for (int i = 0; i < interfaces; i++) {
-            in.readUnsignedShort();
-        }
-        int fields = in.readUnsignedShort();
-        for (int i = 0; i < fields; i++) {
-            in.readUnsignedShort();
-            in.readUnsignedShort();
-            in.readUnsignedShort();
-            skipAttributes(in);
-        }
-        int count = in.readUnsignedShort();
-        var methods = new ArrayList<Method>(count);
-        for (int i = 0; i < count; i++) {
-            int access = in.readUnsignedShort();
-            var methodName = pool.utf8(in.readUnsignedShort());
-            var descriptor = pool.utf8(in.readUnsignedShort());
-            Optional<Code> code = Optional.empty();
-            int attributes = in.readUnsignedShort();
-            for (int a = 0; a < attributes; a++) {
-                var attributeName = pool.utf8(in.readUnsignedShort());
-                int length = in.readInt();
-                if (attributeName.equals("Code")) {
-                    code = Optional.of(readCode(in, pool));
-                } else {
-                    in.skipNBytes(length);
-                }
-            }
-            methods.add(new Method(methodName, descriptor, access, code));
-        }
-        var bootstraps = new ArrayList<BootstrapMethod>();
-        int classAttributes = in.readUnsignedShort();
-        for (int a = 0; a < classAttributes; a++) {
-            var attributeName = pool.utf8(in.readUnsignedShort());
-            int length = in.readInt();
-            if (attributeName.equals("BootstrapMethods")) {
-                int n = in.readUnsignedShort();
-                for (int i = 0; i < n; i++) {
-                    int handle = in.readUnsignedShort();
-                    int argc = in.readUnsignedShort();
-                    var arguments = new ArrayList<Integer>();
-                    for (int k = 0; k < argc; k++) {
-                        arguments.add(in.readUnsignedShort());
-                    }
-                    bootstraps.add(new BootstrapMethod(handle, List.copyOf(arguments)));
-                }
-            } else {
-                in.skipNBytes(length);
-            }
-        }
-        return new ClassFile(name, superName, major, pool, List.copyOf(methods), List.copyOf(bootstraps));
+    private static ClassFile read(ClassModel model) {
+        var methods = model.methods().stream().map(ClassFile::method).toList();
+        var bootstraps = model.findAttribute(Attributes.bootstrapMethods()).stream() //
+                .flatMap(a -> a.bootstrapMethods().stream()) //
+                .map(b -> new BootstrapMethod(b.bootstrapMethod().index(), b.arguments().stream().map(PoolEntry::index).toList())) //
+                .toList();
+        var superName = model.superclass().map(c -> c.asInternalName());
+        return new ClassFile(model.thisClass().asInternalName(), superName, model.majorVersion(), new ConstantPool(model.constantPool()), methods, bootstraps);
     }
 
-    private static Code readCode(DataInputStream in, ConstantPool pool) throws IOException {
-        int maxStack = in.readUnsignedShort();
-        int maxLocals = in.readUnsignedShort();
-        var bytes = in.readNBytes(in.readInt());
-        int handlerCount = in.readUnsignedShort();
-        var handlers = new ArrayList<Handler>();
-        for (int i = 0; i < handlerCount; i++) {
-            handlers.add(new Handler(in.readUnsignedShort(), in.readUnsignedShort(), in.readUnsignedShort(), in.readUnsignedShort()));
-        }
-        var lines = new ArrayList<LineNumber>();
-        var locals = new ArrayList<LocalVariable>();
-        byte[] typeAnnotations = new byte[0];
-        int attributes = in.readUnsignedShort();
-        for (int a = 0; a < attributes; a++) {
-            var name = pool.utf8(in.readUnsignedShort());
-            int length = in.readInt();
-            switch (name) {
-                case "LineNumberTable" -> {
-                    int n = in.readUnsignedShort();
-                    for (int i = 0; i < n; i++) {
-                        lines.add(new LineNumber(in.readUnsignedShort(), in.readUnsignedShort()));
-                    }
-                }
-                case "LocalVariableTable" -> {
-                    int n = in.readUnsignedShort();
-                    for (int i = 0; i < n; i++) {
-                        locals.add(new LocalVariable(in.readUnsignedShort(), in.readUnsignedShort(), pool.utf8(in.readUnsignedShort()), pool.utf8(in.readUnsignedShort()), in.readUnsignedShort()));
-                    }
-                }
-                case "RuntimeVisibleTypeAnnotations" -> typeAnnotations = in.readNBytes(length);
-                default -> in.skipNBytes(length);
-            }
-        }
-        return new Code(maxStack, maxLocals, bytes, List.copyOf(handlers), List.copyOf(lines), List.copyOf(locals), typeAnnotations);
+    private static Method method(MethodModel m) {
+        var code = m.findAttribute(Attributes.code()).map(ClassFile::code);
+        return new Method(m.methodName().stringValue(), m.methodType().stringValue(), m.flags().flagsMask(), code);
     }
 
-    private static void skipAttributes(DataInputStream in) throws IOException {
-        int count = in.readUnsignedShort();
-        for (int i = 0; i < count; i++) {
-            in.readUnsignedShort();
-            in.skipNBytes(in.readInt());
-        }
+    private static Code code(CodeAttribute code) {
+        var handlers = code.exceptionHandlers().stream() //
+                .map(h -> new Handler(code.labelToBci(h.tryStart()), code.labelToBci(h.tryEnd()), code.labelToBci(h.handler()), h.catchType().map(PoolEntry::index).orElse(0))) //
+                .toList();
+        var lines = code.findAttributes(Attributes.lineNumberTable()).stream() //
+                .flatMap(a -> a.lineNumbers().stream()) //
+                .map(l -> new LineNumber(l.startPc(), l.lineNumber())) //
+                .toList();
+        var locals = code.findAttributes(Attributes.localVariableTable()).stream() //
+                .flatMap(a -> a.localVariables().stream()) //
+                .map(v -> new LocalVariable(v.startPc(), v.length(), v.name().stringValue(), v.type().stringValue(), v.slot())) //
+                .toList();
+        return new Code(code.maxStack(), code.maxLocals(), code.codeArray(), handlers, lines, locals, TypeAnnotations.locals(code));
     }
 }
