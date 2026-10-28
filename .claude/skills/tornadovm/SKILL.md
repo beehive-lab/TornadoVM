@@ -14,7 +14,7 @@ For profiling and optimisation work on the runtime, see the `tornadovm-perf-camp
 
 ## Build
 
-Requires **JDK 21+** (`JAVA_HOME` must point at a JDK 21 build). Source the env once per shell, then build with `make`:
+Requires **JDK 25+** (`JAVA_HOME` must point at a JDK 25 or newer build). Source the env once per shell, then build with `make`:
 
 ```bash
 source setvars.sh                 # exports JAVA_HOME, TORNADOVM_HOME; prepends $TORNADOVM_HOME/bin to PATH
@@ -24,11 +24,11 @@ make BACKEND=opencl,cuda          # comma-separated list; values in scope: openc
 Convenience targets: `make cuda` (= `--backend cuda`), `make metal` (= `metal,opencl`). Default `BACKEND` is `opencl`.
 
 - **Incremental build ≈ 3 min.** Only a clean rebuild is long — don't assume every build is slow.
-- Under the hood `make` calls `bin/compile --jdk jdk21 --backend <list>`. Useful flags: `--rebuild` (rebuild deps), `--sdk`, `--mvn_single_threaded`.
-- The built SDK lands in `dist/tornadovm-<version>-jdk21-dev-<variant>-<os>-<arch>/...`; `TORNADOVM_HOME` and the `bin/tornado*` launchers point into it.
+- Under the hood `make` calls `bin/compile --jdk jdk25plus --backend <list>`. Useful flags: `--rebuild` (rebuild deps), `--sdk`, `--mvn_single_threaded`.
+- The built SDK lands in `dist/tornadovm-<version>-jdk25plus-dev-<variant>-<os>-<arch>/...`; `TORNADOVM_HOME` and the `bin/tornado*` launchers point into it.
 
 ### Build gotchas
-1. **Stale `setvars.sh` `JAVA_HOME`** — an out-of-date `setvars.sh` can export the wrong JDK (e.g. JDK 27 → `invalid source release 21 with --enable-preview`). After sourcing, verify `java -version`; pin `JAVA_HOME` to a JDK 21 explicitly if it's wrong.
+1. **Stale `setvars.sh` `JAVA_HOME`** — an out-of-date `setvars.sh` can export the wrong JDK (e.g. a JDK older than 25 → `invalid target release: 25`). After sourcing, verify `java -version`; pin `JAVA_HOME` to a JDK 25+ explicitly if it's wrong.
 
 ## Test
 

@@ -2,7 +2,7 @@
 
 TC compiles TornadoVM kernels, Java methods, to **CUDA C++** (NVRTC), **OpenCL C 1.2** and **Metal
 Shading Language**. It reads the class files itself, works on its own SSA IR, and prints structured
-source that the device driver compiles. It is pure Java (JDK 21+). It uses no JVMCI, no Graal and no
+source that the device driver compiles. It is pure Java (JDK 25+). It uses no JVMCI, no Graal and no
 bindings to LLVM, MLIR or NVVM. It runs headless: no GPU and no TornadoVM runtime are needed to
 compile.
 
@@ -85,13 +85,13 @@ every Maven build of `tornado-compiler`, unlike the GPU suites:
 ```bash
 source setvars.sh
 # every TC module with its tests (about 10 s; 143 test cases, the lit file tests included)
-./mvnw -o -Pjdk22plus -pl $(ls -d tornado-compiler/tc-* | paste -sd,) -am install
+./mvnw -o -Pjdk25plus -pl $(ls -d tornado-compiler/tc-* | paste -sd,) -am install
 # one module, or one file test
-./mvnw -o -Pjdk22plus -pl tornado-compiler/tc-ir -am test
-./mvnw -o -Pjdk22plus -pl tornado-compiler/tc-ir -am test -Dtest='LitTest#run[Verifier/types.tcir]' -Dsurefire.failIfNoSpecifiedTests=false
+./mvnw -o -Pjdk25plus -pl tornado-compiler/tc-ir -am test
+./mvnw -o -Pjdk25plus -pl tornado-compiler/tc-ir -am test -Dtest='LitTest#run[Verifier/types.tcir]' -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
-The profile follows `JAVA_HOME`: `-Pjdk21` on JDK 21, `-Pjdk22plus` on JDK 22 or newer. File
+The profile is `-Pjdk25plus` (JDK 25 or newer). File
 tests live in `tc-*/src/test/lit/<Area>/*.tcir`, with `RUN:` lines and FileCheck `CHECK:` lines. `utils/update-checks.py <test>` regenerates a test's
 CHECK block; review the diff by hand. The layout and directives are described in
 [testing.md](https://github.com/mikepapadim/tornado-compiler-spec/blob/main/compiler-replacement/testing.md).

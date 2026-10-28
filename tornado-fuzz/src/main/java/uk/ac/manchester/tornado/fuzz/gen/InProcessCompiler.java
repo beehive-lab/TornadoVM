@@ -86,8 +86,8 @@ public final class InProcessCompiler {
             List<String> options = new ArrayList<>();
             options.add("-classpath");
             options.add(classpath);
-            // The running JDK's class-file version; preview only for a jdk21 SDK, whose API classes
-            // are compiled with JDK 21 preview features (a jdk22plus SDK uses none).
+            // The running JDK's class-file version; preview only for an SDK whose API classes were
+            // compiled with preview features (a jdk25plus SDK uses none).
             options.add("--release");
             options.add(Integer.toString(Runtime.version().feature()));
             if (sdkUsesPreview()) {

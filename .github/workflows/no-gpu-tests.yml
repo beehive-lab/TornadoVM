@@ -1,4 +1,4 @@
-name: "No-GPU tests: TC + runtime [JDK 21-27]"
+name: "No-GPU tests: TC + runtime [JDK 25-27]"
 
 # The unit tests that need no GPU, on standard GitHub-hosted runners: TC's (the compiler's lit file
 # tests, its API tests and the clean-room source rules) and tornado-api/tornado-runtime's. TC reads
@@ -6,7 +6,7 @@ name: "No-GPU tests: TC + runtime [JDK 21-27]"
 # class-file version; the GPU workflows build on one host JDK only. The full build comes first so the
 # modular dependencies are on the module path; the tests themselves touch no device.
 #
-# gpu-ci.yml proves one ARTIFACT runs on every JDK; this proves the jdk22plus profile BUILDS on
+# gpu-ci.yml proves one ARTIFACT runs on every JDK; this proves the jdk25plus profile BUILDS on
 # every JDK. The matrix axis is therefore the host JDK, not the profile.
 
 # Pull requests to develop only, as in gpu-ci.yml: merges run no tests, and documentation-only
@@ -53,21 +53,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # The preview-compiled SDK: JDK 21 only.
-          - profile: jdk21
-            setup_java_version: '21'
           # One profile, every host JDK from the floor up.
-          - profile: jdk22plus
-            setup_java_version: '22'
-          - profile: jdk22plus
-            setup_java_version: '23'
-          - profile: jdk22plus
-            setup_java_version: '24'
-          - profile: jdk22plus
+          - profile: jdk25plus
             setup_java_version: '25'
-          - profile: jdk22plus
+          - profile: jdk25plus
             setup_java_version: '26'
-          - profile: jdk22plus
+          - profile: jdk25plus
             setup_java_version: '27-ea'
     steps:
       - uses: actions/checkout@v4

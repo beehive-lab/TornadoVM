@@ -66,7 +66,7 @@ __VERSION__ = "v7.3.2-dev"
 
 # Vendor keyword prefix (matches the __<PREFIX><version>__ constants in installer_config.py) and
 # display name, in menu order. Versions where a vendor has no build (e.g. graal-jdk-26,
-# microsoft-jdk-22) simply have no matching constant in installer_config.py and are skipped below.
+# microsoft-jdk-26) simply have no matching constant in installer_config.py and are skipped below.
 __JDK_VENDORS__ = [
     ("JDK", "OpenJDK (Oracle OpenJDK)"),
     ("GRAALVM", "GraalVM"),
@@ -78,7 +78,7 @@ __JDK_VENDORS__ = [
     ("SAPMACHINE", "SapMachine"),
     ("LIBERICA", "BellSoft Liberica"),
 ]
-__JDK_VERSIONS__ = [21, 22, 23, 24, 25, 26]
+__JDK_VERSIONS__ = [25, 26]
 
 def _build_supported_jdks() -> Tuple[List[str], List[str]]:
     """Builds the flat, numbered (keyword, description) lists shown in the JDK menu, by looking up
@@ -441,15 +441,9 @@ class BuildManager:
 
     def _resolve_make_target(self, jdk_keyword: Optional[str]) -> str:
         """Maps a JDK keyword - either a JAVA_HOME-detected profile like 'jdk25', or a vendor
-        download keyword like 'temurin-jdk-25'/'graal-jdk-21' - onto one of the two targets the
-        Makefile/bin/compile understand: 'jdk21' (preview-compiled, runs on 21 only) or
-        'jdk22plus' (one profile that covers every JDK from 22 up, any vendor)."""
-        if not jdk_keyword:
-            return "jdk21"
-
-        version_match = re.search(r'(\d+)$', jdk_keyword)
-        major = int(version_match.group(1)) if version_match else 21
-        return "jdk21" if major == 21 else "jdk22plus"
+        download keyword like 'temurin-jdk-25'/'graal-jdk-25' - onto the one target the
+        Makefile/bin/compile understand: 'jdk25plus' (every JDK from 25 up, any vendor)."""
+        return "jdk25plus"
 
     def _get_backend_option(self, backends: List[str]) -> str:
         """Get backend option string."""
@@ -529,7 +523,7 @@ class SystemValidator:
 
     def _match_jdk_version(self, output: str) -> Optional[str]:
         """Match `java -version` output to a supported JDK build profile. TornadoVM's floor is
-        JDK 21, not any specific feature version, so anything 21 or newer is accepted rather than
+        JDK 25, not any specific feature version, so anything 25 or newer is accepted rather than
         only the exact versions installer_config.py happens to have download URLs for - JAVA_HOME
         already points at a working JDK here, nothing needs to be downloaded."""
         version_match = re.search(r'version\s+"(\d+)', output)
@@ -537,7 +531,7 @@ class SystemValidator:
             return None
 
         major = int(version_match.group(1))
-        if major < 21:
+        if major < 25:
             return None
 
         return f"graal-jdk-{major}" if "graalvm" in output.lower() else f"jdk{major}"
@@ -643,7 +637,7 @@ def parseArguments():
     parser = argparse.ArgumentParser(description="TornadoVM Installer Tool.  It will install all software dependencies except the GPU drivers")
     parser.add_argument("--jdk", action="store", dest="jdk", default=None,
                         help=(
-                            "Specify a JDK to install by its keyword (e.g., 'jdk21', 'temurin-jdk-25'). "
+                            "Specify a JDK to install by its keyword (e.g., 'jdk25', 'temurin-jdk-25'). "
                             "Run with --listJDKs to view all available JDK keywords."
                         ))
     parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, cuda, metal }")

@@ -5,9 +5,9 @@ A probe is a single Java file in the scratchpad that drives the built SDK direct
 ## Harness
 
 ```bash
-SDK=/path/to/TornadoVM/dist/tornadovm-<ver>-jdk21-dev-cuda-linux-amd64/tornadovm-<ver>-jdk21-dev-cuda
+SDK=/path/to/TornadoVM/dist/tornadovm-<ver>-jdk25plus-dev-cuda-linux-amd64/tornadovm-<ver>-jdk25plus-dev-cuda
 
-javac -g --enable-preview --release 21 \
+javac -g --release 25 \
       --module-path $SDK/share/java/tornado --add-modules tornado.api \
       -d . MyProbe.java
 
@@ -18,7 +18,7 @@ tornado --jvm="-Dtornado.recover.bailout=False" -cp $PWD MyProbe
 Four gotchas, each of which costs a confusing hour:
 
 1. **Compile with `-g`.** TC names the kernel's C variables after the Java locals from the debug info, so `--printKernel` output can be matched to the source.
-2. **`--enable-preview --release 21`** — the API's native array classes are compiled with preview features on.
+2. **`--release 25`** (or newer) — the SDK's classes are compiled for JDK 25.
 3. **`-Dtornado.recover.bailout=False`** or a failed compilation silently runs sequential Java and you time the CPU.
 4. **`DataTransferMode.EVERY_EXECUTION` is an `int` constant**, not an enum: a helper parameter must be `int`. `new TornadoExecutionPlan(...)` throws `TornadoExecutionPlanException`, so `main` declares `throws Exception`.
 

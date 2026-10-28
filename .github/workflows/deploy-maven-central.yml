@@ -17,9 +17,9 @@ name: 4 - Deploy Maven Central [auto]
 # The bindings load the NVIDIA, CLBlast, or Apple MLX libraries
 # through java.lang.foreign at run time; the native *-jni shims some of them use
 # are built per platform and ship only in the SDK. Each module is still deployed once PER JDK PROFILE
-# under 2 distinct Maven Central coordinates (X.Y.Z-jdk21/-jdk22plus) — the
-# jdk21 and jdk22plus Maven profiles are the only ones left (see bin/compile's
-# SDK_JDK_CONTRACT); jdk22plus covers every JDK from 22 up in one coordinate —
+# under its own Maven Central coordinate (X.Y.Z-jdk25plus) — jdk25plus is the
+# only Maven profile left (see bin/compile's SDK_JDK_CONTRACT) and covers every
+# JDK from 25 up in one coordinate —
 # matching the existing "pin a specific JDK line" convention — see the `jdk`
 # matrix below. Each leg does an ephemeral `versions:set` (never committed)
 # right before `mvn deploy`, since the single release tag's committed pom.xml
@@ -42,10 +42,10 @@ on:
         type: boolean
         default: false
       jdks:
-        description: 'JSON list of JDK profiles to deploy (e.g. ["jdk21"] to redo one leg whose coordinates are not on Central yet).'
+        description: 'JSON list of JDK profiles to deploy (e.g. ["jdk25plus"] to redo one leg whose coordinates are not on Central yet).'
         required: false
         type: string
-        default: '["jdk21", "jdk22plus"]'
+        default: '["jdk25plus"]'
 
 jobs:
   deploy:
@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: ${{ fromJSON(inputs.jdks || '["jdk21", "jdk22plus"]') }}
+        jdk: ${{ fromJSON(inputs.jdks || '["jdk25plus"]') }}
     env:
       MAVEN_HOME: /opt/maven
     steps:
@@ -76,12 +76,9 @@ jobs:
       - name: Resolve JDK environment
         run: |
           case "${{ matrix.jdk }}" in
-            jdk21)
-              echo "JAVA_HOME=/opt/jenkins/jdks/graal-23.1.0/jdk-21.0.3" >> "$GITHUB_ENV"
-              ;;
-            jdk22plus)
-              # jdk22plus floors at JDK 22 and is deployed once for every JDK from 22 up — any
-              # JDK >= 22 here builds an identical artifact (pom.xml's --release 22), so this is
+            jdk25plus)
+              # jdk25plus floors at JDK 25 and is deployed once for every JDK from 25 up — any
+              # JDK >= 25 here builds an identical artifact (pom.xml's --release 25), so this is
               # pinned to 25 purely to match the build JDK used elsewhere (build-release-sdks.yml,
               # gpu-ci-platform.yml), not a requirement.
               echo "JAVA_HOME=/opt/jenkins/jdks/jdk-25.0.2" >> "$GITHUB_ENV"

@@ -25,16 +25,16 @@ Measurements:
 - **Default:** two backends installed (OpenCL and CUDA); the run uses CUDA.
 - **Set-up:** the `java` rows use the argfile prepared in Step 0.
 
-| Mode | JDK 21 (`jdk21` SDK) | JDK 25 | JDK 26 | JDK 27-ea |
-|---|---:|---:|---:|---:|
-| `java @argfile` | 652 ms | 616 ms | 619 ms | 638 ms |
-| + `-Dtornado.enabled.backends=cuda` | 495 ms | 465 ms | 467 ms | 483 ms |
-| + AppCDS archive | 572 ms | 519 ms | 527 ms | 532 ms |
-| + AppCDS + `enabled.backends=cuda` | **405 ms** | 370 ms | 378 ms | 381 ms |
-| + Leyden AOT cache | — | 455 ms | 452 ms | 449 ms |
-| + AOT cache + `enabled.backends=cuda` | — | **310 ms** | **309 ms** | **301 ms** |
-| `tornado` launcher (Python), for comparison | 734 ms | 695 ms | | |
-| `tornado --aotCache`¹ | — | 637 ms | | |
+| Mode | JDK 25 | JDK 26 | JDK 27-ea |
+|---|---:|---:|---:|
+| `java @argfile` | 616 ms | 619 ms | 638 ms |
+| + `-Dtornado.enabled.backends=cuda` | 465 ms | 467 ms | 483 ms |
+| + AppCDS archive | 519 ms | 527 ms | 532 ms |
+| + AppCDS + `enabled.backends=cuda` | 370 ms | 378 ms | 381 ms |
+| + Leyden AOT cache | 455 ms | 452 ms | 449 ms |
+| + AOT cache + `enabled.backends=cuda` | **310 ms** | **309 ms** | **301 ms** |
+| `tornado` launcher (Python), for comparison | 695 ms | | |
+| `tornado --aotCache`¹ | 637 ms | | |
 
 ¹ The launcher always puts the whole SDK module directory on the module path, so its cache loses
 the module graph (see Step 0). The argfile row with the same cache is 455 ms.
@@ -63,8 +63,7 @@ The rest of each run is the JVM, the drivers and the GPU. Creating a CUDA contex
 | Your setup | Use |
 |---|---|
 | Any JDK, a machine with more than one backend installed | `-Dtornado.enabled.backends=<backend>`: no build step, saves about 150 ms |
-| JDK 25 or newer | the Leyden AOT cache: one training run, saves another 150 ms |
-| JDK 21 | AppCDS |
+| Any JDK | the Leyden AOT cache: one training run, saves another 150 ms (AppCDS also works) |
 | Smallest start-up and no JDK at run time | a GraalVM native image |
 | CLIs, serverless functions, tests started many times | combine `enabled.backends` with any of the above |
 | Long-running services | these mostly matter for start-up; they change little once warm |
@@ -73,24 +72,15 @@ The rest of each run is the JVM, the drivers and the GPU. Creating a CUDA contex
 
 | SDK (`make` target) | Runs on | `--enable-preview` | Leyden AOT cache | AppCDS | Native image |
 |---|---|---|---|---|---|
-| `jdk21` (`make BACKEND=...`) | JDK 21 | yes, the SDK and your application | no (needs JDK 25) | yes | no¹ |
-| `jdk22plus` (`make jdk22plus BACKEND=...`) | JDK 22–27 | no | JDK 25+ | yes | GraalVM for JDK 25+ |
-
-¹ `build-tc-native` can build the stand-alone compiler `tc` with a GraalVM for JDK 21. Native images
-of whole applications need the FFM API without preview, so they need the `jdk22plus` SDK.
+| `jdk25plus` (`make BACKEND=...`) | JDK 25–27 | no | yes | yes | GraalVM for JDK 25+ |
 
 Build the SDK once:
 
 ```bash
-# jdk22plus: JAVA_HOME must point at JDK 25 (or 22+) while building
+# JAVA_HOME must point at JDK 25 or newer while building
 export JAVA_HOME=/path/to/jdk-25
-make jdk22plus BACKEND=opencl,cuda        # or BACKEND=opencl, cuda, metal, ...
+make BACKEND=opencl,cuda                  # or BACKEND=opencl, cuda, metal, ...
 source setvars.sh                         # sets TORNADOVM_HOME, JAVA_HOME and PATH
-
-# jdk21
-export JAVA_HOME=/path/to/jdk-21
-make BACKEND=opencl,cuda
-source setvars.sh
 ```
 
 ## Step 0: one argfile instead of the launcher
@@ -104,7 +94,7 @@ java @$TORNADOVM_HOME/tornado-argfile -cp app.jar com.example.Main
 ```
 
 The argfile has 11 flag lines and is the same on every JDK the SDK supports. For a
-`jdk22plus` SDK with OpenCL and CUDA it reads:
+`jdk25plus` SDK with OpenCL and CUDA it reads:
 
 ```
 -server
@@ -120,7 +110,7 @@ The argfile has 11 flag lines and is the same on every JDK the SDK supports. For
 --add-modules jdk.unsupported,java.management,java.logging,jdk.jfr,java.naming,jdk.management,tornado.runtime,tornado.drivers.common,tornado.drivers.opencl,tornado.drivers.cuda,tornado.cublas,...
 ```
 
-The `jdk21` argfile also has `--enable-preview`. No `-XX:+EnableJVMCI`, `--patch-module` or
+No `-XX:+EnableJVMCI`, `--patch-module` or
 `--upgrade-module-path` is needed on any JDK.
 
 **Give the module path only the runtime's modules** when you use an AOT cache or AppCDS. Two
@@ -216,11 +206,10 @@ java @$TORNADOVM_HOME/tornado-argfile -Dtornado.enabled.backends=cuda \
   then `-XX:AOTMode=create -XX:AOTCache=app.aot`). That combination is untested with TornadoVM;
   use JDK 25 or newer.
 
-## Step 2b: AppCDS (JDK 21 and newer)
+## Step 2b: AppCDS
 
 Class-data sharing for the application's classes. It stores classes already parsed and verified,
-but not lambdas, linked call sites or profiles. It works on every JDK the SDKs support, and it's
-the option for the `jdk21` SDK.
+but not lambdas, linked call sites or profiles. It works on every JDK the SDK supports.
 
 ```bash
 # uses the argfile prepared in Step 0
@@ -234,13 +223,6 @@ java @$TORNADOVM_HOME/tornado-argfile -Dtornado.enabled.backends=cuda \
      -XX:SharedArchiveFile=app.jsa -cp app.jar com.example.Main
 ```
 
-With the `jdk21` SDK, compile the application with `--enable-preview --release 21` too. The SDK's
-classes use the FFM API, which is still a preview feature in Java 21:
-
-```bash
-javac --enable-preview --release 21 -cp $TORNADOVM_HOME/share/java/tornado/tornado-api-*.jar -d classes ...
-```
-
 **Other ways to make the archive:**
 - `-XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=app.jsa` writes it on the first run and keeps
   it up to date (JDK 19+).
@@ -252,7 +234,7 @@ javac --enable-preview --release 21 -cp $TORNADOVM_HOME/share/java/tornado/torna
 (through FFM) and TC, into one executable that needs no JVM.
 
 ```bash
-source setvars.sh                                         # a jdk22plus SDK
+source setvars.sh                                         # a jdk25plus SDK
 export GRAALVM_HOME=/path/to/graalvm-jdk-25               # GraalVM CE or Oracle GraalVM, JDK 25+
 
 tornado-native-image -cp app.jar -o app com.example.Main [args for the tracing runs]
@@ -317,8 +299,7 @@ tc emit --target cuda   --cp app.jar --stats com.example.Kernels saxpy
 uses. A cold `tc emit` drops from about 0.15 s to 0.01 s, with byte-identical output:
 
 ```bash
-GRAALVM_HOME=/path/to/graalvm-jdk-25 build-tc-native       # jdk22plus SDK
-GRAALVM_HOME=/path/to/graalvm-jdk-21 build-tc-native       # jdk21 SDK (built with --enable-preview)
+GRAALVM_HOME=/path/to/graalvm-jdk-25 build-tc-native
 ```
 
 `tc` reads class files only, so it cannot inline JDK methods it has no class files for (for example
@@ -329,11 +310,8 @@ GRAALVM_HOME=/path/to/graalvm-jdk-21 build-tc-native       # jdk21 SDK (built wi
 | Symptom | Cause and fix |
 |---|---|
 | `FindException: Unable to derive module descriptor for ./app.jar` | `.` is on the module path and the current directory holds a jar: take `.` off the argfile's module path, or run from another directory |
-| `--aotCache needs JDK 25 or newer` | the `jdk21` SDK or JDK 22–24: use AppCDS |
 | `-Xlog:aot` shows `full module graph: disabled`, or `WARNING: Using incubator modules: jdk.incubator.vector` | the SDK's test modules are on the module path: give it only the runtime's modules (Step 0) |
 | AOT cache silently not used | different JDK, flags or class path from the training run, or classes in a directory: check with `-Xlog:aot`, force with `-XX:AOTMode=on` |
-| `UnsupportedClassVersionError` with the `jdk21` SDK | the application was compiled for a newer release: `javac --enable-preview --release 21` |
-| `class file ... uses preview features of Java SE 21` | compile against the `jdk21` SDK with `--enable-preview` |
 | `TornadoBackendNotFound: tornado.enabled.backends=... selects none of the installed backends` | the name is not installed in this SDK; the message lists the installed ones |
 | A native image fails with a missing reflection or downcall entry | a code path the tracing runs did not take: run `tornado-native-image` again with arguments that reach it |
-| `this SDK was built with --enable-preview for JDK 21` from `tornado-native-image` | build a `jdk22plus` SDK |
+| `this SDK was built with --enable-preview` from `tornado-native-image` | build a `jdk25plus` SDK |

@@ -137,8 +137,8 @@ tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclGroup [
 
 ## Changing the module
 
-- Bindings go in `provider/NcclNativeLib` (FFM through `FFMSupport`; the code must compile on JDK 21
-  preview and JDK 22+, so no unnamed `_` variables). Dispatch goes in
+- Bindings go in `provider/NcclNativeLib` (FFM through `FFMSupport`; the code compiles at
+  release 25). Dispatch goes in
   `provider/NcclLibraryProvider.dispatch`.
 - Factories go in `Nccl`. The communicator is always parameter 0, passed as its `handle()`. Give
   every parameter an `Access` mode, because the runtime orders transfers from them.

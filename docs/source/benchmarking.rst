@@ -15,12 +15,12 @@ reports the time of each and the speedup of TornadoVM over Java.
 Quick start
 -----------
 
-Install a JDK 21 and a TornadoVM SDK with `SDKMAN! <https://sdkman.io/sdks/tornadovm/>`_, choosing the backend
+Install a JDK 25 and a TornadoVM SDK with `SDKMAN! <https://sdkman.io/sdks/tornadovm/>`_, choosing the backend
 for your hardware (``metal``, ``opencl``, ``cuda`` or ``full``):
 
 .. code:: bash
 
-   $ sdk install tornadovm 7.2.0-jdk21-opencl
+   $ sdk install tornadovm 7.3.1-jdk25plus-opencl
    $ tornado --devices
 
 Build the suite and run a benchmark, with result validation:
