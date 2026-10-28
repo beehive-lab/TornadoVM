@@ -15,7 +15,7 @@ On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls 
 [![Docs](https://img.shields.io/badge/docs-readthedocs-blue)](https://tornadovm.readthedocs.io/en/latest/)
 [![Slack](https://img.shields.io/badge/chat-Slack-4A154B?logo=slack)](https://join.slack.com/t/tornadovmcommunity/shared_invite/zt-3ai2wyqva-bKz~cQRFlaJ~ZnPrbkwIEw)
 
-**Latest release:** TornadoVM 7.3.1 (JDK 21 - JDK 27) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
+**Latest release:** TornadoVM 8.0.0 (JDK 21 - JDK 27) — native **NVIDIA library integration** (cuBLAS / cuFFT / cuDNN) and Tensor Core intrinsics, plus a native **Apple Metal backend** for Apple Silicon. [Changelog](https://tornadovm.readthedocs.io/en/latest/CHANGELOG.html) · [Website](https://www.tornadovm.org) · [Documentation](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---
@@ -219,14 +219,14 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 sdk install tornadovm
 ```
 
-Pick a backend-specific build if you prefer a smaller install. Candidate versions carry the JDK line, `jdk25plus` (e.g. `7.3.1-jdk25plus-cuda`):
+Pick a backend-specific build if you prefer a smaller install. Candidate versions carry the JDK line, `jdk25plus` (e.g. `8.0.0-jdk25plus-cuda`):
 
 | Backend | SDKMAN! version | Targets |
 |---|---|---|
-| OpenCL *(default)* | `7.3.1-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
-| CUDA | `7.3.1-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN/cuDF library tasks** |
-| Metal 🆕 | `7.3.1-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
-| All backends | `7.3.1-full` | Everything above |
+| OpenCL *(default)* | `8.0.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
+| CUDA | `8.0.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN/cuDF library tasks** |
+| Metal 🆕 | `8.0.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
+| All backends | `8.0.0-full` | Everything above |
 
 Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 
@@ -241,12 +241,12 @@ tornado --devices
 ```bash
 # Unix (Linux/macOS)
 java @$TORNADOVM_HOME/tornado-argfile \
-  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-7.3.1.jar \
+  -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-8.0.0.jar \
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 # Windows 10+
 java @%TORNADOVM_HOME%\tornado-argfile ^
-  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-7.3.1.jar ^
+  -cp %TORNADOVM_HOME%\share\java\tornado\tornado-examples-8.0.0.jar ^
   uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 ```
 
@@ -263,12 +263,12 @@ Maven Central coordinates carry the JDK line — use the `-jdk25plus` version:
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-api</artifactId>
-    <version>7.3.1-jdk25plus</version>
+    <version>8.0.0-jdk25plus</version>
   </dependency>
   <dependency>
     <groupId>io.github.beehive-lab</groupId>
     <artifactId>tornado-runtime</artifactId>
-    <version>7.3.1-jdk25plus</version>
+    <version>8.0.0-jdk25plus</version>
   </dependency>
 </dependencies>
 ```

@@ -17,13 +17,13 @@ Via SDKMAN!:
    sdk install tornadovm                              # default: latest version, OpenCL backend
    sdk install tornadovm <version>-<jdk-version>-<backend>
    # e.g.:
-   sdk install tornadovm 7.3.1-jdk25plus-cuda
+   sdk install tornadovm 8.0.0-jdk25plus-cuda
    sdk install tornadovm 5.2.1-jdk25plus-metal
    sdk install tornadovm 5.2.1-jdk25plus-opencl
 
 To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (``<backend>`` is ``opencl``, ``cuda``, ``metal``, or ``full`` for all backends). Run ``sdk list tornadovm`` to see all available combinations.
 
-TornadoVM requires JDK 25 or newer. ``<jdk-version>`` is ``jdk25plus``: one SDK for every JDK from 25 up, including 27. It uses no preview features, so it runs unchanged on any JDK from 25 onwards — switching JDK needs no reinstall and no rebuild, only ``tornado --generate-argfile`` if you launch via the argfile rather than the ``tornado`` command. Releases up to 7.3 also shipped a ``jdk21`` SDK for JDK 21.
+TornadoVM requires JDK 25 or newer. ``<jdk-version>`` is ``jdk25plus``: one SDK for every JDK from 25 up, including 27. It uses no preview features, so it runs unchanged on any JDK from 25 onwards — switching JDK needs no reinstall and no rebuild, only ``tornado --generate-argfile`` if you launch via the argfile rather than the ``tornado`` command. Releases up to 8.0 also shipped a ``jdk21`` SDK for JDK 21.
 
 The TornadoVM API is also published on Maven Central, so you can add it directly to an existing Java project without installing the SDK at all. Use the ``-jdk25plus`` version suffix.
 

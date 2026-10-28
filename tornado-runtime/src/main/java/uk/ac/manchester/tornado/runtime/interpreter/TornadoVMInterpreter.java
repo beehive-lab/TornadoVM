@@ -245,8 +245,10 @@ public class TornadoVMInterpreter {
         byte op = bytecodeResult.get();
         while (op != TornadoVMBytecodes.BEGIN.value()) {
             TornadoInternalError.guarantee(op == TornadoVMBytecodes.CONTEXT.value(), "invalid code: 0x%x", op);
-            final int deviceIndex = bytecodeResult.getInt();
-            assert deviceIndex == interpreterDevice.getDeviceContext().getDeviceIndex();
+            // Each device runs its own bytecode, which opens a single context: slot 0. It is not
+            // the device's index in its backend, which is non-zero for every device but the first.
+            final int contextIndex = bytecodeResult.getInt();
+            assert contextIndex == 0 : "context slot " + contextIndex + " in a single-context bytecode";
             logger.debug("loading context %s", interpreterDevice.toString());
             final long t0 = System.nanoTime();
             interpreterDevice.ensureLoaded(graphExecutionContext.getExecutionPlanId());

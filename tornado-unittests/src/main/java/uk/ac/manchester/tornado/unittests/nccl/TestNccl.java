@@ -22,6 +22,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -1100,6 +1104,96 @@ public class TestNccl extends TornadoTestBase {
         for (int rank = 0; rank < 2; rank++) {
             for (int i = 0; i < SIZE; i++) {
                 assertEquals(3.0f * (i % 7 + 1), buffers[rank].get(i), 0.0f);
+            }
+        }
+    }
+
+    /** Runs and closes a plan on {@code device} that transfers a new array on every execution, so its host memory is pinned. */
+    private static void runAndClose(TornadoDevice device, String name) throws Exception {
+        FloatArray array = new FloatArray(SIZE);
+        GridScheduler gridScheduler = new GridScheduler();
+        gridScheduler.addWorkerGrid(name + ".k0", worker(SIZE));
+        TaskGraph graph = new TaskGraph(name) //
+                .task("k0", TestNccl::fillFloat, new KernelContext(), array, 0) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, array);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withDevice(device).withGridScheduler(gridScheduler).execute();
+        }
+    }
+
+    /**
+     * Rank 1's all-reduce is in flight on GPU 1, waiting for rank 0, while rank 0 frees another plan
+     * on GPU 0 and only then joins the all-reduce. Freeing the plan must not wait for GPU 1, whose
+     * collective cannot finish before rank 0 starts its own: neither for its kernel stack frame nor
+     * for the pinned host memory of an array collected before (unpinned when a plan is freed).
+     */
+    @Test
+    public void testFreeingAPlanWhileAPeerWaits() throws Exception {
+        TornadoDevice[] devices = cudaDevices();
+        if (devices.length < 2) {
+            throw new TornadoVMMultiDeviceNotSupported("This test needs at least 2 CUDA devices");
+        }
+        TornadoDevice[] pair = { devices[0], devices[1] };
+        FloatArray[] sums = { new FloatArray(SIZE), new FloatArray(SIZE) };
+        TornadoExecutionPlan[] plans = new TornadoExecutionPlan[2];
+        // daemon threads: after a time-out they stay blocked in the driver and must not keep the JVM alive
+        ExecutorService threads = Executors.newFixedThreadPool(2, r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            return thread;
+        });
+        boolean finished = false;
+        NcclCommunicator communicator = NcclCommunicator.create(pair);
+        try {
+            for (int rank = 0; rank < 2; rank++) {
+                String name = "peerWaits" + rank;
+                GridScheduler gridScheduler = new GridScheduler();
+                gridScheduler.addWorkerGrid(name + ".k0", worker(SIZE));
+                TaskGraph graph = new TaskGraph(name) //
+                        .task("k0", TestNccl::fillFloat, new KernelContext(), sums[rank], rank) //
+                        .libraryTask("sum", Nccl::allReduceInPlace, communicator, sums[rank], NcclRedOp.SUM) //
+                        .transferToHost(DataTransferMode.EVERY_EXECUTION, sums[rank]);
+                plans[rank] = new TornadoExecutionPlan(graph.snapshot()).withDevice(pair[rank]).withGridScheduler(gridScheduler);
+            }
+            // both ranks once, so that the second round launches without compiling
+            Future<?> first = threads.submit(() -> plans[1].execute());
+            plans[0].execute();
+            first.get(120, TimeUnit.SECONDS);
+            // a pinned array that is collected: its pin is dropped when the next plan is freed
+            runAndClose(pair[0], "collected");
+            for (int i = 0; i < 3; i++) {
+                System.gc();
+                Thread.sleep(100);
+            }
+
+            Future<?> peer = threads.submit(() -> plans[1].execute());
+            Thread.sleep(1000);
+            Future<?> rank0 = threads.submit(() -> {
+                try {
+                    runAndClose(pair[0], "freedFirst");
+                } catch (Exception e) {
+                    throw new TornadoRuntimeException(e);
+                }
+                plans[0].execute();
+            });
+            rank0.get(120, TimeUnit.SECONDS);
+            peer.get(120, TimeUnit.SECONDS);
+            finished = true;
+        } finally {
+            threads.shutdownNow();
+            // after a time-out the ranks are still blocked: closing the plans would block as well
+            if (finished) {
+                for (TornadoExecutionPlan plan : plans) {
+                    if (plan != null) {
+                        plan.close();
+                    }
+                }
+                communicator.close();
+            }
+        }
+        for (int rank = 0; rank < 2; rank++) {
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(3.0f * (i % 7 + 1), sums[rank].get(i), 0.0f);
             }
         }
     }

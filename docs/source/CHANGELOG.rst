@@ -7,6 +7,63 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 8.0.0
+---------------
+26/10/26
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#1268 <https://github.com/beehive-lab/TornadoVM/pull/1268>`_: CI: fast tests on PRs to develop (Linux + macOS), no tests on merge, nightly full run on develop
+- `#1264 <https://github.com/beehive-lab/TornadoVM/pull/1264>`_: [docs] Fix the stale docs version and the release step that bumps it
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#1271 <https://github.com/beehive-lab/TornadoVM/pull/1271>`_: [cuda] Synchronize CUDADevice version and OpenCL-API query helpers
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1277 <https://github.com/beehive-lab/TornadoVM/pull/1277>`_: [cuda] Add tornado.cuda.sched to choose how host threads wait
+- `#1278 <https://github.com/beehive-lab/TornadoVM/pull/1278>`_: [build] Find Python modules pip just installed in a new user site
+- `#1279 <https://github.com/beehive-lab/TornadoVM/pull/1279>`_: [runtime] Warn when a KernelContext task runs without a worker grid
+- `#1283 <https://github.com/beehive-lab/TornadoVM/pull/1283>`_: [release] Fetch libcudf for the shim's CUDA and check the shims' glibc floor
+- `#1290 <https://github.com/beehive-lab/TornadoVM/pull/1290>`_: [mlx] Report MLX unit tests as unsupported on every non-Metal backend
+- `#1291 <https://github.com/beehive-lab/TornadoVM/pull/1291>`_: [runtime] Check the context slot, not the backend device index, when an interpreter opens its context
+- `#1289 <https://github.com/beehive-lab/TornadoVM/pull/1289>`_: [cuda] Unpin host memory off the threads that run plans, so multi-GPU NCCL plans in one process cannot deadlock
+- `#1288 <https://github.com/beehive-lab/TornadoVM/pull/1288>`_: [nccl] Overlap an all-reduce with other work on a side stream
+- `#1287 <https://github.com/beehive-lab/TornadoVM/pull/1287>`_: Skip NaN comparisons in TestFloatBitsAndComparisons under OpenCL fast-relaxed math
+- `#1281 <https://github.com/beehive-lab/TornadoVM/pull/1281>`_: [tc] Speed up the TC compiler on large kernels
+- `#1285 <https://github.com/beehive-lab/TornadoVM/pull/1285>`_: [cublas][cudnn] BF16 GemmEx with an FP32 result, convolution gradients, attention on a packed QKV projection
+- `#1280 <https://github.com/beehive-lab/TornadoVM/pull/1280>`_: [cuda] Load the newest CUDA library versions first
+- `#1276 <https://github.com/beehive-lab/TornadoVM/pull/1276>`_: [cudf] Keep an eighth of the card in the memory pool between calls
+- `#1275 <https://github.com/beehive-lab/TornadoVM/pull/1275>`_: Convert FP8 scalars through tile casts so FP8 scale and compare compile under CUDA Tile
+- `#1272 <https://github.com/beehive-lab/TornadoVM/pull/1272>`_: Fix Windows/CUDA 13 portability issues in TC tests, example kernel, cuSPARSE and SDK packaging
+- `#1274 <https://github.com/beehive-lab/TornadoVM/pull/1274>`_: CI: skip PR CI when a pull request only changes images
+- `#1273 <https://github.com/beehive-lab/TornadoVM/pull/1273>`_: [chore] Update logo in README
+- `#1270 <https://github.com/beehive-lab/TornadoVM/pull/1270>`_: [unittests] Fix TestVirtualDeviceKernel failing on every platform: compare kernels without source positions
+- `#1269 <https://github.com/beehive-lab/TornadoVM/pull/1269>`_: CI: wait for Maven Central before dispatching downstream version bumps
+- `#1267 <https://github.com/beehive-lab/TornadoVM/pull/1267>`_: [docs] Move fast start-up up in the README and refresh the Leyden/native image guide
+- `#1249 <https://github.com/beehive-lab/TornadoVM/pull/1249>`_: Build: install only the Python modules the scripts use, and show why pip refused
+- `#1266 <https://github.com/beehive-lab/TornadoVM/pull/1266>`_: Relicense TornadoVM under the Apache License, Version 2.0
+- `#1265 <https://github.com/beehive-lab/TornadoVM/pull/1265>`_: [release] Build the CUDA SDK on Linux aarch64 in the release SDK workflow
+- `#1228 <https://github.com/beehive-lab/TornadoVM/pull/1228>`_: [compiler] Replace the Graal compiler with TC, TornadoVM's own Java bytecode to kernel compiler
+- `#1260 <https://github.com/beehive-lab/TornadoVM/pull/1260>`_: [Hybrid API][OpenCL] Add CLBlast library task support
+- `#1263 <https://github.com/beehive-lab/TornadoVM/pull/1263>`_: Merge withCompilerFlags into the backend defaults on every backend, and add withCompilerFlags(flags)
+- `#1261 <https://github.com/beehive-lab/TornadoVM/pull/1261>`_: [cudnn] Channels-last (NHWC) convolutions, FP32 and FP16
+- `#1250 <https://github.com/beehive-lab/TornadoVM/pull/1250>`_: Build: cudnn-jni and cutlass-jni find JNI on a headless JDK
+- `#1251 <https://github.com/beehive-lab/TornadoVM/pull/1251>`_: Build: skip the cuDNN shim without cuDNN instead of failing the CUDA backend
+- `#1255 <https://github.com/beehive-lab/TornadoVM/pull/1255>`_: [cuda] Report prebuilt device-launch kernels as unsupported on a pre-CUDA-12 NVRTC
+- `#1254 <https://github.com/beehive-lab/TornadoVM/pull/1254>`_: [cudnn] Report fused SDPA as unsupported when the device or build cannot run it
+- `#1253 <https://github.com/beehive-lab/TornadoVM/pull/1253>`_: Fix stale Metal native-stream docs
+- `#1238 <https://github.com/beehive-lab/TornadoVM/pull/1238>`_: Keep outgrown cuDNN workspaces until the context is destroyed
+- `#1252 <https://github.com/beehive-lab/TornadoVM/pull/1252>`_: [cudnn] Add an FP16 convolution with tensor-core maths
+- `#1245 <https://github.com/beehive-lab/TornadoVM/pull/1245>`_: Fix Maven Central deploy hang caused by concurrent GPG signing
+- `#1244 <https://github.com/beehive-lab/TornadoVM/pull/1244>`_: [metal] Wait for MLX library work before host reads and writes under -Dtornado.mlx.async=true
+- `#1243 <https://github.com/beehive-lab/TornadoVM/pull/1243>`_: Look up a task's device-local index once
+
+
 TornadoVM 7.3.1
 ---------------
 15/10/26

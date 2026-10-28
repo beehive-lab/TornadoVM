@@ -272,7 +272,7 @@ jobs:
           VERSION: ${{ steps.vars.outputs.version }}
         run: |
           set -euo pipefail
-          for repo in kfusion-tornadovm TornadoVM-Ray-Tracer jitllm; do
+          for repo in kfusion-tornadovm TornadoVM-Ray-Tracer jitllm tornadovm-benchmark-suite; do
             echo "Dispatching tornadovm-release to beehive-lab/$repo (version=${VERSION})..."
             gh api "repos/beehive-lab/$repo/dispatches" --input - <<EOF
           {"event_type":"tornadovm-release","client_payload":{"version":"${VERSION}"}}

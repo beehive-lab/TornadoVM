@@ -58,7 +58,7 @@
              the active jdkNN profile (that regression is what broke the 6.0.0 to 6.0.1-dev bump:
              the SDK's tornado-api jar lost its -jdkNN suffix and a jar built for another JDK
              leaked into consumer builds). -->
-        <revision>7.3.2-jdk25plus-dev</revision>
+        <revision>8.0.1-jdk25plus-dev</revision>
         <tornado.version>${project.version}</tornado.version>
         <tornado.backend>opencl</tornado.backend>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -355,7 +355,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <revision>7.3.2-jdk25plus-dev</revision>
+                <revision>8.0.1-jdk25plus-dev</revision>
                 <!-- Runtime module access for the opt-in pure-JVM unit tests. -->
                 <tornado.test.argLine>--add-modules=jdk.incubator.vector</tornado.test.argLine>
             </properties>

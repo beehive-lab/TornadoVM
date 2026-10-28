@@ -136,9 +136,16 @@ public class CUDAContext implements CUDAContextInterface {
         }
     }
 
-    /** Waits for the outstanding work of every device that has a context. */
-    private synchronized void synchronizeAll() {
-        for (long id : contextIDs) {
+    /**
+     * Waits for the outstanding work of every device that has a context. The lock is not held while
+     * waiting: the devices may be running work that other threads have to join first.
+     */
+    private void synchronizeAll() {
+        long[] ids;
+        synchronized (this) {
+            ids = contextIDs.clone();
+        }
+        for (long id : ids) {
             CUDAHandles.Context context = id == 0 ? null : CUDAHandles.resolve(id, CUDAHandles.Context.class);
             if (context != null) {
                 CUDADriverAPI.cuCtxSetCurrent(context.context());
@@ -357,6 +364,79 @@ public class CUDAContext implements CUDAContextInterface {
         return cuMemHostUnregister(hostPointer);
     }
 
+    /** Unregisters host memory away from the threads that run plans (see {@link #unregisterPinnedMemoryLater}). */
+    private final java.util.concurrent.ExecutorService unpinner = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread thread = new Thread(r, "tornado-cuda-unpin");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    /**
+     * Unregisters host memory on a thread of its own, then runs {@code done}. CUDA synchronises
+     * every device when host memory is unregistered, so a thread that runs plans can block there on
+     * work only it can unblock, such as an NCCL collective on another GPU waiting for this thread's
+     * next collective. The unpinning thread may wait as long as it takes.
+     */
+    public void unregisterPinnedMemoryLater(long hostPointer, Runnable done) {
+        unpinner.execute(() -> {
+            try {
+                cuMemHostUnregister(hostPointer);
+            } finally {
+                done.run();
+            }
+        });
+    }
+
+    /** Pinned host buffers of freed kernel stack frames, kept for the next frame; all of {@link #pinnedFrameBytes}. */
+    private final java.util.ArrayDeque<Long> pinnedFrames = new java.util.ArrayDeque<>();
+
+    private long pinnedFrameBytes;
+
+    /**
+     * A pinned host buffer of {@code bytes} for a kernel stack frame: one a freed frame left behind,
+     * or a new one, allocated and registered. Frame buffers stay pinned until {@link #cleanup}:
+     * CUDA synchronises every device when host memory is unregistered, so unregistering while a
+     * plan of another thread runs can deadlock against work only this thread can unblock, such as
+     * an NCCL collective on another GPU waiting for this rank's next collective.
+     *
+     * @return the buffer, or 0 when no off-heap memory could be allocated
+     */
+    public long acquirePinnedFrame(long bytes, long alignment) {
+        synchronized (pinnedFrames) {
+            if (bytes == pinnedFrameBytes && !pinnedFrames.isEmpty()) {
+                return pinnedFrames.pop();
+            }
+        }
+        long hostPointer = allocateOffHeapMemory(bytes, alignment);
+        if (hostPointer != 0) {
+            registerPinnedMemory(hostPointer, bytes);
+            synchronized (pinnedFrames) {
+                if (pinnedFrames.isEmpty()) {
+                    pinnedFrameBytes = bytes;
+                }
+            }
+        }
+        return hostPointer;
+    }
+
+    /**
+     * Returns the buffer of a freed kernel stack frame of the device at {@code deviceIndex} for reuse,
+     * once that device has no copy from it in flight. Only that device's context is synchronised,
+     * and no lock is held while waiting: the device may be running a collective that another
+     * thread has to join first.
+     */
+    public void releasePinnedFrame(long hostPointer, long bytes, int deviceIndex) {
+        makeCurrent(deviceIndex);
+        CUDADriverAPI.cuCtxSynchronize();
+        synchronized (pinnedFrames) {
+            if (bytes == pinnedFrameBytes) {
+                pinnedFrames.push(hostPointer);
+                return;
+            }
+        }
+        unregisterPinnedMemoryLater(hostPointer, () -> freeOffHeapMemory(hostPointer));
+    }
+
     public int getNumDevices() {
         return devices.size();
     }
@@ -440,6 +520,24 @@ public class CUDAContext implements CUDAContextInterface {
     }
 
     public void cleanup() {
+        unpinner.shutdown();
+        try {
+            if (!unpinner.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+                logger.warn("host memory still being unregistered at shutdown");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        synchronized (pinnedFrames) {
+            // pooled frames exist only once a context did
+            if (!pinnedFrames.isEmpty()) {
+                for (long hostPointer : pinnedFrames) {
+                    cuMemHostUnregister(hostPointer);
+                    freeOffHeapMemory(hostPointer);
+                }
+            }
+            pinnedFrames.clear();
+        }
 
         if (TornadoOptions.DUMP_EVENTS) {
             for (CUDADeviceContext deviceContext : deviceContexts) {
