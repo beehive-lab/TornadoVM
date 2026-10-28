@@ -28,6 +28,7 @@ import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -37,7 +38,8 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * Kernels run over arrays of many sizes, one plan per size with {@code withDynamicShapes()}, as an
  * application with changing shapes does. A kernel that reads no array length shares one TC
  * compilation across the sizes; kernels
- * that read the length of an input or of an array they only write must still see each size.
+ * that read the length of an input or of an array they only write must still see each size. The
+ * same kernels also run captured in CUDA graphs and replayed.
  *
  * <p>
  * How to run?
@@ -136,6 +138,48 @@ public class TestTcDynamicShapes extends TornadoTestBase {
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, out), "t0", n);
             for (int i = 0; i < n; i++) {
                 assertEquals(n - 1 + i, out.get(i), 1e-3f, "size " + n + ", index " + i);
+            }
+        }
+    }
+
+    /**
+     * A kernel shared across sizes and a kernel that reads a length, in one task graph captured in a
+     * CUDA graph per size and replayed with new input values on each execution.
+     */
+    @Test
+    public void testSharedAndSpecialisedKernelsInCUDAGraphs() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        for (int k = 0; k < SIZES.length; k++) {
+            int n = SIZES[k];
+            float factor = 1.5f + k;
+            FloatArray in = new FloatArray(n);
+            FloatArray scaled = new FloatArray(n);
+            FloatArray shifted = new FloatArray(n);
+            KernelContext context = new KernelContext();
+            TaskGraph graph = new TaskGraph("graph" + k) //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                    .task("t0", TestTcDynamicShapes::scale, context, in, scaled, n, factor) //
+                    .task("t1", TestTcDynamicShapes::last, context, in, shifted, n) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, scaled, shifted);
+            WorkerGrid grid = new WorkerGrid1D((n + LOCAL - 1) / LOCAL * LOCAL);
+            grid.setLocalWork(LOCAL, 1, 1);
+            GridScheduler scheduler = new GridScheduler();
+            scheduler.addWorkerGrid("graph" + k + ".t0", grid);
+            scheduler.addWorkerGrid("graph" + k + ".t1", grid);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+                plan.withDynamicShapes().withCUDAGraph().withGridScheduler(scheduler);
+                for (int iteration = 0; iteration < 3; iteration++) {
+                    for (int i = 0; i < n; i++) {
+                        in.set(i, i * 0.25f + iteration);
+                    }
+                    plan.execute();
+                    for (int i = 0; i < n; i++) {
+                        String where = "size " + n + ", iteration " + iteration + ", index " + i;
+                        assertEquals((i * 0.25f + iteration) * factor + n, scaled.get(i), 1e-3f, where);
+                        assertEquals((n - 1) * 0.25f + iteration + i, shifted.get(i), 1e-3f, where);
+                    }
+                }
             }
         }
     }
