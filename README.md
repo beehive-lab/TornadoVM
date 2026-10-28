@@ -139,7 +139,7 @@ WorkerGrid2D worker = new WorkerGrid2D(n / TILE, n / TILE);   // TILE BLOCKS, no
 
 ## Kotlin
 
-Kernels can also be written in **Kotlin**. Kotlin compiles to JVM bytecode, so Kotlin kernels run on the same backends as Java ones, through a Kotlin API with task-graph builders, `Int` thread indices, `parallelFor`, and `Tile` operators for the TileContext API. Build it with `make KOTLIN=1`.
+Kernels can also be written in **Kotlin**. Kotlin compiles to JVM bytecode, so Kotlin kernels run on the same backends as Java ones, through a Kotlin API with task-graph builders, `Int` thread indices, `parallelFor`, and `Tile` operators for the TileContext API. Build it with `make KOTLIN=1`; the API is built and tested with Kotlin 2.4.20.
 
 ```kotlin
 fun vectorAdd(context: KernelContext, a: TFloatArray, b: TFloatArray, c: TFloatArray) {
@@ -148,7 +148,7 @@ fun vectorAdd(context: KernelContext, a: TFloatArray, b: TFloatArray, c: TFloatA
 }
 ```
 
-[Kotlin guide, including current limitations →](tornado-kotlin/README.md) · [documentation](docs/source/kotlin.rst)
+[Kotlin guide, with supported features and current limitations →](tornado-kotlin/README.md) · [documentation](docs/source/kotlin.rst)
 
 ---
 

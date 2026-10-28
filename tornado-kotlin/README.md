@@ -6,6 +6,9 @@ directory adds a Kotlin API on top of the Java one, plus Kotlin unit tests.
 
 Kotlin support is opt-in. The default build does not use the Kotlin toolchain.
 
+**Kotlin version:** the API is built and tested with **Kotlin 2.4.20**, and SDKs built with
+`KOTLIN=1` ship `kotlin-stdlib` 2.4.20. Compile your own Kotlin code with Kotlin 2.4.20 or newer.
+
 ## Building
 
 ```bash
@@ -178,6 +181,28 @@ tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.tile
 tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.tile.TileSoftmax [rows]
 ```
 
+## TornadoVM features from Kotlin
+
+| Feature | From Kotlin |
+|---|---|
+| `KernelContext` kernels (1D, 2D, 3D), local memory, barriers, atomics | Supported, tested |
+| Loop-parallel kernels | Supported through `parallelFor`; `@Parallel` is not supported |
+| `@Reduce` reductions | Supported, tested |
+| Off-heap arrays, `HalfFloat`, vector types (`Float4`, `VectorFloat4`, ...), matrices (`Matrix2DFloat`, ...) | Supported, tested |
+| Objects with fields as kernel parameters (Kotlin properties) | Supported, tested |
+| Math in kernels: `TornadoMath`, `kotlin.math` | Supported, tested |
+| Kotlin unsigned types (`UInt`), `when`, top-level and extension helper functions, `@JvmStatic` functions in an `object` as kernels | Supported, tested |
+| CUDA Tile (`TileContext`) | Supported on CUDA, tested |
+| Hybrid API (`libraryTask`, cuBLAS) | Supported on CUDA, tested |
+| Profiler, CUDA graphs (`withCUDAGraph`) | Supported, tested |
+| Exceptions in kernels (`require`, `check`, `throw`) | Not supported, as in Java |
+| Batch processing (`withBatch`) | Not supported with `KernelContext` kernels, in Kotlin or in Java; with `parallelFor`, not tested yet |
+| Prebuilt kernels (`prebuiltTask`), dynamic reconfiguration, multiple and concurrent devices | Not tested from Kotlin yet. They are host-side Java API, used from Kotlin as from Java |
+| Image types (`ImageFloat`, ...) | Not tested from Kotlin yet |
+| GraalVM native image, Leyden AOT cache | Not tested with Kotlin yet |
+
+`TestKotlinFeatures` covers the rows marked tested that the other Kotlin test classes do not.
+
 ## Current limitations
 
 - **Kotlin/JVM only.** Kotlin/Native, Kotlin/JS and Kotlin Multiplatform targets are not supported.
@@ -188,9 +213,14 @@ tornado -m tornado.kotlin.examples/uk.ac.manchester.tornado.kotlin.examples.tile
   `task` call site; a function reference stored in a variable first cannot be compiled.
 - **No `@Parallel`.** kotlinc does not keep annotations on local variables. Use `parallelFor`, or
   `KernelContext`, instead. As in Java, a parallel loop must start at a constant.
-- **No object allocation in kernels**, as in Java. Ranges with `step` or `downTo` create
-  progression objects and call the Kotlin standard library, so write strided and descending loops
-  as `while` loops. A plain `for (i in a until b)` loop is fine.
+- **No object allocation in kernels**, as in Java. In Kotlin this also rules out:
+  - ranges with `step` (`for (j in 0 until n step 2)`), which use `IntProgression` objects
+    (`TC-E1003 field kotlin.ranges.IntRange.Companion is not supported in kernels yet`). Write
+    strided loops as `while` loops. `until`, `..`, `downTo` and `repeat` loops are fine;
+  - `require`, `check`, `error` and `throw`, which allocate an exception
+    (`TC-E1011 allocating an object (java.lang.IllegalArgumentException) is not supported in kernels`).
+    Check arguments on the host. `!!` is fine: its null check is removed like kotlinc's other
+    null checks.
 - **No `suspend` kernels.** Coroutines cannot run on the device.
 - **`jvmTarget` must not be lower than the API's.** `parallelFor` and the Tile operators are
   `inline`, so code using them must target JVM 21 or newer with a `-jdk21` SDK, and JVM 22 or newer
