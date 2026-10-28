@@ -106,7 +106,8 @@ public final class TcKernels {
             kernel = TcHook.settled(method, kernel);
         }
         var installed = installer.install(kernel.entryName(), kernel.source());
-        int maxThreads = installed.maxThreadsPerBlock();
+        // virtual devices install nothing and return null
+        int maxThreads = installed != null ? installed.maxThreadsPerBlock() : Integer.MAX_VALUE;
         if (kernel.generic() && maxThreads < target.maxWorkGroupSize() && TcHook.unsettled(method, shared)) {
             // Code shared across tasks can need more registers than a task's own specialisation, and so
             // allow smaller blocks; the task's block is only known at launch. Compare once with this
