@@ -342,8 +342,8 @@ example tests.
 See also
 --------
 
-`HYBRID_API_GUIDE.md <https://github.com/beehive-lab/TornadoVM/blob/master/HYBRID_API_GUIDE.md>`__
-(repository root) is a complete, example-driven guide to every provider
+`HYBRID_API_GUIDE.md <https://github.com/beehive-lab/TornadoVM/blob/master/tornado-native-libs/HYBRID_API_GUIDE.md>`__
+(in ``tornado-native-libs/``) is a complete, example-driven guide to every provider
 (cuBLAS, cuBLASLt, cuFFT, cuDNN, cuSPARSE, CUTLASS): factory tables, code
 snippets, composition patterns, CUDA-Graph usage, build/install
 requirements, CLI flags, a "write your own provider" walkthrough, and a

@@ -174,5 +174,5 @@ fresh run gives lower absolute times, mostly for decode-sized cases.
    into a `Program`, following MLX's own `ops.cpp` and launch code.
 3. Add a test to the category's class in `tornado-unittests/.../unittests/mlx`.
 
-For a new native library, see `HYBRID_API_GUIDE.md`; `MlxLibraryProvider` is a provider with no
+For a new native library, see [`HYBRID_API_GUIDE.md`](../HYBRID_API_GUIDE.md); `MlxLibraryProvider` is a provider with no
 native module.

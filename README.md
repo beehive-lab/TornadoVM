@@ -168,7 +168,7 @@ try (TornadoExecutionPlan plan = new TornadoExecutionPlan(tg.snapshot())) {
 }
 ```
 
-Library bindings are discovered via Java `ServiceLoader`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. All library modules (cuBLAS, cuFFT, cuDNN, cuSPARSE, cuRAND, cuDF, CUTLASS, cuVS, NCCL, CLBlast, Apple MLX) live in [`tornado-native-libs/`](tornado-native-libs/README.md). TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
+Library bindings are discovered via Java `ServiceLoader`, bind the calls through `java.lang.foreign` (a JNI module only if the library genuinely needs compiled C/C++), and any native library joins the graph with no core runtime changes. All library modules (cuBLAS, cuFFT, cuDNN, cuSPARSE, cuRAND, cuDF, CUTLASS, cuVS, NCCL, CLBlast, Apple MLX) live in [`tornado-native-libs/`](tornado-native-libs/README.md), with the [hybrid API guide](tornado-native-libs/HYBRID_API_GUIDE.md). TornadoVM is a member of the **NVIDIA Inception Program** and has presented this work at **NVIDIA GTC**. [Hybrid API guide →](https://tornadovm.readthedocs.io/en/latest/)
 
 
 ---

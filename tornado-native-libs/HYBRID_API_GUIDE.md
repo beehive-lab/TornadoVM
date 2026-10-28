@@ -352,7 +352,7 @@ new TaskGraph("layer")
     .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
 ```
 
-See [`tornado-native-libs/tornado-mlx/README.md`](tornado-native-libs/tornado-mlx/README.md) for the full operation list and benchmarks.
+See [`tornado-native-libs/tornado-mlx/README.md`](tornado-mlx/README.md) for the full operation list and benchmarks.
 
 ### 3.9 NCCL — multi-GPU collectives and point-to-point (`nvidia/nccl`)
 
@@ -361,7 +361,7 @@ Collectives and point-to-point transfers across GPUs, in one process or several,
 device, and the collective is a library task in every rank's task graph. NCCL reads and writes the
 TornadoVM buffers directly, on the plan's stream, so the data stays on the GPUs between the kernels
 around it. The design and the full API are described in
-[`tornado-native-libs/tornado-nccl/ARCHITECTURE.md`](tornado-native-libs/tornado-nccl/ARCHITECTURE.md).
+[`tornado-native-libs/tornado-nccl/ARCHITECTURE.md`](tornado-nccl/ARCHITECTURE.md).
 
 | Factory | Operation |
 |---|---|
@@ -673,7 +673,7 @@ tornado-test -V uk.ac.manchester.tornado.unittests.cutlass.TestCutlass
 Adding a library needs **no core-runtime changes** — it is a module pair
 discovered via `java.util.ServiceLoader`. Four steps (mirror
 `tornado-native-libs/tornado-cudnn`; the module goes next to it under `tornado-native-libs/`,
-see the checklist in [`tornado-native-libs/README.md`](tornado-native-libs/README.md)):
+see the checklist in [`tornado-native-libs/README.md`](README.md)):
 
 **1. Factory** — build a `LibraryTaskDescriptor`:
 
@@ -794,7 +794,7 @@ Key SPI types (in `tornado-runtime/.../runtime/library/spi/`):
 ## See also
 
 - `docs/source/hybrid-api.rst` — architecture reference (SPI internals).
-- Per-provider READMEs (index: [`tornado-native-libs/README.md`](tornado-native-libs/README.md)), under
+- Per-provider READMEs (index: [`tornado-native-libs/README.md`](README.md)), under
   `tornado-native-libs/`: `tornado-cublas/`, `tornado-cufft/`, `tornado-cudnn/`,
   `tornado-cutlass/`, `tornado-cusparse/`, `tornado-cuvs/`, `tornado-mlx/`.
 - Unit tests double as worked examples:

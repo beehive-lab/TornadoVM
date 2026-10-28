@@ -16,7 +16,7 @@ TaskGraph taskGraph = new TaskGraph("cuBLAS")
 ```
 
 Each module is a provider discovered through `java.util.ServiceLoader`, so the core runtime does
-not depend on any of them. See [`HYBRID_API_GUIDE.md`](../HYBRID_API_GUIDE.md) for the API and
+not depend on any of them. See [`HYBRID_API_GUIDE.md`](HYBRID_API_GUIDE.md) for the API and
 [`docs/source/hybrid-api.rst`](../docs/source/hybrid-api.rst) for the SPI internals.
 
 ## Modules
@@ -90,7 +90,7 @@ tornado-test -V uk.ac.manchester.tornado.unittests.cublas.TestCuBlas
 
 ## Adding a library
 
-Follow [section 9 of the hybrid API guide](../HYBRID_API_GUIDE.md#9-write-your-own-provider) for
+Follow [section 9 of the hybrid API guide](HYBRID_API_GUIDE.md#9-write-your-own-provider) for
 the provider code, and use `tornado-cudnn` as the template. Then wire the module in:
 
 1. Create `tornado-native-libs/tornado-<lib>/`. Set `io.github.beehive-lab:tornado` as its
