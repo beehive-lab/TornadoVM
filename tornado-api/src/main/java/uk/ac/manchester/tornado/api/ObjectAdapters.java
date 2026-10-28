@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.api;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 import uk.ac.manchester.tornado.api.common.TaskPackage;
@@ -25,7 +27,27 @@ import uk.ac.manchester.tornado.api.common.TaskPackage;
 /** The installed {@link ObjectAdapter}s, applied where TornadoVM receives objects from a program. */
 public final class ObjectAdapters {
 
-    private static final List<ObjectAdapter> ADAPTERS = ServiceLoader.load(ObjectAdapter.class).stream().map(ServiceLoader.Provider::get).toList();
+    private static final List<ObjectAdapter> ADAPTERS = load();
+
+    /**
+     * The adapters that load. One that cannot (its library is not on the class path, say) is skipped
+     * with a warning: it must not stop programs that do not use it.
+     */
+    private static List<ObjectAdapter> load() {
+        var adapters = new ArrayList<ObjectAdapter>();
+        var providers = ServiceLoader.load(ObjectAdapter.class).iterator();
+        for (int attempts = 0; attempts < 1000; attempts++) {
+            try {
+                if (!providers.hasNext()) {
+                    break;
+                }
+                adapters.add(providers.next());
+            } catch (ServiceConfigurationError | LinkageError e) {
+                System.err.println("[TornadoVM] an ObjectAdapter could not be loaded and is ignored: " + e.getMessage());
+            }
+        }
+        return List.copyOf(adapters);
+    }
 
     private ObjectAdapters() {
     }
