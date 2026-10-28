@@ -136,6 +136,15 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
         return true;
     }
 
+    /**
+     * Whether a loop that stores into private memory at an address depending on a variable is
+     * marked {@code #pragma unroll}. NVIDIA's OpenCL compiler can refuse such a kernel with
+     * "unsupported operation" (beehive-lab/TornadoVM#1297); unrolled, the addresses are constants.
+     */
+    default boolean unrollPrivateStoreLoops() {
+        return false;
+    }
+
     /** The same regions as arguments, passed on by a device launch. */
     String abiArguments();
 
