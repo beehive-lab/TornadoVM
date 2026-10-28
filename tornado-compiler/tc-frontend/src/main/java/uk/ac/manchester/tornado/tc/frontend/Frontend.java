@@ -328,8 +328,15 @@ public final class Frontend {
     }
 
     /** The name a callee has (see {@link Translator#calleeName}); {@code owner} is an internal name. */
-    /** A TornadoVM API field read or call lowered by {@link #apiField} / {@link #apiCall}: its value, if any. */
-    public record ApiResult(Optional<Value> value) {
+    /**
+     * A TornadoVM API field read or call lowered by {@link #apiField} / {@link #apiCall}: its value, if any,
+     * and, for a call that updates a value-type receiver in place ({@code v.set(lane, x)} on a vector), the
+     * receiver's new value. The frontend makes every later use of the receiver see the new value.
+     */
+    public record ApiResult(Optional<Value> value, Optional<Value> receiver) {
+        public ApiResult(Optional<Value> value) {
+            this(value, Optional.empty());
+        }
     }
 
     /**
@@ -344,9 +351,10 @@ public final class Frontend {
 
     /**
      * For model frontends: a call into the TornadoVM API (native arrays, {@code KernelContext},
-     * {@code TornadoMath}, ...) lowered as the bytecode frontend lowers it. {@code args} include the
-     * receiver of an instance call. Empty when the method is not API or its binding needs the bytecode
-     * frontend's own state (vectors, atomics, half floats, device launches).
+     * {@code TornadoMath}, value types such as {@code HalfFloat} and vectors, atomics, ...) lowered as the
+     * bytecode frontend lowers it. {@code args} include the receiver of an instance call. Empty when the
+     * method is not API or its binding needs the bytecode frontend's own state (device launches, inlined
+     * Java bodies, lanes indexed by a non-constant value).
      */
     public static Optional<ApiResult> apiCall(IrBuilder b, String owner, String name, String descriptor, boolean isStatic, List<Value> args) {
         var binding = Bindings.method(owner.replace('.', '/'), name, descriptor);
@@ -376,11 +384,161 @@ public final class Frontend {
             case Bindings.ArraySize(var type) -> Optional.of(new ApiResult(Optional.of(b.arrayLength(args.get(0), type))));
             case Bindings.Convert(var op, var result) -> Optional.of(new ApiResult(Optional.of(b.convert(op, args.get(args.size() - 1), result))));
             case Bindings.Identity i -> Optional.of(new ApiResult(Optional.of(args.get(0))));
-            case Bindings.SharedArray(var element) -> args.get(1) instanceof Inst c && c.opcode() instanceof Opcode.ConstInt(var n) && n > 0
-                    ? Optional.of(new ApiResult(Optional.of(b.alloca(AddressSpace.SHARED, element, (int) n))))
-                    : Optional.empty();
+            case Bindings.SharedArray(var element) -> value(localArray(b, AddressSpace.SHARED, element, args.get(1)));
+            case Bindings.HalfBits h -> value(b.convert(ConvertOp.SEXT, b.convert(ConvertOp.BITCAST, args.get(0), Type.I16), Type.I32));
+            case Bindings.HalfArith(var op) -> value(b.convert(ConvertOp.FTRUNC,
+                    b.binary(op, b.convert(ConvertOp.FEXT, args.get(0), Type.F32), b.convert(ConvertOp.FEXT, args.get(1), Type.F32)), Type.F16));
+            case Bindings.ByteView(var type, var store) -> {
+                if (store) {
+                    b.arrayStore(args.get(0), args.get(1), args.get(2));
+                    yield Optional.of(new ApiResult(Optional.empty()));
+                }
+                yield value(b.arrayLoad(args.get(0), args.get(1), type));
+            }
+            case Bindings.ReceiverIntrinsic(var intrinsic, var type) -> {
+                var result = b.intrinsic(intrinsic, type, args);
+                yield Optional.of(new ApiResult(result.producesValue() ? Optional.of(result) : Optional.empty()));
+            }
+            case Bindings.VectorGet(var lane) -> {
+                var vector = args.get(0);
+                var element = ((Type.VectorType) vector.type()).element();
+                var known = lane >= 0 ? java.util.OptionalLong.of(lane) : uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(args.get(1));
+                var result = known.isPresent() ? b.intrinsic("tornado.vector.lane", uk.ac.manchester.tornado.tc.ir.Immediates.of("lane", known.getAsLong()), element, List.of(vector))
+                        : b.intrinsic("tornado.vector.lane_at", element, List.of(vector, args.get(1)));
+                yield value(element.equals(Type.I8) || element.equals(Type.I16) ? b.convert(ConvertOp.SEXT, result, Type.I32) : result);
+            }
+            case Bindings.VectorSlice(var start, var count) -> {
+                var vector = args.get(0);
+                var element = ((Type.VectorType) vector.type()).element();
+                var lanes = new java.util.ArrayList<Value>();
+                for (int l = start; l < start + count; l++) {
+                    lanes.add(b.intrinsic("tornado.vector.lane", uk.ac.manchester.tornado.tc.ir.Immediates.of("lane", l), element, List.of(vector)));
+                }
+                yield value(b.intrinsic("tornado.vector.make", new Type.VectorType(element, count), lanes));
+            }
+            case Bindings.VectorSet(var lane) -> {
+                var vector = args.get(0);
+                var element = ((Type.VectorType) vector.type()).element();
+                var known = lane >= 0 ? java.util.OptionalLong.of(lane) : uk.ac.manchester.tornado.tc.ir.analysis.Constants.integer(args.get(1));
+                var x = narrow(b, args.get(args.size() - 1), element);
+                var updated = known.isPresent()
+                        ? b.intrinsic("tornado.vector.insert", uk.ac.manchester.tornado.tc.ir.Immediates.of("lane", known.getAsLong()), vector.type(), List.of(vector, x))
+                        : b.intrinsic("tornado.vector.insert_at", vector.type(), List.of(vector, args.get(1), x));
+                yield Optional.of(new ApiResult(Optional.empty(), Optional.of(updated)));
+            }
+            case Bindings.VectorWhole(var op) -> {
+                var vector = args.get(0);
+                var vec = (Type.VectorType) vector.type();
+                yield switch (op) {
+                    case "set" -> Optional.of(new ApiResult(Optional.empty(), Optional.of(args.get(1))));
+                    case "fill" -> Optional.of(new ApiResult(Optional.empty(),
+                            Optional.of(b.intrinsic("tornado.vector.make", vec, java.util.Collections.nCopies(vec.length(), narrow(b, args.get(1), vec.element()))))));
+                    default -> value(b.constInt(Type.I32, vec.length()));
+                };
+            }
+            case Bindings.Atomic(var op, var element, var returnsPrevious) -> {
+                // args: context, array, index, values... A local array is a pointer: the element's address;
+                // a global array stays (array, index) until ABI lowering gives its address.
+                var array = args.get(1);
+                var operands = new java.util.ArrayList<Value>();
+                if (array.type() instanceof Type.PointerType) {
+                    var offset = b.binary(Opcode.BinaryOp.MUL, b.convert(ConvertOp.SEXT, args.get(2), Type.I64), b.constInt(Type.I64, byteSize(element)));
+                    operands.add(b.pointerOffset(array, offset));
+                } else {
+                    operands.add(array);
+                    operands.add(args.get(2));
+                }
+                operands.addAll(args.subList(3, args.size()));
+                var result = b.intrinsic("tornado.atomic." + op, returnsPrevious ? element : Type.VOID, operands);
+                yield Optional.of(new ApiResult(returnsPrevious ? Optional.of(result) : Optional.empty()));
+            }
+            case Bindings.AtomicOp(var op, var delta) -> {
+                var operands = new java.util.ArrayList<Value>(List.of(args.get(0)));
+                operands.add(args.size() > 1 ? args.get(1) : b.constInt(Type.I32, delta));
+                var result = b.intrinsic("tornado.atomic_int." + op, op.equals("set") ? Type.VOID : Type.I32, operands);
+                yield Optional.of(new ApiResult(result.producesValue() ? Optional.of(result) : Optional.empty()));
+            }
             default -> Optional.empty();
         };
+    }
+
+    /**
+     * For model frontends: {@code new T(args)} of a TornadoVM value type ({@code HalfFloat}, the vector
+     * types, {@code AtomicInteger}) as the bytecode frontend builds it. {@code args} exclude the new object.
+     * Empty when {@code T} is not such a type.
+     */
+    public static Optional<Value> apiNew(IrBuilder b, String owner, String descriptor, List<Value> args) {
+        var collection = Bindings.collection(owner.replace('.', '/'));
+        if (collection.isPresent() && descriptor.equals("(I)V")) {
+            // A local vector collection (new VectorFloat4(n)): private storage of n * width elements.
+            var c = collection.get();
+            var width = b.constInt(Type.I32, c.width());
+            var storage = localArray(b, AddressSpace.PRIVATE, c.element(), b.binary(Opcode.BinaryOp.MUL, args.get(0), width));
+            return Optional.of(b.intrinsic(LocalCollections.NAME, typeOf("L" + owner.replace('.', '/') + ";"), List.of(storage, args.get(0), width)));
+        }
+        var binding = Bindings.method(owner.replace('.', '/'), "<init>", descriptor);
+        if (binding.isEmpty()) {
+            return Optional.empty();
+        }
+        return switch (binding.get()) {
+            case Bindings.ValueInit(var from, var op, var result) -> {
+                var arg = args.get(0);
+                yield Optional.of(b.convert(op, arg.type().equals(from) ? arg : b.convert(ConvertOp.TRUNC, arg, from), result));
+            }
+            case Bindings.VectorInit(var vec) -> {
+                var lanes = new java.util.ArrayList<Value>();
+                for (int l = 0; l < vec.length(); l++) {
+                    lanes.add(args.isEmpty() ? (vec.element().isFloat() ? b.constFloat(vec.element(), 0.0) : b.constInt(vec.element(), 0)) : narrow(b, args.get(l), vec.element()));
+                }
+                yield Optional.of(b.intrinsic("tornado.vector.make", vec, lanes));
+            }
+            case Bindings.AtomicNew a -> Optional.of(b.intrinsic("tornado.atomic_int.new", uk.ac.manchester.tornado.tc.ir.ApiTypes.ATOMIC_INTEGER, List.of(args.isEmpty() ? b.constInt(Type.I32, 0) : args.get(0))));
+            default -> Optional.empty();
+        };
+    }
+
+    /**
+     * For model frontends: a private or shared array of {@code length} elements ({@code new float[n]}),
+     * as the bytecode frontend allocates it: now if the length is a constant, else pending until value
+     * specialisation makes it one.
+     */
+    public static Value localArray(IrBuilder b, AddressSpace space, Type element, Value length) {
+        if (length instanceof Inst inst && inst.opcode() instanceof Opcode.ConstInt(var v) && v > 0) {
+            return b.alloca(space, element, (int) v);
+        }
+        return b.intrinsic(LocalArrays.PENDING, LocalArrays.pendingImmediates(space, element), new Type.PointerType(space), List.of(length));
+    }
+
+    /** The length of a local array made by {@link #localArray}, as the bytecode frontend reads it. */
+    public static Value localArrayLength(IrBuilder b, Value array) {
+        if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
+            return b.constInt(Type.I32, count);
+        }
+        if (array instanceof Inst inst && LocalArrays.isPending(inst)) {
+            return inst.operand(0);
+        }
+        return b.intrinsic(LocalArrays.LENGTH, Type.I32, List.of(array));
+    }
+
+    /** After a model frontend translated {@code function}: the local arrays' lengths, resolved as the bytecode frontend resolves them. */
+    public static List<Diagnostic> resolveLocalArrays(Function function) {
+        return LocalArrays.resolveLengths(function);
+    }
+
+    private static Optional<ApiResult> value(Value v) {
+        return Optional.of(new ApiResult(Optional.of(v)));
+    }
+
+    /** An int stored into a byte or short lane, as the bytecode frontend narrows it. */
+    private static Value narrow(IrBuilder b, Value v, Type element) {
+        if (v.type().equals(element)) {
+            return v;
+        }
+        return element.equals(Type.I8) || element.equals(Type.I16) ? b.convert(ConvertOp.TRUNC, v, element) : v;
+    }
+
+    private static long byteSize(Type t) {
+        return t.equals(Type.I64) || t.equals(Type.F64) ? 8 : t.equals(Type.I16) || t.equals(Type.F16) ? 2 : t.equals(Type.I8) ? 1 : 4;
     }
 
     public static String calleeName(String owner, String name, String descriptor) {

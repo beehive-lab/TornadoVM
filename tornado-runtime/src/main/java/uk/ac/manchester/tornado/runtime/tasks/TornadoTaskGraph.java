@@ -1567,11 +1567,28 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         updateProfiler();
     }
 
+    /**
+     * The device holding {@code state}'s buffer: the graph's device, or else the device of a task that
+     * ran elsewhere ({@code -D<graph>.<task>.device}). Copies back must come from where the data is.
+     */
+    private TornadoXPUDevice deviceHolding(DataObjectState state) {
+        final TornadoXPUDevice graphDevice = meta().getXPUDevice();
+        if (state.getDeviceBufferState(graphDevice).hasObjectBuffer()) {
+            return graphDevice;
+        }
+        for (TornadoXPUDevice device : executionContext.getDevices()) {
+            if (device != null && state.getDeviceBufferState(device).hasObjectBuffer()) {
+                return device;
+            }
+        }
+        return graphDevice;
+    }
+
     private Event syncObjectInner(Object object) {
         Access objectAccess = getObjectAccess(object);
         final LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
         final DataObjectState dataObjectState = localState.getDataObjectState();
-        final TornadoXPUDevice device = meta().getXPUDevice();
+        final TornadoXPUDevice device = deviceHolding(dataObjectState);
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
         if (deviceState.isLockedBuffer()) {
             return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, 0, deviceState, null));
@@ -1583,13 +1600,19 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         Access objectAccess = getObjectAccess(object);
         final LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
         final DataObjectState dataObjectState = localState.getDataObjectState();
-        final TornadoXPUDevice device = meta().getXPUDevice();
+        final TornadoXPUDevice device = deviceHolding(dataObjectState);
         final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(device);
-        deviceState.setPartialCopySize(partialCopySize);
-        if (deviceState.isLockedBuffer()) {
-            return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, offset, deviceState, null));
+        if (!deviceState.isLockedBuffer()) {
+            return null;
         }
-        return null;
+        deviceState.setPartialCopySize(partialCopySize);
+        try {
+            return device.resolveEvent(executionPlanId, device.streamOutBlocking(executionPlanId, object, offset, deviceState, null));
+        } finally {
+            // The size is for this copy only: left behind, it turned every later copy of the object,
+            // whole ones included, into this partial one.
+            deviceState.setPartialCopySize(0);
+        }
     }
 
     private Event syncObjectInnerLazy(Object object, long hostOffset, long bufferSize) {

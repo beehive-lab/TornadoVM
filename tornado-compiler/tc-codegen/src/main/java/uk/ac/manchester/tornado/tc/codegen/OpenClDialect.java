@@ -36,6 +36,11 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
 final class OpenClDialect implements CDialect {
 
     @Override
+    public boolean unrollPrivateStoreLoops() {
+        return true;
+    }
+
+    @Override
     public Dialect id() {
         return Dialect.OPENCL;
     }

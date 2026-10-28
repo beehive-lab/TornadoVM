@@ -503,6 +503,36 @@ public final class CEmitter {
         line(depth, "}");
     }
 
+    /**
+     * Whether {@code body}, outside nested loops (each is judged on its own), stores into private
+     * memory at an address that depends on a variable.
+     */
+    private static boolean storesPrivateAtVariableAddress(List<S.Stmt> body) {
+        for (var statement : body) {
+            boolean found = switch (statement) {
+                case S.Effect(var op, var loc) when op.inst().opcode() instanceof Opcode.Store -> op.operands().get(0).type() instanceof Type.PointerType(var space)
+                        && space == AddressSpace.PRIVATE && dependsOnVariable(op.operands().get(0));
+                case S.If(var c, var t, var e) -> storesPrivateAtVariableAddress(t) || storesPrivateAtVariableAddress(e);
+                case S.Labelled(var l, var b) -> storesPrivateAtVariableAddress(b);
+                case S.Switch(var selector, var cases, var otherwise) -> cases.stream().anyMatch(c -> storesPrivateAtVariableAddress(c.body())) || storesPrivateAtVariableAddress(otherwise);
+                default -> false;
+            };
+            if (found) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean dependsOnVariable(S.Expr expr) {
+        return switch (expr) {
+            case S.VarRef ref -> true;
+            case S.Op(var inst, var operands) -> operands.stream().anyMatch(CEmitter::dependsOnVariable);
+            case S.ElementAddress(var address, var base, var index, var element) -> dependsOnVariable(address);
+            default -> false;
+        };
+    }
+
     private void loop(String label, List<S.Stmt> body, Set<String> fallthrough, int depth) {
         // A jump to the loop's label (a continue of an outer loop) can only come from its body: the
         // label is written at the loop's start once the body shows it is needed.
@@ -517,6 +547,9 @@ public final class CEmitter {
             inner = e;
         }
         var latch = latch(label, inner);
+        if (dialect.unrollPrivateStoreLoops() && storesPrivateAtVariableAddress(inner)) {
+            line(depth, "#pragma unroll");
+        }
         LoopFrame frame;
         if (latch != null) {
             // `{ block L { ... break L; ... } i = i + step; }` is `for (; c; i = i + step) { ... continue; ... }`.
