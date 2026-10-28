@@ -65,4 +65,6 @@ open module tornado.unittests {
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //
             uk.ac.manchester.tornado.unittests.tasks.TestLibraryNativeBuffers.NativeBufferTestProvider;
+    provides uk.ac.manchester.tornado.api.ObjectAdapter with //
+            uk.ac.manchester.tornado.unittests.api.TestObjectAdapters.HolderAdapter;
 }
