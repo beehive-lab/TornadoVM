@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -59,6 +60,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithWarmUpIterations;
 import uk.ac.manchester.tornado.api.plan.types.WithWarmUpTime;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 /**
  * Class to create and optimize execution plans for running a set of
@@ -219,6 +221,100 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         root.numPlanResults++;
         tornadoExecutor.updateLastExecutedTaskGraph();
         return executionResult;
+    }
+
+    /**
+     * Binds an existing device allocation to a {@code deviceView} argument of this plan, for the
+     * executions that follow.
+     *
+     * <p>
+     * The address is <b>borrowed</b>. TornadoVM reads and (for a read-write view) writes through it
+     * and nothing else: it never allocates a buffer of its own for the view, never copies host data
+     * into it, never copies it back out, never writes a native-array header into it and never frees
+     * it. Keeping the allocation alive and valid for as long as the plan may run, and freeing it
+     * afterwards, is the caller's job -- as is making the data visible to this plan's stream if
+     * another stream produced it.
+     * </p>
+     *
+     * <p>
+     * Rebinding between batches is the expected use: call it again with a different address and a
+     * different length, and the next {@link #execute()} uses those. A view may only be bound by one
+     * plan at a time, so two tasks sharing a view is an error rather than a silent race; use one
+     * view per task.
+     * </p>
+     *
+     * @param view
+     *     An array created by a {@code deviceView} factory, e.g. {@code FloatArray.deviceView(n)}.
+     * @param devicePointer
+     *     Device address of the first element.
+     * @param byteLength
+     *     How many bytes are valid at that address; must be a whole number of elements and must fit
+     *     in the view's capacity.
+     * @return {@link TornadoExecutionPlan}
+     * @since 8.0.1
+     */
+    public TornadoExecutionPlan bindExternalBuffer(TornadoNativeArray view, long devicePointer, long byteLength) {
+        return bindExternalBuffer(view, devicePointer, byteLength, -1, -1, false);
+    }
+
+    /**
+     * Binds an existing device allocation to a {@code deviceView} argument of this plan, stating the
+     * device it belongs to, how many of its elements hold data, and whether the kernel may write
+     * through it. See {@link #bindExternalBuffer(TornadoNativeArray, long, long)}.
+     *
+     * @param view
+     *     An array created by a {@code deviceView} factory.
+     * @param devicePointer
+     *     Device address of the first element.
+     * @param byteLength
+     *     How many bytes are valid at that address.
+     * @param logicalLength
+     *     How many elements of that span hold data, or -1 to derive it from {@code byteLength}. This
+     *     is what {@code getSize()} reports; it is not necessarily a row count (a {@code LIST}
+     *     offsets array holds one more element than there are rows).
+     * @param deviceIndex
+     *     Index of the device the address belongs to, or -1 when the caller does not state it. When
+     *     given, it is checked against the device this plan runs on.
+     * @param readOnly
+     *     Whether the kernel may only read through this view.
+     * @return {@link TornadoExecutionPlan}
+     * @since 8.0.1
+     */
+    public TornadoExecutionPlan bindExternalBuffer(TornadoNativeArray view, long devicePointer, long byteLength, long logicalLength, int deviceIndex, boolean readOnly) {
+        Objects.requireNonNull(view, "view");
+        if (!view.isDeviceView()) {
+            throw new IllegalArgumentException("Only an array created by a deviceView factory can be bound to an external device address. "
+                    + "A normal array owns a TornadoVM buffer with a header, and overwriting that with a foreign pointer would corrupt both.");
+        }
+        if (deviceIndex >= 0) {
+            TornadoDevice planDevice = tornadoExecutor.getDevice(0);
+            TornadoDeviceContext planContext = planDevice == null ? null : planDevice.getDeviceContext();
+            if (planContext != null && planContext.getDeviceIndex() != deviceIndex) {
+                throw new IllegalArgumentException("The address belongs to device " + deviceIndex + " but this plan runs on device " + planContext.getDeviceIndex()
+                        + "; a device address is only valid in its own device's context.");
+            }
+        }
+        view.deviceViewBinding().bind(devicePointer, byteLength, logicalLength, deviceIndex, readOnly, rootNode.executionFrame);
+        return this;
+    }
+
+    /**
+     * Releases the binding of a {@code deviceView} argument made with
+     * {@link #bindExternalBuffer(TornadoNativeArray, long, long)}. The device memory is the caller's
+     * and is not freed. A view must be unbound before another plan may bind it.
+     *
+     * @param view
+     *     The device view to unbind.
+     * @return {@link TornadoExecutionPlan}
+     * @since 8.0.1
+     */
+    public TornadoExecutionPlan unbindExternalBuffer(TornadoNativeArray view) {
+        Objects.requireNonNull(view, "view");
+        if (!view.isDeviceView()) {
+            throw new IllegalArgumentException("This array is not a device view, so it has no external binding to release");
+        }
+        view.deviceViewBinding().unbind(rootNode.executionFrame);
+        return this;
     }
 
     /**

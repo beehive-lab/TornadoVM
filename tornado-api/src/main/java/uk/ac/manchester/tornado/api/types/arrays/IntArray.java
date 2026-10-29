@@ -20,6 +20,8 @@ package uk.ac.manchester.tornado.api.types.arrays;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
+import uk.ac.manchester.tornado.api.memory.DeviceViewBinding;
+
 import java.lang.foreign.MemorySegment;
 import java.nio.IntBuffer;
 import java.util.Arrays;
@@ -294,14 +296,62 @@ public final class IntArray extends TornadoNativeArray {
      *
      * @return
      */
+    /**
+     * Constructs a {@link IntArray} that is a device view: no host memory is allocated, and the
+     * array stands for a device allocation somebody else owns, bound later with
+     * {@code bindExternalBuffer}.
+     */
+    private IntArray(DeviceViewBinding binding) {
+        this.numberOfElements = binding.capacityElements();
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / INT_BYTES;
+        this.segmentByteSize = 0;
+        this.segment = null;
+        markAsDeviceView(binding);
+    }
+
+    /**
+     * Creates a device-only view that can address up to {@code capacityElements} elements of
+     * foreign device memory.
+     *
+     * <p>
+     * Unlike {@code new IntArray(n)}, this allocates nothing: no host {@link MemorySegment} and no
+     * TornadoVM device buffer. The view carries no native-array header, so the kernel reads element
+     * {@code i} at {@code address + i * 4} and a foreign library's buffer can be used exactly as
+     * that library laid it out. Bind an address to it with
+     * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan#bindExternalBuffer} before executing a
+     * plan that uses it; the address stays the caller's to free.
+     * </p>
+     *
+     * <p>
+     * Host {@code get}/{@code set}, {@code toHeapArray}, {@code slice} and the segment accessors are
+     * not available on a view: there is no host memory behind it. {@code getSize()} reports the
+     * binding's logical length, which starts at the capacity and follows each rebind.
+     * </p>
+     *
+     * @param capacityElements
+     *         the largest number of elements any binding of this view may hold.
+     * @return A detached {@link IntArray} device view.
+     */
+    public static IntArray deviceView(long capacityElements) {
+        return new IntArray(new DeviceViewBinding(checkNumElements(capacityElements), INT_BYTES));
+    }
+
+    /**
+     * Creates a device-only view. See {@link #deviceView(long)}.
+     */
+    public static IntArray deviceView(int capacityElements) {
+        return deviceView((long) capacityElements);
+    }
+
     @Override
     public int getSize() {
-        return toIntSize(numberOfElements);
+        return toIntSize(getSizeLong());
     }
 
     @Override
     public long getSizeLong() {
-        return numberOfElements;
+        return isDeviceView() ? deviceViewBinding().logicalLength() : numberOfElements;
     }
 
     /**
@@ -311,7 +361,8 @@ public final class IntArray extends TornadoNativeArray {
      */
     @Override
     public long getNumBytesOfSegmentWithHeader() {
-        return segmentByteSize;
+        // A device view has no header, so both byte counts are the same: the payload it spans.
+        return isDeviceView() ? getNumBytesOfSegment() : segmentByteSize;
     }
 
     /**
@@ -321,7 +372,7 @@ public final class IntArray extends TornadoNativeArray {
      */
     @Override
     public long getNumBytesOfSegment() {
-        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+        return isDeviceView() ? getSizeLong() * INT_BYTES : segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
     /**
@@ -331,6 +382,7 @@ public final class IntArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
+        checkNotDeviceView("getSegment()");
         return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
@@ -341,6 +393,7 @@ public final class IntArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
+        checkNotDeviceView("getSegmentWithHeader()");
         return segment.getSegment();
     }
 
