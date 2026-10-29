@@ -83,6 +83,34 @@ final class Helpers {
                     }
                     """),
             // A vector value with one lane replaced (Java vector types are values here; setX makes a new one).
+            Map.entry("tc_vload_float4", """
+                    __device__ static inline float4 tc_vload_float4(const char *p) {
+                      if ((((unsigned long long) p) & 15ull) == 0ull) return *((const float4 *) p);
+                      const float *f = (const float *) p;
+                      return make_float4(f[0], f[1], f[2], f[3]);
+                    }
+                    """),
+            Map.entry("tc_vload_float2", """
+                    __device__ static inline float2 tc_vload_float2(const char *p) {
+                      if ((((unsigned long long) p) & 7ull) == 0ull) return *((const float2 *) p);
+                      const float *f = (const float *) p;
+                      return make_float2(f[0], f[1]);
+                    }
+                    """),
+            Map.entry("tc_vstore_float4", """
+                    __device__ static inline void tc_vstore_float4(char *p, float4 v) {
+                      if ((((unsigned long long) p) & 15ull) == 0ull) { *((float4 *) p) = v; return; }
+                      float *f = (float *) p;
+                      f[0] = v.x; f[1] = v.y; f[2] = v.z; f[3] = v.w;
+                    }
+                    """),
+            Map.entry("tc_vstore_float2", """
+                    __device__ static inline void tc_vstore_float2(char *p, float2 v) {
+                      if ((((unsigned long long) p) & 7ull) == 0ull) { *((float2 *) p) = v; return; }
+                      float *f = (float *) p;
+                      f[0] = v.x; f[1] = v.y;
+                    }
+                    """),
             Map.entry("tc_with", """
                     template <typename V, typename S> __device__ static inline V tc_with_x(V v, S s) { v.x = s; return v; }
                     template <typename V, typename S> __device__ static inline V tc_with_y(V v, S s) { v.y = s; return v; }

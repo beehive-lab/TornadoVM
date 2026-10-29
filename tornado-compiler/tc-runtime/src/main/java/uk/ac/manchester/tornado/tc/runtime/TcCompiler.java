@@ -343,6 +343,12 @@ public final class TcCompiler {
             new Step("local-arrays", c -> LocalArrays.hasPending(c.function), c -> LocalArrays.run(c.function), Verifier.Stage.PRE_ABI),
             new Step("legality", c -> true, c -> Legality.run(c.function, c.target), Verifier.Stage.PRE_ABI),
             new Step("abi", c -> true, c -> AbiLowering.run(c.function, c.target, c.layouts()), Verifier.Stage.POST_ABI),
+            new Step("vector-memory", c -> c.target.dialect() != TargetCaps.Dialect.CUDA && c.target.dialect() != TargetCaps.Dialect.OPENCL
+                    && (c.usesIntrinsic(uk.ac.manchester.tornado.tc.tornado.VectorMemory.LOAD) || c.usesIntrinsic(uk.ac.manchester.tornado.tc.tornado.VectorMemory.STORE)),
+                    c -> {
+                        uk.ac.manchester.tornado.tc.tornado.VectorMemory.split(c.function);
+                        return List.of();
+                    }, Verifier.Stage.POST_ABI),
             new Step("optimize.post-abi", c -> true, c -> {
                 PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(c.options.verifyEach())
                         .observe((run, fn) -> TcTrace.current().ir("optimize.post-abi", run.pass(), run.changed(), run.nanos(), fn)).run(c.function);

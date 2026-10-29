@@ -1294,11 +1294,20 @@ final class BabylonTranslator {
         var type = new Type.VectorType(memoryType(element), vectorView(name));
         var view = new ArrayView(receiver, false, type.element(), false, layout.byteOffset(MemoryLayout.PathElement.groupElement(array.name().orElseThrow())), array.elementCount(),
                 null, layout, 1);
+        // f32 vectors: one wide access where the address allows it (the CUDA/OpenCL spelling), as HAT's
+        // own backends do; lane by lane on other targets or when the index is not aligned.
+        boolean wide = type.element().equals(Type.F32);
         if (name.startsWith("store")) {
-            storeVectorAt(b, receiver, viewAddress(b, view, null, v(op.operands().get(2))), type, v(op.operands().get(1)));
+            var at = viewAddress(b, view, null, v(op.operands().get(2)));
+            if (wide) {
+                b.intrinsic("tornado.vector.store", Type.VOID, List.of(receiver, at, v(op.operands().get(1))));
+            } else {
+                storeVectorAt(b, receiver, at, type, v(op.operands().get(1)));
+            }
             return null;
         }
-        return loadVectorAt(b, receiver, viewAddress(b, view, null, v(op.operands().get(1))), type);
+        var at = viewAddress(b, view, null, v(op.operands().get(1)));
+        return wide ? b.intrinsic("tornado.vector.load", type, List.of(receiver, at)) : loadVectorAt(b, receiver, at, type);
     }
 
     /** Float2/Float4: construction, lanes, lane updates (mutable vectors) and lane-wise arithmetic. */

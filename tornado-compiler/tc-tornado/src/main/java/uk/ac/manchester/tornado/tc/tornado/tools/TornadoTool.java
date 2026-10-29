@@ -29,10 +29,13 @@ import uk.ac.manchester.tornado.tc.ir.Verifier;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
 import uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering;
+import uk.ac.manchester.tornado.tc.tornado.VectorMemory;
 
 /**
  * The {@code tc-tornado} tool: runs TornadoVM lowerings on TC-SSA and prints the result, verified at
- * the post-ABI stage. {@code tc-tornado [--parallel] [--abi] [--header=16|24] <file | ->}.
+ * the post-ABI stage. {@code tc-tornado [--parallel] [--abi] [--split-vectors] [--header=16|24] <file | ->};
+ * {@code --split-vectors} splits vector loads and stores into lane accesses after the ABI lowering, as
+ * for targets without wide accesses.
  */
 public final class TornadoTool {
 
@@ -55,12 +58,15 @@ public final class TornadoTool {
         var target = TargetCaps.CUDA_SM89;
         boolean abi = false;
         boolean parallel = false;
+        boolean splitVectors = false;
         String file = null;
         for (var arg : args) {
             if (arg.equals("--abi")) {
                 abi = true;
             } else if (arg.equals("--parallel")) {
                 parallel = true;
+            } else if (arg.equals("--split-vectors")) {
+                splitVectors = true;
             } else if (arg.startsWith("--header=")) {
                 target = target.withArrayHeaderBytes(Integer.parseInt(arg.substring("--header=".length())));
             } else if (arg.startsWith("-") && !arg.equals("-")) {
@@ -91,6 +97,9 @@ public final class TornadoTool {
                 }
                 if (!err.isEmpty()) {
                     return new Result(1, "", err.toString());
+                }
+                if (splitVectors) {
+                    module.functions().forEach(VectorMemory::split);
                 }
                 Verifier.verify(module, Verifier.Stage.POST_ABI).forEach(d -> err.append(d.render()).append('\n'));
                 if (!err.isEmpty()) {

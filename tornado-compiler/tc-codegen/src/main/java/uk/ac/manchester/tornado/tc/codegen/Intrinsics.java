@@ -71,6 +71,13 @@ public final class Intrinsics {
         // a vector with one lane replaced (setX on a vector value).
         cuda("tornado.vector.lane", "$0.{lane|xyzw}");
         TABLE.put(new Key("tornado.vector.insert", Dialect.CUDA, ""), Spelling.withHelper("tc_with_{lane|xyzw}($0, $1)", "tc_with"));
+        // A vector at consecutive floats: one 64/128-bit access when the address is aligned for it,
+        // lane by lane otherwise (Java allows any element index).
+        for (int n : new int[] { 2, 4 }) {
+            String vec = new Type.VectorType(Type.F32, n).text();
+            TABLE.put(new Key("tornado.vector.load", Dialect.CUDA, vec), Spelling.withHelper("tc_vload_float" + n + "((const char *) ($0) + ($1))", "tc_vload_float" + n));
+            TABLE.put(new Key("tornado.vector.store", Dialect.CUDA, vec), Spelling.withHelper("tc_vstore_float" + n + "((char *) ($0) + ($1), $2)", "tc_vstore_float" + n));
+        }
         // AtomicInteger counters: slot $0 of the kernel's atomics region (AtomicSlots), operand $1.
         cuda("tornado.atomic_int.add_get", "atomicAdd(&_atomics[$0], $1) + $1");
         cuda("tornado.atomic_int.get_add", "atomicAdd(&_atomics[$0], $1)");
@@ -179,6 +186,12 @@ public final class Intrinsics {
         opencl("tornado.global_size", "(int) get_global_size({dim})");
         // Vector lanes by number (.s0 to .sf works for every width; .x/.y/.z/.w only up to four).
         opencl("tornado.vector.lane", "$0.s{lane|0123456789abcdef}");
+        // vloadn/vstoren need only element alignment, and use wide accesses where they can.
+        for (int n : new int[] { 2, 4 }) {
+            String vec = new Type.VectorType(Type.F32, n).text();
+            openclTyped("tornado.vector.load", vec, "vload" + n + "(0, (__global const float *) ((__global const char *) ($0) + ($1)))");
+            openclTyped("tornado.vector.store", vec, "vstore" + n + "($2, 0, (__global float *) ((__global char *) ($0) + ($1)))");
+        }
         // AtomicInteger counters in the atomics region.
         opencl("tornado.atomic_int.add_get", "atomic_add(&_atomics[$0], $1) + $1");
         opencl("tornado.atomic_int.get_add", "atomic_add(&_atomics[$0], $1)");
