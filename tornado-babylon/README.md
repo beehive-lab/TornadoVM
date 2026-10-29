@@ -54,6 +54,11 @@ to 4.8e-7 (relative), on CUDA, OpenCL and the UHD 770.
 
 ## How it fits
 
+![tornado-babylon architecture: programs, this module, the TornadoVM runtime, TC and the drivers](docs/architecture.svg)
+
+<details>
+<summary>The call path, in text</summary>
+
 ```
 HAT program ──Accelerator──▶ TornadoHatBackend.dispatchKernel / dispatchTile
                               │  NDRange → WorkerGrid; HAT buffers → ByteArray in place (HeaderArena)
@@ -68,6 +73,8 @@ TornadoVM program ───────────▶│ TcHook → TcCompiler.
                               ▼
                  TC pipeline (unchanged) → CUDA C / OpenCL C / CUDA Tile C++ → NVRTC / clBuildProgram / nvcc -tile
 ```
+
+</details>
 
 ## What is supported
 
@@ -198,6 +205,7 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 - **`@Parallel` loops** in TornadoVM kernels compiled from their code models need class files compiled with `-g`.
 
 - **Buffer residency:**
+  - It pays when buffers stay on the device across dispatches (Game of Life). A kernel whose launches all have to upload every buffer again (one dispatch per compute call, as HAT's matmul) switches to an ordinary plan after 4 launches, whose transfers run inside the execution from pinned memory: 1.49 ms per compute of 2DTILING (1024), against 1.94 ms resident.
   - Host accesses are tracked in the compute method HAT dispatches (as HAT's own backends do). A call from it to another method that receives buffers counts as writing them.
   - A kernel that writes a buffer through array views, vector stores, tiles or atomics, or a helper compiled from bytecode, counts as writing all of that buffer.
 
@@ -280,6 +288,24 @@ Options:
 `@Parallel` through code models needs the class file's local variable names: compile with `-g`
 (Maven's default).
 
+## Files in this module
+
+| File | What it is |
+|---|---|
+| `src/main/java/.../babylon/tc/` | The TC frontend: `BabylonFrontend` (the `ModelFrontend` service), `BabylonTranslator` (code model to TC IR), `HatLayouts` / `DeviceLayouts` (HAT schemas as memory layouts), `HatWrites` (members each kernel writes), `Markers` |
+| `src/main/java/.../babylon/hat/` | The HAT backend: `TornadoHatBackend`, `HeaderArena`, `ComputeTracking`, `HatTasks`, `HatObjectAdapter` (+ its thin `HatObjectAdapterService`), `TornadoBuffers` |
+| `src/main/java/.../babylon/Events.java` | JFR events: `tornado.hat.Dispatch`, `tornado.babylon.Translate` |
+| `examples/src/` | Self-checking examples: `@Reflect` TornadoVM kernels, `HatTasks`, tiles, Game of Life (headless and windowed), interface-mapped particles |
+| `docs/architecture.svg` | The diagram above |
+| `build.sh`, `env.sh` | Build the module and its examples with the Babylon JDK; the environment they use |
+| `run.sh` | Run a HAT or TornadoVM program through this module (`-d cuda:0`) |
+| `hat-tests.sh`, `hat-sweep.sh` | HAT's unit tests and HAT's examples on TornadoVM devices |
+| `examples-tests.sh` | This module's examples on every device |
+| `reflect-all-sdk.sh`, `annotate-static-methods.py` | The TornadoVM unit-test suite compiled from code models: an SDK copy whose test kernels are `@Reflect` |
+| `perf.sh`, `perf-nsys.sh` | End-to-end and kernel-only times against HAT's own backends |
+| `profile.sh`, `tools/` | JFR, Nsight Systems and Nsight Compute runs, with their summaries (`jfr-summary.py`, `ncu-summary.py`, `profile.jfc`) |
+| `checkstyle.sh` | TornadoVM's checkstyle rules on this module (it is built outside the Maven reactor) |
+
 ## Testing
 
 | Script | What it runs |
@@ -348,22 +374,26 @@ the same HAT kernels compiled by TC on TornadoVM, and by HAT's own CUDA and Open
 
 | Kernel | TC kernel time (CUDA) | HAT CUDA kernel time | TC end to end, median | HAT CUDA end to end | HAT OpenCL end to end |
 |---|---:|---:|---:|---:|---:|
-| 1D | 18.1 ms | 37.2 ms | 18.9 ms | 37.7 ms | 394 ms |
-| 2D | 1.79 ms | 1.79 ms | 2.97 ms | 2.95 ms | 351 ms |
-| 2DLI | 428 µs | 444 µs | 1.58 ms | 1.63 ms | 65.3 ms |
-| 2DTILING | 332 µs | 334 µs | 1.50 ms | 1.58 ms | 29.0 ms |
-| 2DREGISTERTILING | 78.7 µs | 76.0 µs | 1.24 ms | 1.25 ms | 11.4 ms |
-| 2DREGISTERTILING_V | 112.8 µs | 79.6 µs | 1.27 ms | 1.24 ms | 8.7 ms |
-| 2DREGISTERTILING_FP16 | 202 µs | 58.8 µs (result wrong) | 0.87 ms | 0.77 ms (wrong) | 7.7 ms |
+| 1D | 17.8 ms | 37.0 ms | 18.8 ms | 37.7 ms | 397 ms |
+| 2D | 1.79 ms | 1.76 ms | 2.98 ms | 3.00 ms | 351 ms |
+| 2DLI | 428 µs | 443 µs | 1.60 ms | 1.62 ms | 65.1 ms |
+| 2DTILING | 332 µs | 333 µs | 1.49 ms | 1.49 ms | 29.0 ms |
+| 2DREGISTERTILING | 79.2 µs | 75.9 µs | 1.23 ms | 1.18 ms | 11.4 ms |
+| 2DREGISTERTILING_V | 121 µs | 79.6 µs | 1.29 ms | 1.18 ms | 8.7 ms |
+| 2DREGISTERTILING_FP16 | 74.8 µs | 58.9 µs (result wrong) | 0.78 ms | 0.75 ms (wrong) | 7.8 ms |
 
 - Kernel time is the mean of Nsight Systems' CUDA kernel records; end to end is the example's own
   timing of a dispatch, including transfers. TornadoVM on OpenCL (same GPU) takes 1.03-1.48x its CUDA
   end-to-end times.
 - The kernels are on par except three. **1D** is 2.1x faster with TC (not investigated). **2DREGISTERTILING_V** is 1.5x slower: not
   its `Float4` loads, which are one 128-bit access, but a loop NVRTC unrolls less than HAT's (see Current limitations). **FP16** is
-  3.4x slower: TC gives Java's results (each half operation rounded as `F16`'s Java methods round,
-  in f32 arithmetic), and the faster HAT CUDA kernel's result fails the example's check.
-- The first dispatch costs 0.55-0.60 s on TornadoVM against 0.16-0.23 s with HAT's CUDA backend: the
-  plan, the TC compilation and NVRTC, and with every backend enabled, OpenCL's platform and context set-up
-  (about 0.2 s, JFR native samples). `-Dhat.t.device=cuda:0` initialises only CUDA. Translating the code
-  model is 20 ms of it. Later dispatches reuse the plan.
+  1.26x slower (74.7 vs 59.2 µs): TC rounds the product and the sum separately, as `F16.mul` and `F16.add` do in Java,
+  while HAT's C lets nvcc fuse them (`HFMA2`), and HAT's result fails the example's check. (It was 3.4x slower, 202 µs,
+  while HAT's half arrays were stored as 64-bit words: nvcc packed and unpacked every half, 912 SASS instructions against
+  392 now that they are `short[]`.)
+- First dispatch of 2DTILING (1024), `-d cuda:0`, median of 5 runs: **270 ms** on TornadoVM against **168 ms** with HAT's
+  CUDA backend; the whole program, launch to exit, **590 ms** against **470 ms**. HAT's backend creates its CUDA context
+  when the `Accelerator` is built, before its first dispatch; `TornadoHatBackend` now initialises TornadoVM and the device on a
+  background thread from that moment too (`-Dtornado.hat.warmUp=false` turns it off: 354 ms and 677 ms). The CUDA module
+  cache saves only 27 ms here (381 ms with it cleared). With every backend enabled (`-d 1:0`), OpenCL's set-up adds
+  about 0.2 s; `cuda:0` initialises only CUDA. Translating the code model is 20 ms. Later dispatches reuse the plan.
