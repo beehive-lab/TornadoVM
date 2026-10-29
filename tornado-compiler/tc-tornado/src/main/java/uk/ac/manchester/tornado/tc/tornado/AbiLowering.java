@@ -111,11 +111,19 @@ public final class AbiLowering {
     private void lower(Function function) {
         var printer = new IrPrinter(false);
         printer.printFunction(function);
-        for (var param : List.copyOf(function.params())) {
+        // The positions the headerless facts refer to are positions in the function's parameter list
+        // as it arrives. This loop also removes parameters from that same list, so asking the live
+        // list where a parameter is gives a different answer once anything before it has gone: an
+        // unused KernelContext ahead of the arrays shifts every later array down one, and the first
+        // headerless input is then taken for a conventional one and read a header's width into the
+        // buffer. Fix the positions first, from a snapshot, and the removals cannot move them.
+        var original = List.copyOf(function.params());
+        for (int position = 0; position < original.size(); position++) {
+            var param = original.get(position);
             switch (param.type()) {
                 case ArrayType(var element) -> {
                     elements.put(param, element);
-                    if (headerlessParams.contains(function.params().indexOf(param))) {
+                    if (headerlessParams.contains(position)) {
                         headerless.add(param);
                     }
                     param.setType(new Type.PointerType(AddressSpace.GLOBAL));
@@ -194,50 +202,58 @@ public final class AbiLowering {
         if (headerlessParams.isEmpty()) {
             return;
         }
-        boolean changed = true;
-        while (changed) {
-            changed = false;
-            for (var block : function.blocks()) {
-                if (block == function.entry()) {
-                    continue;
-                }
-                for (int i = 0; i < block.args().size(); i++) {
-                    var arg = block.args().get(i);
-                    if (!elements.containsKey(arg) || headerless.contains(arg)) {
-                        continue;
-                    }
-                    if (incomingIsHeaderless(function, block, i)) {
-                        headerless.add(arg);
-                        changed = true;
-                    }
-                }
-            }
-        }
-        // Now that the fixed point is reached, refuse any merge that is headerless on one path only.
+        // An array chosen at run time reaches a block argument from several places, and a loop
+        // carries one back to itself. Asking "are all the values reaching this argument already
+        // known headerless" never becomes true inside a cycle: the backedge is the argument itself,
+        // which is what is being decided. A loop over two headerless arrays was therefore refused
+        // as a mix of layouts although no headered array existed anywhere in it.
+        //
+        // So start optimistically instead. Assume every array block argument is headerless, then
+        // repeatedly demote any whose incoming values include something known headered. A cycle
+        // with no headered value entering it from outside keeps the assumption, which is correct,
+        // because every value that can reach it is headerless. One that does meet a headered value
+        // is demoted on the first pass and stays demoted.
+        var candidates = new ArrayList<uk.ac.manchester.tornado.tc.ir.BlockArg>();
         for (var block : function.blocks()) {
             if (block == function.entry()) {
                 continue;
             }
-            for (int i = 0; i < block.args().size(); i++) {
-                var arg = block.args().get(i);
-                if (elements.containsKey(arg) && mixesLayouts(function, block, i)) {
-                    diagnostics.add(new Diagnostic("TC-E3105", "the array reaching this point is a headerless device view on one path and a normal array on another, "
-                            + "and the two are addressed differently; keep them apart", "%" + printer.name(arg), uk.ac.manchester.tornado.tc.ir.Loc.UNKNOWN));
+            for (var arg : block.args()) {
+                if (elements.containsKey(arg)) {
+                    candidates.add(arg);
+                    headerless.add(arg);
                 }
             }
         }
-    }
-
-    /** Whether every array flowing into argument {@code index} of {@code block} is headerless (and there is one). */
-    private boolean incomingIsHeaderless(Function function, uk.ac.manchester.tornado.tc.ir.Block block, int index) {
-        boolean any = false;
-        for (var incoming : incoming(function, block, index)) {
-            if (!headerless.contains(incoming)) {
-                return false;
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (var arg : candidates) {
+                if (!headerless.contains(arg)) {
+                    continue;
+                }
+                var block = arg.block();
+                int index = block.args().indexOf(arg);
+                for (var incoming : incoming(function, block, index)) {
+                    if (!headerless.contains(incoming)) {
+                        headerless.remove(arg);
+                        changed = true;
+                        break;
+                    }
+                }
             }
-            any = true;
         }
-        return any;
+        // Now that the solution has settled, a merge that really does mix the two layouts is one
+        // whose incoming values disagree. Those are refused: the two are addressed differently and
+        // there is no single correct way to read the result.
+        for (var arg : candidates) {
+            var block = arg.block();
+            int index = block.args().indexOf(arg);
+            if (mixesLayouts(function, block, index)) {
+                diagnostics.add(new Diagnostic("TC-E3105", "the array reaching this point is a headerless device view on one path and a normal array on another, "
+                        + "and the two are addressed differently; keep them apart", "%" + printer.name(arg), uk.ac.manchester.tornado.tc.ir.Loc.UNKNOWN));
+            }
+        }
     }
 
     private boolean mixesLayouts(Function function, uk.ac.manchester.tornado.tc.ir.Block block, int index) {

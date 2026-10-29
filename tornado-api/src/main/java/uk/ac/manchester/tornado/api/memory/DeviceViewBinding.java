@@ -69,6 +69,19 @@ public final class DeviceViewBinding {
 
     private final AtomicReference<Object> owner = new AtomicReference<>();
 
+    /**
+     * The logical length that has been folded into compiled code, once that has happened.
+     *
+     * <p>
+     * A view whose length the kernel can see has that length compiled into the kernel as a
+     * constant. Rebinding the view to a different length afterwards does not recompile anything:
+     * the installed code keeps the old constant and keeps reading that many elements, which for a
+     * shorter binding is past the end of what was bound. The length is therefore allowed to be
+     * visible to a kernel or to change, but not both.
+     * </p>
+     */
+    private volatile long lengthFoldedIntoKernel = -1;
+
     public DeviceViewBinding(long capacityElements, int elementSize) {
         if (capacityElements < 0) {
             throw new IllegalArgumentException("A device view cannot have a negative capacity: " + capacityElements);
@@ -98,10 +111,23 @@ public final class DeviceViewBinding {
         return logicalLength;
     }
 
-    /** How many elements the current binding holds; at most the capacity. */
+    /**
+     * How many elements the current binding holds; at most the capacity, and at most what is
+     * actually bound. Checking only the capacity let a view claim more elements than the memory
+     * behind it holds, which is a read past the end of somebody else's allocation.
+     */
     public void setLogicalLength(long elements) {
         if (elements < 0 || elements > capacityElements) {
             throw new IllegalArgumentException("Logical length " + elements + " is outside the view's capacity of " + capacityElements + " elements");
+        }
+        if (devicePointer != 0 && elements > deviceByteLength / elementSize) {
+            throw new IllegalArgumentException("Logical length " + elements + " is more than the " + (deviceByteLength / elementSize)
+                    + " elements currently bound (" + deviceByteLength + " bytes); the extra elements are not memory this view was given");
+        }
+        if (lengthVisibleToKernel && lengthFoldedIntoKernel >= 0 && elements != lengthFoldedIntoKernel) {
+            throw new IllegalStateException("This view's length is visible to the kernel and " + lengthFoldedIntoKernel
+                    + " has already been compiled into it, so it cannot now become " + elements
+                    + ". Leave setLengthVisibleToKernel off and pass the length to the kernel as a parameter instead.");
         }
         this.logicalLength = elements;
     }
@@ -111,11 +137,34 @@ public final class DeviceViewBinding {
     }
 
     /**
-     * Whether a kernel may call {@code getSize()} on this view. See the class comment: it folds the
-     * logical length in as a constant, so the kernel is recompiled when the length changes.
+     * Whether a kernel may call {@code getSize()} on this view.
+     *
+     * <p>
+     * Turning this on fixes the view's logical length: it is compiled into the kernel as a
+     * constant, and a later rebind to a different length is refused rather than silently running
+     * code specialised for the old one. A view that genuinely changes length between batches should
+     * leave this off and have the kernel take the length as an ordinary parameter, which is what
+     * the length is for.
+     * </p>
      */
     public void setLengthVisibleToKernel(boolean visible) {
-        this.lengthVisibleToKernel = visible;
+        if (!visible) {
+            this.lengthVisibleToKernel = false;
+            this.lengthFoldedIntoKernel = -1;
+            return;
+        }
+        this.lengthVisibleToKernel = true;
+        this.lengthFoldedIntoKernel = logicalLength;
+    }
+
+    /**
+     * Records that compiled code now contains this view's logical length, so that a later rebind to
+     * a different length can be refused instead of running against the stale constant.
+     */
+    public void noteLengthFoldedIntoKernel() {
+        if (lengthVisibleToKernel) {
+            this.lengthFoldedIntoKernel = logicalLength;
+        }
     }
 
     public boolean isBound() {
@@ -176,6 +225,13 @@ public final class DeviceViewBinding {
         if (bound > byteLength / elementSize) {
             throw new IllegalArgumentException("Logical length " + bound + " does not fit in the " + byteLength + " bytes bound");
         }
+        if (lengthVisibleToKernel && lengthFoldedIntoKernel >= 0 && bound != lengthFoldedIntoKernel) {
+            // Checked before anything is written, so a refused rebind leaves the view exactly as it
+            // was rather than half-updated.
+            throw new IllegalStateException("This view's length is visible to the kernel and " + lengthFoldedIntoKernel
+                    + " has already been compiled into it, so it cannot now be bound with " + bound + " elements. "
+                    + "Leave setLengthVisibleToKernel off and pass the length to the kernel as a parameter instead.");
+        }
         Object token = holder == null ? NO_OWNER : holder;
         Object current = owner.compareAndExchange(null, token);
         if (current != null && current != token) {
@@ -185,7 +241,7 @@ public final class DeviceViewBinding {
         this.deviceByteLength = byteLength;
         this.deviceIndex = targetDeviceIndex;
         this.readOnly = readOnlyBinding;
-        setLogicalLength(bound);
+        this.logicalLength = bound;
     }
 
     /** Releases the binding. The device memory is the caller's and is not freed here. */

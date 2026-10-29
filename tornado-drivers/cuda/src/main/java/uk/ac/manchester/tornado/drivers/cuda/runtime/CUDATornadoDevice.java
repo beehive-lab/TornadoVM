@@ -512,6 +512,12 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
             }
+            if (buffer instanceof CUDAExternalDeviceBuffer external) {
+                // Reusing a locked buffer skips allocate(), which is where a borrowed view's access
+                // contract was checked. The binding can have changed since; check it again here, so
+                // that every execution is validated rather than only the first.
+                external.validateForAccess(access);
+            }
         } else {
             buffer = newDeviceBufferAllocation(object, batchSize, state, access);
         }

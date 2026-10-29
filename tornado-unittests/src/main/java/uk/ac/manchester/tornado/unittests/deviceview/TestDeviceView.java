@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
@@ -402,6 +403,148 @@ public class TestDeviceView extends TornadoTestBase {
             CudaMemory.free(leftPointer);
             CudaMemory.free(rightPointer);
             CudaMemory.free(outPointer);
+        }
+    }
+
+    /**
+     * A kernel whose first parameter is a {@link KernelContext} it never uses. The ABI drops that
+     * parameter, which used to renumber the arrays behind it.
+     */
+    public static void copyAfterUnusedContext(KernelContext unused, FloatArray in, FloatArray out, int numRows) {
+        for (@Parallel int i = 0; i < numRows; i++) {
+            out.set(i, in.get(i));
+        }
+    }
+
+    /**
+     * An unused context argument must not move the arrays behind it.
+     *
+     * <p>
+     * The facts that say which arguments are headerless are positions in the parameter list as the
+     * compiler receives it, and ABI lowering removes the unused context from that same list while it
+     * is reading those positions. The first headerless array then answered to the position of the
+     * one before it and was read a header's width -- sixteen bytes, four floats -- into the buffer.
+     * The input here is eight floats and only the first four are bound, so a shifted read lands on
+     * [50,60,70,80] while staying inside a real allocation.
+     * </p>
+     */
+    @Test
+    public void testUnusedKernelContextDoesNotShiftHeaderlessArguments() {
+        float[] values = { 10, 20, 30, 40, 50, 60, 70, 80 };
+        long inPointer = CudaMemory.allocate((long) values.length * Float.BYTES);
+        long outPointer = CudaMemory.allocate(4L * Float.BYTES);
+        try {
+            CudaMemory.copyToDevice(inPointer, values);
+            CudaMemory.copyToDevice(outPointer, new float[] { -99, -99, -99, -99 });
+
+            FloatArray in = FloatArray.deviceView(4);
+            FloatArray out = FloatArray.deviceView(4);
+            TaskGraph graph = new TaskGraph("unused-context") //
+                    .task("copy", TestDeviceView::copyAfterUnusedContext, new KernelContext(), in, out, 4);
+            TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
+            plan.bindExternalBuffer(in, inPointer, 4L * Float.BYTES, 4, -1, true);
+            plan.bindExternalBuffer(out, outPointer, 4L * Float.BYTES, 4, -1, false);
+            plan.execute();
+            CudaMemory.synchronizeContext();
+
+            assertArrayEquals(new float[] { 10, 20, 30, 40 }, CudaMemory.copyFloatsToHost(outPointer, 4), 0.0f,
+                    "the unused context argument shifted which array was treated as headerless");
+        } finally {
+            CudaMemory.free(inPointer);
+            CudaMemory.free(outPointer);
+        }
+    }
+
+    /**
+     * A view whose length the kernel can see has that length compiled in, so it may not then change.
+     *
+     * <p>
+     * Rebinding such a view used to update only the Java-side metadata. The installed kernel kept
+     * the constant it was compiled with and kept reading that many elements, which after a shrink is
+     * past the end of what is now bound. Refusing the rebind is what makes the two mechanisms
+     * consistent: a length can be a compile-time constant, or it can vary, not both.
+     * </p>
+     */
+    @Test
+    public void testALengthVisibleViewRefusesToChangeLength() {
+        long pointer = CudaMemory.allocate(16L * Float.BYTES);
+        try {
+            FloatArray view = FloatArray.deviceView(16);
+            view.deviceViewBinding().setLengthVisibleToKernel(true);
+            TaskGraph graph = new TaskGraph("fixed-length").task("t", TestDeviceView::addViews, view, view, view, 1);
+            TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
+
+            plan.bindExternalBuffer(view, pointer, 16L * Float.BYTES, 16, -1, false);
+            plan.unbindExternalBuffer(view);
+            // Shrinking is the dangerous direction and growing is the confusing one; both are refused.
+            assertThrows(IllegalStateException.class, () -> plan.bindExternalBuffer(view, pointer, 8L * Float.BYTES, 8, -1, false));
+            assertThrows(IllegalStateException.class, () -> view.deviceViewBinding().setLogicalLength(4));
+            // Rebinding at the same length is still fine.
+            plan.bindExternalBuffer(view, pointer, 16L * Float.BYTES, 16, -1, false);
+            assertEquals(16, view.getSize());
+            plan.unbindExternalBuffer(view);
+        } finally {
+            CudaMemory.free(pointer);
+        }
+    }
+
+    /** A view may never claim more elements than the memory actually bound to it holds. */
+    @Test
+    public void testLogicalLengthCannotExceedTheBoundSpan() {
+        long pointer = CudaMemory.allocate(64L * Float.BYTES);
+        try {
+            FloatArray view = FloatArray.deviceView(64);
+            TaskGraph graph = new TaskGraph("span").task("t", TestDeviceView::addViews, view, view, view, 1);
+            TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
+            plan.bindExternalBuffer(view, pointer, 8L * Float.BYTES, 8, -1, false);
+            // Within the view's capacity of 64, but beyond the 8 elements actually bound.
+            assertThrows(IllegalArgumentException.class, () -> view.deviceViewBinding().setLogicalLength(32));
+            assertEquals(8, view.getSize());
+            plan.unbindExternalBuffer(view);
+        } finally {
+            CudaMemory.free(pointer);
+        }
+    }
+
+    /**
+     * An output rebound read-only must not still be written by a plan that was already compiled.
+     *
+     * <p>
+     * The access contract was checked where the external buffer wrapper is allocated, and a plan
+     * reusing a locked buffer never goes through that path again. The protection existed and the
+     * reuse walked past it, so the task wrote into a column that had asked not to be written.
+     * </p>
+     */
+    @Test
+    public void testAWritableOutputCannotBeReboundReadOnly() {
+        long inPointer = CudaMemory.allocate(Float.BYTES);
+        long firstOut = CudaMemory.allocate(Float.BYTES);
+        long protectedOut = CudaMemory.allocate(Float.BYTES);
+        try {
+            CudaMemory.copyToDevice(inPointer, new float[] { 10 });
+            CudaMemory.copyToDevice(firstOut, new float[] { -99 });
+            CudaMemory.copyToDevice(protectedOut, new float[] { -99 });
+
+            FloatArray in = FloatArray.deviceView(1);
+            FloatArray out = FloatArray.deviceView(1);
+            TaskGraph graph = new TaskGraph("readonly-reuse").task("add", TestDeviceView::addViews, in, in, out, 1);
+            TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
+            plan.bindExternalBuffer(in, inPointer, Float.BYTES, 1, -1, true);
+            plan.bindExternalBuffer(out, firstOut, Float.BYTES, 1, -1, false);
+            plan.execute();
+            CudaMemory.synchronizeContext();
+            assertEquals(20.0f, CudaMemory.copyFloatsToHost(firstOut, 1)[0], DELTA);
+
+            plan.unbindExternalBuffer(out);
+            plan.bindExternalBuffer(out, protectedOut, Float.BYTES, 1, -1, true);
+            assertThrows(RuntimeException.class, plan::execute, "a task that writes must not run against a read-only binding");
+            CudaMemory.synchronizeContext();
+            assertEquals(-99.0f, CudaMemory.copyFloatsToHost(protectedOut, 1)[0], DELTA,
+                    "the read-only column was written anyway");
+        } finally {
+            CudaMemory.free(inPointer);
+            CudaMemory.free(firstOut);
+            CudaMemory.free(protectedOut);
         }
     }
 

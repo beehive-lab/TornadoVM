@@ -125,11 +125,26 @@ public class CUDAExternalDeviceBuffer implements XPUBuffer {
             throw new TornadoRuntimeException("A device view cannot be used in a batched task-graph: its device memory is a fixed allocation somebody else owns, "
                     + "so TornadoVM cannot split it into chunks. Bind one view per batch instead.");
         }
+        validateForAccess(requestedAccess);
+    }
+
+    /**
+     * Checks the binding against what the task will do to it.
+     *
+     * <p>
+     * This has to run on every execution rather than once when the wrapper is created. A plan that
+     * reuses a locked buffer never allocates again, so a view bound read-write for one batch and
+     * rebound read-only for the next was still written by the task that had already been compiled
+     * against it: the protection existed but the reuse path walked past it.
+     * </p>
+     */
+    public void validateForAccess(Access requestedAccess) {
         long bound = binding.requireBoundPointer();
         if (requestedAccess != Access.READ_ONLY && binding.isReadOnly()) {
-            throw new TornadoRuntimeException("The task writes to this device view, but it was bound read-only at 0x" + Long.toHexString(bound)
+            throw new TornadoRuntimeException("The task writes to this device view, but it is bound read-only at 0x" + Long.toHexString(bound)
                     + ". Bind it read-write, or give the task a separate output view.");
         }
+        binding.noteLengthFoldedIntoKernel();
     }
 
     @Override
