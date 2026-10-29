@@ -735,6 +735,14 @@ And then:
 
 
 
+Start-up: initialising only the device in use
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TornadoVM creates a backend (OpenCL, CUDA, Metal) the first time a program uses it, so a program
+that runs on one backend does not pay for initialising the others. The device indices stay the same
+(``TornadoExecutionPlan.getDevice(1, 0)`` names the same device whether or not backend 0 exists yet).
+The default device is ``TornadoExecutionPlan.getDefaultDevice()`` (device 0 of backend 0).
+
 Obtain the result and the profiler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
