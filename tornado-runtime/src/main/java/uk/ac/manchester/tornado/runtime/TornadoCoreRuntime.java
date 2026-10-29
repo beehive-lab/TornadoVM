@@ -85,11 +85,10 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         backends.makeDefault(index);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <D extends TornadoBackend> D getBackend(Class<D> type) {
         int index = backends.indexOf(type);
-        return index < 0 ? null : (D) backends.get(index);
+        return index < 0 ? null : type.cast(backends.get(index));
     }
 
     @Override
