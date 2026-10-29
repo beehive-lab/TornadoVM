@@ -86,6 +86,8 @@ public final class IntrinsicRegistry {
         pure("tornado.vector.insert", "a vector with one lane replaced", "lane");
         pure("tornado.vector.lane_at", "a lane by an index operand, until unrolling makes it constant");
         pure("tornado.vector.insert_at", "a lane replaced by an index operand, until unrolling makes it constant");
+        add("tornado.vector.load", EnumSet.of(Effect.READS), "a vector from consecutive elements of an array (operands: data, byte offset); one wide load where the address allows");
+        add("tornado.vector.store", EnumSet.of(Effect.WRITES), "a vector to consecutive elements of an array (operands: data, byte offset, vector); one wide store where the address allows");
         add("tornado.vector.store_param", EnumSet.of(Effect.WRITES), "writes a changed vector parameter back to its lanes in memory");
         // Synchronisation, warp and tensor-core operations.
         add("tornado.barrier.", EnumSet.of(Effect.CONVERGENT, Effect.READS, Effect.WRITES), "work-group barrier");
