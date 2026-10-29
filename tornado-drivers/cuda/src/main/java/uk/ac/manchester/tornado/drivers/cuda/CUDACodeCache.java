@@ -22,6 +22,7 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
+import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus.CL_BUILD_SUCCESS;
 import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
@@ -156,7 +157,10 @@ public class CUDACodeCache {
     }
 
     private void storeCachedModule(Path cacheFile, CUDAProgram program, String entryPoint) {
-        final byte[] image = program.getModuleImage();
+        storeImage(cacheFile, program.getModuleImage(), entryPoint);
+    }
+
+    private void storeImage(Path cacheFile, byte[] image, String entryPoint) {
         if (image == null || image.length == 0) {
             return;
         }
@@ -227,6 +231,34 @@ public class CUDACodeCache {
         if ((OPENCL_CACHE_ENABLE || OPENCL_DUMP_BINS) && !deviceContext.getPlatformContext().getPlatform().getVendor().equalsIgnoreCase("Apple")) {
             final Path outDir = resolveCacheDirectory();
             program.dumpBinaries(outDir.toAbsolutePath() + "/" + entryPoint);
+        }
+    }
+
+    /**
+     * NVRTC-compiles {@code source} into the compiler's in-process image cache, on the calling
+     * (background) thread, unless the module cache on disk already has it. The later
+     * {@link #installSource} of the same source then finds the image and only loads the module.
+     */
+    public void prefetchSource(TaskDataContext meta, String entryPoint, byte[] source) {
+        if (isInputSourceSPIRVBinary(source) || CUDATileCompiler.isTileSource(source)) {
+            return;
+        }
+        final String compilerFlags = meta.getCompilerFlags(TornadoVMBackendType.CUDA);
+        Path moduleCacheFile = null;
+        if (CUDA_CODE_CACHE_ENABLE) {
+            final String key = moduleCacheKey(source, compilerFlags, false);
+            if (key != null) {
+                moduleCacheFile = resolveModuleCacheDirectory().resolve(entryPoint + "-" + key + CUBIN_SUFFIX);
+                if (Files.exists(moduleCacheFile)) {
+                    return;
+                }
+            }
+        }
+        final byte[] image = CUDACompiler.prebuild(new String(source, StandardCharsets.UTF_8), deviceContext.getDeviceId(), compilerFlags);
+        // Stored now, not only when the kernel is installed: a plan's graphs that a run does not
+        // execute would otherwise be compiled again by every later run's prefetch.
+        if (moduleCacheFile != null && image != null) {
+            storeImage(moduleCacheFile, image, entryPoint);
         }
     }
 

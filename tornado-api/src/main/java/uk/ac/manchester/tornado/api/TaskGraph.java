@@ -1097,6 +1097,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withPreCompilation(executionPackage);
     }
 
+    void prefetchCompilations(ExecutorFrame executionPackage) {
+        taskGraphImpl.prefetchCompilations(executionPackage);
+    }
+
     void withCUDAGraph() {
         taskGraphImpl.withCUDAGraph();
     }

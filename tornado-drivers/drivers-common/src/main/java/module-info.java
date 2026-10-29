@@ -2,6 +2,7 @@ open module tornado.drivers.common {
     requires transitive tornado.runtime;
     requires transitive tornado.tc.runtime;
     requires tornado.tc.debug;
+    requires jdk.jfr;
     
     exports uk.ac.manchester.tornado.drivers.common;
     exports uk.ac.manchester.tornado.drivers.common.mm;

@@ -222,6 +222,18 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return atomicsBuffer;
     }
 
+    @Override
+    public void prefetch(long executionPlanId, SchedulableTask task) {
+        if (!(task instanceof CompilableTask executable)) {
+            return;
+        }
+        final CUDADeviceContextInterface deviceContext = getDeviceContext();
+        if (deviceContext.isCached(executionPlanId, task.getId(), executable.getMethod().getName())) {
+            return;
+        }
+        TcKernels.prefetch(executable, tcTarget(), (entry, source) -> deviceContext.prefetchSource(executionPlanId, executable.meta(), entry, source));
+    }
+
     private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
         final CUDADeviceContextInterface deviceContext = getDeviceContext();
         final CompilableTask executable = (CompilableTask) task;

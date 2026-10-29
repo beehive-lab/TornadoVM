@@ -189,11 +189,14 @@ public class OCLProgram {
 
     public void build(String options) {
         buffer.clear();
+        var event = uk.ac.manchester.tornado.drivers.common.tc.CompileEvent.begin("opencl", null, null, Thread.currentThread().getName().startsWith("tornado-compile-"));
         try {
             clBuildProgram(programPointer, devices, options);
         } catch (OCLException e) {
             logger.error(e.getMessage());
             throw new TornadoBailoutRuntimeException(e.getMessage());
+        } finally {
+            event.finish(); // failed builds are compilations too
         }
     }
 

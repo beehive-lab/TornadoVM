@@ -211,6 +211,10 @@ public class TornadoVM {
         executeActionOnInterpreters(TornadoVMInterpreter::printTimes);
     }
 
+    public void prefetchCompilations() {
+        executeActionOnInterpreters(TornadoVMInterpreter::prefetchCompilations);
+    }
+
     public void withPreCompilation() {
         executeActionOnInterpreters(TornadoVMInterpreter::withPreCompilation);
     }

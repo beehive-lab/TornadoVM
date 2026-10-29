@@ -27,6 +27,7 @@ import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TI
 import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -51,6 +52,7 @@ import java.util.regex.Pattern;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoBackend;
@@ -1384,6 +1386,41 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
             System.out.println();
         }
+    }
+
+    @Override
+    public void prefetchCompilations(ExecutorFrame executionPackage) {
+        // Graphs whose compilation is not known before they run are left to compile in order:
+        // a batched graph compiles per chunk, and a graph with @Reduce parameters is rewritten
+        // (reduce skeleton) on its first execution, so its tasks would compile differently.
+        if (bailout || batchSizeBytes != TornadoExecutionContext.INIT_VALUE || (TornadoOptions.EXPERIMENTAL_REDUCE && hasReduceParameters())) {
+            return;
+        }
+        setupProfiler();
+        getDevice().getDeviceContext().setResetToFalse(executionPackage.getExecutionPlanId());
+        // Builds the TornadoVM bytecode (and the per-task contexts) now; withPreCompilation and
+        // execute find it built.
+        compileComputeGraphToTornadoVMBytecode();
+        executionPlanId = executionPackage.getExecutionPlanId();
+        executionContext.setExecutionPlanId(executionPlanId);
+        vm.prefetchCompilations();
+    }
+
+    private boolean hasReduceParameters() {
+        for (TaskPackage taskPackage : taskPackages) {
+            if (taskPackage instanceof PrebuiltTaskPackage) {
+                continue;
+            }
+            Method kernel = taskPackage.isMethodTask() ? taskPackage.getMethod() : TaskUtils.resolveMethodHandle(taskPackage.getTaskParameters()[0]);
+            for (Annotation[] annotations : kernel.getParameterAnnotations()) {
+                for (Annotation annotation : annotations) {
+                    if (annotation instanceof Reduce) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override

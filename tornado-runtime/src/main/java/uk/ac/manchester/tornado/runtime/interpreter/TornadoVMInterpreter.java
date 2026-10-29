@@ -303,6 +303,27 @@ public class TornadoVMInterpreter {
         }
     }
 
+    /**
+     * Asks the device to start compiling this interpreter's kernel tasks in the background, set up as
+     * {@link #compileTaskFromBytecodeToBinary} sets them up, so that the compilation it later requests
+     * for the same task finds the result (or waits for it).
+     */
+    public void prefetchCompilations() {
+        for (SchedulableTask task : taskExecutionContexts) {
+            if (task instanceof LibraryTask || task instanceof PrebuiltTask) {
+                continue;
+            }
+            // The plan's settings (strict floating point, compiler flags) reach the task as they do
+            // before its in-order compilation: they are part of what is compiled.
+            updateMeta(task.meta());
+            if (gridScheduler != null && gridScheduler.get(task.getId()) != null) {
+                task.setUseGridScheduler(true);
+                task.setGridScheduler(gridScheduler);
+            }
+            interpreterDevice.prefetch(graphExecutionContext.getExecutionPlanId(), task);
+        }
+    }
+
     public void withPreCompilation() {
         execute(true);
         finishedWarmup = true;

@@ -967,16 +967,19 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     }
 
     private CUDACodeCache getCUDACodeCache(long executionPlanId) {
-        if (!codeCache.containsKey(executionPlanId)) {
-            codeCache.put(executionPlanId, new CUDACodeCache(this));
-        }
-        return codeCache.get(executionPlanId);
+        // Atomic: background compilations (prefetch) ask for the plan's cache too.
+        return codeCache.computeIfAbsent(executionPlanId, id -> new CUDACodeCache(this));
     }
 
     @Override
     public boolean isKernelAvailable(long executionPlanId) {
         CUDACodeCache oclCodeCache = getCUDACodeCache(executionPlanId);
         return oclCodeCache.isKernelAvailable();
+    }
+
+    @Override
+    public void prefetchSource(long executionPlanId, TaskDataContext meta, String entryPoint, byte[] source) {
+        getCUDACodeCache(executionPlanId).prefetchSource(meta, checkKernelName(entryPoint), source);
     }
 
     @Override

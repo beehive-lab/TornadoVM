@@ -54,6 +54,10 @@ public class ImmutableTaskGraph {
         taskGraph.withPreCompilation(executionPackage);
     }
 
+    void prefetchCompilations(ExecutorFrame executionPackage) {
+        taskGraph.prefetchCompilations(executionPackage);
+    }
+
     void withCUDAGraph() {
         taskGraph.withCUDAGraph();
     }
