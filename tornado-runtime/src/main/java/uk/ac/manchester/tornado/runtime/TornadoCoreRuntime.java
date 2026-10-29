@@ -22,36 +22,35 @@ package uk.ac.manchester.tornado.runtime;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.ServiceLoader;
-import java.util.stream.StreamSupport;
 
 
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
-import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
 
 public final class TornadoCoreRuntime implements TornadoRuntime {
 
     private static final TornadoCoreRuntime runtime = new TornadoCoreRuntime();
     private static final JVMMapping JVM = new JVMMapping();
-    private static final int DEFAULT_DRIVER = 0;
-
-    private static final int DEFAULT_BACKEND = 0;
 
     private final TornadoVMConfigAccess vmConfig;
-    private final TornadoAcceleratorBackend[] tornadoVMBackends;
-    private int backendCount;
+    private final Backends backends;
 
     private TornadoCoreRuntime() {
         vmConfig = new TornadoVMConfigAccess();
-        tornadoVMBackends = loadBackends();
+        List<TornadoBackendProvider> installed = ServiceLoader.load(TornadoBackendProvider.class).stream().map(ServiceLoader.Provider::get).toList();
+        backends = new Backends(installed, TornadoOptions.ENABLED_BACKENDS, this::createBackend);
+    }
+
+    private TornadoAcceleratorBackend createBackend(TornadoBackendProvider provider) {
+        if (TornadoOptions.FULL_DEBUG) {
+            System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
+        }
+        return provider.createBackend(vmConfig);
     }
 
     public static TornadoCoreRuntime getTornadoRuntime() {
@@ -62,47 +61,13 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
         return runtime.vmConfig;
     }
 
-    private TornadoAcceleratorBackend[] loadBackends() {
-        ServiceLoader<TornadoBackendProvider> loader = ServiceLoader.load(TornadoBackendProvider.class);
-        List<TornadoBackendProvider> installed = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
-        List<TornadoBackendProvider> providerList = installed.stream().filter(TornadoCoreRuntime::isEnabled).toList();
-        if (providerList.isEmpty() && !installed.isEmpty()) {
-            throw new TornadoBackendNotFound("tornado.enabled.backends=" + TornadoOptions.ENABLED_BACKENDS + " selects none of the installed backends: " + installed.stream()
-                    .map(p -> p.getDevicePriority().name().toLowerCase(Locale.ROOT)).toList());
-        }
-        TornadoAcceleratorBackend[] tornadoAcceleratorBackends = new TornadoAcceleratorBackend[TornadoBackends.values().length];
-        int index = 0;
-        for (TornadoBackendProvider provider : providerList) {
-            if (TornadoOptions.FULL_DEBUG) {
-                System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
-            }
-            TornadoAcceleratorBackend backend = provider.createBackend(vmConfig);
-            if (backend != null) {
-                tornadoAcceleratorBackends[index] = backend;
-                index++;
-            }
-        }
-        backendCount = index;
-        return tornadoAcceleratorBackends;
-    }
-
-    private static boolean isEnabled(TornadoBackendProvider provider) {
-        String enabled = TornadoOptions.ENABLED_BACKENDS;
-        if (enabled.isBlank()) {
-            return true;
-        }
-        String name = provider.getDevicePriority().name();
-        return Arrays.stream(enabled.split(",")).map(String::trim).anyMatch(name::equalsIgnoreCase);
-    }
-
     @Override
     public <D extends TornadoBackend> int getBackendIndex(Class<D> backendClass) {
-        for (int backendIndex = 0; backendIndex < tornadoVMBackends.length; backendIndex++) {
-            if (tornadoVMBackends[backendIndex] != null && tornadoVMBackends[backendIndex].getClass() == backendClass) {
-                return backendIndex;
-            }
+        int index = backends.indexOf(backendClass);
+        if (index < 0) {
+            throw shouldNotReachHere("Could not find index for backend: " + backendClass);
         }
-        throw shouldNotReachHere("Could not find index for backend: " + backendClass);
+        return index;
     }
 
     @Override
@@ -112,43 +77,34 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     @Override
     public TornadoAcceleratorBackend getBackend(int index) {
-        if (index > tornadoVMBackends.length) {
-            throw new TornadoBackendNotFound("Tornado Backend Not Found");
-        }
-        return tornadoVMBackends[index];
+        return backends.get(index);
     }
 
     @Override
     public void setDefaultBackend(int index) {
-        TornadoAcceleratorBackend tmp = tornadoVMBackends[0];
-        tornadoVMBackends[0] = tornadoVMBackends[index];
-        tornadoVMBackends[index] = tmp;
+        backends.makeDefault(index);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <D extends TornadoBackend> D getBackend(Class<D> type) {
-        for (TornadoAcceleratorBackend backend : tornadoVMBackends) {
-            if (backend.getClass() == type) {
-                return (D) backend;
-            }
-        }
-        return null;
+        int index = backends.indexOf(type);
+        return index < 0 ? null : (D) backends.get(index);
     }
 
     @Override
     public TornadoVMBackendType getBackendType(int index) {
-        return tornadoVMBackends[index].getBackendType();
+        return backends.get(index).getBackendType();
     }
 
     @Override
     public int getNumBackends() {
-        return backendCount;
+        return backends.count();
     }
 
     @Override
     public TornadoXPUDevice getDefaultDevice() {
-        return (tornadoVMBackends == null || tornadoVMBackends[DEFAULT_BACKEND] == null) ? JVM : (TornadoXPUDevice) tornadoVMBackends[DEFAULT_BACKEND].getDefaultDevice();
+        return backends.count() == 0 ? JVM : (TornadoXPUDevice) backends.get(0).getDefaultDevice();
     }
 
 }
