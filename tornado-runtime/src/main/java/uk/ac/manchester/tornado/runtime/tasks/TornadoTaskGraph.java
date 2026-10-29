@@ -53,8 +53,6 @@ import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
-import uk.ac.manchester.tornado.api.TornadoBackend;
-import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.Event;
@@ -93,7 +91,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoTaskRuntimeException;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.ExecutorFrame;
-import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
@@ -654,10 +651,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void setDevice(TornadoDevice device) {
 
-        TornadoDevice oldDevice = meta().getXPUDevice();
+        TornadoDevice oldDevice = currentDeviceHolding(device);
 
         // prevent to set again the same device as it invalidates its state
-        if (oldDevice.equals(device)) {
+        if (oldDevice != null && oldDevice.equals(device)) {
             reuseDeviceBuffersForSameDevice(device);
             return;
         }
@@ -675,15 +672,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        //Release locked buffers from the old device and lock them on the new one.
-        for (LocalObjectState localState : executionContext.getObjectStates()) {
-            final DataObjectState dataObjectState = localState.getDataObjectState();
-            final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(oldDevice);
-            if (deviceState.isLockedBuffer()) {
-                releaseObjectFromDeviceMemory(localState, oldDevice);
-                reuseDeviceBufferObject(localState, device);
-            }
-        }
+        moveLockedBuffers(oldDevice, device);
 
         // Set Thread-Schedulers to Default Value
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
@@ -691,6 +680,30 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             task.meta().resetThreadBlocks();
         }
 
+    }
+
+    /**
+     * The graph's current device, or null when it can hold nothing of the graph: a device the graph
+     * has never resolved, on another backend than {@code target}. Resolving it only to compare would
+     * create its backend (OpenCL's platforms and contexts, say, for a graph moved to a CUDA device
+     * before it first runs); on {@code target}'s backend, which exists, resolving it costs nothing.
+     */
+    private TornadoDevice currentDeviceHolding(TornadoDevice target) {
+        return meta().isXPUDeviceResolved() || meta().getBackendIndex() == target.getBackendIndex() ? meta().getXPUDevice() : null;
+    }
+
+    /** Releases the buffers locked on {@code from} (if any) and locks them on {@code to}. */
+    private void moveLockedBuffers(TornadoDevice from, TornadoDevice to) {
+        if (from == null) {
+            return;
+        }
+        for (LocalObjectState localState : executionContext.getObjectStates()) {
+            final XPUDeviceBufferState deviceState = localState.getDataObjectState().getDeviceBufferState(from);
+            if (deviceState.isLockedBuffer()) {
+                releaseObjectFromDeviceMemory(localState, from);
+                reuseDeviceBufferObject(localState, to);
+            }
+        }
     }
 
     private void reuseDeviceBuffersForSameDevice(TornadoDevice device) {
@@ -833,7 +846,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void setDevice(String taskName, TornadoDevice device) {
 
-        TornadoDevice oldDevice = meta().getXPUDevice();
+        TornadoDevice oldDevice = currentDeviceHolding(device);
 
         // Recompile for the new device unless its code is cached.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
@@ -849,15 +862,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        // Release locked buffers from the old device and lock them on the new one.
-        for (LocalObjectState localState : executionContext.getObjectStates()) {
-            final DataObjectState dataObjectState = localState.getDataObjectState();
-            final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(oldDevice);
-            if (deviceState.isLockedBuffer()) {
-                releaseObjectFromDeviceMemory(localState, oldDevice);
-                reuseDeviceBufferObject(localState, device);
-            }
-        }
+        moveLockedBuffers(oldDevice, device);
 
         // Set Thread-Schedulers to Default Value
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
@@ -1460,18 +1465,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void reuseDeviceBufferObject(Object object) {
-        Access objectAccess = getObjectAccess(object);
-        final LocalObjectState localState = executionContext.getLocalStateObject(object, objectAccess);
-        // Since we do not know upfront the device to use, we need to set the lock buffer
-        // for all available devices. This does not allocate any buffer, just annotates
-        // a Java object as pinned, so the TornadoVM runtime is free to reuse the space
-        final TornadoRuntime runtime = TornadoRuntimeProvider.getTornadoRuntime();
-        int numBackends = runtime.getNumBackends();
-        for (int i = 0; i < numBackends; i++) {
-            TornadoBackend backend = runtime.getBackend(i);
-            // For every device from all backends, set the local state to reuse the buffer
-            backend.getAllDevices().forEach(device -> reuseDeviceBufferObject(localState, device));
-        }
+        // Since we do not know upfront the device to use, the buffer is locked on every device. This
+        // does not allocate any buffer, just annotates a Java object as pinned, so the TornadoVM runtime
+        // is free to reuse the space. It needs no list of devices, so it creates no backend.
+        executionContext.getLocalStateObject(object, getObjectAccess(object)).getDataObjectState().lockOnEveryDevice();
     }
 
     private void reuseDeviceBufferObject(final LocalObjectState localState, final TornadoDevice device) {
