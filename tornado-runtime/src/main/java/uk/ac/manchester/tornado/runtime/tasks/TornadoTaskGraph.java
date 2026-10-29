@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -651,10 +652,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void setDevice(TornadoDevice device) {
 
-        TornadoDevice oldDevice = currentDeviceHolding(device);
+        Optional<TornadoDevice> oldDevice = currentDeviceHolding(device);
 
         // prevent to set again the same device as it invalidates its state
-        if (oldDevice != null && oldDevice.equals(device)) {
+        if (oldDevice.filter(device::equals).isPresent()) {
             reuseDeviceBuffersForSameDevice(device);
             return;
         }
@@ -672,7 +673,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        moveLockedBuffers(oldDevice, device);
+        oldDevice.ifPresent(old -> moveLockedBuffers(old, device));
 
         // Set Thread-Schedulers to Default Value
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
@@ -683,20 +684,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     /**
-     * The graph's current device, or null when it can hold nothing of the graph: a device the graph
+     * The graph's current device, or empty when it can hold nothing of the graph: a device the graph
      * has never resolved, on another backend than {@code target}. Resolving it only to compare would
      * create its backend (OpenCL's platforms and contexts, say, for a graph moved to a CUDA device
      * before it first runs); on {@code target}'s backend, which exists, resolving it costs nothing.
      */
-    private TornadoDevice currentDeviceHolding(TornadoDevice target) {
-        return meta().isXPUDeviceResolved() || meta().getBackendIndex() == target.getBackendIndex() ? meta().getXPUDevice() : null;
+    private Optional<TornadoDevice> currentDeviceHolding(TornadoDevice target) {
+        return meta().isXPUDeviceResolved() || meta().getBackendIndex() == target.getBackendIndex() ? Optional.of(meta().getXPUDevice()) : Optional.empty();
     }
 
-    /** Releases the buffers locked on {@code from} (if any) and locks them on {@code to}. */
+    /** Releases the buffers locked on {@code from} and locks them on {@code to}. */
     private void moveLockedBuffers(TornadoDevice from, TornadoDevice to) {
-        if (from == null) {
-            return;
-        }
         for (LocalObjectState localState : executionContext.getObjectStates()) {
             final XPUDeviceBufferState deviceState = localState.getDataObjectState().getDeviceBufferState(from);
             if (deviceState.isLockedBuffer()) {
@@ -846,7 +844,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void setDevice(String taskName, TornadoDevice device) {
 
-        TornadoDevice oldDevice = currentDeviceHolding(device);
+        Optional<TornadoDevice> oldDevice = currentDeviceHolding(device);
 
         // Recompile for the new device unless its code is cached.
         for (int i = 0; i < executionContext.getTaskCount(); i++) {
@@ -862,7 +860,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        moveLockedBuffers(oldDevice, device);
+        oldDevice.ifPresent(old -> moveLockedBuffers(old, device));
 
         // Set Thread-Schedulers to Default Value
         for (int i = 0; i < executionContext.getTaskCount(); i++) {

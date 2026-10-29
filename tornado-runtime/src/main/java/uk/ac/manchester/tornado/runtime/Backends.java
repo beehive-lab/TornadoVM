@@ -23,7 +23,9 @@ package uk.ac.manchester.tornado.runtime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
 
@@ -55,20 +57,16 @@ final class Backends {
      */
     Backends(List<TornadoBackendProvider> installed, String enabled, Function<TornadoBackendProvider, TornadoAcceleratorBackend> factory) {
         this.factory = factory;
-        List<TornadoBackendProvider> selected = installed.stream().sorted().filter(provider -> isEnabled(provider, enabled)).toList();
-        if (selected.isEmpty() && !installed.isEmpty()) {
-            throw new TornadoBackendNotFound("tornado.enabled.backends=" + enabled + " selects none of the installed backends: " + installed.stream().sorted().map(Backends::name)
-                    .toList());
+        List<TornadoBackendProvider> ordered = installed.stream().sorted().toList();
+        Set<String> names = enabled == null || enabled.isBlank() ? null : Arrays.stream(enabled.split(",")).map(n -> n.trim().toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
+        slots = ordered.stream().filter(provider -> names == null || names.contains(name(provider))).map(Slot::new).toArray(Slot[]::new);
+        if (slots.length == 0 && !ordered.isEmpty()) {
+            throw new TornadoBackendNotFound("tornado.enabled.backends=" + enabled + " selects none of the installed backends: " + ordered.stream().map(Backends::name).toList());
         }
-        slots = selected.stream().map(Slot::new).toArray(Slot[]::new);
     }
 
     private static String name(TornadoBackendProvider provider) {
         return provider.getDevicePriority().name().toLowerCase(Locale.ROOT);
-    }
-
-    private static boolean isEnabled(TornadoBackendProvider provider, String enabled) {
-        return enabled == null || enabled.isBlank() || Arrays.stream(enabled.split(",")).map(String::trim).anyMatch(provider.getDevicePriority().name()::equalsIgnoreCase);
     }
 
     /** How many backends there are, created or not. */
