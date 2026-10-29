@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1010" viewBox="0 0 1280 1010" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>tornado-babylon: HAT and Babylon code models on TornadoVM through TC</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <style>
+      .h { font-size: 15px; font-weight: 700; }
+      .t { font-size: 12.5px; fill: #1e293b; }
+      .s { font-size: 11.5px; fill: #475569; }
+      .m { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: 11.5px; fill: #0f172a; }
+      .lane { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; }
+      .a { stroke: #475569; stroke-width: 1.6; fill: none; marker-end: url(#arrow); }
+      .ad { stroke: #475569; stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="1010" rx="14" fill="#ffffff"/>
+  <text x="40" y="42" font-size="21" font-weight="700" fill="#0f172a">tornado-babylon: HAT programs and Babylon code models on TornadoVM, compiled by TC</text>
+  <text x="40" y="64" class="s">One compiler (TC) and one runtime (TornadoVM) for HAT kernels and TornadoVM kernels. No Graal, no JVMCI, no HAT native backends.</text>
+
+  <!-- ============ Lane 1: programs ============ -->
+  <rect x="20" y="82" width="1240" height="150" rx="12" fill="#faf5ff" stroke="#e9d5ff"/>
+  <text x="34" y="102" class="lane" fill="#7c3aed">PROGRAMS</text>
+
+  <rect x="40" y="112" width="390" height="108" rx="10" fill="#ffffff" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="56" y="136" class="h" fill="#6d28d9">HAT program (unmodified)</text>
+  <text x="56" y="158" class="m">accelerator.compute(cc -&gt; ...)</text>
+  <text x="56" y="176" class="m">cc.dispatchKernel(range, Kernels::k, buf)</text>
+  <text x="56" y="194" class="t">@Reflect kernels · F32Array, Schema structs,</text>
+  <text x="56" y="211" class="t">F16 / BF16, Float4 views, tiles, tensors</text>
+
+  <rect x="445" y="112" width="390" height="108" rx="10" fill="#ffffff" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="461" y="136" class="h" fill="#6d28d9">TornadoVM program</text>
+  <text x="461" y="158" class="m">new TaskGraph("g").task("t", K::k, ...)</text>
+  <text x="461" y="176" class="m">HatTasks.of(K::hatKernel, range, ...)</text>
+  <text x="461" y="194" class="t">KernelContext kernels; @Reflect ones may be</text>
+  <text x="461" y="211" class="t">compiled from their code model</text>
+
+  <rect x="850" y="112" width="390" height="108" rx="10" fill="#ffffff" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="866" y="136" class="h" fill="#6d28d9">Interface-mapped data</text>
+  <text x="866" y="158" class="m">Particles p = TornadoBuffers.allocate(...)</text>
+  <text x="866" y="176" class="m">graph.task("t", K::step, p, floats)</text>
+  <text x="866" y="194" class="t">Java interfaces with a Schema (structs, arrays)</text>
+  <text x="866" y="211" class="t">as TornadoVM kernel arguments, no HAT runtime</text>
+
+  <!-- ============ Lane 2: this module ============ -->
+  <rect x="20" y="246" width="1240" height="214" rx="12" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="34" y="266" class="lane" fill="#0f766e">TORNADO-BABYLON (THIS MODULE)</text>
+
+  <rect x="40" y="276" width="560" height="172" rx="10" fill="#ffffff" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="56" y="300" class="h" fill="#0f766e">TornadoHatBackend  (implements hat.backend.Backend)</text>
+  <text x="56" y="322" class="t">• NDRange → WorkerGrid; dispatchKernel / dispatchTile → TaskGraph "hat", task "t"</text>
+  <text x="56" y="341" class="t">• HeaderArena: HAT buffers are TornadoVM ByteArrays in place (zero copy)</text>
+  <text x="56" y="360" class="t">• ComputeTracking: host accesses in the compute method → copy on demand</text>
+  <text x="56" y="379" class="t">• Buffers stay on the device; HatWrites skips members no kernel wrote</text>
+  <text x="56" y="398" class="t">• Plans reused per kernel and range; optional CUDA graphs</text>
+  <text x="56" y="417" class="t">• -Dhat.t.device=cuda:0 initialises only that backend</text>
+  <text x="56" y="436" class="s">JFR events tornado.hat.Dispatch · profile.sh jfr | nsys | ncu</text>
+
+  <rect x="615" y="276" width="300" height="172" rx="10" fill="#ffffff" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="631" y="300" class="h" fill="#0f766e">HatTasks</text>
+  <text x="631" y="322" class="t">HAT kernels (and HAT struct</text>
+  <text x="631" y="341" class="t">buffers) as tasks of ordinary</text>
+  <text x="631" y="360" class="t">TornadoVM task graphs: mix them</text>
+  <text x="631" y="379" class="t">with KernelContext tasks; use</text>
+  <text x="631" y="398" class="t">plans, profilers, CUDA graphs,</text>
+  <text x="631" y="417" class="t">multiple devices</text>
+
+  <rect x="930" y="276" width="310" height="172" rx="10" fill="#ffffff" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="946" y="300" class="h" fill="#0f766e">HatObjectAdapter</text>
+  <text x="946" y="322" class="t">An ObjectAdapter (TornadoVM SPI,</text>
+  <text x="946" y="341" class="t">#1309): an interface-mapped buffer</text>
+  <text x="946" y="360" class="t">stands for a ByteArray over its own</text>
+  <text x="946" y="379" class="t">memory; the kernel parameter gets</text>
+  <text x="946" y="398" class="t">its layout. TornadoBuffers allocates</text>
+  <text x="946" y="417" class="t">buffers without a HAT Accelerator.</text>
+
+  <!-- ============ Lane 3: TornadoVM runtime ============ -->
+  <rect x="20" y="474" width="1240" height="84" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+  <text x="34" y="494" class="lane" fill="#1d4ed8">TORNADOVM RUNTIME</text>
+  <rect x="40" y="502" width="1200" height="44" rx="9" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
+  <text x="56" y="529" class="t">TaskGraph · TornadoExecutionPlan · transfers (FIRST_EXECUTION, UNDER_DEMAND, partial copy-back #1308) · device selection · batching · profiler · CUDA graphs</text>
+
+  <!-- ============ Lane 4: TC ============ -->
+  <rect x="20" y="572" width="1240" height="290" rx="12" fill="#fff7ed" stroke="#fed7aa"/>
+  <text x="34" y="592" class="lane" fill="#c2410c">TC: TORNADOVM'S COMPILER</text>
+
+  <!-- frontends -->
+  <rect x="40" y="602" width="430" height="170" rx="10" fill="#ffffff" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="56" y="626" class="h" fill="#c2410c">BabylonFrontend  (a ModelFrontend service)</text>
+  <text x="56" y="648" class="m">Op.ofMethod(m) → lower → inline tile helpers</text>
+  <text x="56" y="666" class="m">→ mark @Parallel → SSA → BabylonTranslator</text>
+  <text x="56" y="688" class="t">HAT accessors, Schema layouts, device memory (local,</text>
+  <text x="56" y="706" class="t">private, F16 as short[]), Float2/4 (wide loads),</text>
+  <text x="56" y="724" class="t">tiles, tensor fragments, KernelContext, atomics</text>
+  <text x="56" y="746" class="s">JFR event tornado.babylon.Translate · TC-E1003 with</text>
+  <text x="56" y="762" class="s">source locations for what is not supported</text>
+
+  <rect x="40" y="782" width="430" height="68" rx="10" fill="#ffffff" stroke="#fdba74" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="56" y="806" class="h" fill="#9a3412">Bytecode frontend (unchanged)</text>
+  <text x="56" y="826" class="t">every method without a code model; the</text>
+  <text x="56" y="843" class="t">model frontend is asked first, per method</text>
+
+  <!-- pipeline -->
+  <rect x="520" y="602" width="720" height="248" rx="10" fill="#ffffff" stroke="#fb923c" stroke-width="1.5"/>
+  <text x="536" y="626" class="h" fill="#c2410c">TC pipeline (shared by both frontends)</text>
+
+  <g>
+    <rect x="536" y="640" width="120" height="54" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+    <text x="596" y="662" class="t" text-anchor="middle" font-weight="700">TC IR</text>
+    <text x="596" y="680" class="s" text-anchor="middle">typed SSA</text>
+
+    <rect x="676" y="640" width="120" height="54" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+    <text x="736" y="662" class="t" text-anchor="middle" font-weight="700">specialise</text>
+    <text x="736" y="680" class="s" text-anchor="middle">argument facts</text>
+
+    <rect x="816" y="640" width="120" height="54" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+    <text x="876" y="662" class="t" text-anchor="middle" font-weight="700">lower</text>
+    <text x="876" y="680" class="s" text-anchor="middle">parallel, tiles, ABI</text>
+
+    <rect x="956" y="640" width="120" height="54" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+    <text x="1016" y="662" class="t" text-anchor="middle" font-weight="700">optimise</text>
+    <text x="1016" y="680" class="s" text-anchor="middle">unroll, GVN, LICM</text>
+
+    <rect x="1096" y="640" width="128" height="54" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+    <text x="1160" y="662" class="t" text-anchor="middle" font-weight="700">structure</text>
+    <text x="1160" y="680" class="s" text-anchor="middle">loops, ifs</text>
+
+    <path class="a" d="M656,667 L674,667"/>
+    <path class="a" d="M796,667 L814,667"/>
+    <path class="a" d="M936,667 L954,667"/>
+    <path class="a" d="M1076,667 L1094,667"/>
+  </g>
+
+  <text x="536" y="716" class="t">Java semantics on the device: int wrap-around, Java-exact half and bfloat16,</text>
+  <text x="536" y="733" class="t">masked tile edges (#1306); vector loads and stores at byte offsets.</text>
+
+  <g>
+    <rect x="536" y="756" width="216" height="80" rx="8" fill="#fff7ed" stroke="#fb923c"/>
+    <text x="644" y="780" class="t" text-anchor="middle" font-weight="700">CUDA C emitter</text>
+    <text x="644" y="799" class="s" text-anchor="middle">__half, float4 loads,</text>
+    <text x="644" y="816" class="s" text-anchor="middle">mma fragments, launches</text>
+
+    <rect x="768" y="756" width="216" height="80" rx="8" fill="#fff7ed" stroke="#fb923c"/>
+    <text x="876" y="780" class="t" text-anchor="middle" font-weight="700">OpenCL C emitter</text>
+    <text x="876" y="799" class="s" text-anchor="middle">vload4 / vstore4,</text>
+    <text x="876" y="816" class="s" text-anchor="middle">local memory, barriers</text>
+
+    <rect x="1000" y="756" width="224" height="80" rx="8" fill="#fff7ed" stroke="#fb923c"/>
+    <text x="1112" y="780" class="t" text-anchor="middle" font-weight="700">CUDA Tile emitter</text>
+    <text x="1112" y="799" class="s" text-anchor="middle">HAT dispatchTile kernels</text>
+    <text x="1112" y="816" class="s" text-anchor="middle">(tile load/store, mma)</text>
+  </g>
+  <path class="a" d="M1160,694 L1160,744 L644,744 L644,754"/>
+  <path class="a" d="M876,744 L876,754"/>
+  <path class="a" d="M1112,744 L1112,754"/>
+
+  <!-- ============ Lane 5: drivers ============ -->
+  <rect x="20" y="876" width="1240" height="114" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="34" y="896" class="lane" fill="#334155">DRIVERS AND DEVICES</text>
+  <rect x="536" y="906" width="216" height="70" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="644" y="930" class="t" text-anchor="middle" font-weight="700">NVRTC → CUDA driver</text>
+  <text x="644" y="950" class="s" text-anchor="middle">NVIDIA GPUs</text>
+  <text x="644" y="966" class="s" text-anchor="middle">(tested: RTX 4090)</text>
+  <rect x="768" y="906" width="216" height="70" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="876" y="930" class="t" text-anchor="middle" font-weight="700">clBuildProgram</text>
+  <text x="876" y="950" class="s" text-anchor="middle">OpenCL GPUs</text>
+  <text x="876" y="966" class="s" text-anchor="middle">(tested: RTX 4090, UHD 770)</text>
+  <rect x="1000" y="906" width="224" height="70" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="1112" y="930" class="t" text-anchor="middle" font-weight="700">nvcc -tile → CUDA driver</text>
+  <text x="1112" y="950" class="s" text-anchor="middle">CUDA Tile</text>
+  <text x="1112" y="966" class="s" text-anchor="middle">(tested: RTX 4090)</text>
+  <path class="a" d="M644,836 L644,904"/>
+  <path class="a" d="M876,836 L876,904"/>
+  <path class="a" d="M1112,836 L1112,904"/>
+
+  <text x="40" y="932" class="t" font-weight="700">Legend</text>
+  <rect x="40" y="944" width="22" height="12" rx="3" fill="#faf5ff" stroke="#a78bfa"/><text x="68" y="954" class="s">user code</text>
+  <rect x="150" y="944" width="22" height="12" rx="3" fill="#f0fdfa" stroke="#2dd4bf"/><text x="178" y="954" class="s">this module</text>
+  <rect x="270" y="944" width="22" height="12" rx="3" fill="#eff6ff" stroke="#60a5fa"/><text x="298" y="954" class="s">TornadoVM runtime</text>
+  <rect x="40" y="966" width="22" height="12" rx="3" fill="#fff7ed" stroke="#fb923c"/><text x="68" y="976" class="s">TC compiler</text>
+  <path class="ad" d="M150,972 L190,972"/><text x="198" y="976" class="s">code model or bytecode, per method</text>
+
+  <!-- ============ Arrows between lanes ============ -->
+  <!-- HAT program → backend -->
+  <path class="a" d="M380,220 L380,274"/>
+  <text x="388" y="250" class="s">dispatchKernel / dispatchTile</text>
+  <!-- TornadoVM program → HatTasks and runtime -->
+  <path class="a" d="M700,220 L700,274"/>
+  <text x="708" y="250" class="s">HatTasks.of</text>
+  <path class="a" d="M800,220 L800,236 L922,236 L922,500"/>
+  <!-- interface-mapped → adapter -->
+  <path class="a" d="M1045,220 L1045,274"/>
+  <text x="1053" y="250" class="s">ServiceLoader</text>
+  <!-- module → runtime -->
+  <path class="a" d="M320,448 L320,500"/>
+  <text x="328" y="474" class="s">TaskGraph, plans</text>
+  <path class="a" d="M765,448 L765,500"/>
+  <path class="a" d="M1085,448 L1085,500"/>
+  <!-- runtime → TC -->
+  <path class="a" d="M255,546 L255,600"/>
+  <text x="263" y="566" class="s">TcHook: compile each task</text>
+  <path class="ad" d="M490,546 L490,812 L472,812"/>
+  <!-- frontends → TC IR -->
+  <path class="a" d="M470,667 L534,667"/>
+  <path class="ad" d="M470,816 L505,816 L505,680 L534,680"/>
+</svg>

@@ -1,3 +1,6 @@
 build/
 *.csv
 var/
+hs_err_pid*.log
+tornado_unittests.log
+.unittestingStatus
