@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBackendNotFound;
+import uk.ac.manchester.tornado.runtime.common.RuntimeServiceLoader;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.enums.TornadoBackends;
@@ -63,7 +64,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     }
 
     private TornadoAcceleratorBackend[] loadBackends() {
-        ServiceLoader<TornadoBackendProvider> loader = ServiceLoader.load(TornadoBackendProvider.class);
+        ServiceLoader<TornadoBackendProvider> loader = RuntimeServiceLoader.load(TornadoBackendProvider.class);
         List<TornadoBackendProvider> installed = StreamSupport.stream(loader.spliterator(), false).sorted().toList();
         List<TornadoBackendProvider> providerList = installed.stream().filter(TornadoCoreRuntime::isEnabled).toList();
         if (providerList.isEmpty() && !installed.isEmpty()) {
@@ -112,8 +113,11 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     @Override
     public TornadoAcceleratorBackend getBackend(int index) {
-        if (index > tornadoVMBackends.length) {
-            throw new TornadoBackendNotFound("Tornado Backend Not Found");
+        if (index < 0 || index >= backendCount || tornadoVMBackends[index] == null) {
+            if (backendCount == 0) {
+                throw new TornadoBackendNotFound("No TornadoVM backend was loaded: no TornadoBackendProvider is visible from the TornadoVM runtime module");
+            }
+            throw new TornadoBackendNotFound("Tornado Backend Not Found: index " + index + ", but " + backendCount + " backend(s) loaded");
         }
         return tornadoVMBackends[index];
     }
