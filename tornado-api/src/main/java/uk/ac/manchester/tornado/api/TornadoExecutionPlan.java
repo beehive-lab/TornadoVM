@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -167,6 +168,37 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      */
     public static TornadoDevice getDefaultDevice() {
         return TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
+    }
+
+    /**
+     * Starts creating backend {@code backendIndex} and initialising its device {@code deviceIndex}
+     * (context, queues and device memory) on a background thread, and returns at once. The work then
+     * overlaps the program's own set-up, such as preparing its data, instead of delaying its first
+     * execution. An execution that reaches the device first waits for it to be ready. (Unlike
+     * {@link #withWarmUpIterations(int)}, it runs nothing: it only prepares the device.)
+     *
+     * @param backendIndex
+     *     the backend, as in {@link #getDevice(int, int)}
+     * @param deviceIndex
+     *     the device within the backend
+     * @return a future that completes with the device once it is ready, or exceptionally with the
+     *     reason it could not be initialised (which its first execution reports too)
+     */
+    public static CompletableFuture<TornadoDevice> initializeDeviceAsync(int backendIndex, int deviceIndex) {
+        return CompletableFuture.supplyAsync(() -> {
+            TornadoDevice device = getDevice(backendIndex, deviceIndex);
+            device.ensureLoaded(0); // a device is initialised once for all plans: no backend uses the plan id here
+            return device;
+        }, task -> Thread.ofPlatform().daemon().name("tornado-device-init").start(task));
+    }
+
+    /**
+     * {@link #initializeDeviceAsync(int, int)} for the default device ({@link #getDefaultDevice()}).
+     *
+     * @return a future that completes with the default device once it is ready
+     */
+    public static CompletableFuture<TornadoDevice> initializeDeviceAsync() {
+        return initializeDeviceAsync(0, 0);
     }
 
     /**
