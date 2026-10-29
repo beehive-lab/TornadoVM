@@ -1009,13 +1009,48 @@ final class BabylonTranslator {
             }
             // Any other schema (structs, arrays of structs): memory laid out as its MemoryLayout, read through views.
             var layout = DeviceLayouts.of(owner);
-            long words = (layout.byteSize() + 7) / 8;
-            var memory = b.alloca(space, Type.I64, (int) Math.max(1, words));
+            // Words of the layout's field size when every field has the same size (an array of F16
+            // structs is short[]), else 8-byte words: memory of 8-byte words that holds 2-byte values
+            // makes the device compiler pack and unpack them (HAT's FP16 register-tiled matmul: 912
+            // SASS instructions with 175 PRMT, against 392 with 16 as short[]).
+            int word = uniformFieldBytes(layout);
+            var wordType = switch (word) {
+                case 1 -> Type.I8;
+                case 2 -> Type.I16;
+                case 4 -> Type.I32;
+                default -> Type.I64;
+            };
+            int wordBytes = word == 1 || word == 2 || word == 4 ? word : 8;
+            long words = (layout.byteSize() + wordBytes - 1) / wordBytes;
+            var memory = b.alloca(space, wordType, (int) Math.max(1, words));
             deviceStructs.put(memory, layout);
             return memory;
         } catch (ReflectiveOperationException | NullPointerException e) {
             throw new Unsupported("TC-E1003", "HAT device type " + ref.refType() + " has no readable deviceSchema: " + e);
         }
+    }
+
+    /** The byte size shared by every value field of {@code layout} (nested structs and arrays included), or 0. */
+    private static int uniformFieldBytes(MemoryLayout layout) {
+        return switch (layout) {
+            case ValueLayout v -> (int) v.byteSize();
+            case SequenceLayout seq -> uniformFieldBytes(seq.elementLayout());
+            case GroupLayout g -> {
+                int size = -1;
+                for (var member : g.memberLayouts()) {
+                    if (member instanceof java.lang.foreign.PaddingLayout) {
+                        yield 0;
+                    }
+                    int m = uniformFieldBytes(member);
+                    if (m == 0 || size >= 0 && m != size) {
+                        yield 0;
+                    }
+                    size = m;
+                }
+                yield Math.max(size, 0);
+            }
+            default -> 0;
+        };
     }
 
     /** {@code a.array(i)} / {@code a.array(i, v)} on HAT local or private memory. */
