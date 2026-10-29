@@ -76,7 +76,33 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
     private final boolean minimizeCopiesRequested;
 
     public TornadoHatBackend() {
-        this(hat.Config.fromEnvOrProperty());
+        this(selectDevice(hat.Config.fromEnvOrProperty()));
+    }
+
+    /**
+     * {@code -Dhat.t.device=cuda:0} (or {@code opencl:1}, ...): a device by its backend's name. Unless
+     * {@code -Dtornado.enabled.backends} says otherwise, TornadoVM then initialises only that backend (on
+     * a CUDA run, OpenCL's platform and context set-up cost the first dispatch about 0.2 s here), and
+     * the property is rewritten to the {@code <backend>:<device>} indices TornadoVM reads.
+     */
+    private static hat.Config selectDevice(hat.Config config) {
+        String device = System.getProperty("hat.t.device");
+        var named = device == null ? null : java.util.regex.Pattern.compile("([A-Za-z]+):(\\d+)").matcher(device.trim());
+        if (named == null || !named.matches()) {
+            return config;
+        }
+        String backend = named.group(1);
+        if (System.getProperty("tornado.enabled.backends") == null) {
+            System.setProperty("tornado.enabled.backends", backend);
+        }
+        var backends = TornadoExecutionPlan.getTornadoDeviceMap().getAllBackends();
+        for (int i = 0; i < backends.size(); i++) {
+            if (backends.get(i).getBackendType().name().equalsIgnoreCase(backend)) {
+                System.setProperty("hat.t.device", i + ":" + named.group(2));
+                return config;
+            }
+        }
+        throw new IllegalArgumentException("-Dhat.t.device=" + device + ": TornadoVM has no " + backend + " backend here (" + backends.stream().map(b -> b.getBackendType().name()).toList() + ")");
     }
 
     private TornadoHatBackend(hat.Config requested) {
