@@ -96,7 +96,7 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 | `arrayView()` (1D and 2D), `localArrayView()`, `privateArrayView()` | Java arrays over HAT memory, indexed as HAT's backends index them (`arr[i][j]` is `array[j * stride + i]`) |
 | Local and private memory (`createLocal()`, `createPrivate()`) | shared or private memory laid out from the type's `deviceSchema`: arrays, structs, arrays of structs (`DeviceLayouts`) |
 | `F16`, `BF16` | `f16`, and bfloat16 as the bits in an int; arithmetic in f32 and rounded back exactly as the Java bodies round (bfloat16: to nearest even, in integer arithmetic) |
-| `Float2`, `Float4` (`float4View`, `storeFloat4View`, `float4ArrayView`, lanes, `of`, `makeMutable`, `add`/`sub`/`mul`/`div`) | TC vectors; a mutated vector (`vA.x(v)`) lives in a private slot |
+| `Float2`, `Float4` (`float4View`, `storeFloat4View`, `float4ArrayView`, lanes, `of`, `makeMutable`, `add`/`sub`/`mul`/`div`) | TC vectors; a mutated vector (`vA.x(v)`) lives in a private slot. f32 views of buffers are one 64/128-bit access where the address is aligned (CUDA), `vloadn`/`vstoren` on OpenCL |
 | `HATMath` (`maxf16`, `cosf`, `native_sinf`, …) | TC math intrinsics at the argument's precision |
 | Tiles (`TileContext.load/store/index/shape/irange/BIDX`, `Tile.zeros/full/add/sub/mul/truediv/mma/transpose/sum/min/max/numTiles/ceildiv/arange/reshape/permute`) | CUDA Tile through TC's `tile.*` IR: a tensor is a strided view past HAT's header; 1D tiles are 1 x n; elementwise operations broadcast extents of 1 (a (1, n) row over an (m, n) tile); tiles at the edge of a tensor are masked (zero-padded reads, no writes past it); helpers that take tiles are inlined |
 | `dispatchTile` | one CUDA Tile block per tile, numbered as HAT's backends number them (a warp flag on X flattens them) |
@@ -190,7 +190,7 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 - **Power-of-two tile extents (TC-E3401).** This is a CUDA Tile rule. To reduce a whole row or column of any length, load it as the next power of two; the edge is zero-padded (`examples/src/tiles/TileExamples.java`, `rowSum`).
 - **`Tile.permute`:** only the identity and the 2D transpose (1, 0).
 - **`Tile.arange`:** yields F32 values.
-- **`Float4` views** of HAT buffers are loaded lane by lane, not as one 128-bit load. HAT's 2DREGISTERTILING_V is 1.42x slower than with HAT's CUDA backend.
+- **HAT's 2DREGISTERTILING_V is 1.5x slower** than with HAT's CUDA backend (121 vs 80 µs). The cause is not the `Float4` loads (now one 128-bit access, below): NVRTC unrolls TC's 16-iteration loop over the shared-memory tiles 4 times, and HAT's C fully (8 against 32 `LDS.128`; ncu: 8.4M shared-load bank conflicts against 0). The loop is too large for TC's own unroller before lowering; `#pragma unroll` on it gives HAT's code. An automatic hint is not done yet.
 - **HAT tensors:** an operand is loaded where `mma` uses it, not where `loadF16` is called.
 - **Double precision:** kernels that use it are refused on devices without FP64 (TC-E4012), for example `Math.exp` on doubles on an Intel UHD 770.
 - **First dispatch:** 0.5-0.6 s for the plan, TC and NVRTC (or nvcc for CUDA Tile); HAT's own CUDA backend takes 0.16-0.23 s. Later dispatches reuse the plan. While a plan is built, a kernel's code model is translated up to three times (access analysis, loop-index check, compilation), about 2 ms each once warm.
@@ -271,7 +271,7 @@ java @build/tornado.args --enable-preview --add-modules=jdk.incubator.code -Dtor
 Options:
 - `-Dtornado.tc.frontend=auto` (default: code models for HAT kernels; HAT kernels have no other way
   in), `babylon` (every method with a code model) or `bytecode` (off).
-- `-Dhat.t.device=<driver>:<device>` picks the HAT backend's device.
+- `-Dhat.t.device=<backend>:<device>` picks the HAT backend's device, by the backend's name (`cuda:0`, `opencl:1`) or index (`1:0`). With a name, only that backend is initialised, which takes about 0.2 s off the first dispatch of a CUDA run (no OpenCL set-up).
 - `-Dtornado.hat.zeroCopy=false` copies HAT buffers around each dispatch instead of wrapping them in
   place.
 - `-Dtornado.hat.strictFP=true` gives the plans strict floating point.
@@ -359,9 +359,11 @@ the same HAT kernels compiled by TC on TornadoVM, and by HAT's own CUDA and Open
 - Kernel time is the mean of Nsight Systems' CUDA kernel records; end to end is the example's own
   timing of a dispatch, including transfers. TornadoVM on OpenCL (same GPU) takes 1.03-1.48x its CUDA
   end-to-end times.
-- The kernels are on par except three. **1D** is 2.1x faster with TC (not investigated). **2DREGISTERTILING_V** is 1.42x slower: TC loads each lane of a
-  `Float4` view from a HAT buffer separately (four 32-bit loads, not one 128-bit load). **FP16** is
+- The kernels are on par except three. **1D** is 2.1x faster with TC (not investigated). **2DREGISTERTILING_V** is 1.5x slower: not
+  its `Float4` loads, which are one 128-bit access, but a loop NVRTC unrolls less than HAT's (see Current limitations). **FP16** is
   3.4x slower: TC gives Java's results (each half operation rounded as `F16`'s Java methods round,
   in f32 arithmetic), and the faster HAT CUDA kernel's result fails the example's check.
 - The first dispatch costs 0.55-0.60 s on TornadoVM against 0.16-0.23 s with HAT's CUDA backend: the
-  plan, the TC compilation and NVRTC. Later dispatches reuse the plan.
+  plan, the TC compilation and NVRTC, and with every backend enabled, OpenCL's platform and context set-up
+  (about 0.2 s, JFR native samples). `-Dhat.t.device=cuda:0` initialises only CUDA. Translating the code
+  model is 20 ms of it. Later dispatches reuse the plan.
