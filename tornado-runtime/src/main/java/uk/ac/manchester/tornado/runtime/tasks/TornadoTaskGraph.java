@@ -490,6 +490,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      * the backend compiler contracting the separated multiply and add back together. Either alone
      * leaves the device fusing, so a caller must not be able to ask for one of them.
      */
+    public void withDynamicShapes() {
+        executionContext.meta().setDynamicShapes(true);
+    }
+
     public void withStrictFloatingPoint() {
         executionContext.meta().setStrictFloatingPoint(true);
         String existing = executionContext.meta().getCompilerFlags(TornadoVMBackendType.CUDA);

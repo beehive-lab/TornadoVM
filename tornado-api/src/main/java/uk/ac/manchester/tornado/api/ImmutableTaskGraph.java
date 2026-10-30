@@ -238,6 +238,10 @@ public class ImmutableTaskGraph {
         taskGraph.withStrictFloatingPoint();
     }
 
+    void withDynamicShapes() {
+        taskGraph.withDynamicShapes();
+    }
+
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
         taskGraph.withCompilerFlags(backendType, compilerFlags);
     }

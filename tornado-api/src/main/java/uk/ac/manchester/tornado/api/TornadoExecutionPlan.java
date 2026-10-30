@@ -43,6 +43,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithStrictFloatingPoint;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
+import uk.ac.manchester.tornado.api.plan.types.WithDynamicShapes;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
@@ -676,6 +677,29 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionPlan withStrictFloatingPoint() {
         tornadoExecutor.withStrictFloatingPoint();
         return new WithStrictFloatingPoint(this);
+    }
+
+    /**
+     * Lets the plan run with array sizes that change between executions without compiling every
+     * kernel again for each new size. A kernel that never reads the length of an array argument
+     * (sizes passed as scalars) is compiled once and shared by all tasks over arrays of other
+     * lengths; scalar arguments that keep changing become runtime values.
+     *
+     * <p>
+     * Shared code is less specialised: it can need more registers and run slower than code
+     * compiled for one size, so use it only for workloads whose shapes change, such as model
+     * serving with changing batch or sequence sizes. {@code -Dtornado.tc.dynamicShapes=true}
+     * turns it on for every plan.
+     *
+     * <p>
+     * Applies to kernels compiled by TC; elsewhere the call is accepted and has no effect.
+     *
+     * @since 8.0.1
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withDynamicShapes() {
+        tornadoExecutor.withDynamicShapes();
+        return new WithDynamicShapes(this);
     }
 
     /**

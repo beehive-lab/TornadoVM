@@ -62,6 +62,16 @@ public interface TaskContextInterface {
 
     void setStrictFloatingPoint(boolean strict);
 
+    /**
+     * Whether TC may share this task's kernel with tasks over arrays of other lengths.
+     *
+     * <p>
+     * Set by {@code TornadoExecutionPlan.withDynamicShapes()}.
+     */
+    boolean isDynamicShapes();
+
+    void setDynamicShapes(boolean dynamicShapes);
+
     boolean isPrintKernelEnabled();
 
     void setPrintKernelFlag(boolean printKernelEnabled);
