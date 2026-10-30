@@ -47,6 +47,11 @@ public final class KernelAccess {
         default Optional<Reductions> reductions(Method method, List<Integer> reduceIndices) {
             return Optional.empty();
         }
+
+        /** The method {@code method} only forwards its arguments to (a Kotlin function reference), if any. */
+        default Optional<Method> forwardedMethod(Method method) {
+            return Optional.empty();
+        }
     }
 
     /**
@@ -97,6 +102,26 @@ public final class KernelAccess {
         } catch (RuntimeException e) {
             return true;
         }
+    }
+
+    /**
+     * The method a task runs. A Kotlin function reference passed as a task is compiled to a method that
+     * only forwards its arguments to the function, without the function's parameter annotations
+     * ({@code @Reduce}): the function is compiled in its place. Any other method is returned as it is.
+     */
+    public static Method kernel(Method method) {
+        if (PROVIDER == null || hasParameterAnnotations(method)) {
+            return method;
+        }
+        try {
+            return PROVIDER.forwardedMethod(method).orElse(method);
+        } catch (RuntimeException e) {
+            return method;
+        }
+    }
+
+    private static boolean hasParameterAnnotations(Method method) {
+        return Arrays.stream(method.getParameterAnnotations()).anyMatch(annotations -> annotations.length > 0);
     }
 
     /** The reductions of a task with {@code @Reduce} parameters {@code reduceIndices}. */

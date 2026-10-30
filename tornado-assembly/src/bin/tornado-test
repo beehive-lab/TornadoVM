@@ -122,6 +122,42 @@ class TestEntry:
 
 
 ## List of classes to be tested. Include new unittest classes here
+## Kotlin unit tests (tornado-kotlin/tornado-kotlin-unittests). They are only present in an SDK
+## built with `make KOTLIN=1`, and are run with `tornado-test --kotlin` or by class name.
+__KOTLIN_TEST_PACKAGE__ = "uk.ac.manchester.tornado.kotlin."
+__KOTLIN_TEST_MODULE__ = "tornado.kotlin.unittests"
+
+__TEST_THE_KOTLIN_WORLD__ = [
+    TestEntry("uk.ac.manchester.tornado.kotlin.unittests.api.TestKotlinApi"),
+    TestEntry("uk.ac.manchester.tornado.kotlin.unittests.compiler.TestKotlinCompilerSupport"),
+    TestEntry("uk.ac.manchester.tornado.kotlin.unittests.features.TestKotlinFeatures"),
+    TestEntry("uk.ac.manchester.tornado.kotlin.unittests.loops.TestParallelFor"),
+    TestEntry("uk.ac.manchester.tornado.kotlin.unittests.hybrid.TestKotlinHybridApi"),
+    TestEntry("uk.ac.manchester.tornado.kotlin.unittests.tile.TestKotlinTiles"),
+]
+
+
+def isKotlinTest(testName):
+    return testName is not None and testName.startswith(__KOTLIN_TEST_PACKAGE__)
+
+
+def kotlinTestOptions(testName):
+    """ JVM options needed to run a Kotlin test class: its module is not a root module of the
+    test runner, so it has to be added explicitly. Empty for Java tests. """
+    if not isKotlinTest(testName):
+        return ""
+    checkKotlinTestsInstalled()
+    return " --add-modules " + __KOTLIN_TEST_MODULE__
+
+
+def checkKotlinTestsInstalled():
+    jars = os.path.join(os.environ["TORNADOVM_HOME"], "share", "java", "tornado")
+    if not any(f.startswith("tornado-kotlin-unittests") for f in os.listdir(jars)):
+        print("[ERROR] The Kotlin unit tests are not part of this TornadoVM build.")
+        print("        Rebuild with Kotlin support enabled, e.g.: make KOTLIN=1 BACKEND=<backends>")
+        sys.exit(1)
+
+
 __TEST_THE_WORLD__ = [
 
     ## SPIR-V, OpenCL and CUDA foundation tests
@@ -1000,7 +1036,7 @@ def runTests(args):
     options = composeAllOptions(args)
 
     if (args.testClass != None):
-        options = "--jvm \"" + options + "\" "
+        options = "--jvm \"" + options + kotlinTestOptions(args.testClass) + "\" "
         cmd = TORNADO_CMD + options
         command = appendTestRunnerClassToCmd(cmd, args)
         command = command + " --params \"" + args.testClass + "\""
@@ -1070,12 +1106,13 @@ def runTestTheWorld(options, args):
 
     __TORNADO_QUICK_PASS_SKIP_TESTS__ = __TORNADO_HEAVY_TESTS__ + __TORNADO_MEMORY_TESTS__
 
-    for t in __TEST_THE_WORLD__:
+    tests = __TEST_THE_KOTLIN_WORLD__ if args.kotlin else __TEST_THE_WORLD__
+    for t in tests:
         if args.quickPass and t.testName in __TORNADO_QUICK_PASS_SKIP_TESTS__:
             continue
         if args.mlx and ".unittests.mlx." not in t.testName:
             continue
-        command = options
+        command = options + kotlinTestOptions(t.testName)
         if t.testParameters:
             for testParam in t.testParameters:
                 command += " " + testParam
@@ -1116,7 +1153,7 @@ def runWithJUnit(args):
         print("[WARNING] Monitor class is not supported when running with JUnit.")
 
     if (args.testClass != None):
-        command = TORNADO_CMD + " --jvm \"" + __JUNIT_ADD_TESTS_MODULE__ + "\" "
+        command = TORNADO_CMD + " --jvm \"" + __JUNIT_ADD_TESTS_MODULE__ + kotlinTestOptions(args.testClass) + "\" "
         command = appendTestRunnerClassToCmd(command, args)
         command = command + " --params \"" + junitSelector(args.testClass) + "\""
         checkSystemStatus(os.system(command), args.testClass, junit=True)
@@ -1125,8 +1162,9 @@ def runWithJUnit(args):
 
 
 def runTestTheWorldWithJunit(args):
-    for t in __TEST_THE_WORLD__:
-        jvmOptions = __JUNIT_ADD_TESTS_MODULE__
+    tests = __TEST_THE_KOTLIN_WORLD__ if args.kotlin else __TEST_THE_WORLD__
+    for t in tests:
+        jvmOptions = __JUNIT_ADD_TESTS_MODULE__ + kotlinTestOptions(t.testName)
         if t.testParameters:
             for testParam in t.testParameters:
                 jvmOptions += " " + testParam
@@ -1159,6 +1197,8 @@ def parseArguments():
                         help="Run with uncompressed pointers")
     parser.add_argument('--printKernel', "-pk", action="store_true", dest="printKernel", default=False,
                         help="Print OpenCL kernel")
+    parser.add_argument('--kotlin', action="store_true", dest="kotlin", default=False,
+                        help="Run the Kotlin unit tests (requires an SDK built with make KOTLIN=1)")
     parser.add_argument('--junit', action="store_true", dest="junit", default=False,
                         help="Run with the JUnit Platform ConsoleLauncher")
     parser.add_argument('--printBytecodes', "-pbc", action="store_true", dest="printBytecodes", default=False,

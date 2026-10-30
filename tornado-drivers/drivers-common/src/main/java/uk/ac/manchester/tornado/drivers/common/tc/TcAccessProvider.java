@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
+import uk.ac.manchester.tornado.tc.frontend.Kotlin;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.tornado.AccessAnalysis;
 
@@ -70,6 +71,24 @@ public final class TcAccessProvider implements KernelAccess.Provider {
             return TcCompiler.reductions(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor, reduceIndices)
                     .map(i -> new KernelAccess.Reductions(i.operations(), i.boundParameter(), i.boundConstant(), i.start()));
         } catch (RuntimeException | StackOverflowError e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Method> forwardedMethod(Method method) {
+        var owner = method.getDeclaringClass();
+        var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
+        var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
+        var target = Kotlin.forwardingTarget(Frontend.BytecodeSource.classLoader(loader), owner.getName(), method.getName(), descriptor);
+        if (target.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            var forwarded = Class.forName(target.get().owner().replace('/', '.'), false, loader).getDeclaredMethod(target.get().name(), method.getParameterTypes());
+            forwarded.setAccessible(true);
+            return Optional.of(forwarded);
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             return Optional.empty();
         }
     }

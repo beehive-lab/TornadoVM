@@ -126,6 +126,10 @@ final class Translator {
     private static final String STRING = "tornado.string", DEVICE_KERNEL = "tornado.device_kernel", VARARGS = "tornado.varargs", VARARGS_SET = "tornado.varargs.set";
     /** Vector parameters of a kernel (hidden SSA variable → parameter): setters on them reach the host. */
     private final Map<VectorParam, BlockArg> vectorParams = new java.util.LinkedHashMap<>();
+    /** Whether the method was compiled by kotlinc (see {@link Kotlin}). */
+    private final boolean kotlin;
+    /** Indices of Kotlin {@code parallelFor} loops, from {@code ParallelLoops.parallelIndex}. */
+    private final Set<Value> kotlinParallelIndices = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
         this(source, classFile, method, kind, null);
@@ -146,6 +150,7 @@ final class Translator {
         var returnDescriptor = method.descriptor().substring(method.descriptor().indexOf(')') + 1);
         var functionName = name != null ? name : kind == Function.Kind.KERNEL ? simpleClass + "." + method.name() : calleeName(classFile.name(), method.name(), method.descriptor());
         this.function = new Function(functionName, kind, kind == Function.Kind.KERNEL ? Bindings.type(returnDescriptor) : typeOf(returnDescriptor));
+        this.kotlin = Kotlin.isKotlin(classFile);
         this.ssa = new SsaVariables(function, preds, (key, block) -> error("TC-E1006", "read of " + SsaVariables.describe(key) + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci()));
     }
 
@@ -446,6 +451,9 @@ final class Translator {
      */
     private void markParallelLoops() {
         var parallel = TypeAnnotations.locals(code.typeAnnotations(), classFile.constants()).stream().filter(a -> a.descriptor().equals(PARALLEL)).toList();
+        if (!kotlinParallelIndices.isEmpty()) {
+            markKotlinParallelLoops();
+        }
         if (parallel.isEmpty()) {
             return;
         }
@@ -460,6 +468,20 @@ final class Translator {
                     continue;
                 }
                 if (parallel.stream().anyMatch(a -> a.slot() == slot && a.covers(bci))) {
+                    header.addAttribute(Attribute.of("parallel", "iv", k));
+                }
+            }
+        }
+    }
+
+    /** Kotlin only: tags the loop headers whose block argument is a {@code parallelFor} index. */
+    private void markKotlinParallelLoops() {
+        for (var header : blockAt.values()) {
+            if (!function.blocks().contains(header)) {
+                continue;
+            }
+            for (int k = 0; k < header.args().size(); k++) {
+                if (kotlinParallelIndices.contains(header.args().get(k))) {
                     header.addAttribute(Attribute.of("parallel", "iv", k));
                 }
             }
@@ -1209,6 +1231,23 @@ final class Translator {
         }
     }
 
+    /** Kotlin only: a call {@link Kotlin} lowers; its result, if any, is pushed. */
+    private boolean kotlinCall(uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef ref, List<Value> args) {
+        if (Kotlin.isNullCheck(ref)) {
+            return true;
+        }
+        if (Kotlin.isParallelIndex(ref)) {
+            kotlinParallelIndices.add(args.get(0));
+            push(args.get(0));
+            return true;
+        }
+        if (args.size() == 1 && Kotlin.isNumberUnbox(ref, args.get(0).type())) {
+            push(args.get(0));
+            return true;
+        }
+        return false;
+    }
+
     private void invoke(Insn insn) {
         var ref = classFile.constants().member(insn.index());
         var binding = Bindings.method(ref.owner(), ref.name(), ref.descriptor());
@@ -1218,6 +1257,9 @@ final class Translator {
             args.add(0, pop());
         }
         var returnType = typeOf(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
+        if (kotlin && kotlinCall(ref, args)) {
+            return;
+        }
         var enumOwner = source.enumInfo(ref.owner());
         if (enumOwner.isPresent() && ref.name().equals("ordinal") && ref.descriptor().equals("()I")) {
             push(args.get(0));
