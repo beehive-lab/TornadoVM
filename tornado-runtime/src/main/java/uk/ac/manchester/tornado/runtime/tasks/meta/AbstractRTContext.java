@@ -75,6 +75,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
      * cannot even be verified to have taken effect.
      */
     private boolean strictFloatingPoint;
+    private boolean dynamicShapes;
     private boolean resetThreads;
 
     private final boolean isOpenclGpuBlockXDefined;
@@ -155,6 +156,11 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     protected static String getDefault(String keySuffix, String id, String defaultValue) {
         String propertyValue = getProperty(id + "." + keySuffix);
         return (propertyValue != null) ? propertyValue : Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
+    }
+
+    /** Whether {@link #getXPUDevice()} has resolved the device, which creates its backend. */
+    public boolean isXPUDeviceResolved() {
+        return device != null;
     }
 
     public TornadoXPUDevice getXPUDevice() {
@@ -238,6 +244,16 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     @Override
     public void setStrictFloatingPoint(boolean strict) {
         this.strictFloatingPoint = strict;
+    }
+
+    @Override
+    public boolean isDynamicShapes() {
+        return dynamicShapes;
+    }
+
+    @Override
+    public void setDynamicShapes(boolean dynamicShapes) {
+        this.dynamicShapes = dynamicShapes;
     }
 
     public String getCompilerFlags(TornadoVMBackendType backendType) {

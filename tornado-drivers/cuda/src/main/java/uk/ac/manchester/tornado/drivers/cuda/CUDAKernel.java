@@ -207,4 +207,17 @@ public class CUDAKernel {
     public long getOclKernelID() {
         return oclKernelID;
     }
+
+    /** The largest block this kernel can launch with (its register use allows), or {@code Integer.MAX_VALUE} if unknown. */
+    public int maxThreadsPerBlock() {
+        CUDAHandles.Kernel kernel = CUDAHandles.resolve(oclKernelID, CUDAHandles.Kernel.class);
+        if (kernel == null) {
+            return Integer.MAX_VALUE;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment value = arena.allocate(java.lang.foreign.ValueLayout.JAVA_INT);
+            int result = CUDADriverAPI.cuFuncGetAttribute(value, CUDADriverAPI.CU_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, kernel.function);
+            return result == CUDADriverAPI.CUDA_SUCCESS ? value.get(java.lang.foreign.ValueLayout.JAVA_INT, 0) : Integer.MAX_VALUE;
+        }
+    }
 }

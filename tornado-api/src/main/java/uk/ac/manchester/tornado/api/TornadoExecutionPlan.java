@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
@@ -43,6 +44,7 @@ import uk.ac.manchester.tornado.api.plan.types.WithStrictFloatingPoint;
 import uk.ac.manchester.tornado.api.plan.types.WithConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.WithDefaultScheduler;
 import uk.ac.manchester.tornado.api.plan.types.WithDevice;
+import uk.ac.manchester.tornado.api.plan.types.WithDynamicShapes;
 import uk.ac.manchester.tornado.api.plan.types.WithFreeDeviceMemory;
 import uk.ac.manchester.tornado.api.plan.types.WithGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithGridScheduler;
@@ -70,12 +72,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
  * @since v0.15
  */
 public sealed class TornadoExecutionPlan implements AutoCloseable permits ExecutionPlanType {
-
-    /**
-     * Method to obtain the default device in TornadoVM. The default one corresponds
-     * to the device assigned to the driver (backend) with index 0 and device 0.
-     */
-    public static TornadoDevice DEFAULT_DEVICE = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
 
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
 
@@ -162,6 +158,48 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
                 taskGraphImpl.updateObjectAccess();
             }
         }
+    }
+
+    /**
+     * The default device of TornadoVM: device 0 of backend 0. A method, not a field, so that a program
+     * that runs on another backend never creates backend 0 (on a machine with OpenCL and CUDA, a CUDA
+     * program does not pay for OpenCL's platforms and contexts).
+     *
+     * @return the default {@link TornadoDevice}
+     */
+    public static TornadoDevice getDefaultDevice() {
+        return TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
+    }
+
+    /**
+     * Starts creating backend {@code backendIndex} and initialising its device {@code deviceIndex}
+     * (context, queues and device memory) on a background thread, and returns at once. The work then
+     * overlaps the program's own set-up, such as preparing its data, instead of delaying its first
+     * execution. An execution that reaches the device first waits for it to be ready. (Unlike
+     * {@link #withWarmUpIterations(int)}, it runs nothing: it only prepares the device.)
+     *
+     * @param backendIndex
+     *     the backend, as in {@link #getDevice(int, int)}
+     * @param deviceIndex
+     *     the device within the backend
+     * @return a future that completes with the device once it is ready, or exceptionally with the
+     *     reason it could not be initialised (which its first execution reports too)
+     */
+    public static CompletableFuture<TornadoDevice> initializeDeviceAsync(int backendIndex, int deviceIndex) {
+        return CompletableFuture.supplyAsync(() -> {
+            TornadoDevice device = getDevice(backendIndex, deviceIndex);
+            device.ensureLoaded(0); // a device is initialised once for all plans: no backend uses the plan id here
+            return device;
+        }, task -> Thread.ofPlatform().daemon().name("tornado-device-init").start(task));
+    }
+
+    /**
+     * {@link #initializeDeviceAsync(int, int)} for the default device ({@link #getDefaultDevice()}).
+     *
+     * @return a future that completes with the default device once it is ready
+     */
+    public static CompletableFuture<TornadoDevice> initializeDeviceAsync() {
+        return initializeDeviceAsync(0, 0);
     }
 
     /**
@@ -676,6 +714,29 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     public TornadoExecutionPlan withStrictFloatingPoint() {
         tornadoExecutor.withStrictFloatingPoint();
         return new WithStrictFloatingPoint(this);
+    }
+
+    /**
+     * Lets the plan run with array sizes that change between executions without compiling every
+     * kernel again for each new size. A kernel that never reads the length of an array argument
+     * (sizes passed as scalars) is compiled once and shared by all tasks over arrays of other
+     * lengths; scalar arguments that keep changing become runtime values.
+     *
+     * <p>
+     * Shared code is less specialised: it can need more registers and run slower than code
+     * compiled for one size, so use it only for workloads whose shapes change, such as model
+     * serving with changing batch or sequence sizes. {@code -Dtornado.tc.dynamicShapes=true}
+     * turns it on for every plan.
+     *
+     * <p>
+     * Applies to kernels compiled by TC; elsewhere the call is accepted and has no effect.
+     *
+     * @since 8.0.1
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withDynamicShapes() {
+        tornadoExecutor.withDynamicShapes();
+        return new WithDynamicShapes(this);
     }
 
     /**

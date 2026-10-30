@@ -125,6 +125,11 @@ public class CUDAInstalledCode implements TornadoInstalledCode {
         return kernel;
     }
 
+    @Override
+    public int maxThreadsPerBlock() {
+        return kernel != null ? kernel.maxThreadsPerBlock() : Integer.MAX_VALUE;
+    }
+
     public void setDeviceLaunchTree(List<String> tree) {
         deviceLaunchTree = List.copyOf(tree);
     }

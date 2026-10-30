@@ -735,6 +735,25 @@ And then:
 
 
 
+Start-up: initialising only the device in use
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TornadoVM creates a backend (OpenCL, CUDA, Metal) the first time a program uses it, so a program
+that runs on one backend does not pay for initialising the others. The device indices stay the same
+(``TornadoExecutionPlan.getDevice(1, 0)`` names the same device whether or not backend 0 exists yet).
+The default device is ``TornadoExecutionPlan.getDefaultDevice()`` (device 0 of backend 0).
+
+The device a program will run on can also be initialised on a background thread while the program
+prepares its data. An execution that reaches the device first waits for it:
+
+.. code:: java
+
+   TornadoExecutionPlan.initializeDeviceAsync(1, 0);   // returns at once (a CompletableFuture<TornadoDevice>)
+   FloatArray input = loadData();                        // overlaps the device's initialisation
+   ...
+   executionPlan.withDevice(TornadoExecutionPlan.getDevice(1, 0)).execute();
+
+
 Obtain the result and the profiler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
