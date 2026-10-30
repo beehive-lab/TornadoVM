@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.plan.types.OffPrintKernel;
 import uk.ac.manchester.tornado.api.plan.types.OffProfiler;
 import uk.ac.manchester.tornado.api.plan.types.OffThreadInfo;
 import uk.ac.manchester.tornado.api.plan.types.WithAllGraphs;
+import uk.ac.manchester.tornado.api.plan.types.WithAutoTune;
 import uk.ac.manchester.tornado.api.plan.types.WithBatch;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAGraph;
 import uk.ac.manchester.tornado.api.plan.types.WithCUDAPendingLaunchCount;
@@ -432,6 +433,44 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         executionFrame.setGridScheduler(gridScheduler);
         return new WithGridScheduler(this, gridScheduler);
     }
+
+     /**
+     * Enables local work-group size auto-tuning. When a task-graph is executed, the runtime benchmarks
+     * candidate local sizes for its tasks and runs the graph with the fastest. Results are cached for the lifetime of the JVM.
+     *
+     * <p>
+     * Only tasks running on the Metal backend are tuned. Tasks on other backends, tasks that take a
+     * {@code KernelContext}, and task-graphs that contain a reduction run as if auto-tuning was not enabled.
+     * </p>
+     *
+     * <p>
+     * The search executes the task-graph many times, so the first execution can take a long time; see
+     * {@link AutoTuneConfig} for a time budget. For a tuned task, the winning local size replaces the local
+     * size of any {@link WorkerGrid} registered with {@link #withGridScheduler(GridScheduler)}. The user's
+     * own local size is one of the candidates, and a global offset on the user's grid is not carried over.
+     * </p>
+     *
+     * @param autoTuneConfiguration
+     *     the tuning settings.
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withAutoTune(AutoTuneConfig autoTuneConfiguration) {
+        executionFrame.setAutoTuneConfig(autoTuneConfiguration);
+        return new WithAutoTune(this, autoTuneConfiguration);
+    }
+
+    /**
+     * Enables local work-group size auto-tuning with the default {@link AutoTuneConfig}. See
+     * {@link #withAutoTune(AutoTuneConfig)}.
+     *
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan withAutoTune() {
+        AutoTuneConfig defaultConfig = new AutoTuneConfig();
+        executionFrame.setAutoTuneConfig(defaultConfig);
+        return new WithAutoTune(this, defaultConfig);
+    }
+
 
     /**
      * Notify the TornadoVM runtime system to utilize the default thread scheduler.

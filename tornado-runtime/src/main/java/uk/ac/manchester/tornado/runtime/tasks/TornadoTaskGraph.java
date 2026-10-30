@@ -50,6 +50,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
+import uk.ac.manchester.tornado.api.AutoTuneConfig;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.tile.TileContext;
@@ -83,6 +84,7 @@ import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
+import uk.ac.manchester.tornado.api.enums.AutoTuneMetric;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
@@ -103,6 +105,7 @@ import uk.ac.manchester.tornado.runtime.TornadoVM;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
+import uk.ac.manchester.tornado.runtime.autotune.AutoTuner;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.CompilerFlags;
 import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
@@ -1945,9 +1948,100 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    /**
+     * Runs auto-tuning for this task-graph when {@code executorFrame} carries an {@link AutoTuneConfig}.
+     * Generated task-graphs and task-graphs that contain a reduction are skipped. While tuning, the config
+     * is removed from the frame so that the benchmarking executions do not trigger tuning again, and, for
+     * {@code KERNEL_TIME}, the profiler is set to {@link ProfilerMode#SILENT}. The tuned grid scheduler is
+     * merged into this graph's grid scheduler, and the frame's config and profiler mode are restored.
+     */
+    private void checkAutoTuneOn(ExecutorFrame executorFrame) {
+        AutoTuneConfig config = executorFrame.getAutoTuneConfig();
+        if (config == null) {
+            return;
+        }
+        if (getId().startsWith(GENERATED_TASK_GRAPH_PREFIX) || containsReduction()) {
+            new TornadoLogger().debug("Auto-tuning skipped for task-graph %s: reductions are not tuned", taskGraphName);
+            return;
+        }
+        List<String> taskIds = new ArrayList<>();
+        for (TaskPackage taskPackage : taskPackages) {
+            taskIds.add(taskGraphName + "." + taskPackage.getId());
+        }
+        // The profiler mode is changed only while tuning and restored in the finally block.
+        ProfilerMode previousProfilerMode = executorFrame.getProfilerMode();
+        // Disable auto-tuning on the frame while tuning, so that the execute() calls
+        // issued for benchmarking do not re-enter this method.
+        executorFrame.setAutoTuneConfig(null);
+        try {
+            if (config.getMetric() == AutoTuneMetric.KERNEL_TIME) {
+                // Kernel timers are only recorded when the profiler is on. SILENT avoids
+                // console output for every benchmarking run.
+                executorFrame.setProfilerMode(ProfilerMode.SILENT);
+            }
+            AutoTuner autoTuner = new AutoTuner(config);
+            GridScheduler tunedGridScheduler = autoTuner.tune(this, taskIds, executorFrame);
+            if (tunedGridScheduler != null) {
+                withGridScheduler(mergeGridSchedulers(gridScheduler, tunedGridScheduler));
+            }
+        } finally {
+            executorFrame.setAutoTuneConfig(config);
+            if (previousProfilerMode == null) {
+                executorFrame.setProfilerOff();
+            } else {
+                executorFrame.setProfilerMode(previousProfilerMode);
+            }
+        }
+    }
+
+    /**
+     * Combines the user's grid scheduler with the tuned one. Tuned entries take precedence
+     * for the tasks that were tuned; entries for all other tasks are kept as the user set them.
+     * Neither input is modified.
+     */
+    private GridScheduler mergeGridSchedulers(GridScheduler userScheduler, GridScheduler tunedScheduler) {
+        if (userScheduler == null) {
+            return tunedScheduler;
+        }
+        GridScheduler merged = new GridScheduler();
+        for (String taskName : userScheduler.keySet()) {
+            merged.addWorkerGrid(taskName, userScheduler.get(taskName));
+        }
+        for (String taskName : tunedScheduler.keySet()) {
+            merged.addWorkerGrid(taskName, tunedScheduler.get(taskName));
+        }
+        return merged;
+    }
+
+    /** Cached result of {@link #containsReduction()}; {@code null} until first computed. */
+    private Boolean hasReduction;
+
+    /**
+     * Reduction task-graphs are rewritten into generated task-graphs at execution time, so the local
+     * work size of the original tasks is not what launches. They are not auto-tuned.
+     */
+    private boolean containsReduction() {
+        if (reduceTaskGraph != null) {
+            return true;
+        }
+        if (hasReduction == null) {
+            boolean found;
+            try {
+                MetaReduceCodeAnalysis analysis = ReduceCodeAnalysis.analyzeTaskGraph(taskPackages);
+                found = analysis != null && analysis.isValid();
+            } catch (RuntimeException e) {
+                // Cannot tell whether the graph contains a reduction: leave it untuned.
+                found = true;
+            }
+            hasReduction = found;
+        }
+        return hasReduction;
+    }
+
     @Override
     public TornadoTaskGraphInterface execute(ExecutorFrame executorFrame) {
         executionPlanId = executorFrame.getExecutionPlanId();
+        checkAutoTuneOn(executorFrame);
         checkProfilerOn(executorFrame);
         return execute();
 
