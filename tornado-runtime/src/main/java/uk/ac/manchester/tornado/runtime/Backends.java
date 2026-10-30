@@ -76,6 +76,9 @@ final class Backends {
 
     /** The backend at {@code index}, created now if it does not exist yet. */
     TornadoAcceleratorBackend get(int index) {
+        if (slots.length == 0) {
+            throw new TornadoBackendNotFound("No TornadoVM backend was loaded: no TornadoBackendProvider is visible from the TornadoVM runtime module");
+        }
         if (index < 0 || index >= slots.length) {
             throw new TornadoBackendNotFound("TornadoVM has no backend " + index + " (backends: " + slots.length + ")");
         }
