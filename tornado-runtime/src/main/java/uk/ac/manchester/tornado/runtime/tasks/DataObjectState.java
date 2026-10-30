@@ -38,6 +38,12 @@ public class DataObjectState implements ObjectState {
     private record CachedDeviceState(TornadoXPUDevice device, XPUDeviceBufferState state) {
     }
 
+    /**
+     * Whether the object's device buffers are locked (kept for reuse) on every device: the state of
+     * a device that has none yet starts locked, so locking needs no list of the devices.
+     */
+    private volatile boolean lockedOnEveryDevice;
+
     public DataObjectState() {
         deviceStates = new ConcurrentHashMap<>();
     }
@@ -52,14 +58,28 @@ public class DataObjectState implements ObjectState {
         if (cached != null && cached.device() == device) {
             return cached.state();
         }
-        final XPUDeviceBufferState deviceState = deviceStates.computeIfAbsent((TornadoXPUDevice) device, key -> new XPUDeviceBufferState());
+        final XPUDeviceBufferState deviceState = deviceStates.computeIfAbsent((TornadoXPUDevice) device, key -> {
+            XPUDeviceBufferState state = new XPUDeviceBufferState();
+            state.setLockBuffer(lockedOnEveryDevice);
+            return state;
+        });
         cachedDeviceState = new CachedDeviceState((TornadoXPUDevice) device, deviceState);
         return deviceState;
+    }
+
+    /**
+     * Locks the object's buffer on every device, those it has a state for and those it will: the
+     * runtime is then free to reuse the device space between executions.
+     */
+    public void lockOnEveryDevice() {
+        lockedOnEveryDevice = true;
+        deviceStates.values().forEach(state -> state.setLockBuffer(true));
     }
 
     @Override
     public DataObjectState clone() {
         DataObjectState dataObjectState = new DataObjectState();
+        dataObjectState.lockedOnEveryDevice = lockedOnEveryDevice;
         dataObjectState.deviceStates = new ConcurrentHashMap<>();
         deviceStates.keySet().forEach(device -> {
             XPUDeviceBufferState xpuDeviceBufferState = deviceStates.get(device).createSnapshot();
@@ -71,6 +91,7 @@ public class DataObjectState implements ObjectState {
     @Override
     public void clear() {
         deviceStates.clear();
+        lockedOnEveryDevice = false;
         cachedDeviceState = null;
     }
 

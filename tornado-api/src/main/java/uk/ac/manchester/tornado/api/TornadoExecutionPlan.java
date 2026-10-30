@@ -72,12 +72,6 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
  */
 public sealed class TornadoExecutionPlan implements AutoCloseable permits ExecutionPlanType {
 
-    /**
-     * Method to obtain the default device in TornadoVM. The default one corresponds
-     * to the device assigned to the driver (backend) with index 0 and device 0.
-     */
-    public static TornadoDevice DEFAULT_DEVICE = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
-
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
 
     /** The backends whose kernels are built by a compiler that takes flags. */
@@ -163,6 +157,17 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
                 taskGraphImpl.updateObjectAccess();
             }
         }
+    }
+
+    /**
+     * The default device of TornadoVM: device 0 of backend 0. A method, not a field, so that a program
+     * that runs on another backend never creates backend 0 (on a machine with OpenCL and CUDA, a CUDA
+     * program does not pay for OpenCL's platforms and contexts).
+     *
+     * @return the default {@link TornadoDevice}
+     */
+    public static TornadoDevice getDefaultDevice() {
+        return TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
     }
 
     /**

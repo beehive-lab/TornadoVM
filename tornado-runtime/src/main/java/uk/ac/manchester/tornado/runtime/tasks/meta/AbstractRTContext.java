@@ -158,6 +158,11 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         return (propertyValue != null) ? propertyValue : Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
     }
 
+    /** Whether {@link #getXPUDevice()} has resolved the device, which creates its backend. */
+    public boolean isXPUDeviceResolved() {
+        return device != null;
+    }
+
     public TornadoXPUDevice getXPUDevice() {
         if (device == null) {
             device = resolveDevice(Tornado.getProperty(id + ".device", backendIndex + ":" + deviceIndex));
