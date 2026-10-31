@@ -13,6 +13,13 @@
     <version>${revision}</version>
     <name>tornado-api</name>
     <url>https://tornadovm.org</url>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
