@@ -91,11 +91,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     private long numThreads;
 
-    private final boolean isMetalThreadgroupSizeDefined;
-    private final int metalThreadsPerThreadgroupX;
-    private final int metalThreadsPerThreadgroupY;
-    private final int metalThreadsPerThreadgroupZ;
-
     private GridScheduler gridScheduler;
 
     private TornadoProfiler profiler;
@@ -141,16 +136,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
         openclGpuBlock2DY = TaskFlags.OPENCL_GPU_BLOCK_2D_Y.forTask(id);
         isOpenclGpuBlock2DYDefined = TaskFlags.OPENCL_GPU_BLOCK_2D_Y.isSetFor(id);
-
-        // Metal thread configuration
-        // Metal Threadgroup Configurations
-        metalThreadsPerThreadgroupX = TaskFlags.METAL_THREADS_PER_THREADGROUP_X.forTask(id);
-        metalThreadsPerThreadgroupY = TaskFlags.METAL_THREADS_PER_THREADGROUP_Y.forTask(id);
-        metalThreadsPerThreadgroupZ = TaskFlags.METAL_THREADS_PER_THREADGROUP_Z.forTask(id);
-
-        isMetalThreadgroupSizeDefined = TaskFlags.METAL_THREADS_PER_THREADGROUP_X.isSetFor(id) //
-                || TaskFlags.METAL_THREADS_PER_THREADGROUP_Y.isSetFor(id) //
-                || TaskFlags.METAL_THREADS_PER_THREADGROUP_Z.isSetFor(id);
     }
 
     /** Whether {@link #getXPUDevice()} has resolved the device, which creates its backend. */
@@ -294,24 +279,6 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     public boolean isOpenclGpuBlock2DYDefined() {
         return isOpenclGpuBlock2DYDefined;
-    }
-
-    // Metal equivalents
-
-    public int getMetalThreadsPerThreadgroupX() {
-        return metalThreadsPerThreadgroupX;
-    }
-
-    public int getMetalThreadsPerThreadgroupY() {
-        return metalThreadsPerThreadgroupY;
-    }
-
-    public int getMetalThreadsPerThreadgroupZ() {
-        return metalThreadsPerThreadgroupZ;
-    }
-
-    public boolean isMetalThreadgroupSizeDefined() {
-        return isMetalThreadgroupSizeDefined;
     }
 
 

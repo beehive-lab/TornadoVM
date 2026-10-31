@@ -52,8 +52,8 @@ JVM Flags
 ---------
 
 JVM flags are read, in order of precedence, from ``-D`` options on the command line (or set at run time with
-``TornadoRuntimeProvider.setProperty``), then from ``$TORNADOVM_HOME/etc/tornado.properties``, and otherwise take
-their default. Boolean flags accept ``true`` or ``false`` in any letter case; a value a flag cannot take stops the
+``TornadoRuntimeProvider.setProperty``), then from ``$TORNADOVM_HOME/etc/tornado.properties`` if you create one (a
+standard Java properties file, for flags you want set on every run), and otherwise take their default. Boolean flags accept ``true`` or ``false`` in any letter case; a value a flag cannot take stops the
 program with a message naming the flag.
 
 When TornadoVM starts, it warns about every ``-Dtornado.*`` flag that does not exist, suggesting the closest
@@ -205,23 +205,14 @@ Thread scheduling
      - unset
      - Thread coarsening factors of a task, comma-separated per dimension.
    * - ``-D<id>.opencl.gpu.block.x`` or ``-Dtornado.opencl.gpu.block.x``
-     - ``256``
-     - OpenCL work-group size of one-dimensional kernels on GPUs.
+     - ``512``
+     - Work-group size of one-dimensional kernels on AMD GPUs, capped by the device's maximum.
    * - ``-D<id>.opencl.gpu.block2d.x`` or ``-Dtornado.opencl.gpu.block2d.x``
      - ``4``
-     - OpenCL work-group size in x of two-dimensional kernels on GPUs.
+     - Work-group size in x of two- and three-dimensional kernels on AMD GPUs, capped by the device's maximum.
    * - ``-D<id>.opencl.gpu.block2d.y`` or ``-Dtornado.opencl.gpu.block2d.y``
      - ``4``
-     - OpenCL work-group size in y of two-dimensional kernels on GPUs.
-   * - ``-D<id>.metal.threads.per.threadgroup.x`` or ``-Dtornado.metal.threads.per.threadgroup.x``
-     - ``1``
-     - Metal threads per threadgroup in x.
-   * - ``-D<id>.metal.threads.per.threadgroup.y`` or ``-Dtornado.metal.threads.per.threadgroup.y``
-     - ``1``
-     - Metal threads per threadgroup in y.
-   * - ``-D<id>.metal.threads.per.threadgroup.z`` or ``-Dtornado.metal.threads.per.threadgroup.z``
-     - ``1``
-     - Metal threads per threadgroup in z.
+     - Work-group size in y and z of two- and three-dimensional kernels on AMD GPUs, capped by the device's maximum.
 
 OpenCL backend
 ~~~~~~~~~~~~~~
@@ -536,7 +527,13 @@ Setting one of these prints a warning and has no effect.
    * - ``-Dtornado.max.events``
      - TornadoVM always behaves as with its default (32768).
    * - ``-Dtornado.metal.threadgroupHint``
-     - It had no effect. Use <task>.metal.threads.per.threadgroup.{x,y,z}.
+     - It had no effect.
+   * - ``-Dtornado.metal.threads.per.threadgroup.x``
+     - It had no effect.
+   * - ``-Dtornado.metal.threads.per.threadgroup.y``
+     - It had no effect.
+   * - ``-Dtornado.metal.threads.per.threadgroup.z``
+     - It had no effect.
    * - ``-Dtornado.nccl.benchmark.cudaGraph``
      - Pass --cuda-graph to the NCCL benchmark instead.
    * - ``-Dtornado.opencl.print``

@@ -42,33 +42,18 @@ public final class TaskFlags {
             .category(CATEGORY).build();
 
     public static final TaskOption<Integer> OPENCL_GPU_BLOCK_X = TaskOption.integer("opencl.gpu.block.x") //
-            .defaultValue(256) //
-            .description("OpenCL work-group size of one-dimensional kernels on GPUs.") //
+            .defaultValue(512) //
+            .description("Work-group size of one-dimensional kernels on AMD GPUs, capped by the device's maximum.") //
             .category(CATEGORY).withGlobalFallback().build();
 
     public static final TaskOption<Integer> OPENCL_GPU_BLOCK_2D_X = TaskOption.integer("opencl.gpu.block2d.x") //
             .defaultValue(4) //
-            .description("OpenCL work-group size in x of two-dimensional kernels on GPUs.") //
+            .description("Work-group size in x of two- and three-dimensional kernels on AMD GPUs, capped by the device's maximum.") //
             .category(CATEGORY).withGlobalFallback().build();
 
     public static final TaskOption<Integer> OPENCL_GPU_BLOCK_2D_Y = TaskOption.integer("opencl.gpu.block2d.y") //
             .defaultValue(4) //
-            .description("OpenCL work-group size in y of two-dimensional kernels on GPUs.") //
-            .category(CATEGORY).withGlobalFallback().build();
-
-    public static final TaskOption<Integer> METAL_THREADS_PER_THREADGROUP_X = TaskOption.integer("metal.threads.per.threadgroup.x") //
-            .defaultValue(1) //
-            .description("Metal threads per threadgroup in x.") //
-            .category(CATEGORY).withGlobalFallback().build();
-
-    public static final TaskOption<Integer> METAL_THREADS_PER_THREADGROUP_Y = TaskOption.integer("metal.threads.per.threadgroup.y") //
-            .defaultValue(1) //
-            .description("Metal threads per threadgroup in y.") //
-            .category(CATEGORY).withGlobalFallback().build();
-
-    public static final TaskOption<Integer> METAL_THREADS_PER_THREADGROUP_Z = TaskOption.integer("metal.threads.per.threadgroup.z") //
-            .defaultValue(1) //
-            .description("Metal threads per threadgroup in z.") //
+            .description("Work-group size in y and z of two- and three-dimensional kernels on AMD GPUs, capped by the device's maximum.") //
             .category(CATEGORY).withGlobalFallback().build();
 
     public static final Option<Boolean> BLOCK_SCHEDULER = Option.bool("tornado.scheduler.block") //

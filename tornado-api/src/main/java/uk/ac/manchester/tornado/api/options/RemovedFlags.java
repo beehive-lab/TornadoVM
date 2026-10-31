@@ -38,7 +38,10 @@ public final class RemovedFlags {
             new RemovedOption("tornado.kernels.parallelise", NO_EFFECT), //
             new RemovedOption("tornado.enable.fastMathOptimizations", NO_EFFECT + " Use tornado.enable.math.optimizations."), //
             new RemovedOption("tornado.enable.nativeFunctions", NO_EFFECT), //
-            new RemovedOption("tornado.metal.threadgroupHint", NO_EFFECT + " Use <task>.metal.threads.per.threadgroup.{x,y,z}."), //
+            new RemovedOption("tornado.metal.threadgroupHint", NO_EFFECT), //
+            new RemovedOption("tornado.metal.threads.per.threadgroup.x", NO_EFFECT), //
+            new RemovedOption("tornado.metal.threads.per.threadgroup.y", NO_EFFECT), //
+            new RemovedOption("tornado.metal.threads.per.threadgroup.z", NO_EFFECT), //
             new RemovedOption("tornado.debug.executionTime", NO_EFFECT + " Use tornado.profiler."), //
             new RemovedOption("tornado.unroll.factor", NO_EFFECT), //
             new RemovedOption("tornado.vmflush", FIXED + " (true)."), //

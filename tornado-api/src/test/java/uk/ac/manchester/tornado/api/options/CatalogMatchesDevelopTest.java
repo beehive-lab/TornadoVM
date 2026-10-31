@@ -40,6 +40,9 @@ public class CatalogMatchesDevelopTest {
     /** Per-task suffix on develop and its default there; null where develop had none. */
     private static final Map<String, Integer> DEVELOP_TASK_DEFAULTS = new LinkedHashMap<>();
 
+    /** A per-task suffix that was removed; its global fallback key is listed in {@link RemovedFlags}. */
+    private static final Integer REMOVED = Integer.MIN_VALUE;
+
     static {
         // TornadoOptions
         DEVELOP_DEFAULTS.put("tornado.opencl.compiler.flags", "-cl-mad-enable -cl-fast-relaxed-math -w");
@@ -166,12 +169,14 @@ public class CatalogMatchesDevelopTest {
         DEVELOP_TASK_DEFAULTS.put("global.workgroup.size", null);
         DEVELOP_TASK_DEFAULTS.put("local.workgroup.size", null);
         DEVELOP_TASK_DEFAULTS.put("coarseness", null);
-        DEVELOP_TASK_DEFAULTS.put("opencl.gpu.block.x", 256);
+        // 256 in the code, but every SDK install set 512 in etc/tornado.properties, which is now the default.
+        DEVELOP_TASK_DEFAULTS.put("opencl.gpu.block.x", 512);
         DEVELOP_TASK_DEFAULTS.put("opencl.gpu.block2d.x", 4);
         DEVELOP_TASK_DEFAULTS.put("opencl.gpu.block2d.y", 4);
-        DEVELOP_TASK_DEFAULTS.put("metal.threads.per.threadgroup.x", 1);
-        DEVELOP_TASK_DEFAULTS.put("metal.threads.per.threadgroup.y", 1);
-        DEVELOP_TASK_DEFAULTS.put("metal.threads.per.threadgroup.z", 1);
+        // Read into fields nothing used: removed.
+        DEVELOP_TASK_DEFAULTS.put("metal.threads.per.threadgroup.x", REMOVED);
+        DEVELOP_TASK_DEFAULTS.put("metal.threads.per.threadgroup.y", REMOVED);
+        DEVELOP_TASK_DEFAULTS.put("metal.threads.per.threadgroup.z", REMOVED);
     }
 
     private final OptionRegistry registry = OptionRegistry.catalog();
@@ -193,6 +198,11 @@ public class CatalogMatchesDevelopTest {
     @Test
     public void everyDevelopTaskSuffixIsATaskOptionWithTheSameDefault() {
         for (Map.Entry<String, Integer> entry : DEVELOP_TASK_DEFAULTS.entrySet()) {
+            if (REMOVED.equals(entry.getValue())) {
+                assertTrue(registry.taskOptions().stream().noneMatch(option -> option.suffix().equals(entry.getKey())), entry.getKey());
+                assertTrue(registry.removed().stream().anyMatch(removed -> removed.key().equals("tornado." + entry.getKey())), entry.getKey());
+                continue;
+            }
             TaskOption<?> option = registry.taskOptions().stream().filter(candidate -> candidate.suffix().equals(entry.getKey())).findFirst() //
                     .orElseThrow(() -> new AssertionError("No task option " + entry.getKey()));
             assertEquals(Optional.ofNullable(entry.getValue()), option.defaultValue(), entry.getKey());
