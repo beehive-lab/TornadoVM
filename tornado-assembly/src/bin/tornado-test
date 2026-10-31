@@ -402,7 +402,7 @@ __TEST_THE_WORLD__ = [
               testMethods=["testVirtualDeviceKernel"],
               testParameters=[
                   "-Dtornado.device.desc=" + os.environ["TORNADOVM_HOME"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.printKernel=True",
+                  "-Dtornado.print.kernel=True",
                   "-Dtornado.virtual.device=True",
                   "-Dtornado.print.kernel.dir=" + os.environ["TORNADOVM_HOME"] + "/virtualKernelOut.out"]),
     TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
@@ -569,12 +569,12 @@ __MAIN_TORNADO_JUNIT_MODULE__ = " org.junit.platform.console/"
 __MAIN_TORNADO_JUNIT__ = "org.junit.platform.console.ConsoleLauncher "
 ## The ConsoleLauncher module does not require the tests, so resolve their module explicitly
 __JUNIT_ADD_TESTS_MODULE__ = "--add-modules tornado.unittests "
-__PRINT_OPENCL_KERNEL__ = "-Dtornado.printKernel=True "
+__PRINT_OPENCL_KERNEL__ = "-Dtornado.print.kernel=True "
 __DEBUG_TORNADO__ = "-Dtornado.debug=True "
-__TORNADOVM_FULLDEBUG__ = __DEBUG_TORNADO__ + "-Dtornado.fullDebug=True "
-__THREAD_INFO__ = "-Dtornado.threadInfo=True "
+__TORNADOVM_FULLDEBUG__ = __DEBUG_TORNADO__ + "-Dtornado.debug.full=True "
+__THREAD_INFO__ = "-Dtornado.thread.info=True "
 __UNCOMPRESSED_POINTERS__ = "-XX:-UseCompressedOops -XX:-UseCompressedClassPointers "
-__PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
+__PRINT_EXECUTION_TIMER__ = "-Dtornado.profiler=True "
 __GC__ = "-Xmx6g "
 __BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
 __VERBOSE_OPTION__ = "-Dtornado.unittests.verbose="

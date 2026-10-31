@@ -161,7 +161,7 @@ tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclAllRedu
 tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclSendRecv [elements,...] [iterations]
 ```
 
-Add `--jvm="-Dtornado.nccl.benchmark.cudaGraph=true"` to run every plan of a benchmark as a CUDA graph.
+Pass `--cuda-graph` to a benchmark, before the sizes, to run every plan as a CUDA graph.
 
 The benchmarks run one step of a multi-GPU pipeline (kernel, communication, kernel) with NCCL and
 with the alternative TornadoVM offers without it: copy every rank's buffer to the host, combine or

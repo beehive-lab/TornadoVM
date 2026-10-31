@@ -52,7 +52,7 @@ For GEMM/GEMV with non-zero ``beta``, the output is marked ``READ_WRITE``;
 include it in ``transferToDevice`` when its initial values come from the host.
 AXPY also reads its output. CLBlast uses the execution plan's command queue
 on the calling thread and requires in-order execution
-(``tornado.ooo-execution.enable=false``, the default). FP64 routines require
+(``tornado.ooo.execution.enable=false``, the default). FP64 routines require
 device support for double precision. Batch processing with ``withBatch`` is
 not supported for library tasks.
 

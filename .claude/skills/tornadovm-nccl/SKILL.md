@@ -121,11 +121,11 @@ tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclSendRec
 tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclGroup [buffers] [elements,...] [iterations]
 ```
 
-- Add `--jvm="-Dtornado.nccl.benchmark.cudaGraph=true"` to a benchmark to run every plan as a graph.
+- Pass `--cuda-graph` to a benchmark (before the sizes) to run every plan as a graph.
 - **Compare against nccl-tests** (`all_reduce_perf`, `sendrecv_perf`) on the same host as the
   control. At large sizes bus bandwidth should match it; if it does not, the host is the problem
   before TornadoVM is.
-- **Small-step overhead is mostly the thread handoff.** Tune it with `-Dtornado.nccl.spinWaitMicros`
+- **Small-step overhead is mostly the thread handoff.** Tune it with `-Dtornado.nccl.spin.wait.micros`
   (default 1000; 0 parks at once and saves CPU but adds latency). Use `nsys profile --trace=cuda,nvtx`;
   NCCL tasks show as `nvidia/nccl/<function>` NVTX ranges.
 - `NCCL_DEBUG=INFO` shows the transport (SHM / P2P / NET) and the rings.

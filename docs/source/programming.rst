@@ -294,7 +294,7 @@ too, including each other. The main points:
 - At most 2048 device-side launches may be pending at once by default. A plan
   that launches more (for example one child per thread block of a large grid)
   raises the limit with ``executionPlan.withCUDAPendingLaunchCount(n)``, or,
-  for all plans, with ``-Dtornado.cuda.dp.pendingLaunchCount=n``.
+  for all plans, with ``-Dtornado.cuda.dp.pending.launch.count=n``.
 
 See ``tornado-examples/.../kernelcontext/compute/DynamicParallelismRouting.java``
 for a mixture-of-experts style example.
