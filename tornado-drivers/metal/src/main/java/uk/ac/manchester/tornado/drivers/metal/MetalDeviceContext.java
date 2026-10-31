@@ -21,7 +21,6 @@
 package uk.ac.manchester.tornado.drivers.metal;
 
 import static uk.ac.manchester.tornado.drivers.metal.MetalCommandQueue.EMPTY_EVENT;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.nio.ByteOrder;
 import java.util.Collections;
@@ -34,21 +33,23 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.options.LibraryFlags;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
-import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalMemoryManager;
 import uk.ac.manchester.tornado.drivers.metal.power.MetalEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalBufferProvider;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class MetalDeviceContext implements MetalDeviceContextInterface {
+
+    /** Events kept per command queue before the oldest are reused. */
+    private static final int EVENT_WINDOW = 1024;
 
     private final MetalTargetDevice device;
 
@@ -141,9 +142,6 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
             // many small graphs spends most of its time.
             commandQueue.flush();
             return;
-        }
-        if (TornadoOptions.USE_SYNC_FLUSH) {
-            commandQueue.flush();
         }
         commandQueue.finish();
     }
@@ -660,7 +658,7 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     /* ---- Native interop (external libraries, e.g. Apple MLX) ---- */
 
     /** -Dtornado.mlx.async=true: commit the batch before a library task without waiting for it. */
-    private static final boolean ASYNC_LIBRARY_DISPATCH = Boolean.getBoolean("tornado.mlx.async");
+    private static final boolean ASYNC_LIBRARY_DISPATCH = LibraryFlags.MLX_ASYNC.get();
 
     @Override
     public long getNativeStream(long executionPlanId) {

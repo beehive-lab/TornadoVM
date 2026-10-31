@@ -21,7 +21,6 @@
 package uk.ac.manchester.tornado.drivers.cuda.mm;
 
 import static uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame.RESERVED_SLOTS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAMemFlags;
@@ -49,7 +49,7 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
 
     @Override
     public long getHeapSize() {
-        return DEVICE_AVAILABLE_MEMORY;
+        return RuntimeFlags.DEVICE_MEMORY.get();
     }
 
     public CUDAKernelStackFrame createKernelStackFrame(long executionPlanId, final int numberOfArguments) {
@@ -99,13 +99,6 @@ public class CUDAMemoryManager implements TornadoMemoryProvider {
     void allocateAtomicRegion() {
         if (this.atomicsRegionPointer == NON_EXISTING_ADDRESS) {
             this.atomicsRegionPointer = createBuffer(atomicRegionSize(), CUDAMemFlags.CL_MEM_READ_WRITE | CUDAMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
-        }
-    }
-
-    void deallocateAtomicRegion() {
-        if (this.atomicsRegionPointer != NON_EXISTING_ADDRESS) {
-            releaseBuffer(this.atomicsRegionPointer);
-            this.atomicsRegionPointer = NON_EXISTING_ADDRESS;
         }
     }
 

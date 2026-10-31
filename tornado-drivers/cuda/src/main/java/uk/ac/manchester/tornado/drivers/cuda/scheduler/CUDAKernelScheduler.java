@@ -20,15 +20,13 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.scheduler;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAGridInfo;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAKernel;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -62,7 +60,7 @@ public abstract class CUDAKernelScheduler {
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
         // Skipped while capturing into a CUDA graph: waiting on (or querying) an event that was
         // recorded into a capturing stream is illegal and invalidates the capture.
-        if (TornadoOptions.isProfilerEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
+        if (ProfilerActivation.isEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
             // Metrics captured before blocking
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
 

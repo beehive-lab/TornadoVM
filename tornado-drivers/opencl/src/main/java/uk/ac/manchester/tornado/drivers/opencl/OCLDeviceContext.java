@@ -22,7 +22,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.drivers.opencl.OCLCommandQueue.EMPTY_EVENT;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.nio.ByteOrder;
 import java.util.Collections;
@@ -40,16 +39,17 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
-import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLBufferProvider;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLDeviceContext implements OCLDeviceContextInterface {
+
+    /** Events kept per command queue before the oldest are reused. */
+    private static final int EVENT_WINDOW = 1024;
 
     private final OCLTargetDevice device;
 
@@ -143,9 +143,6 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     @Override
     public void sync(long executionPlanId) {
         OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
-        if (TornadoOptions.USE_SYNC_FLUSH) {
-            commandQueue.flush();
-        }
         commandQueue.finish();
     }
 
@@ -269,7 +266,7 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
     public long getNativeCommandQueue(long executionPlanId) {
         OCLCommandQueue queue = getCommandQueue(executionPlanId);
         if ((queue.getProperties() & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE) != 0) {
-            throw new TornadoRuntimeException("Native OpenCL library tasks require an in-order command queue (set tornado.ooo-execution.enable=false)");
+            throw new TornadoRuntimeException("Native OpenCL library tasks require an in-order command queue (set tornado.ooo.execution.enable=false)");
         }
         return queue.getCommandQueuePtr();
     }

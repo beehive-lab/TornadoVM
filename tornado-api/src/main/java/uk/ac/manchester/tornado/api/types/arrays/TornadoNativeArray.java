@@ -41,16 +41,14 @@ public abstract sealed class TornadoNativeArray //
         LongArray, ShortArray, Int8Array, FP8Array, BFloat16Array {
 
     /**
-     * The size of the header in bytes. It sets the default value either to 16 or 24, depending on whether the uncompressed flags are passed by the user. It can also be configurable through the
-     * "tornado.panama.objectHeader" system property.
+     * The size of the header in bytes: 16, or 24 when the JVM runs with uncompressed pointers.
      */
-    public static final long ARRAY_HEADER = Long.parseLong(System.getProperty("tornado.panama.objectHeader", getDefaultHeaderSize()));
+    public static final long ARRAY_HEADER = headerSize();
 
-    private static String getDefaultHeaderSize() {
+    private static long headerSize() {
         List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
         boolean isUncompressed = jvmArgs.contains("-XX:-UseCompressedOops") || jvmArgs.contains("-XX:-UseCompressedClassPointers");
-
-        return isUncompressed ? "24" : "16";
+        return isUncompressed ? 24 : 16;
     }
 
     /**

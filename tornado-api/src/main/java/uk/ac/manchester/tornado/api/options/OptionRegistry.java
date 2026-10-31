@@ -34,8 +34,7 @@ import java.util.TreeMap;
  */
 public final class OptionRegistry {
 
-    private static final List<Class<?>> CATALOGS = List.of( //
-            RuntimeFlags.class, //
+    private static final List<Class<?>> CATALOGS = List.of(RuntimeFlags.class, //
             DebugFlags.class, //
             ProfilerFlags.class, //
             TaskFlags.class, //

@@ -27,12 +27,12 @@ import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.ME
 import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.METAL_PROFILING_COMMAND_QUEUED;
 import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.METAL_PROFILING_COMMAND_START;
 import static uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo.METAL_PROFILING_COMMAND_SUBMIT;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_METAL_PROFILING;
 
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.api.options.MetalFlags;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalProfilingInfo;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
@@ -88,7 +88,7 @@ public class MetalEvent implements Event {
     }
 
     private long readEventTime(MetalProfilingInfo eventType) {
-        if (!ENABLE_METAL_PROFILING) {
+        if (!MetalFlags.PROFILING.get()) {
             return -1;
         }
         long time = 0;

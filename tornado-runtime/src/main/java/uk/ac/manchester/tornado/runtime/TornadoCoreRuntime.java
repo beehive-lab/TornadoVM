@@ -25,11 +25,14 @@ import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shoul
 import java.util.List;
 import java.util.ServiceLoader;
 
-
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.OptionRegistry;
+import uk.ac.manchester.tornado.api.options.OptionResolver;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
 public final class TornadoCoreRuntime implements TornadoRuntime {
@@ -41,13 +44,21 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     private final Backends backends;
 
     private TornadoCoreRuntime() {
+        reportOptionProblems();
         vmConfig = new TornadoVMConfigAccess();
         List<TornadoBackendProvider> installed = ServiceLoader.load(TornadoBackendProvider.class).stream().map(ServiceLoader.Provider::get).toList();
-        backends = new Backends(installed, TornadoOptions.ENABLED_BACKENDS, this::createBackend);
+        backends = new Backends(installed, RuntimeFlags.ENABLED_BACKENDS.get(), this::createBackend);
+    }
+
+    /**
+     * Warns about every {@code -Dtornado.*} option that is unknown, with the closest existing one, or removed.
+     */
+    private static void reportOptionProblems() {
+        OptionRegistry.catalog().diagnose(OptionResolver.global().source().keys()).forEach(diagnostic -> OptionResolver.warn(diagnostic.message()));
     }
 
     private TornadoAcceleratorBackend createBackend(TornadoBackendProvider provider) {
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             System.out.println("[INFO] TornadoVM Loading Backend: " + provider.getName());
         }
         return provider.createBackend(vmConfig);
@@ -72,7 +83,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     @Override
     public boolean isProfilerEnabled() {
-        return TornadoOptions.PROFILER_LOGS_ACCUMULATE() && TornadoOptions.isProfilerEnabled();
+        return ProfilerActivation.keepsReport() && ProfilerActivation.isEnabled();
     }
 
     @Override

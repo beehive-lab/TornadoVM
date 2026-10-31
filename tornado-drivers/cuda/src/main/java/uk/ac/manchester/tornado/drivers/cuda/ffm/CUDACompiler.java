@@ -20,6 +20,8 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.ffm;
 
+import uk.ac.manchester.tornado.api.options.CudaFlags;
+import uk.ac.manchester.tornado.api.options.InvalidOptionValueException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import java.io.File;
 import java.lang.foreign.Arena;
@@ -27,6 +29,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -377,9 +380,9 @@ public final class CUDACompiler {
      * first toolkit root that has it. {@code null} when there is none.
      */
     static String deviceRuntimeLibrary() {
-        String override = System.getProperty("tornado.cuda.devrt.path");
-        if (override != null && !override.isBlank()) {
-            return new File(override).isFile() ? override : null;
+        Optional<String> override = CudaFlags.DEVICE_RUNTIME_PATH.find().filter(path -> !path.isBlank());
+        if (override.isPresent()) {
+            return new File(override.get()).isFile() ? override.get() : null;
         }
         String[] subdirectories = { "lib64", "lib", "lib" + File.separator + "x64", "targets" + File.separator + "x86_64-linux" + File.separator + "lib",
                 "targets" + File.separator + "sbsa-linux" + File.separator + "lib", "lib" + File.separator + "x86_64-linux-gnu", "lib" + File.separator + "aarch64-linux-gnu" };
@@ -400,28 +403,27 @@ public final class CUDACompiler {
     private static final Map<Long, Long> PENDING_LAUNCH_COUNT = new ConcurrentHashMap<>();
 
     /**
-     * Applies {@code -Dtornado.cuda.dp.pendingLaunchCount} to the context before the first module
+     * Applies {@code -Dtornado.cuda.dp.pending.launch.count} to the context before the first module
      * that launches kernels from the device is loaded, unless a plan already set the limit with
      * {@code withCUDAPendingLaunchCount}. Left unset, the driver default applies.
      */
     private static void applyPendingLaunchLimit(CUDAHandles.Program program) {
-        String value = System.getProperty("tornado.cuda.dp.pendingLaunchCount");
-        if (value == null || value.isBlank() || program.context == 0 || PENDING_LAUNCH_COUNT.containsKey(program.context)) {
+        if (program.context == 0 || PENDING_LAUNCH_COUNT.containsKey(program.context)) {
             return;
         }
-        long count;
+        Optional<Long> count;
         try {
-            count = Long.parseLong(value.trim());
-        } catch (NumberFormatException e) {
-            System.out.println(LOG_PREFIX + "WARNING: ignoring -Dtornado.cuda.dp.pendingLaunchCount=" + value + ": not a number.");
+            count = CudaFlags.PENDING_LAUNCH_COUNT.find();
+        } catch (InvalidOptionValueException e) {
+            System.out.println(LOG_PREFIX + "WARNING: " + e.getMessage() + "; ignoring it.");
             return;
         }
-        setLimit(program.context, count);
+        count.ifPresent(limit -> setLimit(program.context, limit));
     }
 
     /**
      * Sets {@code CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT} on a context, as requested by a plan.
-     * Takes precedence over {@code -Dtornado.cuda.dp.pendingLaunchCount}; the driver is only called
+     * Takes precedence over {@code -Dtornado.cuda.dp.pending.launch.count}; the driver is only called
      * when the value changes.
      *
      * @param contextHandle

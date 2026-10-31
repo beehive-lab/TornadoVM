@@ -30,12 +30,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
+import uk.ac.manchester.tornado.api.options.TaskFlags;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -56,7 +58,6 @@ import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.MetaReduceTasks;
 import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis.REDUCE_OPERATION;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
 
@@ -69,8 +70,8 @@ class ReduceTaskGraph {
     private static final int DEFAULT_GPU_WORK_GROUP = 256;
     // The device a task runs on when nothing names one (tornado.backend / tornado.device): the
     // generated reduction tasks must follow the same default as the tasks they finish.
-    private static final int DEFAULT_BACKEND_INDEX = TornadoOptions.DEFAULT_BACKEND_INDEX;
-    private static final int DEFAULT_DEVICE_INDEX = TornadoOptions.DEFAULT_DEVICE_INDEX;
+    private static final int DEFAULT_BACKEND_INDEX = RuntimeFlags.BACKEND_INDEX.get();
+    private static final int DEFAULT_DEVICE_INDEX = RuntimeFlags.DEVICE_INDEX.get();
     private static AtomicInteger counterName = new AtomicInteger(0);
     private static AtomicInteger counterSeqName = new AtomicInteger(0);
     private final List<StreamingObject> inputModeObjects;
@@ -165,13 +166,13 @@ class ReduceTaskGraph {
 
     private BackendSelectionContainer changeDriverAndDeviceIfNeeded(String taskScheduleName, String graphName, String taskName) {
         String idTaskGraph = graphName + "." + taskName;
-        boolean isDeviceDefined = MetaDataUtils.getProperty(idTaskGraph + ".device") != null;
+        Optional<String> device = TaskFlags.DEVICE.lookup(idTaskGraph);
 
-        if (isDeviceDefined) {
-            BackendSelectionContainer info = MetaDataUtils.resolveDriverDeviceIndexes(MetaDataUtils.getProperty(idTaskGraph + ".device"));
+        if (device.isPresent()) {
+            BackendSelectionContainer info = MetaDataUtils.resolveDriverDeviceIndexes(device.get());
             int backendIndex = info.backendIndex();
             int deviceNumber = info.deviceIndex();
-            TornadoRuntimeProvider.setProperty(taskScheduleName + "." + taskName + ".device", backendIndex + ":" + deviceNumber);
+            TornadoRuntimeProvider.setProperty(TaskFlags.DEVICE.taskKey(taskScheduleName + "." + taskName), backendIndex + ":" + deviceNumber);
             return info;
         }
         return null;
@@ -526,7 +527,7 @@ class ReduceTaskGraph {
                     for (REDUCE_OPERATION operation : operations) {
                         final String newTaskSequentialName = SEQUENTIAL_TASK_REDUCE_NAME + counterSeqName.get();
                         String fullName = rewrittenTaskGraph.getTaskGraphName() + "." + newTaskSequentialName;
-                        TornadoRuntimeProvider.setProperty(fullName + ".device", backendToRun + ":" + deviceToRun);
+                        TornadoRuntimeProvider.setProperty(TaskFlags.DEVICE.taskKey(fullName), backendToRun + ":" + deviceToRun);
 
                         switch (operation) {
                             case SUM -> ReduceFactory.handleAdd(newArray, rewrittenTaskGraph, sizeReduceArray, newTaskSequentialName);
@@ -627,10 +628,7 @@ class ReduceTaskGraph {
             executionPlan.withoutThreadInfo();
         }
 
-        // check parameter list
-        if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
-            checkAllArgumentsPerTask();
-        }
+        checkAllArgumentsPerTask();
 
         setNeutralElement();
         if (hybridMode && !hybridInitialized) {

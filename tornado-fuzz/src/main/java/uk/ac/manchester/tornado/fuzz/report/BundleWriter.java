@@ -115,7 +115,7 @@ public final class BundleWriter {
         sb.append("```bash\n");
         sb.append("tornado -m tornado.fuzz/uk.ac.manchester.tornado.fuzz.FuzzMain \\\n");
         sb.append("    --params \"seed=").append(cfg.seed).append(" count=1 phase=").append(cfg.phase).append(" outDir=/tmp/fuzz\" \\\n");
-        sb.append("    --jvm=\"-Dtornado.printKernel=true -Dtornado.print.kernel.dir=$(pwd) -Dtornado.print.bytecodes=true\"\n");
+        sb.append("    --jvm=\"-Dtornado.print.kernel=true -Dtornado.print.kernel.dir=$(pwd) -Dtornado.print.bytecodes=true\"\n");
         sb.append("```\n");
 
         sb.append("\n## Likely culprit files\n\n");

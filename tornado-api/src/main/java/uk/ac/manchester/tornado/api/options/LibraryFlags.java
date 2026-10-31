@@ -41,7 +41,7 @@ public final class LibraryFlags {
 
     public static final Option<Long> NCCL_SPIN_WAIT_MICROS = Option.longValue("tornado.nccl.spin.wait.micros") //
             .defaultValue(1000L) //
-            .description("Microseconds an NCCL plan-group thread spins before it blocks while waiting for work.") //
+            .description("Microseconds NCCL rank threads and the caller spin before parking; 0 parks at once.") //
             .category(CATEGORY).internal().deprecatedKey("tornado.nccl.spinWaitMicros").build();
 
     private LibraryFlags() {

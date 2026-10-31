@@ -25,12 +25,14 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoMetalPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.MetalFlags;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class MetalContext implements MetalContextInterface {
 
@@ -128,11 +130,11 @@ public class MetalContext implements MetalContextInterface {
 
     public long getProperties() {
         long properties = 0;
-        if (TornadoOptions.ENABLE_METAL_PROFILING) {
+        if (MetalFlags.PROFILING.get()) {
             properties |= MetalCommandQueueProperties.METAL_QUEUE_PROFILING_ENABLE;
         }
 
-        if (TornadoOptions.ENABLE_OOO_EXECUTION) {
+        if (RuntimeFlags.OUT_OF_ORDER_EXECUTION.get()) {
             properties |= MetalCommandQueueProperties.METAL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         return properties;
@@ -155,13 +157,13 @@ public class MetalContext implements MetalContextInterface {
     }
 
     /**
-     * {@code strictFloatingPoint}: fast math off whatever {@code tornado.metal.fastmath} says. Without
+     * {@code strictFloatingPoint}: fast math off whatever {@code tornado.metal.fast.math} says. Without
      * options Metal compiles with its own default, which has fast math on.
      */
     public MetalProgram createProgramWithSource(byte[] source, long[] lengths, MetalDeviceContext deviceContext, boolean strictFloatingPoint) {
         MetalProgram program = null;
 
-        int compileFlags = strictFloatingPoint ? METAL_COMPILE_STRICT : TornadoOptions.METAL_FAST_MATH ? METAL_COMPILE_FAST_MATH : 0;
+        int compileFlags = strictFloatingPoint ? METAL_COMPILE_STRICT : MetalFlags.FAST_MATH.get() ? METAL_COMPILE_FAST_MATH : 0;
         try {
             program = new MetalProgram(metalCreateProgramWithSource(contextID, source, lengths, compileFlags), deviceContext);
         } catch (MetalException e) {
@@ -200,18 +202,12 @@ public class MetalContext implements MetalContextInterface {
 
     public void cleanup() {
 
-        if (TornadoOptions.DUMP_EVENTS) {
-            for (MetalDeviceContext deviceContext : deviceContexts) {
-                deviceContext.dumpEvents();
-            }
-        }
-
         try {
             long t1 = System.nanoTime();
             metalReleaseContext(contextID);
             long t2 = System.nanoTime();
 
-            if (TornadoOptions.FULL_DEBUG) {
+            if (DebugFlags.FULL_DEBUG.get()) {
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t2 - t1) * 1e-9);
             }
         } catch (MetalException e) {

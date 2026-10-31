@@ -26,8 +26,6 @@ import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
-import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class JsonHandler {
 
@@ -35,7 +33,6 @@ public class JsonHandler {
     private static final String END_LINE = "\",\n";
     private static final String DEVICE_ID = "Device ID";
     private static final String DEVICE = "Device";
-    private static final String IP = "IP";
     private StringBuilder indent;
 
     private void increaseIndent() {
@@ -53,9 +50,6 @@ public class JsonHandler {
         increaseIndent();
         json.append(indent.toString() + "\"" + name + "\": { \n");
         increaseIndent();
-        if (TornadoOptions.LOG_IP) {
-            json.append(indent.toString() + "\"" + IP + "\"" + ": " + "\"" + RuntimeUtilities.getTornadoInstanceIP() + END_LINE);
-        }
         TornadoVMBackendType backendType = TornadoRuntimeProvider.getTornadoRuntime().getBackend(device.getDriverIndex()).getBackendType();
         json.append(indent.toString() + "\"" + ProfilerType.BACKEND + "\" : \"" + backendType + END_LINE);
         json.append(indent.toString() + "\"" + DEVICE_ID + SEPARATOR + device.getDriverIndex() + ":" + device.getDevicePlatform() + END_LINE);

@@ -24,7 +24,6 @@ package uk.ac.manchester.tornado.drivers.opencl;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus.CL_BUILD_SUCCESS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLBuildStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
@@ -44,15 +44,14 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class OCLCodeCache {
 
-    private static final String FALSE = "False";
     private static final int SPIRV_MAGIC_NUMBER = 119734787;
     private static final String OPENCL_SOURCE_SUFFIX = ".cl";
-    private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
-    private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
-    private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
-    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
-    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
-    private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+    private final boolean OPENCL_CACHE_ENABLE = OpenCLFlags.CODE_CACHE.get();
+    private final boolean OPENCL_DUMP_BINS = OpenCLFlags.CODE_CACHE_DUMP.get();
+    private final boolean OPENCL_DUMP_SOURCE = OpenCLFlags.SOURCE_DUMP.get();
+    private final String OPENCL_CACHE_DIR = OpenCLFlags.CODE_CACHE_DIR.get();
+    private final String OPENCL_SOURCE_DIR = OpenCLFlags.SOURCE_DIR.get();
+    private final String OPENCL_LOG_DIR = OpenCLFlags.LOG_DIR.get();
 
     private final ConcurrentHashMap<String, OCLInstalledCode> cache;
     private final OCLDeviceContextInterface deviceContext;

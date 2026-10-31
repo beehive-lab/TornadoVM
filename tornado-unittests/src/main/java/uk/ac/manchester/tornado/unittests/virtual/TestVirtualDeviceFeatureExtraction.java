@@ -35,6 +35,7 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.options.ProfilerFlags;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -42,7 +43,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- * tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.printKernel=True -Dtornado.virtual.device=True
+ * tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-CPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
  * -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction
  * </code>
  */
@@ -53,7 +54,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     private static final byte CARRIAGE_RETURN = 0xD;
     private static final byte WHITESPACE = 0x20;
 
-    private static final String FEATURE_DUMP_DIR = System.getProperty("tornado.features.dump.dir");
+    private static final String FEATURE_DUMP_DIR = ProfilerFlags.FEATURES_DUMP_DIR.find().orElse(null);
     private static final int SIZE = 8192;
 
     private static void maxReduction(float[] input, @Reduce float[] result) {

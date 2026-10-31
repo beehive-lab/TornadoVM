@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 import uk.ac.manchester.tornado.runtime.common.JavaKind;
 
 import uk.ac.manchester.tornado.api.common.Event;
@@ -921,10 +922,10 @@ public class CUDACommandQueue extends CommandQueue {
     private boolean capturing = false;
 
     /**
-     * With {@code tornado.cuda.graph.asyncLaunch}, a graph that copies nothing back to the host is
+     * With {@code tornado.cuda.graph.async.launch}, a graph that copies nothing back to the host is
      * launched without waiting for it, so the next launch on the stream overlaps its execution.
      */
-    private static final boolean ASYNC_GRAPH_LAUNCH = Boolean.getBoolean("tornado.cuda.graph.asyncLaunch");
+    private static final boolean ASYNC_GRAPH_LAUNCH = CudaFlags.GRAPH_ASYNC_LAUNCH.get();
 
     /** Streams whose capture in progress has recorded a device-to-host copy. */
     private static final Set<Long> HOST_COPY_CAPTURES = ConcurrentHashMap.newKeySet();
@@ -997,7 +998,7 @@ public class CUDACommandQueue extends CommandQueue {
      * Launches a previously instantiated graph on this queue's stream and
      * blocks until completion so that captured device-to-host copies are
      * visible to the host once this call returns. With
-     * {@code tornado.cuda.graph.asyncLaunch}, a graph that copies nothing to
+     * {@code tornado.cuda.graph.async.launch}, a graph that copies nothing to
      * the host returns as soon as it is launched.
      */
     public void launchGraph(long graphExecHandle) {

@@ -20,7 +20,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 
 /**
  * One Metal device as the runtime uses it: its device context and the TornadoVM memory regions on
@@ -48,7 +48,7 @@ public final class MetalDeviceBackend {
         if (initialised) {
             return;
         }
-        if (!VIRTUAL_DEVICE_ENABLED) {
+        if (!RuntimeFlags.VIRTUAL_DEVICE.get()) {
             deviceContext.getMemoryManager().allocateDeviceMemoryRegions();
         }
         initialised = true;

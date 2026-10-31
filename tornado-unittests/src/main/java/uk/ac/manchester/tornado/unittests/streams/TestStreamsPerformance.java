@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -445,7 +446,7 @@ public class TestStreamsPerformance extends TornadoTestBase {
         }
 
         long steadyNs = medianNanos(steady);
-        boolean staged = Boolean.getBoolean("tornado.staged.transfers");
+        boolean staged = CudaFlags.STAGED_TRANSFERS.get();
         double uploadMs = (firstNs - steadyNs) / 1e6;
         long totalBytes = (long) layers * layerSize * 4;
         System.out.println("==== TestStreamsPerformance (first-execution upload) ====");

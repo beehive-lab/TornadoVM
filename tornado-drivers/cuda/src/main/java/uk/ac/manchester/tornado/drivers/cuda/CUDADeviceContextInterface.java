@@ -22,9 +22,9 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
@@ -104,7 +104,7 @@ public interface CUDADeviceContextInterface extends TornadoDeviceContext {
      * Whether large one-shot H2D uploads are routed through the pinned staging ring.
      */
     default boolean isStagedTransfersEnabled() {
-        return TornadoOptions.ENABLE_STAGED_TRANSFERS;
+        return CudaFlags.STAGED_TRANSFERS.get();
     }
 
     /**

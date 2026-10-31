@@ -37,6 +37,7 @@ import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
@@ -45,13 +46,13 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * How to run?
  * </p>
  * <code>
- * tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.printKernel=True -Dtornado.virtual.device=True
+ * tornado-test -V --jvm="-Dtornado.device.desc=virtual-device-GPU.json -Dtornado.print.kernel=True -Dtornado.virtual.device=True
  * -Dtornado.print.kernel.dir=virtualKernelOut.out" uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel
  * </code>
  */
 public class TestVirtualDeviceKernel extends TornadoTestBase {
 
-    private static final String SOURCE_DIR = System.getProperty("tornado.print.kernel.dir");
+    private static final String SOURCE_DIR = DebugFlags.PRINT_KERNEL_DIR.find().orElse(null);
     private static final int SIZE = 8192;
 
     /** The source position TC appends to a kernel line, e.g. {@code  // ReduceFactory.java:182}. */

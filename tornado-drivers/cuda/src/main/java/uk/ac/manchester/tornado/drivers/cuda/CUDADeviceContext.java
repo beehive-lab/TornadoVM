@@ -21,7 +21,6 @@
 package uk.ac.manchester.tornado.drivers.cuda;
 
 import static uk.ac.manchester.tornado.drivers.cuda.CUDACommandQueue.EMPTY_EVENT;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.EVENT_WINDOW;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -37,11 +36,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
-import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAMemoryManager;
 import uk.ac.manchester.tornado.drivers.cuda.power.CUDAEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.cuda.power.CUDANvidiaPowerMetricHandler;
@@ -49,10 +48,13 @@ import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDABufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class CUDADeviceContext implements CUDADeviceContextInterface {
+
+    /** Events kept per command queue before the oldest are reused. */
+    private static final int EVENT_WINDOW = 1024;
 
     private final CUDATargetDevice device;
 
@@ -89,7 +91,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * API. Device-wide rather than per-plan: it also drives the host-pin decision in
      * {@code allocate()}, and pinning is a property of the buffer, not of the plan using it.
      */
-    private volatile boolean stagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
+    private volatile boolean stagedTransfersEnabled = CudaFlags.STAGED_TRANSFERS.get();
     /** Guards the one-time warning emitted when concurrency is requested on hardware that cannot overlap. */
     private boolean warnedUnsupportedConcurrency;
     /** Per-plan single-instance role queues (H2D / D2H) used when intra-plan concurrency is enabled. */
@@ -101,7 +103,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * COMPUTE queue would serialise every kernel, which is why kernel/kernel overlap needs a pool.
      * Configurable via {@code -Dtornado.cuda.compute.streams}; defaults to 4.
      */
-    private static final int COMPUTE_POOL_SIZE = Math.max(1, Integer.getInteger("tornado.cuda.compute.streams", 4));
+    private static final int COMPUTE_POOL_SIZE = Math.max(1, CudaFlags.COMPUTE_STREAMS.get());
     /** Per-plan COMPUTE stream pool, grown lazily up to {@link #COMPUTE_POOL_SIZE}. */
     private final Map<Long, List<CUDACommandQueue>> computePool = new ConcurrentHashMap<>();
     /** Per-plan round-robin cursor for assigning kernels to COMPUTE-pool streams. */
@@ -203,9 +205,6 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
     @Override
     public void sync(long executionPlanId) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
-        if (TornadoOptions.USE_SYNC_FLUSH) {
-            commandQueue.flush();
-        }
         // Join the plan's secondary queues (role + COMPUTE pool) into the default queue via
         // events, then host-sync ONCE: a cuStreamSynchronize per queue would serialise the
         // host against up to 7 queues per execution.
@@ -356,7 +355,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         // bytecode) to push the CURRENT profiler state to the native layer: the profiler can be
         // enabled dynamically per plan (withProfiler), and per-op timing events are only worth
         // creating while it is active.
-        CUDACommandQueue.nativeEnableTiming(TornadoOptions.isProfilerEnabled());
+        CUDACommandQueue.nativeEnableTiming(ProfilerActivation.isEnabled());
         if (enabled && deviceSupportsIntraPlanConcurrency()) {
             intraPlanConcurrencyPlans.add(executionPlanId);
         } else {
@@ -532,8 +531,8 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
 
     private void ensureStagedRing() {
         if (stagedRingPtr == 0L) {
-            stagedChunkSize = TornadoOptions.STAGED_TRANSFER_CHUNK_SIZE;
-            stagedRingDepth = Math.max(2, TornadoOptions.STAGED_TRANSFER_RING_DEPTH);
+            stagedChunkSize = CudaFlags.STAGED_CHUNK_SIZE.get();
+            stagedRingDepth = Math.max(2, CudaFlags.STAGED_RING_DEPTH.get());
             // Pinned host memory belongs to the context current at allocation time.
             context.makeCurrent(getDeviceIndex());
             stagedRingPtr = CUDACommandQueue.cuMemAllocHost(stagedChunkSize * stagedRingDepth);
@@ -581,7 +580,7 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
      * threads lifts the fill above the DMA rate so the transfer stays DMA-bound.
      */
     private void fillSlot(long dstPtr, long srcPtr, long bytes) {
-        int threads = TornadoOptions.STAGED_TRANSFER_FILL_THREADS;
+        int threads = CudaFlags.STAGED_FILL_THREADS.get();
         long minPerThread = 1 << 21;
         if (threads <= 1 || bytes < threads * minPerThread) {
             CUDACommandQueue.memcpyHostToHost(dstPtr, srcPtr, bytes);

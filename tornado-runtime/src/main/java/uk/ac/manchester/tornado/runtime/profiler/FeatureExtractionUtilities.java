@@ -30,15 +30,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
+import uk.ac.manchester.tornado.api.options.ProfilerFlags;
 
 import uk.ac.manchester.tornado.runtime.utils.JsonHandler;
 
 public final class FeatureExtractionUtilities {
 
-    private static final String FEATURES_DIRECTORY = Tornado.getProperty("tornado.features.dump.dir", "");
+    private static final String FEATURES_DIRECTORY = ProfilerFlags.FEATURES_DUMP_DIR.get();
     private static final String LOOKUP_BUFFER_ADDRESS_NAME = "kernellookupBufferAddress";
 
     private FeatureExtractionUtilities() {
@@ -46,8 +44,7 @@ public final class FeatureExtractionUtilities {
 
     /**
      * Writes the features of kernel {@code name} ({@code Class.method}) compiled for {@code deviceContext}
-     * as JSON: appended to {@code tornado.features.dump.dir} when set, else printed; and sent to
-     * {@code tornado.dump.to.ip} when set.
+     * as JSON: appended to {@code tornado.features.dump.dir} when set, else printed.
      */
     public static void emitFeatureProfileJsonFile(LinkedHashMap<ProfilerCodeFeatures, Integer> entry, String name, TornadoDeviceContext deviceContext) {
         if (name.endsWith("." + LOOKUP_BUFFER_ADDRESS_NAME)) {
@@ -64,13 +61,6 @@ public final class FeatureExtractionUtilities {
             }
         } else {
             System.out.println(json);
-        }
-        if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
-            try {
-                new TornadoVMClient().sentLogOverSocket(json);
-            } catch (IOException e) {
-                System.out.println(e);
-            }
         }
     }
 

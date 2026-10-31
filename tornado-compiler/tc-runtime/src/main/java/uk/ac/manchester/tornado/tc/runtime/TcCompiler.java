@@ -334,9 +334,6 @@ public final class TcCompiler {
      * legality once types and local-array sizes are final; ABI lowering last, after which the IR is
      * post-ABI.
      */
-    /** -Dtornado.tc.nativeHalf=false: half arithmetic through float (see the native-half step). */
-    private static final boolean NATIVE_HALF = !"false".equals(System.getProperty("tornado.tc.nativeHalf"));
-
     private static final List<Step> PIPELINE = List.of(
             new Step("inline", c -> c.module != null && c.module.functions().size() > 1, c -> Inliner.run(c.module, c.function), Verifier.Stage.PRE_ABI),
             new Step("local-collections", c -> c.module != null, c -> LocalCollections.run(c.function), Verifier.Stage.PRE_ABI),
@@ -372,8 +369,8 @@ public final class TcCompiler {
             }, Verifier.Stage.POST_ABI),
             // Half sums, differences and products in half on targets with half arithmetic (CUDA sm_53+,
             // OpenCL with cl_khr_fp16): the same bits as Java's widen-compute-round, without the
-            // conversions. -Dtornado.tc.nativeHalf=false keeps the float path.
-            new Step("native-half", c -> NATIVE_HALF && c.target.fp16() && (c.target.dialect() == TargetCaps.Dialect.CUDA || c.target.dialect() == TargetCaps.Dialect.OPENCL)
+            // conversions. -Dtornado.tc.native.half=false keeps the float path.
+            new Step("native-half", c -> c.options.nativeHalf() && c.target.fp16() && (c.target.dialect() == TargetCaps.Dialect.CUDA || c.target.dialect() == TargetCaps.Dialect.OPENCL)
                     && NativeHalfArithmetic.applies(c.function), c -> {
                 new NativeHalfArithmetic().run(c.function);
                 return List.of();
@@ -480,7 +477,7 @@ public final class TcCompiler {
             var emitted = new CEmitter.Result[1];
             stage("emit", Kind.SOURCE, () -> {
                 try {
-                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd());
+                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd(), options.signedOverflowUndefined());
                 } catch (CEmitter.EmitException e) {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }

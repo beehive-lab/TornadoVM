@@ -25,11 +25,12 @@ import java.util.Collections;
 
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.options.ProfilerFlags;
+import uk.ac.manchester.tornado.api.options.TcFlags;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
 import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
@@ -45,10 +46,10 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 public final class TcKernels {
 
     /**
-     * With {@code -Dtornado.tc.compileTimes=true} (and the profiler on), one line per compiled task:
+     * With {@code -Dtornado.tc.compile.times=true} (and the profiler on), one line per compiled task:
      * TC's time and the driver's (NVRTC, clBuildProgram, Metal library) time.
      */
-    private static final boolean REPORT_COMPILE_TIMES = Boolean.getBoolean("tornado.tc.compileTimes");
+    private static final boolean REPORT_COMPILE_TIMES = TcFlags.COMPILE_TIMES.get();
 
     /** The initial values of the {@code AtomicInteger}s a kernel creates, by kernel method. */
     public static final Map<Object, ArrayList<Integer>> ATOMICS = Collections.synchronizedMap(new HashMap<>());
@@ -85,7 +86,7 @@ public final class TcKernels {
                 (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint(), taskMeta.isWorkerGridAvailable(),
                 taskMeta.isDynamicShapes()).orElseThrow();
         profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
-        if (TornadoOptions.FEATURE_EXTRACTION && deviceContext != null) {
+        if (ProfilerFlags.FEATURE_EXTRACTION.get() && deviceContext != null) {
             emitFeatures(method, kernel.features(), deviceContext);
         }
         profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));

@@ -29,6 +29,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.LibraryFlags;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
 import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
@@ -38,7 +40,6 @@ import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class MetalMemorySegmentWrapper implements XPUBuffer {
@@ -90,7 +91,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
     }
 
     /** -Dtornado.mlx.async=true: library calls only encode GPU work and never read buffers on the CPU. */
-    private static final boolean ASYNC_LIBRARY_DISPATCH = Boolean.getBoolean("tornado.mlx.async");
+    private static final boolean ASYNC_LIBRARY_DISPATCH = LibraryFlags.MLX_ASYNC.get();
 
     /**
      * CPU address of the first element. Metal buffers use shared storage, so this is the
@@ -211,7 +212,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("allocated: %s", toString());
         }
     }
@@ -226,7 +227,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("deallocated: %s", toString());
         }
     }

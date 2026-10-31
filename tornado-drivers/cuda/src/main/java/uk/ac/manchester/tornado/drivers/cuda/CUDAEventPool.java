@@ -23,7 +23,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CIRCULAR_EVENTS;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +31,6 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * Class which holds mapping between CUDADriver events and TornadoVM runtime events,
@@ -48,6 +46,9 @@ import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
  * </p>
  */
 public class CUDAEventPool {
+
+    /** Most events a single wait passes to the driver. */
+    private static final int MAX_WAIT_EVENTS = 64;
 
     public final long[] waitEventsBuffer;
     private final long[] events;
@@ -67,7 +68,7 @@ public class CUDAEventPool {
         this.descriptors = new EventDescriptor[eventPoolSize];
         this.eventQueues = new CUDACommandQueue[eventPoolSize];
         this.eventIndex = 0;
-        this.waitEventsBuffer = new long[TornadoOptions.MAX_WAIT_EVENTS];
+        this.waitEventsBuffer = new long[MAX_WAIT_EVENTS];
         this.internalEvent = new CUDAEvent();
         this.logger = new TornadoLogger(this.getClass());
     }
@@ -106,7 +107,7 @@ public class CUDAEventPool {
     private void findNextEventSlot() {
         eventIndex = retain.nextClearBit(eventIndex + 1);
 
-        if (CIRCULAR_EVENTS && (eventIndex >= events.length)) {
+        if (eventIndex >= events.length) {
             eventIndex = 0;
         }
 

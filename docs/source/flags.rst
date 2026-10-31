@@ -484,7 +484,7 @@ For TornadoVM developers. They may change or disappear without a deprecation per
      - Emit int and long arithmetic as plain C, where signed overflow is undefined: faster where the driver compiler exploits it, wrong where Java code relies on wrapping. Formerly ``-Dtornado.tc.signedOverflowUndefined``.
    * - ``-Dtornado.nccl.spin.wait.micros``
      - ``1000``
-     - Microseconds an NCCL plan-group thread spins before it blocks while waiting for work. Formerly ``-Dtornado.nccl.spinWaitMicros``.
+     - Microseconds NCCL rank threads and the caller spin before parking; 0 parks at once. Formerly ``-Dtornado.nccl.spinWaitMicros``.
 
 Removed options
 ~~~~~~~~~~~~~~~
@@ -505,6 +505,8 @@ Setting one of these prints a warning and has no effect.
      - TornadoVM always behaves as with its default (false).
    * - ``-Dtornado.debug.executionTime``
      - It had no effect. Use tornado.profiler.
+   * - ``-Dtornado.driver``
+     - It had no effect. Use tornado.backend.
    * - ``-Dtornado.dump.to.ip``
      - Sending profiler logs over a socket was removed. Use tornado.profiler.dump.dir.
    * - ``-Dtornado.enable.fastMathOptimizations``

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import uk.ac.manchester.tornado.api.options.MetalFlags;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
@@ -566,18 +567,18 @@ public final class MetalObjects {
      * order they were encoded, so the kernels of a task graph still run one after another. The CPU
      * waits only where it needs a result: a host read or write of a buffer that a pending command
      * buffer binds (see {@link #awaitBuffer}), a wait on an event, {@link #finish} and blits. Set
-     * {@code -Dtornado.metal.dispatch.batch=False} to commit and wait for every kernel.
+     * {@code -Dtornado.metal.dispatch.batch=false} to commit and wait for every kernel.
      */
-    private static final boolean BATCH = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.batch", "True"));
+    private static final boolean BATCH = MetalFlags.DISPATCH_BATCH.get();
 
     /**
      * Kernels per command buffer before it is committed. Small batches keep the GPU working while the
      * CPU encodes the next kernels; large ones leave it idle until a whole batch is encoded. Measured
      * on an M4 Pro, Qwen3-0.6B decode (tg64, tok/s, F16 / Q8_0) at batch sizes 1, 2, 4, 8 and 32:
      * 58 / 60, 64 / 64, 57 / 58, 50 / 48 and 41 / 43, against 19 / 18 committing and waiting for
-     * every kernel ({@code -Dtornado.metal.dispatch.batchSize=N} to change it).
+     * every kernel ({@code -Dtornado.metal.dispatch.batch.size=N} to change it).
      */
-    private static final int BATCH_SIZE = Math.max(1, Integer.getInteger("tornado.metal.dispatch.batchSize", 2));
+    private static final int BATCH_SIZE = Math.max(1, MetalFlags.DISPATCH_BATCH_SIZE.get());
 
     /** Whether kernels are batched into shared command buffers rather than waited for one by one. */
     public static boolean batchesDispatches() {
@@ -770,9 +771,9 @@ public final class MetalObjects {
      * work, while completion of the command buffer reaches the CPU some 60-90 us later on Apple
      * silicon, so this takes that delay off every wait. A queue whose last wait took longer than
      * {@link #SPIN_BUDGET_NS} blocks right away on the next one (see {@link QueueEvent#block}). Set
-     * {@code -Dtornado.metal.dispatch.spinWait=False} to wait with {@code waitUntilCompleted}.
+     * {@code -Dtornado.metal.dispatch.spin.wait=false} to wait with {@code waitUntilCompleted}.
      */
-    private static final boolean SPIN_WAIT = Boolean.parseBoolean(System.getProperty("tornado.metal.dispatch.spinWait", "True"));
+    private static final boolean SPIN_WAIT = MetalFlags.DISPATCH_SPIN_WAIT.get();
 
     /** Command buffer status and the spin budget are checked every this many polls. */
     private static final int STATUS_POLL_INTERVAL = 64;

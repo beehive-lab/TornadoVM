@@ -20,11 +20,11 @@
  */
 package uk.ac.manchester.tornado.runtime.tasks.meta;
 
-import static java.lang.Integer.parseInt;
 import static uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.resolveDevice;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -33,12 +33,16 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.MetalFlags;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
+import uk.ac.manchester.tornado.api.options.TaskFlags;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
 import uk.ac.manchester.tornado.runtime.TornadoAcceleratorBackend;
 import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
-import uk.ac.manchester.tornado.runtime.common.Tornado;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.CompilerFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.tasks.meta.MetaDataUtils.BackendSelectionContainer;
 
@@ -106,56 +110,47 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     AbstractRTContext(String id, AbstractRTContext parent) {
         this.id = id;
 
-        isDeviceDefined = getProperty(id + ".device") != null;
+        Optional<String> device = TaskFlags.DEVICE.lookup(id);
+        isDeviceDefined = device.isPresent();
         if (isDeviceDefined) {
-            BackendSelectionContainer backendSelection = MetaDataUtils.resolveDriverDeviceIndexes(getProperty(id + ".device"));
+            BackendSelectionContainer backendSelection = MetaDataUtils.resolveDriverDeviceIndexes(device.get());
             backendIndex = backendSelection.backendIndex();
             deviceIndex = backendSelection.deviceIndex();
         } else if (null != parent) {
             backendIndex = parent.getBackendIndex();
             deviceIndex = parent.getDeviceIndex();
         } else {
-            backendIndex = TornadoOptions.DEFAULT_BACKEND_INDEX;
-            deviceIndex = TornadoOptions.DEFAULT_DEVICE_INDEX;
+            backendIndex = RuntimeFlags.BACKEND_INDEX.get();
+            deviceIndex = RuntimeFlags.DEVICE_INDEX.get();
         }
 
-        threadInfoEnabled = TornadoOptions.THREAD_INFO;
-        printKernel = TornadoOptions.PRINT_KERNEL_SOURCE;
+        threadInfoEnabled = DebugFlags.THREAD_INFO.get();
+        printKernel = DebugFlags.PRINT_KERNEL.get();
 
         compilerOptionsPerBackend = new ConcurrentHashMap<>();
-        compilerOptionsPerBackend.put(TornadoVMBackendType.METAL, TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS);
-        compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS);
-        compilerOptionsPerBackend.put(TornadoVMBackendType.CUDA, TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS);
+        compilerOptionsPerBackend.put(TornadoVMBackendType.METAL, MetalFlags.COMPILER_FLAGS.get());
+        compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, OpenCLFlags.COMPILER_FLAGS.get());
+        compilerOptionsPerBackend.put(TornadoVMBackendType.CUDA, CompilerFlags.cudaDefaults());
 
         // Thread Configurations
-        openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));
-        isOpenclGpuBlockXDefined = getProperty(id + ".opencl.gpu.block.x") != null;
+        openclGpuBlockX = TaskFlags.OPENCL_GPU_BLOCK_X.forTask(id);
+        isOpenclGpuBlockXDefined = TaskFlags.OPENCL_GPU_BLOCK_X.isSetFor(id);
 
-        openclGpuBlock2DX = parseInt(getDefault("opencl.gpu.block2d.x", id, "4"));
-        isOpenclGpuBlock2DXDefined = getProperty(id + ".opencl.gpu.block2d.x") != null;
+        openclGpuBlock2DX = TaskFlags.OPENCL_GPU_BLOCK_2D_X.forTask(id);
+        isOpenclGpuBlock2DXDefined = TaskFlags.OPENCL_GPU_BLOCK_2D_X.isSetFor(id);
 
-        openclGpuBlock2DY = parseInt(getDefault("opencl.gpu.block2d.y", id, "4"));
-        isOpenclGpuBlock2DYDefined = getProperty(id + ".opencl.gpu.block2d.y") != null;
+        openclGpuBlock2DY = TaskFlags.OPENCL_GPU_BLOCK_2D_Y.forTask(id);
+        isOpenclGpuBlock2DYDefined = TaskFlags.OPENCL_GPU_BLOCK_2D_Y.isSetFor(id);
 
         // Metal thread configuration
         // Metal Threadgroup Configurations
-        metalThreadsPerThreadgroupX = parseInt(getDefault("metal.threads.per.threadgroup.x", id, "1"));
-        metalThreadsPerThreadgroupY = parseInt(getDefault("metal.threads.per.threadgroup.y", id, "1"));
-        metalThreadsPerThreadgroupZ = parseInt(getDefault("metal.threads.per.threadgroup.z", id, "1"));
+        metalThreadsPerThreadgroupX = TaskFlags.METAL_THREADS_PER_THREADGROUP_X.forTask(id);
+        metalThreadsPerThreadgroupY = TaskFlags.METAL_THREADS_PER_THREADGROUP_Y.forTask(id);
+        metalThreadsPerThreadgroupZ = TaskFlags.METAL_THREADS_PER_THREADGROUP_Z.forTask(id);
 
-        isMetalThreadgroupSizeDefined =
-                getProperty(id + ".metal.threads.per.threadgroup.x") != null ||
-                        getProperty(id + ".metal.threads.per.threadgroup.y") != null ||
-                        getProperty(id + ".metal.threads.per.threadgroup.z") != null;
-    }
-
-    private static String getProperty(String key) {
-        return System.getProperty(key);
-    }
-
-    protected static String getDefault(String keySuffix, String id, String defaultValue) {
-        String propertyValue = getProperty(id + "." + keySuffix);
-        return (propertyValue != null) ? propertyValue : Tornado.getProperty("tornado" + "." + keySuffix, defaultValue);
+        isMetalThreadgroupSizeDefined = TaskFlags.METAL_THREADS_PER_THREADGROUP_X.isSetFor(id) //
+                || TaskFlags.METAL_THREADS_PER_THREADGROUP_Y.isSetFor(id) //
+                || TaskFlags.METAL_THREADS_PER_THREADGROUP_Z.isSetFor(id);
     }
 
     /** Whether {@link #getXPUDevice()} has resolved the device, which creates its backend. */
@@ -165,7 +160,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
 
     public TornadoXPUDevice getXPUDevice() {
         if (device == null) {
-            device = resolveDevice(Tornado.getProperty(id + ".device", backendIndex + ":" + deviceIndex));
+            device = resolveDevice(TaskFlags.DEVICE.lookup(id).orElse(backendIndex + ":" + deviceIndex));
         }
         return device;
     }
@@ -233,7 +228,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
     }
 
     public boolean isDebug() {
-        return TornadoOptions.DEBUG;
+        return DebugFlags.DEBUG.get();
     }
 
     @Override

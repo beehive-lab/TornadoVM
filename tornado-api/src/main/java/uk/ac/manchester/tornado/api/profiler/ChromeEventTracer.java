@@ -19,14 +19,9 @@ package uk.ac.manchester.tornado.api.profiler;
 
 import java.io.File;
 import java.util.Map;
+import uk.ac.manchester.tornado.api.options.ProfilerFlags;
 
 public class ChromeEventTracer {
-    /**
-     * The filename for ChromeEventTracer to write json file.
-     */
-    public static final String CHROME_EVENT_TRACER_FILENAME_KEY = "tornado.chrome.event.tracer.filename";
-    public static final String CHROME_EVENT_TRACER_FILENAME = System.getProperties().getProperty(CHROME_EVENT_TRACER_FILENAME_KEY, "chrome.json");
-    public static final String CHROME_EVENT_TRACER_ENABLED_KEY = "tornado.chrome.event.tracer.enabled";
     public static final ChromeEventJSonWriter json = new ChromeEventJSonWriter();
 
     static {
@@ -40,7 +35,7 @@ public class ChromeEventTracer {
     }
 
     public static String getChromeEventTracerFileName() {
-        return System.getProperties().getProperty(CHROME_EVENT_TRACER_FILENAME_KEY, "chrome.json");
+        return ProfilerFlags.CHROME_EVENT_TRACER_FILE.get();
     }
 
     /**
@@ -50,7 +45,7 @@ public class ChromeEventTracer {
      * @return boolean.
      */
     public static boolean isChromeEventTracerEnabled() {
-        return Boolean.getBoolean(CHROME_EVENT_TRACER_ENABLED_KEY);
+        return ProfilerFlags.CHROME_EVENT_TRACER.get();
     }
 
     public static ChromeEventTracer create() {

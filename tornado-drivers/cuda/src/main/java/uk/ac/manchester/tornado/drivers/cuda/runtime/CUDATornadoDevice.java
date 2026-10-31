@@ -47,10 +47,13 @@ import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
+import uk.ac.manchester.tornado.api.options.TaskFlags;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.cuda.CUDABackendImpl;
 import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
 import uk.ac.manchester.tornado.drivers.common.tc.TcTargetDevice;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADevice;
@@ -78,7 +81,6 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
@@ -162,8 +164,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     private void disableProfilerOptions() {
-        TornadoOptions.TORNADO_PROFILER_LOG = false;
-        TornadoOptions.TORNADO_PROFILER = false;
+        ProfilerActivation.disableForPlan();
     }
 
     @Override
@@ -189,7 +190,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
             case CL_DEVICE_TYPE_CPU -> {
-                if (TornadoOptions.USE_BLOCK_SCHEDULER) {
+                if (TaskFlags.BLOCK_SCHEDULER.get()) {
                     return TornadoSchedulingStrategy.PER_CPU_BLOCK;
                 } else {
                     return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
@@ -523,7 +524,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             return deallocatedSpace;
         }
         deviceBufferState.getXPUBuffer().markAsFreeBuffer();
-        if (TornadoOptions.isDeallocateBufferEnabled()) {
+        if (RuntimeFlags.DEALLOCATE_BUFFERS.get()) {
             deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
         }
         deviceBufferState.setContents(false);
@@ -562,7 +563,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
      * non-null, so the profiler does not change the ordering of the read.
      */
     private static boolean returnCopyOutEvent(int[] events) {
-        return events != null || TornadoOptions.isProfilerEnabled();
+        return events != null || ProfilerActivation.isEnabled();
     }
 
     @Override

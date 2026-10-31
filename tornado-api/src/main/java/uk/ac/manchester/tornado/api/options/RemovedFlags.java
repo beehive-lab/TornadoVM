@@ -28,10 +28,10 @@ public final class RemovedFlags {
     private static final String NO_EFFECT = "It had no effect.";
     private static final String FIXED = "TornadoVM always behaves as with its default";
 
-    public static final List<RemovedOption> ALL = List.of( //
-            new RemovedOption("tornado.logger.codegen", NO_EFFECT), //
+    public static final List<RemovedOption> ALL = List.of(new RemovedOption("tornado.logger.codegen", NO_EFFECT), //
             new RemovedOption("tornado.logger.buildlir", NO_EFFECT), //
             new RemovedOption("tornado.platform", NO_EFFECT + " Use tornado.backend."), //
+            new RemovedOption("tornado.driver", NO_EFFECT + " Use tornado.backend."), //
             new RemovedOption("tornado.opencl.print", NO_EFFECT + " Use tornado.print.kernel."), //
             new RemovedOption("tornado.events.log", NO_EFFECT), //
             new RemovedOption("tornado.vectors.enable", NO_EFFECT), //
