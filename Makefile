@@ -135,9 +135,15 @@ test-slam:
 docs:
 	sphinx-build -M html docs/source/ docs/build
 
+# Regenerate the JVM flag tables of docs/source/flags.rst from the flag declarations in tornado-api
+# (uk.ac.manchester.tornado.api.options). The tornado-api unit tests fail when the page is out of date.
+flags-doc:
+	./mvnw -q -P$(JDK_PROFILE) -pl tornado-api compile
+	"$${JAVA_HOME}/bin/java" --enable-preview -cp tornado-api/target/classes uk.ac.manchester.tornado.api.options.OptionsDocTool --rst-update docs/source/flags.rst
+
 # Generate IntelliJ IDEA project files (developer-only)
 # Prerequisites: build TornadoVM first and source setvars.sh
 intellijinit:
 	bin/tornadovm-intellij-init
 
-.PHONY: docs intellijinit
+.PHONY: docs flags-doc intellijinit

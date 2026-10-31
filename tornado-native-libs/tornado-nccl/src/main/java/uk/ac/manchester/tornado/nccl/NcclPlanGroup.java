@@ -29,6 +29,7 @@ import java.util.concurrent.locks.LockSupport;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.TornadoExecutionResult;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.LibraryFlags;
 
 /**
  * Executes the plans of the ranks of an NCCL communicator together. A collective completes only
@@ -50,7 +51,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  * thread pools and futures, every step paid two thread wake-ups in a row (rank threads waking for
  * the step, then the caller waking for the result) and the ranks started the collective at
  * different times; on a two-socket host that doubled the time of a 4 MiB exchange. The spin is
- * bounded by {@code -Dtornado.nccl.spinWaitMicros} (default 1000; 0 parks straight away), so a
+ * bounded by {@code -Dtornado.nccl.spin.wait.micros} (default 1000; 0 parks straight away), so a
  * thread that has nothing to do parks after that long instead of holding a core.
  * </p>
  *
@@ -73,7 +74,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  */
 public final class NcclPlanGroup implements AutoCloseable {
 
-    private static final long SPIN_WAIT_NANOS = Long.getLong("tornado.nccl.spinWaitMicros", 1000L) * 1000L;
+    private static final long SPIN_WAIT_NANOS = LibraryFlags.NCCL_SPIN_WAIT_MICROS.get() * 1000L;
 
     /** How often the caller re-aborts, after a rank failed, while other ranks have not returned yet. */
     private static final long ABORT_POLL_NANOS = 1_000_000L;

@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
+import uk.ac.manchester.tornado.api.options.TcFlags;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -41,7 +42,6 @@ import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.ErrorCodes;
 import uk.ac.manchester.tornado.tc.ir.Loc;
-import uk.ac.manchester.tornado.tc.ir.analysis.KernelFeatures;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
@@ -54,18 +54,20 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * and records statistics. A kernel TC cannot compile raises the TornadoVM exception for the
  * diagnostic's category.
  *
- * <p>Options: {@code tornado.tc.verbose=true} (one line per kernel), {@code tornado.tc.stats=true}
- * (summary at exit), {@code tornado.tc.memoize=false} (compile every task, even when an earlier one
- * had the same method and facts), {@code tornado.tc.varyingScalars=N} (see {@link #VARYING_SCALARS}),
- * {@code tornado.tc.dynamicShapes=true} (see {@link #DYNAMIC_SHAPES}) and the {@code tornado.tc.*} dump
- * options of {@link TcOptions}.</p>
+ * <p>Options: the {@code tornado.tc.*} flags of {@link TcFlags}, read once and passed to TC as
+ * {@link TcOptions}.</p>
  */
 public final class TcHook {
 
-    private static final boolean VERBOSE = Boolean.getBoolean("tornado.tc.verbose");
-    private static final boolean STATS = Boolean.getBoolean("tornado.tc.stats");
+    private static final boolean VERBOSE = TcFlags.VERBOSE.get();
+    private static final boolean STATS = TcFlags.STATS.get();
 
-    private static final boolean MEMOIZE = Boolean.parseBoolean(System.getProperty("tornado.tc.memoize", "true"));
+    private static final boolean MEMOIZE = TcFlags.MEMOIZE.get();
+
+    /** The compilation options the flags configure, before a task's own (its id, strict floating point). */
+    private static final TcOptions CONFIGURED = new TcOptions(TcOptions.dumpStages(TcFlags.DUMP.get()), Path.of(TcFlags.DUMP_DIR.get()), //
+            "each".equals(TcFlags.VERIFY.get()), Optional.of(TcFlags.ONLY.get()).filter(only -> !only.isEmpty()), "html".equals(TcFlags.REPORT.get()), //
+            TcFlags.MATH_OPTIMIZATIONS.get(), "?", TcFlags.ENABLE_FMA.get(), TcFlags.NATIVE_HALF.get(), TcFlags.SIGNED_OVERFLOW_UNDEFINED.get());
 
     /**
      * A scalar argument that has taken this many different values across the tasks of one kernel
@@ -74,7 +76,7 @@ public final class TcHook {
      * it, each layer's attention was a kernel of its own. Values a kernel needs as constants (a
      * local array's size) keep it specialised: the generic compilation is refused and not retried.
      */
-    private static final int VARYING_SCALARS = Integer.getInteger("tornado.tc.varyingScalars", 3);
+    private static final int VARYING_SCALARS = TcFlags.VARYING_SCALARS.get();
 
     /**
      * Dynamic shapes, for tasks of a plan with {@code withDynamicShapes()}, or every task when this
@@ -85,7 +87,7 @@ public final class TcHook {
      * whether the kernel, its callees inlined, reads any array length. Off by default: shared code can
      * be slower than code specialised on one size.
      */
-    private static final boolean DYNAMIC_SHAPES = Boolean.getBoolean("tornado.tc.dynamicShapes");
+    private static final boolean DYNAMIC_SHAPES = TcFlags.DYNAMIC_SHAPES.get();
 
     private static final AtomicInteger COMPILED = new AtomicInteger();
     private static final AtomicInteger REUSED = new AtomicInteger();
@@ -233,7 +235,7 @@ public final class TcHook {
 
     /** What a compilation leaves for later tasks (not its stages). */
     private record Compiled(String source, String entryName, long nanos, List<uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics,
-            KernelFeatures features, String task, boolean taskInSource, boolean readsLengths) {
+            String task, boolean taskInSource, boolean readsLengths) {
     }
 
     /** Most recent compilations; a model's layers share one entry per kernel. */
@@ -256,7 +258,7 @@ public final class TcHook {
      * without the array lengths (see dynamic shapes (see {@link #DYNAMIC_SHAPES})) or with scalars as runtime values. Such
      * code can need more registers than the task's own specialisation; see {@link #compileSpecialised}.
      */
-    public record Kernel(byte[] source, String entryName, Optional<DomainTree> domain, long nanos, AtomicSlots.Info atomics, KernelFeatures features, boolean generic) {
+    public record Kernel(byte[] source, String entryName, Optional<DomainTree> domain, long nanos, AtomicSlots.Info atomics, boolean generic) {
     }
 
     private TcHook() {
@@ -307,7 +309,7 @@ public final class TcHook {
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
-        var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
+        var options = CONFIGURED.withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
         var key = new Key(method, target, options.withTask("?"), List.copyOf(facts));
         boolean shared = (DYNAMIC_SHAPES || dynamicShapes) && MEMOIZE && !SPECIALISED.contains(new MethodKey(method, target, options.withTask("?")))
                 && !readsLengths(name, owner, loader, descriptor, options, key, taskId);
@@ -363,7 +365,7 @@ public final class TcHook {
         var owner = method.getDeclaringClass();
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
-        var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
+        var options = CONFIGURED.withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
         var result = compileOrReuse(name, owner, loader, descriptor, options, new Key(method, target, options.withTask("?"), List.copyOf(facts)), taskId);
         return result.isEmpty() ? Optional.empty() : kernel(name, result.get(), facts, numThreads, false);
     }
@@ -397,7 +399,7 @@ public final class TcHook {
             return Optional.empty();
         }
         var withBound = source.substring(0, at) + "__global__ void __launch_bounds__(" + maxThreads + ", 1) " + kernel.entryName() + "(" + source.substring(at + entry.length());
-        return Optional.of(new Kernel(withBound.getBytes(StandardCharsets.UTF_8), kernel.entryName(), kernel.domain(), kernel.nanos(), kernel.atomics(), kernel.features(), true));
+        return Optional.of(new Kernel(withBound.getBytes(StandardCharsets.UTF_8), kernel.entryName(), kernel.domain(), kernel.nanos(), kernel.atomics(), true));
     }
 
     /**
@@ -422,7 +424,7 @@ public final class TcHook {
             }
         }
         if (specialise) {
-            SPECIALISED.add(new MethodKey(method, target, TcOptions.fromSystemProperties().withTask("?").withStrictFloatingPoint(strictFloatingPoint)));
+            SPECIALISED.add(new MethodKey(method, target, CONFIGURED.withTask("?").withStrictFloatingPoint(strictFloatingPoint)));
             if (VERBOSE) {
                 System.out.printf("[TC] %s: shared code needs more registers than its specialisation; specialised from now on%n", method.getDeclaringClass().getSimpleName() + "." + method.getName());
             }
@@ -544,7 +546,7 @@ public final class TcHook {
             System.out.printf("[TC] compiled %s in %.2f ms%n", name, c.nanos() / 1e6);
         }
         boolean taskInSource = c.source().contains(uk.ac.manchester.tornado.tc.codegen.CEmitter.DEVICE_LAUNCH_LABEL);
-        return Optional.of(new Compiled(c.source(), c.entryName(), c.nanos(), c.domain(), c.atomics(), c.features(), options.task(), taskInSource, c.readsLengths()));
+        return Optional.of(new Compiled(c.source(), c.entryName(), c.nanos(), c.domain(), c.atomics(), options.task(), taskInSource, c.readsLengths()));
     }
 
     /** The kernel for one task: the launch domain depends on the task's thread count, not only on the code. */
@@ -566,7 +568,7 @@ public final class TcHook {
             }
             domain = Optional.of(tree);
         }
-        return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos(), c.atomics(), c.features(), generic));
+        return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos(), c.atomics(), generic));
     }
 
     /** -Dtornado.tc.report=html: every stage of one compilation, refused ones included, in one page. */

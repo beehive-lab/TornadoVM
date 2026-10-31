@@ -25,6 +25,7 @@ import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.TornadoSetting;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
 import uk.ac.manchester.tornado.api.exceptions.TornadoAPIException;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 
 /**
  * Loads the runtime that implements the API. The {@code tornado.load.*} properties name the classes;
@@ -36,7 +37,7 @@ public class TornadoAPIProvider {
     public static TornadoTaskGraphInterface loadScheduleRuntime(String name) {
         TornadoTaskGraphInterface taskGraphImpl;
         try {
-            String tornadoAPIImplementation = System.getProperty("tornado.load.api.implementation", "uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph");
+            String tornadoAPIImplementation = RuntimeFlags.API_IMPLEMENTATION.get();
             Class<?> klass = Class.forName(tornadoAPIImplementation);
             Constructor<?> constructor = klass.getConstructor(String.class);
             taskGraphImpl = (TornadoTaskGraphInterface) constructor.newInstance(name);
@@ -49,7 +50,7 @@ public class TornadoAPIProvider {
     public static TornadoRuntime loadTornadoRuntimeImpl() {
         TornadoRuntime runtime;
         try {
-            String tornadoRuntimeImplementation = System.getProperty("tornado.load.runtime.implementation", "uk.ac.manchester.tornado.runtime.TornadoCoreRuntime");
+            String tornadoRuntimeImplementation = RuntimeFlags.RUNTIME_IMPLEMENTATION.get();
             Class<?> klass = Class.forName(tornadoRuntimeImplementation);
             Method method = klass.getDeclaredMethod("getTornadoRuntime");
             runtime = (TornadoRuntime) method.invoke(null);
@@ -62,7 +63,7 @@ public class TornadoAPIProvider {
     public static TornadoSetting loadTornadoImpl() {
         TornadoSetting tornado;
         try {
-            String tornadoImplementation = System.getProperty("tornado.load.tornado.implementation", "uk.ac.manchester.tornado.runtime.common.Tornado");
+            String tornadoImplementation = RuntimeFlags.SETTINGS_IMPLEMENTATION.get();
             Class<?> klass = Class.forName(tornadoImplementation);
             Constructor<?> constructor = klass.getConstructor();
             tornado = (TornadoSetting) constructor.newInstance();

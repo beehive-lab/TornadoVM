@@ -20,77 +20,44 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.nio.file.Path;
 
 import uk.ac.manchester.tornado.api.TornadoSetting;
+import uk.ac.manchester.tornado.api.options.OptionResolver;
+import uk.ac.manchester.tornado.api.options.PropertiesFileSource;
 
+/**
+ * Access to TornadoVM's configuration through {@link uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider}. Reads
+ * the way every option is read, through {@link OptionResolver#global()}: {@code -D} system properties first, then
+ * {@code $TORNADOVM_HOME/etc/tornado.properties}.
+ */
 public final class Tornado implements TornadoSetting {
-
-    private static final String TORNADOVM_HOME_VARIABLE = "TORNADOVM_HOME";
-
-    private static final Properties settings = System.getProperties();
-
-    static {
-        tryLoadSettings();
-    }
-
-    private static void setProperty(String key, String value) {
-        settings.setProperty(key, value);
-    }
-
-    public static String getProperty(String key) {
-        return settings.getProperty(key);
-    }
-
-    public static String getProperty(String key, String defaultValue) {
-        return settings.getProperty(key, defaultValue);
-    }
-
-    private static void loadSettings(String filename) {
-        final File localSettings = new File(filename);
-        Properties loadProperties = new Properties();
-        if (localSettings.exists()) {
-            try (FileInputStream fileInputStream = new FileInputStream(localSettings)) {
-                loadProperties.load(fileInputStream);
-            } catch (IOException e) {
-                new TornadoLogger().warn("Unable to load settings from %s", localSettings.getAbsolutePath());
-            }
-        }
-        Set<String> localKeys = loadProperties.stringPropertyNames();
-        Set<String> systemKeys = settings.stringPropertyNames();
-        Set<String> diff = new HashSet<>(localKeys);
-        diff.removeAll(systemKeys);
-        diff.forEach(key -> settings.setProperty(key, loadProperties.getProperty(key)));
-    }
-
-    private static void tryLoadSettings() {
-        final String tornadoRoot = System.getenv(TORNADOVM_HOME_VARIABLE);
-        loadSettings(tornadoRoot + "/etc/tornado.properties");
-    }
 
     @Override
     public void setTornadoProperty(String key, String value) {
-        Tornado.setProperty(key, value);
+        System.setProperty(key, value);
     }
 
     @Override
     public String getTornadoProperty(String key) {
-        return Tornado.getProperty(key);
+        return OptionResolver.global().source().lookup(key).orElse(null);
     }
 
     @Override
     public String getTornadoProperty(String key, String defaultValue) {
-        return Tornado.getProperty(key, defaultValue);
+        return OptionResolver.global().source().lookup(key).orElse(defaultValue);
     }
 
+    /**
+     * Adds the properties of a file that are not already set, as if they had been given with {@code -D}.
+     */
     @Override
     public void loadTornadoProperty(String filename) {
-        loadSettings(filename);
+        PropertiesFileSource file = PropertiesFileSource.load(Path.of(filename), OptionResolver::warn);
+        for (String key : file.keys()) {
+            if (System.getProperty(key) == null) {
+                file.lookup(key).ifPresent(value -> System.setProperty(key, value));
+            }
+        }
     }
-
 }

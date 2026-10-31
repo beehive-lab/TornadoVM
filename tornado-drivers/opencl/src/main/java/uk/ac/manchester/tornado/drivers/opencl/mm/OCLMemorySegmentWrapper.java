@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
 import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
@@ -36,7 +37,6 @@ import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class OCLMemorySegmentWrapper implements XPUBuffer {
@@ -192,7 +192,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("allocated: %s", toString());
         }
     }
@@ -207,7 +207,7 @@ public class OCLMemorySegmentWrapper implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("deallocated: %s", toString());
         }
     }

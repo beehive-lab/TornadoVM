@@ -17,7 +17,9 @@
  */
 package uk.ac.manchester.tornado.nccl.tests;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
@@ -57,7 +59,7 @@ import uk.ac.manchester.tornado.nccl.provider.NcclNativeLib;
  * How to run?
  * </p>
  * <code>
- * tornado [--jvm="-Dtornado.nccl.benchmark.cudaGraph=true"] -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclAllReduce [elements,elements,...] [iterations]
+ * tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.BenchmarkNcclAllReduce [--cuda-graph] [elements,elements,...] [iterations]
  * </code>
  */
 public class BenchmarkNcclAllReduce {
@@ -65,11 +67,13 @@ public class BenchmarkNcclAllReduce {
     private static final int WARMUP_ITERATIONS = 5;
     private static final int LOCAL_SIZE = 256;
 
-    /** With {@code -Dtornado.nccl.benchmark.cudaGraph=true}, every plan is captured into a CUDA graph and replayed. */
-    private static final boolean CUDA_GRAPH = Boolean.getBoolean("tornado.nccl.benchmark.cudaGraph");
+    private static final String CUDA_GRAPH_ARGUMENT = "--cuda-graph";
+
+    /** With {@code --cuda-graph}, every plan is captured into a CUDA graph and replayed. */
+    private static boolean cudaGraph;
 
     private static TornadoExecutionPlan graphIfRequested(TornadoExecutionPlan plan) {
-        if (CUDA_GRAPH) {
+        if (cudaGraph) {
             plan.withCUDAGraph();
         }
         return plan;
@@ -241,8 +245,10 @@ public class BenchmarkNcclAllReduce {
     }
 
     public static void main(String[] args) {
-        int[] sizes = Arrays.stream((args.length > 0 ? args[0] : "1024,65536,1048576,16777216,67108864").split(",")).mapToInt(Integer::parseInt).toArray();
-        int iterations = args.length > 1 ? Integer.parseInt(args[1]) : 50;
+        List<String> arguments = new ArrayList<>(List.of(args));
+        cudaGraph = arguments.remove(CUDA_GRAPH_ARGUMENT);
+        int[] sizes = Arrays.stream((arguments.size() > 0 ? arguments.get(0) : "1024,65536,1048576,16777216,67108864").split(",")).mapToInt(Integer::parseInt).toArray();
+        int iterations = arguments.size() > 1 ? Integer.parseInt(arguments.get(1)) : 50;
 
         int numDevices = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getNumDevices();
         TornadoDevice[] devices = new TornadoDevice[numDevices];
@@ -252,7 +258,7 @@ public class BenchmarkNcclAllReduce {
             names.append(i == 0 ? "" : ", ").append(devices[i].getPhysicalDevice().getDeviceName());
         }
         int version = NcclNativeLib.version();
-        String mode = CUDA_GRAPH ? ", CUDA graphs" : "";
+        String mode = cudaGraph ? ", CUDA graphs" : "";
         System.out.printf("NCCL %d.%d.%d, %d rank(s): %s, %d iterations (median)%s%n", version / 10000, (version / 100) % 100, version % 100, numDevices, names, iterations, mode);
         System.out.printf("%12s %10s | %16s %12s %9s | %16s %12s %12s%n", "elements", "MiB/rank", "step host-staged", "step NCCL", "speedup", "all-reduce only", "algbw GB/s", "busbw GB/s");
         for (int size : sizes) {

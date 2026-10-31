@@ -26,6 +26,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.runtime.common.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
@@ -46,7 +47,6 @@ import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.common.PrimitiveStorage;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
 
 public class MetalVectorWrapper implements XPUBuffer {
@@ -93,9 +93,9 @@ public class MetalVectorWrapper implements XPUBuffer {
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
-                    TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
+                    TornadoNativeArray.ARRAY_HEADER);
         }
     }
 
@@ -110,9 +110,9 @@ public class MetalVectorWrapper implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), bufferOffset,
-                    TornadoOptions.PANAMA_OBJECT_HEADER_SIZE);
+                    TornadoNativeArray.ARRAY_HEADER);
         }
     }
 

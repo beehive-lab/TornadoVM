@@ -20,8 +20,6 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
-
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
@@ -32,6 +30,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
@@ -64,7 +63,7 @@ public class CUDADriver {
     public static final int CUDA_SUCCESS = 0;
 
     static {
-        if (VIRTUAL_DEVICE_ENABLED) {
+        if (RuntimeFlags.VIRTUAL_DEVICE.get()) {
             initializeVirtualPlatform();
         } else {
             // Initialize physical platform. The backend talks to libcuda and NVRTC directly through

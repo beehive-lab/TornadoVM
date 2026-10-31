@@ -25,6 +25,7 @@ import java.lang.ref.Cleaner;
 import java.util.HashMap;
 import java.util.Map;
 
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
 
 /**
@@ -74,7 +75,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDAContext;
 public final class CUDAPinnedMemoryRegistry {
 
     /** Kill switch: {@code -Dtornado.cuda.host.pinning=false} disables pinning (pageable transfers). */
-    public static final boolean HOST_PINNING_ENABLED = Boolean.parseBoolean(System.getProperty("tornado.cuda.host.pinning", "True"));
+    public static final boolean HOST_PINNING_ENABLED = CudaFlags.HOST_PINNING.get();
 
     /**
      * {@code -Dtornado.cuda.host.pinning.all=true} pins the host memory of every device buffer. By
@@ -83,7 +84,7 @@ public final class CUDAPinnedMemoryRegistry {
      * and pinning gigabytes of them per plan makes the driver fail allocations and copies when
      * plans are created and closed often.
      */
-    public static final boolean PIN_ALL_BUFFERS = Boolean.parseBoolean(System.getProperty("tornado.cuda.host.pinning.all", "False"));
+    public static final boolean PIN_ALL_BUFFERS = CudaFlags.HOST_PINNING_ALL.get();
 
     /** Unregisters the pins of segments whose owners were collected. */
     private static final Cleaner CLEANER = Cleaner.create();

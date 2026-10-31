@@ -29,6 +29,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.api.types.collections.TornadoCollectionInterface;
 import uk.ac.manchester.tornado.api.types.images.TornadoImagesInterface;
@@ -36,7 +38,6 @@ import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.exceptions.TornadoUnsupportedError;
 
 public class CUDAMemorySegmentWrapper implements XPUBuffer {
@@ -60,7 +61,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
      * Aligning to 128 instead would pad every buffer by 112 bytes rather than 16 for the same sector count.
      * </p>
      */
-    private static final long PAYLOAD_ALIGNMENT = Long.getLong("tornado.cuda.payloadAlignment", 32L);
+    private static final long PAYLOAD_ALIGNMENT = CudaFlags.PAYLOAD_ALIGNMENT.get();
 
     /**
      * Bytes prepended to the device allocation so that {@code base + HEADER_PAD + ARRAY_HEADER} is
@@ -119,7 +120,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
      * large enough that the per-chunk staging overhead is amortised.
      */
     private boolean useStagedTransfer() {
-        return deviceContext.isStagedTransfersEnabled() && batchSize <= 0 && bufferSize >= TornadoOptions.STAGED_TRANSFER_MIN_SIZE;
+        return deviceContext.isStagedTransfersEnabled() && batchSize <= 0 && bufferSize >= CudaFlags.STAGED_MIN_SIZE.get();
     }
 
     @Override
@@ -274,7 +275,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         }
         boolean pin = CUDAPinnedMemoryRegistry.PIN_ALL_BUFFERS || transferredEveryExecution;
         if (useStagedTransfer() && access == Access.READ_ONLY) {
-            if (TornadoOptions.FULL_DEBUG) {
+            if (DebugFlags.FULL_DEBUG.get()) {
                 new TornadoLogger().info("skipping host pinning (staged transfers): %s", toString());
             }
         } else if (segment != null && pin) {
@@ -287,7 +288,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
             throw new TornadoMemoryException("[ERROR] Bytes Allocated <= 0: " + bufferSize);
         }
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("allocated: %s", toString());
         }
     }
@@ -311,7 +312,7 @@ public class CUDAMemorySegmentWrapper implements XPUBuffer {
         bufferIdBase = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             new TornadoLogger().info("deallocated: %s", toString());
         }
     }

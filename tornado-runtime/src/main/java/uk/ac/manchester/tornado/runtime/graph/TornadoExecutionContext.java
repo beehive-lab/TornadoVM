@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
@@ -52,9 +53,9 @@ import uk.ac.manchester.tornado.api.types.matrix.TornadoMatrixInterface;
 import uk.ac.manchester.tornado.api.types.vectors.TornadoVectorsInterface;
 import uk.ac.manchester.tornado.api.types.volumes.TornadoVolumesInterface;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.common.enums.DataTypeSize;
@@ -125,7 +126,7 @@ public class TornadoExecutionContext {
         this.isIntraPlanConcurrencyEnabled = false;
         // Defaults to the -Dtornado.staged.transfers property, so the plan-level API overrides it
         // rather than replacing it.
-        this.isStagedTransfersEnabled = TornadoOptions.ENABLE_STAGED_TRANSFERS;
+        this.isStagedTransfersEnabled = CudaFlags.STAGED_TRANSFERS.get();
     }
 
     public KernelStackFrame[] getKernelStackFrame() {
@@ -615,7 +616,7 @@ public class TornadoExecutionContext {
                 final LocalObjectState localState = objectState.get(i);
                 Event event = localState.sync(executionPlanId, object, meta().getXPUDevice());
 
-                if (TornadoOptions.isProfilerEnabled() && event != null) {
+                if (ProfilerActivation.isEnabled() && event != null) {
                     long value = profiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
                     value += event.getElapsedTime();
                     profiler.setTimer(ProfilerType.COPY_OUT_TIME_SYNC, value);

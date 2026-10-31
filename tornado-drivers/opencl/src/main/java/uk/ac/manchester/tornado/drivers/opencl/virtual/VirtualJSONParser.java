@@ -22,6 +22,7 @@
 package uk.ac.manchester.tornado.drivers.opencl.virtual;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 
 import java.io.IOException;
@@ -32,8 +33,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_FILE;
 
 public class VirtualJSONParser {
 
@@ -98,14 +97,14 @@ public class VirtualJSONParser {
     }
 
     private static String readVirtualDeviceJson() {
-        Path path = Paths.get(VIRTUAL_DEVICE_FILE);
-        TornadoInternalError.guarantee(path.toFile().exists(), "Virtual device file does not exist: %s", VIRTUAL_DEVICE_FILE);
+        Path path = Paths.get(RuntimeFlags.VIRTUAL_DEVICE_FILE.get());
+        TornadoInternalError.guarantee(path.toFile().exists(), "Virtual device file does not exist: %s", RuntimeFlags.VIRTUAL_DEVICE_FILE.get());
 
         try {
             byte[] bytes = Files.readAllBytes(path);
             return new String(bytes);
         } catch (IOException e) {
-            throw new RuntimeException(String.format("Failed to read from %s", VIRTUAL_DEVICE_FILE), e);
+            throw new RuntimeException(String.format("Failed to read from %s", RuntimeFlags.VIRTUAL_DEVICE_FILE.get()), e);
         }
     }
 }

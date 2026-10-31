@@ -34,9 +34,9 @@ import ctypes.util
 # FLAGS FOR TORNADOVM
 # ########################################################
 __TORNADOVM_DEBUG__ = " -Dtornado.debug=True "
-__TORNADOVM_FULLDEBUG__ = __TORNADOVM_DEBUG__ + "-Dtornado.fullDebug=True -Ddump.taskgraph=True "
-__TORNADOVM_THREAD_INFO__ = " -Dtornado.threadInfo=True "
-__TORNADOVM_PRINT_KERNEL__ = " -Dtornado.printKernel=True "
+__TORNADOVM_FULLDEBUG__ = __TORNADOVM_DEBUG__ + "-Dtornado.debug.full=True "
+__TORNADOVM_THREAD_INFO__ = " -Dtornado.thread.info=True "
+__TORNADOVM_PRINT_KERNEL__ = " -Dtornado.print.kernel=True "
 __TORNADOVM_PRINT_BC__ = " -Dtornado.print.bytecodes=True "
 __TORNADOVM_DUMP_PROFILER__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True -Dtornado.profiler.dump.dir="
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
@@ -1330,6 +1330,11 @@ class TornadoVMRunnerTool():
             os.system(command)
             sys.exit(0)
 
+        if (args.listFlags):
+            command = javaFlags + "uk.ac.manchester.tornado.api.options.OptionsDocTool --list" + (" --all" if args.listAllFlags else "")
+            os.system(command)
+            sys.exit(0)
+
         params = ""
         if (args.application_parameters != None):
             params = args.application_parameters
@@ -1386,6 +1391,10 @@ def parseArguments():
                         help="Start the TC IR visualiser in the browser: Java, bytecode, every TC stage and pass, and the generated CUDA/OpenCL code, linked line by line (optional: a .java file)")
     parser.add_argument('--devices', action="store_true", dest="showDevices", default=False,
                         help="Print information about the  accelerators available")
+    parser.add_argument('--list-flags', action="store_true", dest="listFlags", default=False,
+                        help="List the TornadoVM JVM flags (-Dtornado.*) with their type, default and current value")
+    parser.add_argument('--all', action="store_true", dest="listAllFlags", default=False,
+                        help="With --list-flags, also list internal and experimental flags")
     parser.add_argument('--enableConcurrentDevices', action="store_true", dest="enableConcurrentDevices", default=False,
                         help="Enable concurrent execution on multiple devices by multiple threads")
     parser.add_argument('--ea', '-ea', action="store_true", dest="enableAssertions", default=False,

@@ -65,8 +65,4 @@ public final class MetaDataUtils {
         }
         return listBinaries.toString().split(",");
     }
-
-    public static String getProperty(String key) {
-        return System.getProperty(key);
-    }
 }

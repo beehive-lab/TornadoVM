@@ -27,7 +27,6 @@ import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_START;
 import static uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_OPENCL_PROFILING;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -36,6 +35,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLProfilingInfo;
@@ -120,7 +120,7 @@ public class OCLEvent implements Event {
     }
 
     private long readEventTime(OCLProfilingInfo eventType) {
-        if (!ENABLE_OPENCL_PROFILING) {
+        if (!OpenCLFlags.PROFILING.get()) {
             return -1;
         }
         long time = 0;

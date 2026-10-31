@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import javax.tools.Diagnostic;
@@ -37,6 +38,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 
 /**
  * Compiles a generated kernel class source in-process with {@code javax.tools}
@@ -54,9 +56,9 @@ public final class InProcessCompiler {
         // With a gen directory that is also on the launch -cp, generated classes load through the
         // system class loader; otherwise each loads through its own URLClassLoader. TC reads a
         // kernel's class file through the kernel class's own loader, so both work.
-        String genDir = System.getProperty("tornado.fuzz.genDir");
-        if (genDir != null) {
-            this.workDir = Files.createDirectories(Path.of(genDir));
+        Optional<String> genDir = DebugFlags.FUZZ_GEN_DIR.find();
+        if (genDir.isPresent()) {
+            this.workDir = Files.createDirectories(Path.of(genDir.get()));
             this.useSystemLoader = true;
         } else {
             this.workDir = Files.createTempDirectory("tornado-fuzz-gen");

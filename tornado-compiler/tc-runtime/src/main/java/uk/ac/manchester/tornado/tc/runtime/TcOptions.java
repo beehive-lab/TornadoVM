@@ -22,24 +22,40 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Options of a TC compilation, read from {@code -Dtornado.tc.*} system properties.
+ * Options of a TC compilation. The compiler reads no system properties: the drivers build these options from the
+ * {@code tornado.tc.*} flags of {@code uk.ac.manchester.tornado.api.options.TcFlags}, where each is documented.
  *
- * <ul>
- * <li>{@code tornado.tc.dump}: {@code none} (default), {@code all}, or a comma-separated list of
- * stage names to write (for example {@code abi,emit}).</li>
- * <li>{@code tornado.tc.dumpDir}: directory for dumps and reports (default {@code tc-dumps}).</li>
- * <li>{@code tornado.tc.verify}: {@code end} (default) runs the verifier once, before structuring
- * and emission; {@code each} after every pass and stage, which names the pass that broke the IR
- * and costs about 15% of the compile time. {@link #DEFAULTS}, used by TC's own tests and tools,
- * verifies after each.</li>
- * <li>{@code tornado.tc.only}: compile-and-dump only functions whose name contains this text.</li>
- * <li>{@code tornado.tc.report}: {@code html} writes a self-contained HTML report per compilation.</li>
- * <li>{@code tornado.enable.fma} (the runtime's switch, default on): fused multiply-adds; a plan
- * with {@code withStrictFloatingPoint()} turns them off for its tasks.</li>
- * </ul>
+ * @param dump
+ *     stage names whose IR is written to {@code dumpDir}; {@code all} for every stage
+ * @param dumpDir
+ *     directory for dumps and reports
+ * @param verifyEach
+ *     run the verifier after every pass and stage, which names the pass that broke the IR and costs about 15% of
+ *     the compile time, instead of once before structuring; {@link #DEFAULTS}, used by TC's own tests and tools,
+ *     verifies after each
+ * @param only
+ *     compile-and-dump only functions whose name contains this text
+ * @param htmlReport
+ *     write a self-contained HTML report per compilation
+ * @param mathOptimizations
+ *     rewrite math calls into faster equivalents (rsqrt)
+ * @param task
+ *     the runtime's task id, printed by reports
+ * @param fuseMultiplyAdd
+ *     fused multiply-adds; a plan with {@code withStrictFloatingPoint()} turns them off for its tasks
+ * @param nativeHalf
+ *     half-precision arithmetic in half rather than through float
+ * @param signedOverflowUndefined
+ *     print int and long arithmetic as plain C, where signed overflow is undefined, instead of wrapping as Java does
  */
 public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
-        boolean fuseMultiplyAdd) {
+        boolean fuseMultiplyAdd, boolean nativeHalf, boolean signedOverflowUndefined) {
+
+    /** Native half arithmetic, and int and long arithmetic that wraps as in Java. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
+            boolean fuseMultiplyAdd) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, true, false);
+    }
 
     /** Fused multiply-adds on. */
     public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task) {
@@ -53,18 +69,17 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
 
     public static final TcOptions DEFAULTS = new TcOptions(Set.of(), Path.of("tc-dumps"), true, Optional.empty(), false);
 
-    public static TcOptions fromSystemProperties() {
-        var dump = System.getProperty("tornado.tc.dump", "none");
-        var stages = switch (dump) {
-            case "none", "" -> Set.<String>of();
+    /**
+     * @param stages
+     *     {@code none} (or blank), {@code all}, or a comma-separated list of stage names
+     * @return the stages to dump
+     */
+    public static Set<String> dumpStages(String stages) {
+        return switch (stages) {
+            case "none", "" -> Set.of();
             case "all" -> Set.of("all");
-            default -> Set.of(dump.split(","));
+            default -> Set.of(stages.split(","));
         };
-        return new TcOptions(stages, Path.of(System.getProperty("tornado.tc.dumpDir", "tc-dumps")), "each".equals(System.getProperty("tornado.tc.verify", "end")),
-                Optional.ofNullable(System.getProperty("tornado.tc.only")), "html".equals(System.getProperty("tornado.tc.report")),
-                // The runtime's own switch for math optimisations (default on), honoured by TC too.
-                Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")), "?",
-                Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true")));
     }
 
     public boolean dumps(String stage) {
@@ -76,16 +91,16 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd, nativeHalf, signedOverflowUndefined);
     }
 
     /** The task being compiled, as the runtime names it (device-launch reports print it, as on the Graal path). */
     public TcOptions withTask(String id) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd, nativeHalf, signedOverflowUndefined);
     }
 
     /** A plan with strict floating point: the multiply and the add round separately, as on the host. */
     public TcOptions withStrictFloatingPoint(boolean strict) {
-        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false) : this;
+        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, nativeHalf, signedOverflowUndefined) : this;
     }
 }

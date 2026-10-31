@@ -24,9 +24,7 @@ import static uk.ac.manchester.tornado.api.profiler.ProfilerType.ALLOCATION_BYTE
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_IN_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_COPY_OUT_SIZE_BYTES;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
-import java.io.IOException;
 import java.lang.foreign.MemorySegment;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -49,9 +47,13 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.MetalFlags;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
+import uk.ac.manchester.tornado.api.options.ProfilerFlags;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
@@ -105,12 +107,11 @@ import uk.ac.manchester.tornado.runtime.analyzer.ReduceCodeAnalysis;
 import uk.ac.manchester.tornado.runtime.analyzer.TaskUtils;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.CompilerFlags;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.library.LibraryRegistry;
 import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.common.TornadoVMClient;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
@@ -359,10 +360,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void enableProfiler(ProfilerMode profilerMode) {
         this.profilerMode = profilerMode;
-        TornadoOptions.TORNADO_PROFILER = true;
-        if (profilerMode == ProfilerMode.SILENT) {
-            TornadoOptions.TORNADO_PROFILER_LOG = true;
-        }
+        ProfilerActivation.enableForPlan(profilerMode == ProfilerMode.SILENT);
     }
 
     /**
@@ -397,8 +395,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void disableProfiler() {
-        TornadoOptions.TORNADO_PROFILER = false;
-        TornadoOptions.TORNADO_PROFILER_LOG = false;
+        ProfilerActivation.disableForPlan();
         this.timeProfiler = null;
         this.profilerMode = null;
     }
@@ -539,9 +536,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private static String defaultCompilerFlags(TornadoVMBackendType backendType) {
         return switch (backendType) {
-            case OPENCL -> TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS;
-            case CUDA -> TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS;
-            case METAL -> TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS;
+            case OPENCL -> OpenCLFlags.COMPILER_FLAGS.get();
+            case CUDA -> CompilerFlags.cudaDefaults();
+            case METAL -> MetalFlags.COMPILER_FLAGS.get();
             default -> "";
         };
     }
@@ -1067,35 +1064,26 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void updateProfiler() {
-        if (!TornadoOptions.isProfilerEnabled()) {
+        if (!ProfilerActivation.isEnabled()) {
             return;
         }
 
         warnIfAppleOpenCLProfiler();
 
-        if (!TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
+        if (!ProfilerActivation.keepsReport()) {
             timeProfiler.dumpJson(new StringBuilder(), this.getId());
         } else {
             bufferLogProfiler.append(timeProfiler.createJson(new StringBuilder(), this.getId()));
         }
 
-        if (!TornadoOptions.SOCKET_PORT.isEmpty()) {
-            TornadoVMClient tornadoVMClient = new TornadoVMClient();
-            try {
-                tornadoVMClient.sentLogOverSocket(timeProfiler.createJson(new StringBuilder(), this.getId()));
-            } catch (IOException e) {
-                System.out.println(e);
-            }
-        }
-
-        if (!TornadoOptions.PROFILER_DIRECTORY.isEmpty()) {
+        if (!ProfilerFlags.PROFILER_DUMP_DIR.get().isEmpty()) {
             String jsonFile = timeProfiler.createJson(new StringBuilder(), this.getId());
             RuntimeUtilities.profilerFileWriter(jsonFile);
         }
     }
 
     private void dumpDeoptimisationReason(TornadoBailoutRuntimeException e) {
-        if (!DEBUG) {
+        if (!DebugFlags.DEBUG.get()) {
             System.err.println(RED + "[Bailout] Running the sequential implementation. Enable --debug to see the reason." + RESET);
         } else {
             System.err.println(e.getMessage());
@@ -1137,7 +1125,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (!deviceState.hasObjectBuffer()) {
                 // The plan may not have run yet, in which case nothing has allocated for this object.
                 device.allocateObjects(new Object[] { object }, 0L, new XPUDeviceBufferState[] { deviceState }, new Access[] { access });
-                if (TornadoOptions.isReusedBuffersEnabled()) {
+                if (RuntimeFlags.REUSE_DEVICE_BUFFERS.get()) {
                     deviceState.setLockBuffer(true);
                 }
             }
@@ -1184,10 +1172,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             timeProfiler.stop(ProfilerType.TOTAL_TASK_GRAPH_TIME);
             updateProfiler();
         } catch (TornadoBailoutRuntimeException e) {
-            if (TornadoOptions.RECOVER_BAILOUT) {
+            if (RuntimeFlags.RECOVER_BAILOUT.get()) {
                 deoptimiseToSequentialJava(e);
             } else {
-                if (DEBUG) {
+                if (DebugFlags.DEBUG.get()) {
                     e.printStackTrace();
                 }
                 throw new TornadoBailoutRuntimeException("Bailout is disabled. \nReason: " + e.getMessage());
@@ -1228,7 +1216,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void waitOn() {
-        if ((TornadoOptions.VM_USE_DEPS || executionContext.isIntraPlanConcurrencyEnabled()) && event != null) {
+        if (executionContext.isIntraPlanConcurrencyEnabled() && event != null) {
             event.waitOn();
         } else {
             for (TornadoXPUDevice tornadoXPUDevice : executionContext.getDevices()) {
@@ -1270,7 +1258,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // List of input objects in the processing list for the dynamic reconfiguration
             inputModesObjects.add(new StreamingObject(mode, parameter));
 
-            if (TornadoOptions.isReusedBuffersEnabled()) {
+            if (RuntimeFlags.REUSE_DEVICE_BUFFERS.get()) {
                 if (!argumentsLookUp.contains(parameter)) {
                     lockObjectsInMemory(parameter);
                 }
@@ -1295,7 +1283,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             executionContext.addPersistedObject(sourceTaskGraphName, parameter);
             executionContext.addPersistedObject(parameter);
 
-            if (TornadoOptions.isReusedBuffersEnabled()) {
+            if (RuntimeFlags.REUSE_DEVICE_BUFFERS.get()) {
                 if (!argumentsLookUp.contains(parameter)) {
                     lockObjectsInMemory(parameter);
                 }
@@ -1318,7 +1306,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             executionContext.getLocalStateObject(parameter, Access.READ_WRITE).setOnDevice(true);
             executionContext.addPersistedObject(parameter);
 
-            if (TornadoOptions.isReusedBuffersEnabled()) {
+            if (RuntimeFlags.REUSE_DEVICE_BUFFERS.get()) {
                 if (!argumentsLookUp.contains(parameter)) {
                     lockObjectsInMemory(parameter);
                 }
@@ -1361,7 +1349,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             // List of output objects for the dynamic reconfiguration
             outputModeObjects.add(new StreamingObject(mode, functionParameter));
 
-            if (TornadoOptions.isReusedBuffersEnabled() || mode == DataTransferMode.UNDER_DEMAND) {
+            if (RuntimeFlags.REUSE_DEVICE_BUFFERS.get() || mode == DataTransferMode.UNDER_DEMAND) {
                 if (!argumentsLookUp.contains(functionParameter)) {
                     // We already set function parameter in transferToDevice
                     lockObjectsInMemory(functionParameter);
@@ -1404,7 +1392,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         executionContext.setExecutionPlanId(executionPlanId);
         vm.withPreCompilation();
 
-        if (TornadoOptions.isProfilerEnabled() && !TornadoOptions.PROFILER_LOGS_ACCUMULATE()) {
+        if (ProfilerActivation.isEnabled() && !ProfilerActivation.keepsReport()) {
             timeProfiler.dumpJson(new StringBuilder(), this.getId());
         }
     }
@@ -1675,7 +1663,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         List<Event> events = new ArrayList<>();
         for (Object object : objects) {
-            if (DEBUG) {
+            if (DebugFlags.DEBUG.get()) {
                 if (copyUnderDemand(object)) {
                     new TornadoLogger().debug("Object " + object + " to be copied UNDER_DEMAND");
                 }
@@ -1689,7 +1677,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         }
 
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (ProfilerActivation.isEnabled()) {
 
             /*
              * Clean the profiler. It avoids the possibility of reporting the `execute`
@@ -1722,7 +1710,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
 
         Event event = null;
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             if (copyUnderDemand(object)) {
                 new TornadoLogger().debug(partialCopySize + " bytes of the object " + object + " to be copied UNDER_DEMAND from offset " + offset);
             }
@@ -1735,7 +1723,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             event = syncParameter(object, offset, partialCopySize);
         }
 
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (ProfilerActivation.isEnabled()) {
             timeProfiler.clean();
             if (event != null) {
                 long value = timeProfiler.getTimer(ProfilerType.COPY_OUT_TIME_SYNC);
@@ -1885,7 +1873,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      * new.
      */
     private void bailout(Exception cause) {
-        if (!TornadoOptions.RECOVER_BAILOUT) {
+        if (!RuntimeFlags.RECOVER_BAILOUT.get()) {
             throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled", cause);
         } else {
             runAllTasksJavaSequential();
@@ -1912,7 +1900,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         updatePersistedObjectState();
 
         TornadoTaskGraphInterface reduceTaskGraph = null;
-        if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(GENERATED_TASK_GRAPH_PREFIX))) {
+        if (!getId().startsWith(GENERATED_TASK_GRAPH_PREFIX)) {
             reduceTaskGraph = analyzeSkeletonAndRun();
         }
 
@@ -1920,10 +1908,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return reduceTaskGraph;
         }
 
-        // check parameter list
-        if (TornadoOptions.FORCE_CHECK_PARAMETERS) {
-            checkAllArgumentsPerTask();
-        }
+        checkAllArgumentsPerTask();
 
         lockInPendingFieldsObjects();
         analysisTaskGraph = null;
@@ -2205,7 +2190,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
         } catch (TornadoBailoutRuntimeException e) {
             this.bailout = true;
-            if (!DEBUG) {
+            if (!DebugFlags.DEBUG.get()) {
                 System.out.println(WARNING_DEOPT_MESSAGE);
             }
             throw e; // Rethrow the same exception
@@ -2372,7 +2357,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     boolean isProfilerEnabled() {
-        return (getProfilerMode() != null || TornadoOptions.isProfilerEnabled());
+        return (getProfilerMode() != null || ProfilerActivation.isEnabled());
     }
 
     ProfilerMode getProfilerMode() {

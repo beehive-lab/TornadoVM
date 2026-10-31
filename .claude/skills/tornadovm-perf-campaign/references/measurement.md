@@ -81,8 +81,8 @@ git stash pop && make BACKEND=cuda
 Passing extra JVM flags to `tornado-test` needs the `=` form **and** a leading space, because the argument parser treats a leading `-` as a new flag:
 
 ```bash
-tornado-test --jvm=" -Dtornado.vm.deps=True" uk.ac.manchester.tornado.unittests.arrays.TestArrays   # works
-tornado-test --jvm "-Dtornado.vm.deps=True" ...                                                     # "expected one argument"
+tornado-test --jvm=" -Dtornado.device.memory=8GB" uk.ac.manchester.tornado.unittests.arrays.TestArrays   # works
+tornado-test --jvm "-Dtornado.device.memory=8GB" ...                                                     # "expected one argument"
 ```
 
 ## 6. Knobs worth knowing
@@ -90,10 +90,9 @@ tornado-test --jvm "-Dtornado.vm.deps=True" ...                                 
 | Flag | Effect |
 |---|---|
 | `-Dtornado.recover.bailout=False` | Fail instead of silently running sequential Java. **Always on when measuring.** |
-| `-Dtornado.vm.deps=True` | Enable dependency tracking (a different, slower code path — measure both) |
 | `-Dtornado.device.memory=NGB` | Device heap; a plan of many graphs can need noticeably more than the sequential path |
 | `-Dtornado.profiler=True` | TornadoVM's own profiler — perturbs; never the default measurement |
-| `-Dtornado.max.events` / `-Dtornado.eventpool.maxwaitevents` | Two *different* knobs with similar names; the first sizes wait-list rows |
+| `tornado --list-flags --all` | Every flag with its default and current value |
 | `--printBytecodes` | What the graph compiler actually emitted (blocking vs non-blocking copy-out, per-chunk ALLOC/DEALLOC) |
 
 Strip ANSI colour before grepping `--printBytecodes` output: `sed 's/\x1b\[[0-9;]*m//g'`.

@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.LibraryFlags;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
@@ -566,7 +567,7 @@ final class CuDnnNativeLib {
         }
         for (int i = 0; i < count.get(C_INT, 0); i++) {
             MemorySegment result = perf.asSlice((long) i * ALGO_PERF_BYTES, ALGO_PERF_BYTES);
-            boolean deterministic = !Boolean.getBoolean("tornado.cudnn.deterministic") || result.get(C_INT, ALGO_PERF_DETERMINISM) == CUDNN_DETERMINISTIC;
+            boolean deterministic = !LibraryFlags.CUDNN_DETERMINISTIC.get() || result.get(C_INT, ALGO_PERF_DETERMINISM) == CUDNN_DETERMINISTIC;
             if (result.get(C_INT, ALGO_PERF_STATUS) == CUDNN_STATUS_SUCCESS && deterministic) {
                 status = (int) SET_CONVOLUTION_MATH_TYPE.invokeExact(convDesc, result.get(C_INT, ALGO_PERF_MATH_TYPE));
                 return status == CUDNN_STATUS_SUCCESS ? result.get(C_INT, 0) : -1;

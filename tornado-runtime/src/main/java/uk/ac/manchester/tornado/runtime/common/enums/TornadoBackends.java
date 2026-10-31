@@ -21,9 +21,9 @@
 
 package uk.ac.manchester.tornado.runtime.common.enums;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.OPENCL_BACKEND_PRIORITY;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.METAL_BACKEND_PRIORITY;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CUDA_BACKEND_PRIORITY;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
+import uk.ac.manchester.tornado.api.options.MetalFlags;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
 
 /**
  * Used to prioritize one backend over another. The drivers will be sorted based
@@ -33,9 +33,9 @@ import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.CUDA_BACKEN
 
 public enum TornadoBackends {
 
-    OpenCL(OPENCL_BACKEND_PRIORITY, "implemented"), //
-    Metal(METAL_BACKEND_PRIORITY, "implemented"), //
-    CUDA(CUDA_BACKEND_PRIORITY, "experimental"); //
+    OpenCL(OpenCLFlags.PRIORITY.get(), "implemented"), //
+    Metal(MetalFlags.PRIORITY.get(), "implemented"), //
+    CUDA(CudaFlags.PRIORITY.get(), "experimental"); //
 
     private final int priority;
     private final String status;

@@ -29,7 +29,6 @@ import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_DISPATCH_
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_DISPATCH_KERNEL_TIME;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +36,7 @@ import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.cuda.runtime.CUDATornadoDevice;
@@ -44,10 +44,10 @@ import uk.ac.manchester.tornado.drivers.cuda.scheduler.CUDAKernelScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.scheduler.CUDAScheduler;
 import uk.ac.manchester.tornado.drivers.cuda.scheduler.CUDATileScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
@@ -239,7 +239,7 @@ public class CUDAInstalledCode implements TornadoInstalledCode {
                 ? enqueue(executionPlanId, oneThread, oneThread, null)
                 : enqueue(executionPlanId, global, meta.getLocalWork(), null);
         // Waiting on an event recorded during a graph capture is illegal and invalidates the capture.
-        if (TornadoOptions.isProfilerEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
+        if (ProfilerActivation.isEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
             recordKernelTime(executionPlanId, kernelEvent, meta);
         }
     }
@@ -303,7 +303,7 @@ public class CUDAInstalledCode implements TornadoInstalledCode {
     }
 
     private void logSubmission() {
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
     }
@@ -317,7 +317,7 @@ public class CUDAInstalledCode implements TornadoInstalledCode {
     }
 
     private void recordFrameWrite(long executionPlanId, int eventId, TaskDataContext meta, CUDAKernelStackFrame frame) {
-        if (!TornadoOptions.isProfilerEnabled()) {
+        if (!ProfilerActivation.isEnabled()) {
             return;
         }
         var event = deviceContext.resolveEvent(executionPlanId, eventId);

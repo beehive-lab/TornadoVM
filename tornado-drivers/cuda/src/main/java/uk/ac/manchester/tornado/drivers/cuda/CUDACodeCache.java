@@ -24,7 +24,6 @@ package uk.ac.manchester.tornado.drivers.cuda;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus.CL_BUILD_SUCCESS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,6 +42,8 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceDynamicParallelismNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDABuildStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDACompiler;
@@ -52,25 +53,23 @@ import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class CUDACodeCache {
 
-    private static final String FALSE = "False";
-    private static final String TRUE = "True";
     private static final String CUBIN_SUFFIX = ".cubin";
     private static final int SPIRV_MAGIC_NUMBER = 119734787;
     private static final String OPENCL_SOURCE_SUFFIX = ".cl";
-    private final boolean OPENCL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.enable", FALSE));
-    private final boolean OPENCL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.opencl.codecache.dump", FALSE));
-    private final boolean OPENCL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.opencl.source.dump", FALSE));
-    private final String OPENCL_CACHE_DIR = getProperty("tornado.opencl.codecache.dir", "/var/opencl-codecache");
-    private final String OPENCL_SOURCE_DIR = getProperty("tornado.opencl.source.dir", "/var/opencl-compiler");
-    private final String OPENCL_LOG_DIR = getProperty("tornado.opencl.log.dir", "/var/opencl-logs");
+    private final boolean OPENCL_CACHE_ENABLE = OpenCLFlags.CODE_CACHE.get();
+    private final boolean OPENCL_DUMP_BINS = OpenCLFlags.CODE_CACHE_DUMP.get();
+    private final boolean OPENCL_DUMP_SOURCE = OpenCLFlags.SOURCE_DUMP.get();
+    private final String OPENCL_CACHE_DIR = OpenCLFlags.CODE_CACHE_DIR.get();
+    private final String OPENCL_SOURCE_DIR = OpenCLFlags.SOURCE_DIR.get();
+    private final String OPENCL_LOG_DIR = OpenCLFlags.LOG_DIR.get();
 
     /**
      * Persist compiled module images and reload them on the next run, so that a kernel is only handed to
      * NVRTC once per (source, device, flags, toolkit). Without it every process pays full NVRTC
      * compilation again, which dominates start-up for applications with many kernels.
      */
-    private final boolean CUDA_CODE_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.cuda.codecache.enable", TRUE));
-    private final String CUDA_CODE_CACHE_DIR = getProperty("tornado.cuda.codecache.dir", "/var/cuda-codecache");
+    private final boolean CUDA_CODE_CACHE_ENABLE = CudaFlags.CODE_CACHE.get();
+    private final String CUDA_CODE_CACHE_DIR = CudaFlags.CODE_CACHE_DIR.get();
 
     private final ConcurrentHashMap<String, CUDAInstalledCode> cache;
     private final CUDADeviceContextInterface deviceContext;

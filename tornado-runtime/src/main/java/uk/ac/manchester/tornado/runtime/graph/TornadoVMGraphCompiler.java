@@ -30,7 +30,6 @@ import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AllocateMultipleBuffersNode;
@@ -142,11 +141,7 @@ public class TornadoVMGraphCompiler {
 
                 // Last operation -> perform synchronisation
                 if (!useCUDAGraphs) {
-                    if (TornadoOptions.ENABLE_STREAM_OUT_BLOCKING) {
-                        synchronizeOperationLastByteCode(tornadoVMBytecodeBuilder, intermediateTornadoGraph.getNumberOfDependencies());
-                    } else {
-                        tornadoVMBytecodeBuilder.barrier(intermediateTornadoGraph.getNumberOfDependencies());
-                    }
+                    synchronizeOperationLastByteCode(tornadoVMBytecodeBuilder, intermediateTornadoGraph.getNumberOfDependencies());
                 }
 
                 // Generate END bytecode
@@ -293,7 +288,7 @@ public class TornadoVMGraphCompiler {
      */
     private static TornadoRuntimeException bytecodeOverflow(TornadoVMBytecodeBuilder builder, BufferOverflowException cause) {
         TornadoRuntimeException error = new TornadoRuntimeException("[ERROR] The TornadoVM bytecode for this task graph does not fit its " + builder.getCapacity()
-                + "-byte buffer. Increase the buffer size with -Dtornado.tvm.maxbytecodesize=<bytes>, e.g. -Dtornado.tvm.maxbytecodesize=" + 2 * builder.getCapacity());
+                + "-byte buffer. Increase the buffer size with -Dtornado.tvm.max.bytecode.size=<bytes>, e.g. -Dtornado.tvm.max.bytecode.size=" + 2 * builder.getCapacity());
         error.initCause(cause);
         return error;
     }
