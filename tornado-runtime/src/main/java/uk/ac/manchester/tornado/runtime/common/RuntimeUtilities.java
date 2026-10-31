@@ -403,7 +403,7 @@ public final class RuntimeUtilities {
     private static String getFilePath() {
         String filePath;
 
-        if (DebugFlags.DUMP_BYTECODES_DIR.get() != null && !DebugFlags.DUMP_BYTECODES_DIR.get().isEmpty()) {
+        if (!DebugFlags.DUMP_BYTECODES_DIR.get().isEmpty()) {
             // Create directory if it doesn't exist
             File directory = new File(DebugFlags.DUMP_BYTECODES_DIR.get());
             if (!directory.exists()) {
