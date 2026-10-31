@@ -58,6 +58,8 @@ public final class RemovedFlags {
             new RemovedOption("tornado.max.events", FIXED + " (32768)."), //
             new RemovedOption("tornado.enable.ip.logging", "Sending profiler logs over a socket was removed."), //
             new RemovedOption("tornado.dump.to.ip", "Sending profiler logs over a socket was removed. Use tornado.profiler.dump.dir."), //
+            new RemovedOption("tornado.feature.extraction", "Kernel feature extraction was removed."), //
+            new RemovedOption("tornado.features.dump.dir", "Kernel feature extraction was removed."), //
             new RemovedOption("tornado.panama.objectHeader", "The array header size is derived from the JVM's compressed-pointer setting."), //
             new RemovedOption("tornado.nccl.benchmark.cudaGraph", "Pass --cuda-graph to the NCCL benchmark instead."));
 

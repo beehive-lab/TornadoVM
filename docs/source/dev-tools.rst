@@ -196,53 +196,6 @@ obtaining statistics:
        DISPATCH_TIME,31008.0
 
 
-5. Code feature extraction for the OpenCL/CUDA generated code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-To enable TornadoVM’s code feature extraction, use the following flag:
-``-Dtornado.feature.extraction=True``.
-
-Example:
-
-.. code:: bash
-
-   $ tornado --jvm="-Dtornado.feature.extraction=True" -m tornado.examples/uk.ac.manchester.tornado.examples.compute.NBody --params "1024 1"
-   {
-       "nBody": {
-           "BACKEND" : "CUDA",
-           "DEVICE_ID": "0:2",
-           "DEVICE": "GeForce GTX 1650",
-           "Global Memory Loads":  "15",
-           "Global Memory Stores":  "6",
-           "Constant Memory Loads":  "0",
-           "Constant Memory Stores":  "0",
-           "Local Memory Loads":  "0",
-           "Local Memory Stores":  "0",
-           "Private Memory Loads":  "20",
-           "Private Memory Stores":  "20",
-           "Total Loops":  "2",
-           "Parallel Loops":  "1",
-           "If Statements":  "2",
-           "Integer Comparison":  "2",
-           "Float Comparison":  "0",
-           "Switch Statements":  "0",
-           "Switch Cases":  "0",
-           "Vector Operations":  "0",
-           "Integer & Float Operations":  "57",
-           "Boolean Operations":  "9",
-           "Cast Operations":  "2",
-           "Float Math Functions":  "1",
-           "Integer Math Functions":  "0"
-       }
-   }
-
-Save features into a file
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use the option ``-Dtornado.feature.extraction=True``
-``-Dtornado.features.dump.dir=FILENAME``. ``FILENAME`` can contain the
-filename and the full path (e.g. features.json).
-
 TornadoVMPulse (profiling dashboard)
 --------------------------------------
 

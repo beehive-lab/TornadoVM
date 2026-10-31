@@ -231,7 +231,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), name)) {
             return deviceContext.getInstalledCode(executionPlanId, task.getId(), name);
         }
-        return TcKernels.compile(executable, tcTarget(), deviceContext, (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
+        return TcKernels.compile(executable, tcTarget(), (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
     }
 
     /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */

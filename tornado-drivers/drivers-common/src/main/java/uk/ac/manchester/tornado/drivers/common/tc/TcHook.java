@@ -42,7 +42,6 @@ import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.ErrorCodes;
 import uk.ac.manchester.tornado.tc.ir.Loc;
-import uk.ac.manchester.tornado.tc.ir.analysis.KernelFeatures;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
@@ -236,7 +235,7 @@ public final class TcHook {
 
     /** What a compilation leaves for later tasks (not its stages). */
     private record Compiled(String source, String entryName, long nanos, List<uk.ac.manchester.tornado.tc.tornado.ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics,
-            KernelFeatures features, String task, boolean taskInSource, boolean readsLengths) {
+            String task, boolean taskInSource, boolean readsLengths) {
     }
 
     /** Most recent compilations; a model's layers share one entry per kernel. */
@@ -259,7 +258,7 @@ public final class TcHook {
      * without the array lengths (see dynamic shapes (see {@link #DYNAMIC_SHAPES})) or with scalars as runtime values. Such
      * code can need more registers than the task's own specialisation; see {@link #compileSpecialised}.
      */
-    public record Kernel(byte[] source, String entryName, Optional<DomainTree> domain, long nanos, AtomicSlots.Info atomics, KernelFeatures features, boolean generic) {
+    public record Kernel(byte[] source, String entryName, Optional<DomainTree> domain, long nanos, AtomicSlots.Info atomics, boolean generic) {
     }
 
     private TcHook() {
@@ -400,7 +399,7 @@ public final class TcHook {
             return Optional.empty();
         }
         var withBound = source.substring(0, at) + "__global__ void __launch_bounds__(" + maxThreads + ", 1) " + kernel.entryName() + "(" + source.substring(at + entry.length());
-        return Optional.of(new Kernel(withBound.getBytes(StandardCharsets.UTF_8), kernel.entryName(), kernel.domain(), kernel.nanos(), kernel.atomics(), kernel.features(), true));
+        return Optional.of(new Kernel(withBound.getBytes(StandardCharsets.UTF_8), kernel.entryName(), kernel.domain(), kernel.nanos(), kernel.atomics(), true));
     }
 
     /**
@@ -547,7 +546,7 @@ public final class TcHook {
             System.out.printf("[TC] compiled %s in %.2f ms%n", name, c.nanos() / 1e6);
         }
         boolean taskInSource = c.source().contains(uk.ac.manchester.tornado.tc.codegen.CEmitter.DEVICE_LAUNCH_LABEL);
-        return Optional.of(new Compiled(c.source(), c.entryName(), c.nanos(), c.domain(), c.atomics(), c.features(), options.task(), taskInSource, c.readsLengths()));
+        return Optional.of(new Compiled(c.source(), c.entryName(), c.nanos(), c.domain(), c.atomics(), options.task(), taskInSource, c.readsLengths()));
     }
 
     /** The kernel for one task: the launch domain depends on the task's thread count, not only on the code. */
@@ -569,7 +568,7 @@ public final class TcHook {
             }
             domain = Optional.of(tree);
         }
-        return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos(), c.atomics(), c.features(), generic));
+        return Optional.of(new Kernel(c.source().getBytes(StandardCharsets.UTF_8), c.entryName(), domain, c.nanos(), c.atomics(), generic));
     }
 
     /** -Dtornado.tc.report=html: every stage of one compilation, refused ones included, in one page. */

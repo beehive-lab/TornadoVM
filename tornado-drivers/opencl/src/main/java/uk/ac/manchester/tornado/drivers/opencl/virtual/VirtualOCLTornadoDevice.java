@@ -171,7 +171,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         // A virtual device has nothing to install on: print the kernel when asked.
         final CompilableTask executable = (CompilableTask) task;
-        return TcKernels.compile(executable, TargetCaps.OPENCL_GENERIC.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER), getDeviceContext(), (entry, source) -> {
+        return TcKernels.compile(executable, TargetCaps.OPENCL_GENERIC.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER), (entry, source) -> {
             if (executable.meta().isPrintKernelEnabled()) {
                 RuntimeUtilities.dumpKernel(source);
             }

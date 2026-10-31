@@ -166,12 +166,6 @@ Profiling
    * - ``-Dtornado.ns.time``
      - ``true``
      - Report profiler times in nanoseconds; ``false`` reports them in milliseconds.
-   * - ``-Dtornado.feature.extraction``
-     - ``false``
-     - Extract the static code features of every compiled kernel, as JSON.
-   * - ``-Dtornado.features.dump.dir``
-     - *empty*
-     - File the extracted kernel features are written to; empty prints them on standard output.
    * - ``-Dtornado.chrome.event.tracer.enabled``
      - ``false``
      - Record runtime events in the Chrome trace format (open in ``chrome://tracing`` or Perfetto).
@@ -518,6 +512,10 @@ Setting one of these prints a warning and has no effect.
      - It had no effect.
    * - ``-Dtornado.experimental.reduce``
      - TornadoVM always behaves as with its default (true).
+   * - ``-Dtornado.feature.extraction``
+     - Kernel feature extraction was removed.
+   * - ``-Dtornado.features.dump.dir``
+     - Kernel feature extraction was removed.
    * - ``-Dtornado.kernels.parallelise``
      - It had no effect.
    * - ``-Dtornado.logger.buildlir``

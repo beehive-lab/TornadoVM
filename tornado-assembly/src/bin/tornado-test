@@ -405,13 +405,6 @@ __TEST_THE_WORLD__ = [
                   "-Dtornado.print.kernel=True",
                   "-Dtornado.virtual.device=True",
                   "-Dtornado.print.kernel.dir=" + os.environ["TORNADOVM_HOME"] + "/virtualKernelOut.out"]),
-    TestEntry(testName="uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction",
-              testMethods=["testVirtualDeviceFeatures"],
-              testParameters=[
-                  "-Dtornado.device.desc=" + os.environ["TORNADOVM_HOME"] + "/examples/virtual-device-GPU.json",
-                  "-Dtornado.virtual.device=True",
-                  "-Dtornado.feature.extraction=True",
-                  "-Dtornado.features.dump.dir=" + os.environ["TORNADOVM_HOME"] + "/virtualFeaturesOut.out"]),
 
     ## Tests for Multi-Thread and Memory
     TestEntry(testName="uk.ac.manchester.tornado.unittests.multithreaded.TestConcurrentSketches"),
@@ -446,8 +439,6 @@ __TORNADO_TESTS_WHITE_LIST__ = [
     ## Virtual devices are only available for OpenCL.
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelGPU",
     "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceKernel#testVirtualDeviceKernelCPU",
-    "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesCPU",
-    "uk.ac.manchester.tornado.unittests.virtual.TestVirtualDeviceFeatureExtraction#testVirtualDeviceFeaturesGPU",
 
     ## Atomics are only available for OpenCL
     "uk.ac.manchester.tornado.unittests.atomics.TestAtomics#testAtomic12",

@@ -234,7 +234,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
         if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), name)) {
             return deviceContext.getInstalledCode(executionPlanId, task.getId(), name);
         }
-        return TcKernels.compile(executable, tcTarget(), deviceContext, (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
+        return TcKernels.compile(executable, tcTarget(), (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
     }
 
     /** What TC may assume about this GPU: Apple GPUs have no double precision and 32-wide SIMD groups. */

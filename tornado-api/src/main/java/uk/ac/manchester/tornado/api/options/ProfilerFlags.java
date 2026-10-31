@@ -18,7 +18,7 @@
 package uk.ac.manchester.tornado.api.options;
 
 /**
- * Options of the TornadoVM profiler, the kernel feature extractor and the Chrome event tracer.
+ * Options of the TornadoVM profiler and the Chrome event tracer.
  */
 public final class ProfilerFlags {
 
@@ -43,16 +43,6 @@ public final class ProfilerFlags {
     public static final Option<Boolean> TIME_IN_NANOSECONDS = Option.bool("tornado.ns.time") //
             .defaultValue(true) //
             .description("Report profiler times in nanoseconds; `false` reports them in milliseconds.") //
-            .category(CATEGORY).build();
-
-    public static final Option<Boolean> FEATURE_EXTRACTION = Option.bool("tornado.feature.extraction") //
-            .defaultValue(false) //
-            .description("Extract the static code features of every compiled kernel, as JSON.") //
-            .category(CATEGORY).build();
-
-    public static final Option<String> FEATURES_DUMP_DIR = Option.string("tornado.features.dump.dir") //
-            .defaultValue("") //
-            .description("File the extracted kernel features are written to; empty prints them on standard output.") //
             .category(CATEGORY).build();
 
     public static final Option<Boolean> CHROME_EVENT_TRACER = Option.bool("tornado.chrome.event.tracer.enabled") //

@@ -238,7 +238,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice, Torna
         if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), name)) {
             return deviceContext.getInstalledCode(executionPlanId, task.getId(), name);
         }
-        return TcKernels.compile(executable, tcTarget(), deviceContext, (entry, source) -> {
+        return TcKernels.compile(executable, tcTarget(), (entry, source) -> {
             // A kernel that turns contraction off (a strict plan, or one rounding to half: Java's HalfFloat
             // rounds after every operation) is built without the relaxed defaults, which let the NVIDIA and
             // Intel compilers drop exactly those roundings.
