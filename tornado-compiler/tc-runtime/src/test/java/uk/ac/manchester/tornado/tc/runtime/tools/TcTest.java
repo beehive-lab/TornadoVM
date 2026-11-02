@@ -193,6 +193,13 @@ public class TcTest {
     }
 
     @Test
+    public void versionExitsCleanly() {
+        var r = run("--version");
+        assertEquals(0, r.status());
+        assertTrue(r.out().startsWith("tc "), r.out());
+    }
+
+    @Test
     public void usageErrors() {
         assertEquals(2, run("emit").status());
         assertEquals(2, run("emit", "--all", "Extra", "arg").status());

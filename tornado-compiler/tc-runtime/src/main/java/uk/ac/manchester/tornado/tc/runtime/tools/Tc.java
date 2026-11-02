@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * <pre>
  *   tc emit [--target cuda|opencl|metal] [--cc N] [--fp16 on|off] [--fp64 on|off] [--cp PATH] [--stats] Class method
  *   tc emit [same options] --all
+ *   tc --version
  *   ... [--arg name=value]...
  * </pre>
  *
@@ -104,6 +105,10 @@ public final class Tc {
     }
 
     static int run(String[] args, PrintStream out, PrintStream err) {
+        if (args.length == 1 && args[0].equals("--version")) {
+            out.println("tc " + version());
+            return 0;
+        }
         if (args.length < 1 || !args[0].equals("emit")) {
             return usage(err);
         }
@@ -387,6 +392,18 @@ public final class Tc {
             }
         }
         return true;
+    }
+
+    /** The TornadoVM version, from the name of the jar this class is in ({@code tc-runtime-8.0.1.jar}). */
+    static String version() {
+        try {
+            var location = Tc.class.getProtectionDomain().getCodeSource();
+            var name = location == null ? "" : Path.of(location.getLocation().toURI()).getFileName().toString();
+            var matcher = java.util.regex.Pattern.compile("tc-runtime-(.+)\\.jar").matcher(name);
+            return matcher.matches() ? matcher.group(1) : "(development build)";
+        } catch (java.net.URISyntaxException | RuntimeException e) {
+            return "(development build)";
+        }
     }
 
     private static String withApi(String classPath) {
