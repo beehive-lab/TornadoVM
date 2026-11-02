@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
+package uk.ac.manchester.tornado.api.internal.options;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -32,10 +32,15 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import uk.ac.manchester.tornado.api.options.InvalidOptionValueException;
+import uk.ac.manchester.tornado.api.options.Option;
+import uk.ac.manchester.tornado.api.options.OptionCategory;
+import uk.ac.manchester.tornado.api.options.TaskOption;
+
 public class OptionResolverTest {
 
     private static final Option<Boolean> FLAG = Option.bool("tornado.test.flag").defaultValue(false).description("A flag.") //
-            .category(OptionCategory.DEBUG).deprecatedKey("tornado.testFlag").build();
+            .category(OptionCategory.DEBUG).deprecatedKey("tornado.testFlag", "9.9.9").build();
 
     private static final Option<Integer> NUMBER = Option.integer("tornado.test.number").defaultValue(7).description("A number.") //
             .category(OptionCategory.RUNTIME).build();
@@ -48,6 +53,9 @@ public class OptionResolverTest {
 
     private static final TaskOption<Integer> BLOCK = TaskOption.integer("test.block").defaultValue(256).description("A block size.") //
             .category(OptionCategory.THREAD_SCHEDULING).withGlobalFallback().build();
+
+    private static final TaskOption<Integer> RENAMED = TaskOption.integer("test.renamed").description("A renamed per-task option.") //
+            .category(OptionCategory.THREAD_SCHEDULING).withGlobalFallback().deprecatedSuffix("test.oldName", "9.9.9").build();
 
     private final List<String> warnings = new ArrayList<>();
 
@@ -75,14 +83,31 @@ public class OptionResolverTest {
         OptionResolver resolver = resolver(MapSource.of("tornado.testFlag", "true"));
         assertEquals(true, resolver.resolve(FLAG));
         assertEquals(true, resolver.resolve(FLAG));
-        assertEquals(List.of("-Dtornado.testFlag is deprecated and will be removed in a future release; use -Dtornado.test.flag instead."), warnings);
+        assertEquals(List.of("-Dtornado.testFlag is deprecated and will stop working in TornadoVM 9.9.9; use -Dtornado.test.flag instead."), warnings);
     }
 
     @Test
-    public void currentKeyWinsOverDeprecatedKey() {
+    public void currentKeyWinsOverDeprecatedKeyAndAConflictIsReported() {
         OptionResolver resolver = resolver(MapSource.of("tornado.testFlag", "true", "tornado.test.flag", "false"));
         assertEquals(false, resolver.resolve(FLAG));
-        assertTrue(warnings.isEmpty());
+        assertEquals(false, resolver.resolve(FLAG));
+        assertEquals(List.of("-Dtornado.test.flag and its former name -Dtornado.testFlag are both set, to different values; -Dtornado.test.flag is used."), warnings);
+    }
+
+    @Test
+    public void bothKeysWithTheSameValueAreNotAConflict() {
+        OptionResolver resolver = resolver(MapSource.of("tornado.testFlag", "true", "tornado.test.flag", "true"));
+        assertEquals(true, resolver.resolve(FLAG));
+        assertTrue(warnings.isEmpty(), warnings.toString());
+    }
+
+    @Test
+    public void deprecatedTaskSuffixStillWorksForTheTaskAndTheGlobalFallback() {
+        assertEquals(Optional.of(8), resolver(MapSource.of("s0.t0.test.oldName", "8")).lookup(RENAMED, "s0.t0"));
+        assertEquals(Optional.of(16), resolver(MapSource.of("tornado.test.oldName", "16")).lookup(RENAMED, "s0.t0"));
+        assertEquals(Optional.of(4), resolver(MapSource.of("s0.t0.test.oldName", "8", "s0.t0.test.renamed", "4")).lookup(RENAMED, "s0.t0"));
+        assertEquals(3, warnings.size(), warnings.toString());
+        assertTrue(warnings.get(0).startsWith("-Ds0.t0.test.oldName is deprecated"), warnings.get(0));
     }
 
     @Test
@@ -129,6 +154,37 @@ public class OptionResolverTest {
         assertEquals(3, resolver(PropertiesFileSource.load(file, warnings::add)).resolve(NUMBER));
         assertEquals(7, resolver(PropertiesFileSource.load(directory.resolve("missing"), warnings::add)).resolve(NUMBER));
         assertTrue(warnings.isEmpty());
+    }
+
+    @Test
+    public void installingAResolverMakesStaticOptionsResolveAgain() {
+        OptionResolver previous = OptionResolver.install(resolver(MapSource.of("tornado.test.number", "1")));
+        try {
+            assertEquals(1, NUMBER.get());
+            assertTrue(NUMBER.isResolved());
+            assertEquals(Optional.of(1), NUMBER.resolvedValue());
+            OptionResolver.install(resolver(MapSource.of("tornado.test.number", "2")));
+            assertFalse(NUMBER.isResolved());
+            assertEquals(2, NUMBER.get());
+        } finally {
+            OptionResolver.install(previous);
+        }
+    }
+
+    @Test
+    public void optionsFileIsReadBetweenTheCommandLineAndTheInstallation(@TempDir Path directory) throws IOException {
+        Path file = directory.resolve("app.properties");
+        Files.writeString(file, "tornado.test.number = 5\ntornado.test.text = from file\n");
+        System.setProperty("tornado.options.file", file.toString());
+        System.setProperty("tornado.test.text", "from -D");
+        try {
+            OptionResolver resolver = OptionResolver.createDefault();
+            assertEquals(5, resolver.resolve(NUMBER));
+            assertEquals("from -D", resolver.resolve(TEXT));
+        } finally {
+            System.clearProperty("tornado.options.file");
+            System.clearProperty("tornado.test.text");
+        }
     }
 
     @Test

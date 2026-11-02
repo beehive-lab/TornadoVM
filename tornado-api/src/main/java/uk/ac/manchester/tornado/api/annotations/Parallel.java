@@ -23,8 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /*
- * Any change made to the package or name of this annotation must be reflected in the runtime option tornado.load.annotation.parallel
- * Please check assembly/src/bin/tornado script
+ * The TC frontend finds this annotation by its descriptor (PARALLEL in tc.frontend.Translator): a change to its
+ * package or name must be made there too.
  */
 
 @Target({ ElementType.LOCAL_VARIABLE, ElementType.TYPE, ElementType.TYPE_USE, ElementType.TYPE_PARAMETER })

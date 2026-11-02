@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import static uk.ac.manchester.tornado.api.internal.options.Deadlines.NEXT_RELEASE;
+
 /**
  * Options of the TornadoVM runtime: which backends and devices it uses, and how it manages them.
  */
@@ -34,7 +36,7 @@ public final class RuntimeFlags {
             .description("Index of the default device within the default backend.") //
             .category(CATEGORY).build();
 
-    public static final Option<String> ENABLED_BACKENDS = Option.string("tornado.enabled.backends") //
+    public static final Option<String> ENABLED_BACKENDS = Option.choiceList("tornado.enabled.backends", "opencl", "cuda", "metal") //
             .defaultValue("") //
             .description("Comma-separated backends to load (`opencl`, `cuda`, `metal`); empty loads every installed backend. "
                     + "A backend left out is not initialised, which shortens start-up. Backend indices count only the loaded backends.") //
@@ -53,7 +55,7 @@ public final class RuntimeFlags {
     public static final Option<Boolean> OUT_OF_ORDER_EXECUTION = Option.bool("tornado.ooo.execution.enable") //
             .defaultValue(false) //
             .description("Create device command queues that may run commands out of order.") //
-            .category(CATEGORY).deprecatedKey("tornado.ooo-execution.enable").build();
+            .category(CATEGORY).deprecatedKey("tornado.ooo-execution.enable", NEXT_RELEASE).build();
 
     public static final Option<Boolean> RECOVER_BAILOUT = Option.bool("tornado.recover.bailout") //
             .defaultValue(false) //
@@ -84,7 +86,7 @@ public final class RuntimeFlags {
     public static final Option<Integer> MAX_BYTECODE_SIZE = Option.integer("tornado.tvm.max.bytecode.size") //
             .defaultValue(4096) //
             .description("Size in bytes of the buffer that holds the TornadoVM bytecodes of a task graph.") //
-            .category(CATEGORY).deprecatedKey("tornado.tvm.maxbytecodesize").build();
+            .category(CATEGORY).deprecatedKey("tornado.tvm.maxbytecodesize", NEXT_RELEASE).build();
 
     public static final Option<String> API_IMPLEMENTATION = Option.string("tornado.load.api.implementation") //
             .defaultValue("uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph") //
@@ -100,6 +102,22 @@ public final class RuntimeFlags {
             .defaultValue("uk.ac.manchester.tornado.runtime.common.Tornado") //
             .description("Class implementing the TornadoVM settings access.") //
             .category(CATEGORY).internal().build();
+
+    /**
+     * Read by the option resolver itself, before any other option, so it can only be given with {@code -D}.
+     */
+    public static final Option<String> OPTIONS_FILE = Option.string("tornado.options.file") //
+            .noDefault("unset") //
+            .description("Properties file of flags to apply to every run, such as for an application that uses TornadoVM from Maven without "
+                    + "`TORNADOVM_HOME`. Only read from the command line (`-D`). Its flags take precedence over "
+                    + "`$TORNADOVM_HOME/etc/tornado.properties`; `-D` takes precedence over both.") //
+            .category(CATEGORY).build();
+
+    public static final Option<String> OPTIONS_ALLOW = Option.nameList("tornado.options.allow") //
+            .noDefault("unset") //
+            .description("Comma-separated `tornado.*` keys that the application itself reads, so the start-up check does not report "
+                    + "them as unknown. A key ending in `.` allows every key it starts. Example: `-Dtornado.options.allow=tornado.backend.name`.") //
+            .category(CATEGORY).build();
 
     private RuntimeFlags() {
     }

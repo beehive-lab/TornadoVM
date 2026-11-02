@@ -22,6 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.internal.options.OptionRegistry;
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
+import uk.ac.manchester.tornado.api.internal.options.OptionsRenderer;
+
 /**
  * Command-line entry point that lists the options or keeps their documentation up to date.
  *

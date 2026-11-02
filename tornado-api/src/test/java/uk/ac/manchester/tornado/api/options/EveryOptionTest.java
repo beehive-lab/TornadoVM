@@ -20,6 +20,7 @@ package uk.ac.manchester.tornado.api.options;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -30,6 +31,10 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+
+import uk.ac.manchester.tornado.api.internal.options.MapSource;
+import uk.ac.manchester.tornado.api.internal.options.OptionRegistry;
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
 
 /**
  * Checks every option of the catalog on its own: it is well formed, its default applies when it is not set,
@@ -92,7 +97,7 @@ public class EveryOptionTest {
     public void taskOptionIsWellFormedAndHonoursItsKeys(TaskOption<?> option) {
         assertTrue(SUFFIX_FORMAT.matcher(option.suffix()).matches(), option.suffix());
         assertTrue(option.description().endsWith("."), option.suffix());
-        String text = option.parser().typeName().equals("int") ? "12" : "1:0";
+        String text = sampleTaskText(option);
         OptionResolver resolver = new OptionResolver(MapSource.of("s0.t0." + option.suffix(), text), message -> {
         });
         assertEquals(option.parser().parse(text), resolver.lookup(option, "s0.t0").orElseThrow());
@@ -105,11 +110,34 @@ public class EveryOptionTest {
         });
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("options")
+    public void closedSetOptionRejectsAWordOutsideTheSet(Option<?> option) {
+        if (option.parser() instanceof OptionParsers.Choice) {
+            OptionResolver resolver = new OptionResolver(MapSource.of(option.key(), "not-a-choice"), message -> {
+            });
+            assertThrows(InvalidOptionValueException.class, () -> resolver.find(option), option.key());
+        }
+    }
+
+    private static String sampleTaskText(TaskOption<?> option) {
+        if (option.parser() == OptionParsers.DEVICE) {
+            return "1:0";
+        }
+        return option.parser().typeName().equals("int") ? "12" : "16,16";
+    }
+
     /**
      * Text that is a valid value of the option and differs from its default.
      */
     private static String sampleText(Option<?> option) {
         Object defaultValue = option.defaultValue().orElse(null);
+        if (option.parser() instanceof OptionParsers.Choice choice) {
+            return choice.choices().stream().filter(word -> !word.equals(defaultValue)).findFirst().orElseThrow();
+        }
+        if (option.parser() == OptionParsers.NAME_LIST) {
+            return "first,second";
+        }
         return switch (option.parser().typeName()) {
             case "boolean" -> Boolean.toString(!Boolean.TRUE.equals(defaultValue));
             case "int", "long" -> "12345";

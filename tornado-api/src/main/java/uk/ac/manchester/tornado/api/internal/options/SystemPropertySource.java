@@ -15,39 +15,25 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
+package uk.ac.manchester.tornado.api.internal.options;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
- * Sources in precedence order: the first one that configures a key wins.
+ * Options given on the command line with {@code -D}, or set at run time with
+ * {@link uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider#setProperty}. Read live, so a value set at run
+ * time is seen by the next resolution of a dynamic option.
  */
-public final class LayeredSource implements OptionSource {
-
-    private final List<OptionSource> layers;
-
-    public LayeredSource(List<OptionSource> layers) {
-        this.layers = List.copyOf(layers);
-    }
+public final class SystemPropertySource implements OptionSource {
 
     @Override
     public Optional<String> lookup(String key) {
-        for (OptionSource layer : layers) {
-            Optional<String> value = layer.lookup(key);
-            if (value.isPresent()) {
-                return value;
-            }
-        }
-        return Optional.empty();
+        return Optional.ofNullable(System.getProperty(key));
     }
 
     @Override
     public Set<String> keys() {
-        Set<String> keys = new TreeSet<>();
-        layers.forEach(layer -> keys.addAll(layer.keys()));
-        return keys;
+        return System.getProperties().stringPropertyNames();
     }
 }

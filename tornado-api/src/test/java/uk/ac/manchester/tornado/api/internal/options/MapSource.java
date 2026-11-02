@@ -15,25 +15,33 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
+package uk.ac.manchester.tornado.api.internal.options;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * Options given on the command line with {@code -D}, or set at run time with
- * {@link uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider#setProperty}. Read live, so a value set at run
- * time is seen by the next resolution of a dynamic option.
+ * Options from a map, standing in for the command line in tests.
  */
-public final class SystemPropertySource implements OptionSource {
+public record MapSource(Map<String, String> values) implements OptionSource {
+
+    public static MapSource of(String... keysAndValues) {
+        Map<String, String> map = new HashMap<>();
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            map.put(keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return new MapSource(Map.copyOf(map));
+    }
 
     @Override
     public Optional<String> lookup(String key) {
-        return Optional.ofNullable(System.getProperty(key));
+        return Optional.ofNullable(values.get(key));
     }
 
     @Override
     public Set<String> keys() {
-        return System.getProperties().stringPropertyNames();
+        return values.keySet();
     }
 }

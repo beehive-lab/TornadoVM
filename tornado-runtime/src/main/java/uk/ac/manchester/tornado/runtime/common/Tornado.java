@@ -21,10 +21,12 @@
 package uk.ac.manchester.tornado.runtime.common;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 import uk.ac.manchester.tornado.api.TornadoSetting;
-import uk.ac.manchester.tornado.api.options.OptionResolver;
-import uk.ac.manchester.tornado.api.options.PropertiesFileSource;
+import uk.ac.manchester.tornado.api.internal.options.OptionRegistry;
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
+import uk.ac.manchester.tornado.api.internal.options.PropertiesFileSource;
 
 /**
  * Access to TornadoVM's configuration through {@link uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider}. Reads
@@ -35,17 +37,26 @@ public final class Tornado implements TornadoSetting {
 
     @Override
     public void setTornadoProperty(String key, String value) {
+        OptionRegistry.catalog().checkSetAtRunTime(key, value).ifPresent(OptionResolver::warn);
         System.setProperty(key, value);
     }
 
     @Override
     public String getTornadoProperty(String key) {
-        return OptionResolver.global().source().lookup(key).orElse(null);
+        return lookup(key).orElse(null);
     }
 
     @Override
     public String getTornadoProperty(String key, String defaultValue) {
-        return OptionResolver.global().source().lookup(key).orElse(defaultValue);
+        return lookup(key).orElse(defaultValue);
+    }
+
+    /**
+     * The text of a key. For an option, also under its former names, the way the option itself is read.
+     */
+    private static Optional<String> lookup(String key) {
+        OptionResolver resolver = OptionResolver.global();
+        return OptionRegistry.catalog().find(key).<Optional<String>> map(resolver::text).orElseGet(() -> resolver.source().lookup(key));
     }
 
     /**

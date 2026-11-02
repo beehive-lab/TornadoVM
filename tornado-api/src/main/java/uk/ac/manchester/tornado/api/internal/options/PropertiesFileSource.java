@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
+package uk.ac.manchester.tornado.api.internal.options;
 
 import java.io.IOException;
 import java.io.Reader;

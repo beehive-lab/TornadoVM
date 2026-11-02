@@ -274,7 +274,7 @@ public class TornadoVMInterpreter {
     }
 
     public void dumpEvents() {
-        if (!ProfilerActivation.isEnabledByPlan()) {
+        if (!ProfilerActivation.isEnabledFromApi()) {
             logger.info("profiling and/or event dumping is not enabled");
             return;
         }

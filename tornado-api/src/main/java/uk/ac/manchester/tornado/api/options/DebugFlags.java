@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import static uk.ac.manchester.tornado.api.internal.options.Deadlines.NEXT_RELEASE;
+
 /**
  * Options that make TornadoVM report what it does: debug output, generated kernels and bytecodes.
  */
@@ -32,17 +34,17 @@ public final class DebugFlags {
     public static final Option<Boolean> FULL_DEBUG = Option.bool("tornado.debug.full") //
             .defaultValue(false) //
             .description("Print detailed debug information; more verbose than `tornado.debug`.") //
-            .category(CATEGORY).deprecatedKey("tornado.fullDebug").build();
+            .category(CATEGORY).deprecatedKey("tornado.fullDebug", NEXT_RELEASE).build();
 
     public static final Option<Boolean> THREAD_INFO = Option.bool("tornado.thread.info") //
             .defaultValue(false) //
             .description("Print the thread configuration (global and local work sizes) of every kernel launch.") //
-            .category(CATEGORY).deprecatedKey("tornado.threadInfo").build();
+            .category(CATEGORY).deprecatedKey("tornado.threadInfo", NEXT_RELEASE).build();
 
     public static final Option<Boolean> PRINT_KERNEL = Option.bool("tornado.print.kernel") //
             .defaultValue(false) //
             .description("Print the source of every generated kernel (OpenCL C, CUDA C or Metal Shading Language).") //
-            .category(CATEGORY).deprecatedKey("tornado.printKernel").build();
+            .category(CATEGORY).deprecatedKey("tornado.printKernel", NEXT_RELEASE).build();
 
     public static final Option<String> PRINT_KERNEL_DIR = Option.string("tornado.print.kernel.dir") //
             .defaultValue("") //
@@ -62,7 +64,7 @@ public final class DebugFlags {
     public static final Option<String> FUZZ_GEN_DIR = Option.string("tornado.fuzz.gen.dir") //
             .noDefault("temporary directory") //
             .description("Directory the TornadoVM fuzzer writes its generated kernel classes to.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.fuzz.genDir").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.fuzz.genDir", NEXT_RELEASE).build();
 
     private DebugFlags() {
     }

@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
+package uk.ac.manchester.tornado.api.internal.options;
 
 /**
  * A problem with a configured {@code tornado.*} key, found by {@link OptionRegistry#diagnose}.
@@ -33,6 +33,10 @@ public record OptionDiagnostic(String key, Kind kind, String message) {
         /** No option has this key. */
         UNKNOWN,
         /** The option was removed. */
-        REMOVED
+        REMOVED,
+        /** The key is a former name of an option, still honoured. */
+        DEPRECATED,
+        /** The key is a former name of an option that is also set under its current name, to another value. */
+        CONFLICT
     }
 }

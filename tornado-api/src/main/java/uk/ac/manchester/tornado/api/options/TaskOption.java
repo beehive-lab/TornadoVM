@@ -17,8 +17,12 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
 
 /**
  * An option set per task graph or per task, as {@code <id>.<suffix>}: {@code s0.t0.device=1:0} for task
@@ -27,6 +31,10 @@ import java.util.Optional;
  * <p>
  * An option {@linkplain Builder#withGlobalFallback() with a global fallback} can also be set for every task at
  * once as {@code tornado.<suffix>}; the per-task key wins.
+ *
+ * <p>
+ * The keys set for a task graph are checked against the task options when the graph is first compiled: a suffix
+ * no task option has, or a task the graph does not have, is reported.
  *
  * @param <T>
  *     the type of the value
@@ -41,6 +49,8 @@ public final class TaskOption<T> {
     private final String description;
     private final OptionCategory category;
     private final boolean globalFallback;
+    private final OptionVisibility visibility;
+    private final List<DeprecatedKey> deprecations;
 
     private TaskOption(Builder<T> builder) {
         this.suffix = builder.suffix;
@@ -49,6 +59,8 @@ public final class TaskOption<T> {
         this.description = builder.description;
         this.category = builder.category;
         this.globalFallback = builder.globalFallback;
+        this.visibility = builder.visibility;
+        this.deprecations = List.copyOf(builder.deprecations);
     }
 
     public static Builder<Integer> integer(String suffix) {
@@ -57,6 +69,10 @@ public final class TaskOption<T> {
 
     public static Builder<String> string(String suffix) {
         return new Builder<>(suffix, OptionParsers.STRING);
+    }
+
+    public static <T> Builder<T> of(String suffix, OptionParser<T> parser) {
+        return new Builder<>(suffix, parser);
     }
 
     /**
@@ -114,6 +130,28 @@ public final class TaskOption<T> {
         return category;
     }
 
+    public OptionVisibility visibility() {
+        return visibility;
+    }
+
+    /**
+     * @return earlier suffixes of this option, still honoured with a warning; {@link DeprecatedKey#key()} is the
+     *     suffix
+     */
+    public List<DeprecatedKey> deprecations() {
+        return deprecations;
+    }
+
+    /**
+     * @return every suffix this option answers to: its own, then its deprecated ones
+     */
+    public List<String> suffixes() {
+        List<String> suffixes = new ArrayList<>();
+        suffixes.add(suffix);
+        deprecations.forEach(deprecation -> suffixes.add(deprecation.key()));
+        return suffixes;
+    }
+
     @Override
     public String toString() {
         return "<id>." + suffix;
@@ -127,6 +165,8 @@ public final class TaskOption<T> {
         private String description;
         private OptionCategory category;
         private boolean globalFallback;
+        private OptionVisibility visibility = OptionVisibility.PUBLIC;
+        private final List<DeprecatedKey> deprecations = new ArrayList<>();
 
         private Builder(String suffix, OptionParser<T> parser) {
             this.suffix = Objects.requireNonNull(suffix);
@@ -150,6 +190,22 @@ public final class TaskOption<T> {
 
         public Builder<T> withGlobalFallback() {
             this.globalFallback = true;
+            return this;
+        }
+
+        public Builder<T> internal() {
+            this.visibility = OptionVisibility.INTERNAL;
+            return this;
+        }
+
+        /**
+         * @param oldSuffix
+         *     an earlier suffix of the option, honoured with a warning
+         * @param dropIn
+         *     the release that stops honouring it
+         */
+        public Builder<T> deprecatedSuffix(String oldSuffix, String dropIn) {
+            this.deprecations.add(new DeprecatedKey(oldSuffix, dropIn));
             return this;
         }
 

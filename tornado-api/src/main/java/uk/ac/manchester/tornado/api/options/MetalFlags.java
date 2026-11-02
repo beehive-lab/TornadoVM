@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import static uk.ac.manchester.tornado.api.internal.options.Deadlines.NEXT_RELEASE;
+
 /**
  * Options of the Metal backend.
  */
@@ -42,7 +44,7 @@ public final class MetalFlags {
     public static final Option<Boolean> FAST_MATH = Option.bool("tornado.metal.fast.math") //
             .defaultValue(false) //
             .description("Compile Metal kernels with fast, relaxed math (`MTLMathModeFast`), trading some floating-point precision for speed.") //
-            .category(CATEGORY).deprecatedKey("tornado.metal.fastmath").build();
+            .category(CATEGORY).deprecatedKey("tornado.metal.fastmath", NEXT_RELEASE).build();
 
     public static final Option<Boolean> CODE_CACHE = Option.bool("tornado.metal.codecache.enable") //
             .defaultValue(false) //
@@ -82,12 +84,12 @@ public final class MetalFlags {
     public static final Option<Integer> DISPATCH_BATCH_SIZE = Option.integer("tornado.metal.dispatch.batch.size") //
             .defaultValue(2) //
             .description("Kernels per command buffer before it is committed, with `tornado.metal.dispatch.batch`.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.metal.dispatch.batchSize").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.metal.dispatch.batchSize", NEXT_RELEASE).build();
 
     public static final Option<Boolean> DISPATCH_SPIN_WAIT = Option.bool("tornado.metal.dispatch.spin.wait") //
             .defaultValue(true) //
             .description("Wait for a command buffer by polling the shared event it signals, instead of `waitUntilCompleted`.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.metal.dispatch.spinWait").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.metal.dispatch.spinWait", NEXT_RELEASE).build();
 
     private MetalFlags() {
     }

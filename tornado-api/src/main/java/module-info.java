@@ -24,6 +24,8 @@ module tornado.api {
     exports uk.ac.manchester.tornado.api.exceptions;
     exports uk.ac.manchester.tornado.api.memory;
     exports uk.ac.manchester.tornado.api.options;
+    // The options machinery: resolver, registry, sources. Not API; the runtime uses it.
+    exports uk.ac.manchester.tornado.api.internal.options to tornado.runtime;
     exports uk.ac.manchester.tornado.api.profiler;
     exports uk.ac.manchester.tornado.api.runtime;
     exports uk.ac.manchester.tornado.api.tile;

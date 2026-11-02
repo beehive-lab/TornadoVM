@@ -64,6 +64,49 @@ public class OptionParsersTest {
     }
 
     @Test
+    public void choiceAcceptsOnlyItsWordsInAnyCase() {
+        OptionParsers.Choice parser = OptionParsers.choice("yield", "spin", "blocking");
+        assertEquals("blocking", parser.parse(" Blocking "));
+        assertEquals("yield|spin|blocking", parser.typeName());
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> parser.parse("blcoking"));
+        assertEquals("'blcoking' is not one of yield, spin, blocking", e.getMessage());
+        assertEquals(false, parser.acceptsBlank());
+    }
+
+    @Test
+    public void choiceListTakesSeveralWordsOrNone() {
+        OptionParsers.Choice parser = OptionParsers.choiceList("opencl", "cuda", "metal");
+        assertEquals("cuda,opencl", parser.parse("CUDA, opencl"));
+        assertEquals("", parser.parse(""));
+        assertEquals(true, parser.acceptsBlank());
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("opencl,cdua"));
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("opencl,,cuda"));
+    }
+
+    @Test
+    public void positiveListChecksEveryDimension() {
+        OptionParser<String> parser = OptionParsers.positiveList(3);
+        assertEquals("1024,1024", parser.parse("1024, 1024"));
+        assertEquals("n[,n[,n]]", parser.typeName());
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("16,x"));
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("0,16"));
+        assertThrows(IllegalArgumentException.class, () -> parser.parse("1,2,3,4"));
+    }
+
+    @Test
+    public void deviceIsBackendColonDevice() {
+        assertEquals("1:0", OptionParsers.DEVICE.parse(" 1:0"));
+        assertThrows(IllegalArgumentException.class, () -> OptionParsers.DEVICE.parse("1"));
+        assertThrows(IllegalArgumentException.class, () -> OptionParsers.DEVICE.parse("gpu:0"));
+    }
+
+    @Test
+    public void nameListRejectsEmptyItems() {
+        assertEquals("input,emit", OptionParsers.NAME_LIST.parse("input, emit"));
+        assertThrows(IllegalArgumentException.class, () -> OptionParsers.NAME_LIST.parse("input,"));
+    }
+
+    @Test
     public void onlyStringsTakeBlankText() {
         assertEquals(true, OptionParsers.STRING.acceptsBlank());
         assertEquals(false, OptionParsers.BOOLEAN.acceptsBlank());

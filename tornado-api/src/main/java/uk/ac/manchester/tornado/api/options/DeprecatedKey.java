@@ -17,13 +17,21 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import java.util.Objects;
+
 /**
- * An option TornadoVM no longer has. Setting it has no effect and is reported with the reason.
+ * A former key of an option, still honoured with a warning until the release {@code dropIn}.
  *
  * @param key
- *     the removed key
- * @param reason
- *     why it was removed, and what to do instead
+ *     the former key
+ * @param dropIn
+ *     the TornadoVM version, {@code major.minor.patch}, that stops honouring it. A unit test fails once the
+ *     project version reaches it, so the key is not kept by accident.
  */
-public record RemovedOption(String key, String reason) {
+public record DeprecatedKey(String key, String dropIn) {
+
+    public DeprecatedKey {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(dropIn);
+    }
 }

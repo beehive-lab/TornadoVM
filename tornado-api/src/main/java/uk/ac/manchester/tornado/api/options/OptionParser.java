@@ -32,7 +32,7 @@ public interface OptionParser<T> {
      *     the configured text; blank only if {@link #acceptsBlank()}
      * @return the parsed value
      * @throws IllegalArgumentException
-     *     if the text is not a valid value; {@link OptionResolver} reports it against the option's key
+     *     if the text is not a valid value; {@link uk.ac.manchester.tornado.api.internal.options.OptionResolver} reports it against the option's key
      */
     T parse(String text);
 

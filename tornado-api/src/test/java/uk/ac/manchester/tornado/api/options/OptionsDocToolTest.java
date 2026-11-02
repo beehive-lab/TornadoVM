@@ -29,6 +29,11 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
+import uk.ac.manchester.tornado.api.internal.options.MapSource;
+import uk.ac.manchester.tornado.api.internal.options.OptionRegistry;
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
+import uk.ac.manchester.tornado.api.internal.options.OptionsRenderer;
+
 public class OptionsDocToolTest {
 
     /** The flags page of the documentation, from the tornado-api module directory Maven runs the tests in. */

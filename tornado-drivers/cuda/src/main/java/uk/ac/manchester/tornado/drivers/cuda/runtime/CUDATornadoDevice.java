@@ -164,7 +164,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     private void disableProfilerOptions() {
-        ProfilerActivation.disableForPlan();
+        ProfilerActivation.disableFromApi();
     }
 
     @Override

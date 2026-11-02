@@ -29,8 +29,10 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.options.DebugFlags;
-import uk.ac.manchester.tornado.api.options.OptionRegistry;
-import uk.ac.manchester.tornado.api.options.OptionResolver;
+import uk.ac.manchester.tornado.api.internal.options.OptionDiagnostic;
+import uk.ac.manchester.tornado.api.internal.options.OptionRegistry;
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
+import uk.ac.manchester.tornado.api.options.InvalidOptionValueException;
 import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
@@ -51,10 +53,26 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
     }
 
     /**
-     * Warns about every {@code -Dtornado.*} option that is unknown, with the closest existing one, or removed.
+     * Warns about every {@code -Dtornado.*} option that is unknown (with the closest existing one), removed,
+     * deprecated, or set under both its names; then parses every option that is set, so that a bad value stops
+     * TornadoVM here rather than when the option is first read.
+     *
+     * @throws InvalidOptionValueException
+     *     for the first option set to a value its type does not accept, after every such option is reported
      */
     private static void reportOptionProblems() {
-        OptionRegistry.catalog().diagnose(OptionResolver.global().source().keys()).forEach(diagnostic -> OptionResolver.warn(diagnostic.message()));
+        OptionResolver resolver = OptionResolver.global();
+        OptionRegistry registry = OptionRegistry.catalog();
+        List<String> allowed = RuntimeFlags.OPTIONS_ALLOW.find().map(list -> List.of(list.split(","))).orElse(List.of());
+        for (OptionDiagnostic diagnostic : registry.diagnose(resolver.source(), allowed)) {
+            // The resolver warns about a deprecated key when it reads it; report each once.
+            resolver.reportOnce(diagnostic.key(), diagnostic.message());
+        }
+        List<InvalidOptionValueException> errors = registry.validate(resolver.source());
+        if (!errors.isEmpty()) {
+            errors.forEach(error -> System.err.println("[TornadoVM] ERROR: " + error.getMessage()));
+            throw errors.get(0);
+        }
     }
 
     private TornadoAcceleratorBackend createBackend(TornadoBackendProvider provider) {

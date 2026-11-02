@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import static uk.ac.manchester.tornado.api.internal.options.Deadlines.NEXT_RELEASE;
+
 /**
  * Options of the CUDA backend.
  */
@@ -26,7 +28,7 @@ public final class CudaFlags {
 
     private static final long SIXTEEN_MB = 16L * 1024 * 1024;
 
-    public static final Option<String> COMPILE_PROFILE = Option.string("tornado.cuda.compile.profile") //
+    public static final Option<String> COMPILE_PROFILE = Option.choice("tornado.cuda.compile.profile", "default", "none", "fast", "debug", "lineinfo", "repro", "deterministic") //
             .defaultValue("default") //
             .description("Named NVRTC option bundle: `default` (none), `fast` (`--use_fast_math --extra-device-vectorization`), `debug` (`-lineinfo`, so "
                     + "Nsight can attribute samples to the generated CUDA C) or `repro` (`--fmad=false`).") //
@@ -54,7 +56,7 @@ public final class CudaFlags {
             .description("Directory, under `$TORNADOVM_HOME`, of the CUDA module cache.") //
             .category(CATEGORY).build();
 
-    public static final Option<String> SCHEDULING = Option.string("tornado.cuda.sched") //
+    public static final Option<String> SCHEDULING = Option.choice("tornado.cuda.sched", "yield", "spin", "blocking", "auto") //
             .defaultValue("yield") //
             .description("How a host thread waits for the device: `yield`, `spin`, `blocking` (sleeps until signalled) or `auto`.") //
             .category(CATEGORY).build();
@@ -78,7 +80,7 @@ public final class CudaFlags {
             .defaultValue(32L) //
             .description("Byte boundary the first element of a native array is aligned to in device memory. 32 keeps warp-wide accesses at four "
                     + "32-byte L2 sectors instead of five.") //
-            .category(CATEGORY).deprecatedKey("tornado.cuda.payloadAlignment").build();
+            .category(CATEGORY).deprecatedKey("tornado.cuda.payloadAlignment", NEXT_RELEASE).build();
 
     public static final Option<String> NVCC = Option.string("tornado.cuda.nvcc") //
             .noDefault("found from the CUDA toolkit") //
@@ -94,12 +96,12 @@ public final class CudaFlags {
             .noDefault("driver default (2048)") //
             .description("Maximum device-side kernel launches outstanding at once (`CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT`); a launch beyond it "
                     + "fails. A plan's `withCUDAPendingLaunchCount(n)` takes precedence.") //
-            .category(CATEGORY).deprecatedKey("tornado.cuda.dp.pendingLaunchCount").build();
+            .category(CATEGORY).deprecatedKey("tornado.cuda.dp.pendingLaunchCount", NEXT_RELEASE).build();
 
     public static final Option<Boolean> GRAPH_ASYNC_LAUNCH = Option.bool("tornado.cuda.graph.async.launch") //
             .defaultValue(false) //
             .description("Launch a CUDA graph that copies nothing back to the host without waiting for it.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.cuda.graph.asyncLaunch").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.cuda.graph.asyncLaunch", NEXT_RELEASE).build();
 
     public static final Option<Boolean> STAGED_TRANSFERS = Option.bool("tornado.staged.transfers") //
             .defaultValue(false) //

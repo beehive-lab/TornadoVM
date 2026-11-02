@@ -15,33 +15,39 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
+package uk.ac.manchester.tornado.api.internal.options;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
- * Options from a map, standing in for the command line in tests.
+ * Sources in precedence order: the first one that configures a key wins.
  */
-record MapSource(Map<String, String> values) implements OptionSource {
+public final class LayeredSource implements OptionSource {
 
-    static MapSource of(String... keysAndValues) {
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < keysAndValues.length; i += 2) {
-            map.put(keysAndValues[i], keysAndValues[i + 1]);
-        }
-        return new MapSource(Map.copyOf(map));
+    private final List<OptionSource> layers;
+
+    public LayeredSource(List<OptionSource> layers) {
+        this.layers = List.copyOf(layers);
     }
 
     @Override
     public Optional<String> lookup(String key) {
-        return Optional.ofNullable(values.get(key));
+        for (OptionSource layer : layers) {
+            Optional<String> value = layer.lookup(key);
+            if (value.isPresent()) {
+                return value;
+            }
+        }
+        return Optional.empty();
     }
 
     @Override
     public Set<String> keys() {
-        return values.keySet();
+        Set<String> keys = new TreeSet<>();
+        layers.forEach(layer -> keys.addAll(layer.keys()));
+        return keys;
     }
 }

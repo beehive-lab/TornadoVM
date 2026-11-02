@@ -20,51 +20,55 @@ package uk.ac.manchester.tornado.runtime.common;
 import uk.ac.manchester.tornado.api.options.ProfilerFlags;
 
 /**
- * Whether the TornadoVM profiler is on: switched on for every execution by {@code -Dtornado.profiler} (and
- * {@code -Dtornado.log.profiler}), or for the executions of a plan by
- * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan#withProfiler}.
+ * Whether the TornadoVM profiler is on: switched on by {@code -Dtornado.profiler} (and {@code -Dtornado.log.profiler}),
+ * or by {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan#withProfiler} through the API.
+ *
+ * <p>
+ * The switch is process-wide, not per plan: once a plan turns the profiler on with {@code withProfiler}, every plan
+ * is profiled until one turns it off ({@code withoutProfiler}, or a device reset). The drivers read it when they
+ * launch a kernel or copy data, without knowing the plan; making it per plan means passing it through them.
  */
 public final class ProfilerActivation {
 
-    private static volatile boolean enabledByPlan;
-    private static volatile boolean keepReportByPlan;
+    private static volatile boolean enabledFromApi;
+    private static volatile boolean keepReportFromApi;
 
     private ProfilerActivation() {
     }
 
     /**
-     * Switches the profiler on for the plan about to run.
+     * Switches the profiler on, for every plan, as {@code withProfiler} asks.
      *
      * @param keepReport
      *     keep the report instead of printing it, as {@code tornado.log.profiler} does
      */
-    public static void enableForPlan(boolean keepReport) {
-        enabledByPlan = true;
+    public static void enableFromApi(boolean keepReport) {
+        enabledFromApi = true;
         if (keepReport) {
-            keepReportByPlan = true;
+            keepReportFromApi = true;
         }
     }
 
-    public static void disableForPlan() {
-        enabledByPlan = false;
-        keepReportByPlan = false;
+    public static void disableFromApi() {
+        enabledFromApi = false;
+        keepReportFromApi = false;
     }
 
     /**
-     * @return whether a plan switched the profiler on, regardless of {@code -Dtornado.profiler}
+     * @return whether the API switched the profiler on, regardless of {@code -Dtornado.profiler}
      */
-    public static boolean isEnabledByPlan() {
-        return enabledByPlan;
+    public static boolean isEnabledFromApi() {
+        return enabledFromApi;
     }
 
     public static boolean isEnabled() {
-        return enabledByPlan || ProfilerFlags.PROFILER.get();
+        return enabledFromApi || ProfilerFlags.PROFILER.get();
     }
 
     /**
      * @return whether the profiler report is kept instead of printed
      */
     public static boolean keepsReport() {
-        return keepReportByPlan || ProfilerFlags.PROFILER_LOG.get();
+        return keepReportFromApi || ProfilerFlags.PROFILER_LOG.get();
     }
 }

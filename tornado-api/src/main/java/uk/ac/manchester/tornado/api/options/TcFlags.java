@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import static uk.ac.manchester.tornado.api.internal.options.Deadlines.NEXT_RELEASE;
+
 /**
  * Options of the TornadoVM compiler (TC). The compiler modules do not read them: the drivers read them here and
  * pass them to TC.
@@ -34,14 +36,14 @@ public final class TcFlags {
     public static final Option<Boolean> MATH_OPTIMIZATIONS = Option.bool("tornado.enable.math.optimizations") //
             .defaultValue(true) //
             .description("Rewrite math calls into faster equivalents, such as `1/sqrt(x)` into `rsqrt(x)`.") //
-            .category(CATEGORY).deprecatedKey("tornado.enable.mathOptimizations").build();
+            .category(CATEGORY).deprecatedKey("tornado.enable.mathOptimizations", NEXT_RELEASE).build();
 
     public static final Option<Boolean> PARTIAL_UNROLL = Option.bool("tornado.experimental.partial.unroll") //
             .defaultValue(false) //
             .description("Experimental: partially unroll loops.") //
             .category(CATEGORY).dynamic().build();
 
-    public static final Option<String> DUMP = Option.string("tornado.tc.dump") //
+    public static final Option<String> DUMP = Option.nameList("tornado.tc.dump") //
             .defaultValue("none") //
             .description("Compiler stages whose IR is written to `tornado.tc.dump.dir`: `none`, `all` or a comma-separated list.") //
             .category(CATEGORY).build();
@@ -49,9 +51,9 @@ public final class TcFlags {
     public static final Option<String> DUMP_DIR = Option.string("tornado.tc.dump.dir") //
             .defaultValue("tc-dumps") //
             .description("Directory of the compiler IR dumps and reports.") //
-            .category(CATEGORY).deprecatedKey("tornado.tc.dumpDir").build();
+            .category(CATEGORY).deprecatedKey("tornado.tc.dumpDir", NEXT_RELEASE).build();
 
-    public static final Option<String> VERIFY = Option.string("tornado.tc.verify") //
+    public static final Option<String> VERIFY = Option.choice("tornado.tc.verify", "end", "each") //
             .defaultValue("end") //
             .description("When the compiler verifies its IR: `end` of the pipeline or after `each` stage.") //
             .category(CATEGORY).build();
@@ -61,9 +63,9 @@ public final class TcFlags {
             .description("Dump and report only the functions whose name contains this text; empty selects every function.") //
             .category(CATEGORY).build();
 
-    public static final Option<String> REPORT = Option.string("tornado.tc.report") //
-            .defaultValue("") //
-            .description("`html` writes an HTML report of every compilation to `tornado.tc.dump.dir`.") //
+    public static final Option<String> REPORT = Option.choice("tornado.tc.report", "none", "html") //
+            .defaultValue("none") //
+            .description("`html` writes an HTML report of every compilation to `tornado.tc.dump.dir`; `none` writes none.") //
             .category(CATEGORY).build();
 
     public static final Option<Boolean> VERBOSE = Option.bool("tornado.tc.verbose") //
@@ -79,7 +81,7 @@ public final class TcFlags {
     public static final Option<Boolean> COMPILE_TIMES = Option.bool("tornado.tc.compile.times") //
             .defaultValue(false) //
             .description("With the profiler on, print the compiler's and the driver's compilation time of every task.") //
-            .category(CATEGORY).deprecatedKey("tornado.tc.compileTimes").build();
+            .category(CATEGORY).deprecatedKey("tornado.tc.compileTimes", NEXT_RELEASE).build();
 
     public static final Option<Boolean> MEMOIZE = Option.bool("tornado.tc.memoize") //
             .defaultValue(true) //
@@ -90,24 +92,24 @@ public final class TcFlags {
             .defaultValue(3) //
             .description("A scalar argument that took this many different values across the tasks of one kernel is compiled as a "
                     + "runtime value from then on; 0 specialises every value.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.tc.varyingScalars").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.tc.varyingScalars", NEXT_RELEASE).build();
 
     public static final Option<Boolean> DYNAMIC_SHAPES = Option.bool("tornado.tc.dynamic.shapes") //
             .defaultValue(false) //
             .description("Compile every task as with `withDynamicShapes()`: a kernel that never reads an array length is shared by tasks "
                     + "over arrays of any size.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.tc.dynamicShapes").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.tc.dynamicShapes", NEXT_RELEASE).build();
 
     public static final Option<Boolean> NATIVE_HALF = Option.bool("tornado.tc.native.half") //
             .defaultValue(true) //
             .description("Compute half-precision arithmetic in half; `false` computes it through float.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.tc.nativeHalf").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.tc.nativeHalf", NEXT_RELEASE).build();
 
     public static final Option<Boolean> SIGNED_OVERFLOW_UNDEFINED = Option.bool("tornado.tc.signed.overflow.undefined") //
             .defaultValue(false) //
             .description("Emit int and long arithmetic as plain C, where signed overflow is undefined: faster where the driver "
                     + "compiler exploits it, wrong where Java code relies on wrapping.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.tc.signedOverflowUndefined").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.tc.signedOverflowUndefined", NEXT_RELEASE).build();
 
     private TcFlags() {
     }

@@ -49,6 +49,8 @@ import java.util.regex.Pattern;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.internal.options.OptionRegistry;
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
 import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.api.options.MetalFlags;
 import uk.ac.manchester.tornado.api.options.OpenCLFlags;
@@ -160,6 +162,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private Event event;
     private String taskGraphName;
     private List<TaskPackage> taskPackages;
+    /** Whether the {@code <graph>.<task>.*} keys of this task graph were checked; done once, at its first compilation. */
+    private boolean taskKeysChecked;
     private List<Object> streamOutObjects;
     private List<Object> streamInObjects;
     private Map<TornadoTaskGraph, List<Object>> taskToPersistentObjectMap;
@@ -360,7 +364,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     @Override
     public void enableProfiler(ProfilerMode profilerMode) {
         this.profilerMode = profilerMode;
-        ProfilerActivation.enableForPlan(profilerMode == ProfilerMode.SILENT);
+        ProfilerActivation.enableFromApi(profilerMode == ProfilerMode.SILENT);
     }
 
     /**
@@ -395,7 +399,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void disableProfiler() {
-        ProfilerActivation.disableForPlan();
+        ProfilerActivation.disableFromApi();
         this.timeProfiler = null;
         this.profilerMode = null;
     }
@@ -948,12 +952,27 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     /**
+     * Warns about {@code -D<graph>.<task>.<suffix>} keys that no per-task option has, or that name a task the graph
+     * does not have, and fails on a value the option does not accept.
+     */
+    private void checkTaskKeys() {
+        if (taskKeysChecked) {
+            return;
+        }
+        taskKeysChecked = true;
+        OptionResolver resolver = OptionResolver.global();
+        List<String> tasks = taskPackages.stream().map(TaskPackage::getId).toList();
+        OptionRegistry.catalog().diagnoseTaskGraph(resolver.source(), taskGraphName, tasks).forEach(diagnostic -> resolver.reportOnce(diagnostic.key(), diagnostic.message()));
+    }
+
+    /**
      * Compile a {@link TaskGraph} into TornadoVM byte-code.
      *
      * @param setNewDevice:
      *     boolean that specifies if set a new device or not.
      */
     private TornadoVM compileGraphAndBuildVM(boolean setNewDevice) {
+        checkTaskKeys();
         final ByteBuffer buffer = ByteBuffer.wrap(highLevelCode);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.limit(hlBuffer.position());

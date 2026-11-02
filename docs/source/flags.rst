@@ -51,14 +51,34 @@ The ``tornado`` wrapper maps these flags to JVM flags for ease of use. For examp
 JVM Flags
 ---------
 
-JVM flags are read, in order of precedence, from ``-D`` options on the command line (or set at run time with
-``TornadoRuntimeProvider.setProperty``), then from ``$TORNADOVM_HOME/etc/tornado.properties`` if you create one (a
-standard Java properties file, for flags you want set on every run), and otherwise take their default. Boolean flags accept ``true`` or ``false`` in any letter case; a value a flag cannot take stops the
-program with a message naming the flag.
+JVM flags are read, in order of precedence, from:
 
-When TornadoVM starts, it warns about every ``-Dtornado.*`` flag that does not exist, suggesting the closest
-existing one, and about every flag that was removed. A flag that was renamed keeps working under its former name
-for one release, with a warning naming the new one.
+1. ``-D`` options on the command line, or set at run time with ``TornadoRuntimeProvider.setProperty``;
+2. the properties file named by ``-Dtornado.options.file``, for applications that use TornadoVM without
+   ``TORNADOVM_HOME`` (from Maven, for example);
+3. ``$TORNADOVM_HOME/etc/tornado.properties``, if you create one: a standard Java properties file, for flags you want
+   set on every run.
+
+Otherwise a flag takes its default. The properties files are read by TornadoVM only: their entries are not copied
+into the JVM's system properties, so ``System.getProperty`` in your own code does not see them.
+
+Values are checked when TornadoVM starts. Boolean flags accept ``true`` or ``false`` in any letter case; a flag that
+takes one of a fixed set of words (such as ``tornado.cuda.sched``) accepts only those words, in any letter case. A
+value a flag cannot take stops the program with a message naming the flag.
+
+When TornadoVM starts, it also warns about every ``-Dtornado.*`` flag that does not exist, suggesting the closest
+existing one, and about every flag that was removed. If your application reads ``tornado.*`` keys of its own, list
+them in ``-Dtornado.options.allow`` so they are not reported. A flag that was renamed keeps working under its former
+name until the release shown in the tables below, with a warning naming the new one; setting both names to different
+values is reported too.
+
+Per-task flags (``-Ds0.t0.device=1:0``) are checked when their task graph is first compiled: a suffix that no
+per-task flag has, or a task the graph does not have, is reported, and a bad value stops the program.
+
+Most flags are read once, the first time TornadoVM needs them. Setting one at run time after that, with
+``TornadoRuntimeProvider.setProperty``, has no effect and prints a warning: set such flags on the command line, or
+before TornadoVM first uses them. The typed ``TornadoRuntimeProvider.setProperty(Option, value)`` checks the value
+when it is set.
 
 The tables below are generated from the flag declarations in ``tornado-api``
 (``uk.ac.manchester.tornado.api.options``).
@@ -92,7 +112,7 @@ Runtime and device selection
      - Run the tasks of a task graph concurrently on several devices, in one or several backends.
    * - ``-Dtornado.ooo.execution.enable``
      - ``false``
-     - Create device command queues that may run commands out of order. Formerly ``-Dtornado.ooo-execution.enable``.
+     - Create device command queues that may run commands out of order. Formerly ``-Dtornado.ooo-execution.enable`` (until 8.1.0).
    * - ``-Dtornado.recover.bailout``
      - ``false``
      - When a task fails to compile or launch, run it as sequential Java on the host instead of failing. Off by default: the fallback is silent, so a broken device path looks like a working one.
@@ -110,7 +130,13 @@ Runtime and device selection
      - JSON description of the virtual device used by ``tornado.virtual.device``.
    * - ``-Dtornado.tvm.max.bytecode.size``
      - ``4096``
-     - Size in bytes of the buffer that holds the TornadoVM bytecodes of a task graph. Formerly ``-Dtornado.tvm.maxbytecodesize``.
+     - Size in bytes of the buffer that holds the TornadoVM bytecodes of a task graph. Formerly ``-Dtornado.tvm.maxbytecodesize`` (until 8.1.0).
+   * - ``-Dtornado.options.file``
+     - unset
+     - Properties file of flags to apply to every run, such as for an application that uses TornadoVM from Maven without ``TORNADOVM_HOME``. Only read from the command line (``-D``). Its flags take precedence over ``$TORNADOVM_HOME/etc/tornado.properties``; ``-D`` takes precedence over both.
+   * - ``-Dtornado.options.allow``
+     - unset
+     - Comma-separated ``tornado.*`` keys that the application itself reads, so the start-up check does not report them as unknown. A key ending in ``.`` allows every key it starts. Example: ``-Dtornado.options.allow=tornado.backend.name``.
 
 Debugging and logging
 ~~~~~~~~~~~~~~~~~~~~~
@@ -127,13 +153,13 @@ Debugging and logging
      - Print basic debug information.
    * - ``-Dtornado.debug.full``
      - ``false``
-     - Print detailed debug information; more verbose than ``tornado.debug``. Formerly ``-Dtornado.fullDebug``.
+     - Print detailed debug information; more verbose than ``tornado.debug``. Formerly ``-Dtornado.fullDebug`` (until 8.1.0).
    * - ``-Dtornado.thread.info``
      - ``false``
-     - Print the thread configuration (global and local work sizes) of every kernel launch. Formerly ``-Dtornado.threadInfo``.
+     - Print the thread configuration (global and local work sizes) of every kernel launch. Formerly ``-Dtornado.threadInfo`` (until 8.1.0).
    * - ``-Dtornado.print.kernel``
      - ``false``
-     - Print the source of every generated kernel (OpenCL C, CUDA C or Metal Shading Language). Formerly ``-Dtornado.printKernel``.
+     - Print the source of every generated kernel (OpenCL C, CUDA C or Metal Shading Language). Formerly ``-Dtornado.printKernel`` (until 8.1.0).
    * - ``-Dtornado.print.kernel.dir``
      - *empty*
      - File the generated kernels are appended to; empty prints them on standard output.
@@ -285,7 +311,7 @@ CUDA backend
      - Pin the host memory of every device buffer, not only of those transferred on every execution.
    * - ``-Dtornado.cuda.payload.alignment``
      - ``32``
-     - Byte boundary the first element of a native array is aligned to in device memory. 32 keeps warp-wide accesses at four 32-byte L2 sectors instead of five. Formerly ``-Dtornado.cuda.payloadAlignment``.
+     - Byte boundary the first element of a native array is aligned to in device memory. 32 keeps warp-wide accesses at four 32-byte L2 sectors instead of five. Formerly ``-Dtornado.cuda.payloadAlignment`` (until 8.1.0).
    * - ``-Dtornado.cuda.nvcc``
      - found from the CUDA toolkit
      - Path of the ``nvcc`` used to compile CUDA Tile kernels.
@@ -294,7 +320,7 @@ CUDA backend
      - Path of the CUDA device runtime (``libcudadevrt.a``), linked into kernels that launch kernels (``KernelContext.launch``).
    * - ``-Dtornado.cuda.dp.pending.launch.count``
      - driver default (2048)
-     - Maximum device-side kernel launches outstanding at once (``CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT``); a launch beyond it fails. A plan's ``withCUDAPendingLaunchCount(n)`` takes precedence. Formerly ``-Dtornado.cuda.dp.pendingLaunchCount``.
+     - Maximum device-side kernel launches outstanding at once (``CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT``); a launch beyond it fails. A plan's ``withCUDAPendingLaunchCount(n)`` takes precedence. Formerly ``-Dtornado.cuda.dp.pendingLaunchCount`` (until 8.1.0).
    * - ``-Dtornado.staged.transfers``
      - ``false``
      - Experimental: upload large one-shot transfers through a ring of pinned staging buffers, overlapping the host copy with the DMA.
@@ -320,7 +346,7 @@ Metal backend
      - Record Metal command-buffer timestamps, which the TornadoVM profiler needs for kernel times.
    * - ``-Dtornado.metal.fast.math``
      - ``false``
-     - Compile Metal kernels with fast, relaxed math (``MTLMathModeFast``), trading some floating-point precision for speed. Formerly ``-Dtornado.metal.fastmath``.
+     - Compile Metal kernels with fast, relaxed math (``MTLMathModeFast``), trading some floating-point precision for speed. Formerly ``-Dtornado.metal.fastmath`` (until 8.1.0).
    * - ``-Dtornado.metal.codecache.enable``
      - ``false``
      - Load a kernel's Metal library from ``tornado.metal.codecache.dir`` when it is there instead of compiling it, and write the compiled ones there.
@@ -355,7 +381,7 @@ TornadoVM compiler (TC)
      - Fuse multiplies and adds into ``fma``. ``false`` keeps the two roundings of the host, also in NVRTC (``--fmad=false``). For one execution plan only, use ``TornadoExecutionPlan.withStrictFloatingPoint()``.
    * - ``-Dtornado.enable.math.optimizations``
      - ``true``
-     - Rewrite math calls into faster equivalents, such as ``1/sqrt(x)`` into ``rsqrt(x)``. Formerly ``-Dtornado.enable.mathOptimizations``.
+     - Rewrite math calls into faster equivalents, such as ``1/sqrt(x)`` into ``rsqrt(x)``. Formerly ``-Dtornado.enable.mathOptimizations`` (until 8.1.0).
    * - ``-Dtornado.experimental.partial.unroll``
      - ``false``
      - Experimental: partially unroll loops.
@@ -364,7 +390,7 @@ TornadoVM compiler (TC)
      - Compiler stages whose IR is written to ``tornado.tc.dump.dir``: ``none``, ``all`` or a comma-separated list.
    * - ``-Dtornado.tc.dump.dir``
      - ``tc-dumps``
-     - Directory of the compiler IR dumps and reports. Formerly ``-Dtornado.tc.dumpDir``.
+     - Directory of the compiler IR dumps and reports. Formerly ``-Dtornado.tc.dumpDir`` (until 8.1.0).
    * - ``-Dtornado.tc.verify``
      - ``end``
      - When the compiler verifies its IR: ``end`` of the pipeline or after ``each`` stage.
@@ -372,8 +398,8 @@ TornadoVM compiler (TC)
      - *empty*
      - Dump and report only the functions whose name contains this text; empty selects every function.
    * - ``-Dtornado.tc.report``
-     - *empty*
-     - ``html`` writes an HTML report of every compilation to ``tornado.tc.dump.dir``.
+     - ``none``
+     - ``html`` writes an HTML report of every compilation to ``tornado.tc.dump.dir``; ``none`` writes none.
    * - ``-Dtornado.tc.verbose``
      - ``false``
      - Print one line per compiled kernel.
@@ -382,7 +408,7 @@ TornadoVM compiler (TC)
      - Print a summary of the compilations at exit.
    * - ``-Dtornado.tc.compile.times``
      - ``false``
-     - With the profiler on, print the compiler's and the driver's compilation time of every task. Formerly ``-Dtornado.tc.compileTimes``.
+     - With the profiler on, print the compiler's and the driver's compilation time of every task. Formerly ``-Dtornado.tc.compileTimes`` (until 8.1.0).
 
 Native libraries
 ~~~~~~~~~~~~~~~~
@@ -427,10 +453,10 @@ For TornadoVM developers. They may change or disappear without a deprecation per
      - Class implementing the TornadoVM settings access.
    * - ``-Dtornado.fuzz.gen.dir``
      - temporary directory
-     - Directory the TornadoVM fuzzer writes its generated kernel classes to. Formerly ``-Dtornado.fuzz.genDir``.
+     - Directory the TornadoVM fuzzer writes its generated kernel classes to. Formerly ``-Dtornado.fuzz.genDir`` (until 8.1.0).
    * - ``-Dtornado.cuda.graph.async.launch``
      - ``false``
-     - Launch a CUDA graph that copies nothing back to the host without waiting for it. Formerly ``-Dtornado.cuda.graph.asyncLaunch``.
+     - Launch a CUDA graph that copies nothing back to the host without waiting for it. Formerly ``-Dtornado.cuda.graph.asyncLaunch`` (until 8.1.0).
    * - ``-Dtornado.staged.chunk.size``
      - ``16777216``
      - Size in bytes of each pinned staging buffer of ``tornado.staged.transfers``.
@@ -448,114 +474,158 @@ For TornadoVM developers. They may change or disappear without a deprecation per
      - Encode kernels into shared command buffers committed in batches, instead of committing and waiting for every kernel.
    * - ``-Dtornado.metal.dispatch.batch.size``
      - ``2``
-     - Kernels per command buffer before it is committed, with ``tornado.metal.dispatch.batch``. Formerly ``-Dtornado.metal.dispatch.batchSize``.
+     - Kernels per command buffer before it is committed, with ``tornado.metal.dispatch.batch``. Formerly ``-Dtornado.metal.dispatch.batchSize`` (until 8.1.0).
    * - ``-Dtornado.metal.dispatch.spin.wait``
      - ``true``
-     - Wait for a command buffer by polling the shared event it signals, instead of ``waitUntilCompleted``. Formerly ``-Dtornado.metal.dispatch.spinWait``.
+     - Wait for a command buffer by polling the shared event it signals, instead of ``waitUntilCompleted``. Formerly ``-Dtornado.metal.dispatch.spinWait`` (until 8.1.0).
    * - ``-Dtornado.tc.memoize``
      - ``true``
      - Reuse a compilation for a task with the same method and facts as an earlier one.
    * - ``-Dtornado.tc.varying.scalars``
      - ``3``
-     - A scalar argument that took this many different values across the tasks of one kernel is compiled as a runtime value from then on; 0 specialises every value. Formerly ``-Dtornado.tc.varyingScalars``.
+     - A scalar argument that took this many different values across the tasks of one kernel is compiled as a runtime value from then on; 0 specialises every value. Formerly ``-Dtornado.tc.varyingScalars`` (until 8.1.0).
    * - ``-Dtornado.tc.dynamic.shapes``
      - ``false``
-     - Compile every task as with ``withDynamicShapes()``: a kernel that never reads an array length is shared by tasks over arrays of any size. Formerly ``-Dtornado.tc.dynamicShapes``.
+     - Compile every task as with ``withDynamicShapes()``: a kernel that never reads an array length is shared by tasks over arrays of any size. Formerly ``-Dtornado.tc.dynamicShapes`` (until 8.1.0).
    * - ``-Dtornado.tc.native.half``
      - ``true``
-     - Compute half-precision arithmetic in half; ``false`` computes it through float. Formerly ``-Dtornado.tc.nativeHalf``.
+     - Compute half-precision arithmetic in half; ``false`` computes it through float. Formerly ``-Dtornado.tc.nativeHalf`` (until 8.1.0).
    * - ``-Dtornado.tc.signed.overflow.undefined``
      - ``false``
-     - Emit int and long arithmetic as plain C, where signed overflow is undefined: faster where the driver compiler exploits it, wrong where Java code relies on wrapping. Formerly ``-Dtornado.tc.signedOverflowUndefined``.
+     - Emit int and long arithmetic as plain C, where signed overflow is undefined: faster where the driver compiler exploits it, wrong where Java code relies on wrapping. Formerly ``-Dtornado.tc.signedOverflowUndefined`` (until 8.1.0).
    * - ``-Dtornado.nccl.spin.wait.micros``
      - ``1000``
-     - Microseconds NCCL rank threads and the caller spin before parking; 0 parks at once. Formerly ``-Dtornado.nccl.spinWaitMicros``.
+     - Microseconds NCCL rank threads and the caller spin before parking; 0 parks at once. Formerly ``-Dtornado.nccl.spinWaitMicros`` (until 8.1.0).
 
 Removed options
 ~~~~~~~~~~~~~~~
 
-Setting one of these prints a warning and has no effect.
+Setting one of these prints a warning and has no effect. The warning is printed until the release shown.
 
 .. list-table::
    :header-rows: 1
-   :widths: 40 60
+   :widths: 35 50 15
 
    * - Flag
      - Reason
+     - Reported until
    * - ``-Dtornado.check.parameters``
      - TornadoVM always behaves as with its default (true).
+     - 8.1.0
    * - ``-Dtornado.circularevents``
      - TornadoVM always behaves as with its default (true).
+     - 8.1.0
    * - ``-Dtornado.clean.atomics.space``
      - TornadoVM always behaves as with its default (false).
+     - 8.1.0
    * - ``-Dtornado.cuda.batchGlobalLoads``
      - It had no effect. Its reader went with the Graal compiler.
+     - 8.1.0
    * - ``-Dtornado.cuda.tile.hints``
      - It had no effect. Its reader went with the Graal compiler.
+     - 8.1.0
    * - ``-Dtornado.cuda.tile.unrollKLoop``
      - It had no effect. Its reader went with the Graal compiler.
+     - 8.1.0
    * - ``-Dtornado.debug.executionTime``
      - It had no effect. Use tornado.profiler.
+     - 8.1.0
    * - ``-Dtornado.driver``
      - It had no effect. Use tornado.backend.
+     - 8.1.0
    * - ``-Dtornado.dump.to.ip``
      - Sending profiler logs over a socket was removed. Use tornado.profiler.dump.dir.
+     - 8.1.0
    * - ``-Dtornado.enable.fastMathOptimizations``
      - It had no effect. Use tornado.enable.math.optimizations.
+     - 8.1.0
    * - ``-Dtornado.enable.ip.logging``
      - Sending profiler logs over a socket was removed.
+     - 8.1.0
    * - ``-Dtornado.enable.nativeFunctions``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.enable.streamOut.blocking``
      - TornadoVM always behaves as with its default (true).
+     - 8.1.0
    * - ``-Dtornado.eventpool.maxwaitevents``
      - TornadoVM always behaves as with its default (64).
+     - 8.1.0
    * - ``-Dtornado.eventpool.size``
      - TornadoVM always behaves as with its default (1024).
+     - 8.1.0
    * - ``-Dtornado.events.dump``
      - TornadoVM always behaves as with its default (false).
+     - 8.1.0
    * - ``-Dtornado.events.log``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.experimental.reduce``
      - TornadoVM always behaves as with its default (true).
+     - 8.1.0
    * - ``-Dtornado.feature.extraction``
      - Kernel feature extraction was removed.
+     - 8.1.0
    * - ``-Dtornado.features.dump.dir``
      - Kernel feature extraction was removed.
+     - 8.1.0
    * - ``-Dtornado.kernels.parallelise``
      - It had no effect.
+     - 8.1.0
+   * - ``-Dtornado.load.annotation.implementation``
+     - It had no effect.
+     - 8.1.0
+   * - ``-Dtornado.load.annotation.parallel``
+     - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.logger.buildlir``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.logger.codegen``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.max.events``
      - TornadoVM always behaves as with its default (32768).
+     - 8.1.0
    * - ``-Dtornado.metal.threadgroupHint``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.metal.threads.per.threadgroup.x``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.metal.threads.per.threadgroup.y``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.metal.threads.per.threadgroup.z``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.nccl.benchmark.cudaGraph``
      - Pass --cuda-graph to the NCCL benchmark instead.
+     - 8.1.0
    * - ``-Dtornado.opencl.print``
      - It had no effect. Use tornado.print.kernel.
+     - 8.1.0
    * - ``-Dtornado.opencl.syncflush``
      - TornadoVM always behaves as with its default (false).
+     - 8.1.0
    * - ``-Dtornado.panama.objectHeader``
      - The array header size is derived from the JVM's compressed-pointer setting.
+     - 8.1.0
    * - ``-Dtornado.platform``
      - It had no effect. Use tornado.backend.
+     - 8.1.0
    * - ``-Dtornado.unroll.factor``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.vectors.enable``
      - It had no effect.
+     - 8.1.0
    * - ``-Dtornado.vm.deps``
      - TornadoVM always behaves as with its default (false).
+     - 8.1.0
    * - ``-Dtornado.vmflush``
      - TornadoVM always behaves as with its default (true).
+     - 8.1.0
 .. END GENERATED OPTIONS
 
 Adding a Flag
@@ -570,5 +640,10 @@ For TornadoVM developers:
 2. Read it with ``Flags.NAME.get()`` (or ``find()`` for a flag without a default). Never call
    ``System.getProperty("tornado.…")``: a unit test rejects it.
 3. Regenerate this page with ``make flags-doc``.
-4. To rename a flag, change its key and add the former one with ``.deprecatedKey(...)``. To remove one, delete it
-   and add it to ``RemovedFlags`` with the reason.
+4. A flag whose value is one of a fixed set of words is ``Option.choice(key, words...)`` (or ``choiceList`` for
+   several), not a free string, so that a typo fails instead of selecting the default behaviour.
+5. Add the flag and its default to ``OptionDefaultsTest``: a default never changes without that list changing.
+6. To rename a flag, change its key and add the former one with ``.deprecatedKey(oldKey, NEXT_RELEASE)``. To remove
+   one, delete it and add it to ``RemovedFlags`` (in ``uk.ac.manchester.tornado.api.internal.options``) with the
+   reason. Both are kept until their deadline; ``DeprecationDeadlineTest`` fails once the project version reaches it,
+   as a reminder to delete them.

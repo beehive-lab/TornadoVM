@@ -45,7 +45,7 @@ public class NoRawOptionReadsTest {
             "(System\\.getProperty|System\\.getProperties\\(\\)\\.getProperty|Boolean\\.getBoolean|Integer\\.getInteger|Long\\.getLong)\\(\\s*\"tornado\\.");
 
     /** The test harness reads its own keys, and saves and restores options around a test. */
-    private static final List<String> EXCLUDED = List.of("tornado-unittests", "/api/options/");
+    private static final List<String> EXCLUDED = List.of("tornado-unittests", "/api/options/", "/api/internal/options/");
 
     @Test
     public void optionsAreOnlyReadThroughTheCatalog() throws IOException {

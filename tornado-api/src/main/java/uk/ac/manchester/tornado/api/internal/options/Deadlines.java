@@ -15,24 +15,19 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
-
-import java.util.Optional;
-import java.util.Set;
+package uk.ac.manchester.tornado.api.internal.options;
 
 /**
- * Where option text comes from: JVM system properties, the {@code etc/tornado.properties} file, or a map in a
- * test.
+ * When deprecated keys and removed-option warnings go away. {@code DeprecationDeadlineTest} fails once the
+ * project version reaches a deadline, so that the key is deleted instead of kept by accident.
  */
-public interface OptionSource {
+public final class Deadlines {
 
     /**
-     * @return the text configured for the key, if any
+     * The release after the one that introduced the options catalog (8.0.1): one release of warnings.
      */
-    Optional<String> lookup(String key);
+    public static final String NEXT_RELEASE = "8.1.0";
 
-    /**
-     * @return every key this source configures, used to report unknown and removed options
-     */
-    Set<String> keys();
+    private Deadlines() {
+    }
 }

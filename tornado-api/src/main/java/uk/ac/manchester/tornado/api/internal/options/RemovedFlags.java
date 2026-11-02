@@ -15,13 +15,13 @@
  * limitations under the License.
  *
  */
-package uk.ac.manchester.tornado.api.options;
+package uk.ac.manchester.tornado.api.internal.options;
 
 import java.util.List;
 
 /**
- * Options removed from TornadoVM. They are kept here for one release so that setting one is reported instead of
- * being silently ignored.
+ * Options removed from TornadoVM. Each is kept here until its {@linkplain RemovedOption#dropIn() deadline} so that
+ * setting one is reported instead of being silently ignored.
  */
 public final class RemovedFlags {
 
@@ -64,7 +64,9 @@ public final class RemovedFlags {
             new RemovedOption("tornado.feature.extraction", "Kernel feature extraction was removed."), //
             new RemovedOption("tornado.features.dump.dir", "Kernel feature extraction was removed."), //
             new RemovedOption("tornado.panama.objectHeader", "The array header size is derived from the JVM's compressed-pointer setting."), //
-            new RemovedOption("tornado.nccl.benchmark.cudaGraph", "Pass --cuda-graph to the NCCL benchmark instead."));
+            new RemovedOption("tornado.nccl.benchmark.cudaGraph", "Pass --cuda-graph to the NCCL benchmark instead."), //
+            new RemovedOption("tornado.load.annotation.implementation", NO_EFFECT), //
+            new RemovedOption("tornado.load.annotation.parallel", NO_EFFECT));
 
     private RemovedFlags() {
     }

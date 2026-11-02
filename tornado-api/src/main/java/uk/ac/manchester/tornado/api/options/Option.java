@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import uk.ac.manchester.tornado.api.internal.options.OptionResolver;
+
 /**
  * A TornadoVM option: a {@code tornado.*} key with a type, a default and a description.
  *
@@ -32,8 +34,10 @@ import java.util.function.Supplier;
  * line, then {@code etc/tornado.properties}, then the default.
  *
  * <p>
- * A static option is resolved once, the first time it is read, and keeps that value. A {@linkplain Builder#dynamic()
- * dynamic} option is resolved on every read, for options that may be changed while the program runs.
+ * A static option is resolved once, the first time it is read, and keeps that value: setting it later, with
+ * {@link uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider#setProperty}, has no effect and is reported.
+ * A {@linkplain Builder#dynamic() dynamic} option is resolved on every read, for options that may be changed while
+ * the program runs.
  *
  * @param <T>
  *     the type of the value
@@ -47,10 +51,17 @@ public final class Option<T> {
     private final String description;
     private final OptionCategory category;
     private final OptionVisibility visibility;
-    private final List<String> deprecatedKeys;
+    private final List<DeprecatedKey> deprecations;
     private final boolean dynamic;
 
-    private volatile T resolved;
+    /**
+     * The value of a static option and the resolver it came from. Installing another global resolver, as tests
+     * do, makes every option resolve again.
+     */
+    private volatile Resolved<T> resolved;
+
+    private record Resolved<T>(OptionResolver resolver, T value) {
+    }
 
     private Option(Builder<T> builder) {
         this.key = builder.key;
@@ -60,7 +71,7 @@ public final class Option<T> {
         this.description = builder.description;
         this.category = builder.category;
         this.visibility = builder.visibility;
-        this.deprecatedKeys = List.copyOf(builder.deprecatedKeys);
+        this.deprecations = List.copyOf(builder.deprecations);
         this.dynamic = builder.dynamic;
     }
 
@@ -89,6 +100,27 @@ public final class Option<T> {
     }
 
     /**
+     * A string option that takes one word of a fixed set, in any letter case; its value is the word in lower case.
+     */
+    public static Builder<String> choice(String key, String... choices) {
+        return new Builder<>(key, OptionParsers.choice(choices));
+    }
+
+    /**
+     * A string option that takes comma-separated words of a fixed set; blank is the empty list.
+     */
+    public static Builder<String> choiceList(String key, String... choices) {
+        return new Builder<>(key, OptionParsers.choiceList(choices));
+    }
+
+    /**
+     * A string option that takes comma-separated names.
+     */
+    public static Builder<String> nameList(String key) {
+        return new Builder<>(key, OptionParsers.NAME_LIST);
+    }
+
+    /**
      * @return the value of this option, from {@link OptionResolver#global()}
      * @throws InvalidOptionValueException
      *     if the option is set to text its type does not accept
@@ -96,15 +128,33 @@ public final class Option<T> {
      *     if the option has no default and is not set; use {@link #find()} for such options
      */
     public T get() {
+        OptionResolver resolver = OptionResolver.global();
         if (dynamic) {
-            return OptionResolver.global().resolve(this);
+            return resolver.resolve(this);
         }
-        T value = resolved;
-        if (value == null) {
-            value = OptionResolver.global().resolve(this);
-            resolved = value;
+        Resolved<T> memo = resolved;
+        if (memo == null || memo.resolver() != resolver) {
+            memo = new Resolved<>(resolver, resolver.resolve(this));
+            resolved = memo;
         }
-        return value;
+        return memo.value();
+    }
+
+    /**
+     * @return whether this is a static option that has already been read, so that changing its setting now has
+     *     no effect
+     */
+    public boolean isResolved() {
+        Resolved<T> memo = resolved;
+        return !dynamic && memo != null && memo.resolver() == OptionResolver.global();
+    }
+
+    /**
+     * @return the value this static option was read as, if it has been read
+     */
+    public Optional<T> resolvedValue() {
+        Resolved<T> memo = resolved;
+        return isResolved() ? Optional.of(memo.value()) : Optional.empty();
     }
 
     /**
@@ -159,7 +209,14 @@ public final class Option<T> {
      * @return earlier names of this option, still honoured with a warning
      */
     public List<String> deprecatedKeys() {
-        return deprecatedKeys;
+        return deprecations.stream().map(DeprecatedKey::key).toList();
+    }
+
+    /**
+     * @return earlier names of this option, with the release that stops honouring each
+     */
+    public List<DeprecatedKey> deprecations() {
+        return deprecations;
     }
 
     public boolean isDynamic() {
@@ -180,7 +237,7 @@ public final class Option<T> {
         private String description;
         private OptionCategory category;
         private OptionVisibility visibility = OptionVisibility.PUBLIC;
-        private final List<String> deprecatedKeys = new ArrayList<>();
+        private final List<DeprecatedKey> deprecations = new ArrayList<>();
         private boolean dynamic;
 
         private Builder(String key, OptionParser<T> parser) {
@@ -239,8 +296,14 @@ public final class Option<T> {
             return this;
         }
 
-        public Builder<T> deprecatedKey(String oldKey) {
-            this.deprecatedKeys.add(oldKey);
+        /**
+         * @param oldKey
+         *     an earlier name of the option, honoured with a warning
+         * @param dropIn
+         *     the release that stops honouring it
+         */
+        public Builder<T> deprecatedKey(String oldKey, String dropIn) {
+            this.deprecations.add(new DeprecatedKey(oldKey, dropIn));
             return this;
         }
 

@@ -25,19 +25,19 @@ public final class TaskFlags {
 
     private static final OptionCategory CATEGORY = OptionCategory.THREAD_SCHEDULING;
 
-    public static final TaskOption<String> DEVICE = TaskOption.string("device") //
+    public static final TaskOption<String> DEVICE = TaskOption.of("device", OptionParsers.DEVICE) //
             .description("Device a task graph or task runs on, as `<backend>:<device>`, e.g. `-Ds0.t0.device=1:0`.") //
             .category(CATEGORY).build();
 
-    public static final TaskOption<String> GLOBAL_WORK_SIZE = TaskOption.string("global.workgroup.size") //
+    public static final TaskOption<String> GLOBAL_WORK_SIZE = TaskOption.of("global.workgroup.size", OptionParsers.positiveList(3)) //
             .description("Global work size of a task, comma-separated per dimension, e.g. `-Ds0.t0.global.workgroup.size=1024,1024`.") //
             .category(CATEGORY).build();
 
-    public static final TaskOption<String> LOCAL_WORK_SIZE = TaskOption.string("local.workgroup.size") //
+    public static final TaskOption<String> LOCAL_WORK_SIZE = TaskOption.of("local.workgroup.size", OptionParsers.positiveList(3)) //
             .description("Local work size of a task, comma-separated per dimension, e.g. `-Ds0.t0.local.workgroup.size=16,16`.") //
             .category(CATEGORY).build();
 
-    public static final TaskOption<String> COARSENESS = TaskOption.string("coarseness") //
+    public static final TaskOption<String> COARSENESS = TaskOption.of("coarseness", OptionParsers.positiveList(3)) //
             .description("Thread coarsening factors of a task, comma-separated per dimension.") //
             .category(CATEGORY).build();
 

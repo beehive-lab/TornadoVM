@@ -169,7 +169,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     }
 
     private void disableProfilerOptions() {
-        ProfilerActivation.disableForPlan();
+        ProfilerActivation.disableFromApi();
     }
 
     @Override

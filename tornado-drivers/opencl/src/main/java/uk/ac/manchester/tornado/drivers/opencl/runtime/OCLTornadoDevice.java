@@ -174,7 +174,7 @@ public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice, Torna
     }
 
     private void disableProfilerOptions() {
-        ProfilerActivation.disableForPlan();
+        ProfilerActivation.disableFromApi();
     }
 
     @Override

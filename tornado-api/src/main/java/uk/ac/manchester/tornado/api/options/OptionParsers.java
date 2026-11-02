@@ -17,8 +17,13 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.api.utils.TornadoAPIUtils;
@@ -48,6 +53,18 @@ public final class OptionParsers {
      */
     public static final OptionParser<Long> SIZE = OptionParser.of("size", text -> TornadoAPIUtils.parseSize(text.trim()));
 
+    /**
+     * A device as {@code <backend>:<device>}, both indices from zero: {@code 1:0}.
+     */
+    public static final OptionParser<String> DEVICE = OptionParser.of("backend:device", OptionParsers::parseDevice);
+
+    /**
+     * Comma-separated names, such as compiler stages. Blank items are rejected; spaces around items are dropped.
+     */
+    public static final OptionParser<String> NAME_LIST = OptionParser.of("name,...", text -> String.join(",", items(text)));
+
+    private static final Pattern DEVICE_FORMAT = Pattern.compile("\\d+:\\d+");
+
     private OptionParsers() {
     }
 
@@ -56,7 +73,73 @@ public final class OptionParsers {
      */
     public static <E extends Enum<E>> OptionParser<E> enumOf(Class<E> type) {
         String choices = Arrays.stream(type.getEnumConstants()).map(constant -> constant.name().toLowerCase(Locale.ROOT)).collect(Collectors.joining("|"));
-        return OptionParser.of(choices, text -> Enum.valueOf(type, text.trim().toUpperCase(Locale.ROOT)));
+        return OptionParser.of(choices, text -> {
+            try {
+                return Enum.valueOf(type, text.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("expected one of " + choices);
+            }
+        });
+    }
+
+    /**
+     * One word of a fixed set, in any letter case; the value is the word in lower case. For a closed set of string
+     * values, so that a typo fails instead of silently selecting the default behaviour.
+     *
+     * @param choices
+     *     the accepted words, in lower case
+     */
+    public static Choice choice(String... choices) {
+        return new Choice(List.of(choices), false);
+    }
+
+    /**
+     * Comma-separated words of a fixed set, in any letter case; the value lists them in lower case, separated by
+     * commas. Blank text is a value: the empty list.
+     */
+    public static Choice choiceList(String... choices) {
+        return new Choice(List.of(choices), true);
+    }
+
+    /**
+     * Comma-separated positive integers, one per dimension: {@code 1024,1024}. The value is the list without
+     * spaces.
+     *
+     * @param maxDimensions
+     *     the most numbers the list may have
+     */
+    public static OptionParser<String> positiveList(int maxDimensions) {
+        String typeName = "n" + "[,n".repeat(maxDimensions - 1) + "]".repeat(maxDimensions - 1);
+        return OptionParser.of(typeName, text -> {
+            List<String> items = items(text);
+            if (items.size() > maxDimensions) {
+                throw new IllegalArgumentException("at most " + maxDimensions + " comma-separated numbers");
+            }
+            for (String item : items) {
+                long value;
+                try {
+                    value = Long.parseLong(item);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("'" + item + "' is not a number");
+                }
+                if (value <= 0) {
+                    throw new IllegalArgumentException("'" + item + "' is not positive");
+                }
+            }
+            return String.join(",", items);
+        });
+    }
+
+    private static List<String> items(String text) {
+        List<String> items = new ArrayList<>();
+        for (String item : text.split(",", -1)) {
+            String trimmed = item.trim();
+            if (trimmed.isEmpty()) {
+                throw new IllegalArgumentException("empty item in a comma-separated list");
+            }
+            items.add(trimmed);
+        }
+        return items;
     }
 
     private static Boolean parseBoolean(String text) {
@@ -68,5 +151,67 @@ public final class OptionParsers {
             return Boolean.FALSE;
         }
         throw new IllegalArgumentException("expected true or false");
+    }
+
+    private static String parseDevice(String text) {
+        String value = text.trim();
+        if (!DEVICE_FORMAT.matcher(value).matches()) {
+            throw new IllegalArgumentException("expected <backend>:<device>, such as 1:0");
+        }
+        return value;
+    }
+
+    /**
+     * The parser of {@link #choice} and {@link #choiceList}: the accepted words are known, so they are listed in
+     * the documentation and in the error for a word outside the set.
+     */
+    public static final class Choice implements OptionParser<String> {
+
+        private final List<String> choices;
+        private final boolean list;
+
+        private Choice(List<String> choices, boolean list) {
+            for (String choice : choices) {
+                if (!choice.equals(choice.toLowerCase(Locale.ROOT)) || choice.isBlank()) {
+                    throw new IllegalArgumentException("Choices are non-blank lower-case words: " + choice);
+                }
+            }
+            this.choices = List.copyOf(choices);
+            this.list = list;
+        }
+
+        /**
+         * @return the accepted words
+         */
+        public List<String> choices() {
+            return choices;
+        }
+
+        @Override
+        public String parse(String text) {
+            if (list && text.isBlank()) {
+                return "";
+            }
+            Set<String> values = new LinkedHashSet<>();
+            for (String item : list ? items(text) : List.of(text.trim())) {
+                String word = item.toLowerCase(Locale.ROOT);
+                if (!choices.contains(word)) {
+                    throw new IllegalArgumentException("'" + item + "' is not one of " + String.join(", ", choices));
+                }
+                values.add(word);
+            }
+            return String.join(",", values);
+        }
+
+        @Override
+        public String typeName() {
+            String words = String.join("|", choices);
+            return list ? "list of " + words : words;
+        }
+
+        @Override
+        public boolean acceptsBlank() {
+            return list;
+        }
     }
 }

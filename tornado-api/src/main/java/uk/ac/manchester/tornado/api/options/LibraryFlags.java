@@ -17,6 +17,8 @@
  */
 package uk.ac.manchester.tornado.api.options;
 
+import static uk.ac.manchester.tornado.api.internal.options.Deadlines.NEXT_RELEASE;
+
 /**
  * Options of the native-library bindings (MLX, cuDNN, NCCL).
  */
@@ -42,7 +44,7 @@ public final class LibraryFlags {
     public static final Option<Long> NCCL_SPIN_WAIT_MICROS = Option.longValue("tornado.nccl.spin.wait.micros") //
             .defaultValue(1000L) //
             .description("Microseconds NCCL rank threads and the caller spin before parking; 0 parks at once.") //
-            .category(CATEGORY).internal().deprecatedKey("tornado.nccl.spinWaitMicros").build();
+            .category(CATEGORY).internal().deprecatedKey("tornado.nccl.spinWaitMicros", NEXT_RELEASE).build();
 
     private LibraryFlags() {
     }
