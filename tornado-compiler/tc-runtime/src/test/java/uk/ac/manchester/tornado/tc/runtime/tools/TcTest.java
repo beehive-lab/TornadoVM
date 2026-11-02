@@ -25,10 +25,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.tools.ToolProvider;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -114,6 +120,76 @@ public class TcTest {
         var r = run("emit", "--target", "opencl", "--cp", dir + File.pathSeparator + API, "uk.ac.manchester.tornado.tc.frontend.kernels.TileKernels", "gemm");
         assertEquals(1, r.status());
         assertTrue(r.err().matches("(?s)TileKernels\\.java:\\d+: error: TC-E4010 .*"), r.err());
+    }
+
+    /**
+     * The offsets the runtime's FieldLayout gives these API classes (read from it with the SDK): the
+     * class-only layout tc emit uses must agree, or kernels would read object fields at the wrong place.
+     */
+    @Test
+    public void typeLayoutsMatchTheRuntimesFieldLayout() throws Exception {
+        try (var loader = new URLClassLoader(new URL[] { Path.of(API).toUri().toURL() }, ClassLoader.getPlatformClassLoader())) {
+            assertEquals(Map.of("COLUMNS", 16, "ROWS", 20, "numElements", 24, "storage", 28), names(TypeLayouts.offsets(loader.loadClass("uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat"), true)));
+            assertEquals(Map.of("numElements", 16, "storage", 20), names(TypeLayouts.offsets(loader.loadClass("uk.ac.manchester.tornado.api.types.collections.VectorFloat4"), true)));
+            assertEquals(Map.of("storage", 16), names(TypeLayouts.offsets(loader.loadClass("uk.ac.manchester.tornado.api.types.vectors.Float4"), true)));
+        }
+    }
+
+    private static Map<String, Integer> names(Map<java.lang.reflect.Field, Integer> offsets) {
+        var byName = new HashMap<String, Integer>();
+        offsets.forEach((field, offset) -> byName.put(field.getName(), offset));
+        return byName;
+    }
+
+    /** Compiles {@code source} (class {@code name}, default package) into {@code dir} against tornado-api, as javac -g -parameters. */
+    private static void javac(Path dir, String name, String source) throws IOException {
+        var file = dir.resolve(name + ".java");
+        Files.writeString(file, source);
+        var compiler = ToolProvider.getSystemJavaCompiler();
+        var options = new java.util.ArrayList<>(List.of("-g", "-parameters", "-cp", API, "-d", dir.toString(), file.toString()));
+        if (Runtime.version().feature() == 21) {
+            options.addAll(0, List.of("--release", "21", "--enable-preview"));
+        }
+        assertEquals(0, compiler.run(null, null, null, options.toArray(String[]::new)), "javac failed");
+    }
+
+    private static final String MATRIX_KERNEL = String.join("\n", //
+            "import uk.ac.manchester.tornado.api.annotations.Parallel;", //
+            "import uk.ac.manchester.tornado.api.types.matrix.Matrix2DFloat;", //
+            "class Matrices {", //
+            "    static void scale(Matrix2DFloat m, float factor) {", //
+            "        for (@Parallel int i = 0; i < m.getNumRows(); i++) {", //
+            "            for (@Parallel int j = 0; j < m.getNumColumns(); j++) {", //
+            "                m.set(i, j, factor * m.get(i, j));", //
+            "            }", //
+            "        }", //
+            "    }", //
+            "}", "");
+
+    @Test
+    public void objectParametersCompileWithTheirLayoutAndTheAssumptionIsSaid(@TempDir Path dir) throws IOException {
+        javac(dir, "Matrices", MATRIX_KERNEL);
+        // Matrix2DFloat: refused without its layout (TC-E3101), compiled once its size is assumed.
+        var r = run("emit", "--cp", dir + File.pathSeparator + API, "--all");
+        assertEquals(0, r.status(), r.err());
+        assertTrue(r.err().matches("(?s)Matrices\\.java:5: note: compiled for m=256: .*--arg name=value.*"), r.err());
+        assertTrue(r.out().contains("// Matrices.java:5: note: compiled for m=256"), r.out());
+    }
+
+    @Test
+    public void anObjectSizeCanBeGiven(@TempDir Path dir) throws IOException {
+        javac(dir, "Matrices", MATRIX_KERNEL);
+        var r = run("emit", "--arg", "m=64", "--cp", dir + File.pathSeparator + API, "--all");
+        assertEquals(0, r.status(), r.err());
+        assertFalse(r.err().contains("note:"), r.err());
+    }
+
+    @Test
+    public void givenValuesSpecialiseTheKernel() {
+        var r = run("emit", "--arg", "arg0=4096", "--cp", KERNELS + File.pathSeparator + API, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "escapeTime");
+        assertEquals(0, r.status(), r.err());
+        assertFalse(r.err().contains("note:"), r.err());
+        assertTrue(r.out().contains("4096"), r.out());
     }
 
     @Test

@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -29,18 +32,20 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.frontend.classfile.Bytecode;
 import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile;
-import uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile.Method;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 import uk.ac.manchester.tornado.tc.runtime.TcCompiler;
 import uk.ac.manchester.tornado.tc.runtime.TcOptions;
+import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
 /**
  * {@code tc}, the headless compiler: compiles kernel methods from class files to CUDA C++, OpenCL C
@@ -49,9 +54,11 @@ import uk.ac.manchester.tornado.tc.runtime.TcOptions;
  * <pre>
  *   tc emit [--target cuda|opencl|metal] [--cc N] [--fp16 on|off] [--fp64 on|off] [--cp PATH] [--stats] Class method
  *   tc emit [same options] --all
+ *   ... [--arg name=value]...
  * </pre>
  *
- * {@code --all} compiles every kernel of every class in the directories on the class path: each
+ * {@code --all} compiles every kernel of every class in the directories on the class path (the
+ * TornadoVM API's own classes excepted): each
  * static {@code void} method whose parameters are primitives, primitive arrays or TornadoVM API types,
  * except {@code main}, synthetic methods and the children of {@code DeviceKernel.of} (compiled with
  * the kernel that launches them). Each kernel's code follows a {@code // ===== Class.method =====}
@@ -59,6 +66,11 @@ import uk.ac.manchester.tornado.tc.runtime.TcOptions;
  *
  * <p>
  * {@code --cc} is the CUDA compute capability (default 89: an RTX 4090), as {@code major * 10 + minor}.
+ * {@code --arg} gives a parameter's value as the runtime would see it: a scalar, an array length, or the
+ * size an object is constructed with; with {@code --all}, every kernel with a parameter of that name
+ * gets it. Names come from the class files' MethodParameters ({@code javac -parameters}), else
+ * {@code arg0}, {@code arg1}, ... A kernel whose {@code @Parallel} bounds need values not given
+ * (TC-E3103) is compiled again with integers and object sizes taken as 256, and a note says so.
  * Diagnostics are printed as {@code File.java:17: error: TC-E4011 message}, the form editors and
  * Compiler Explorer recognise.
  *
@@ -102,6 +114,7 @@ public final class Tc {
         String classPath = ".";
         boolean stats = false;
         boolean all = false;
+        var given = new LinkedHashMap<String, String>();
         var positional = new ArrayList<String>();
         try {
             for (int i = 1; i < args.length; i++) {
@@ -120,6 +133,13 @@ public final class Tc {
                     case "--cp" -> classPath = value(args, ++i);
                     case "--stats" -> stats = true;
                     case "--all" -> all = true;
+                    case "--arg" -> {
+                        var nameValue = value(args, ++i).split("=", 2);
+                        if (nameValue.length != 2) {
+                            throw new IllegalArgumentException("--arg takes name=value, as in --arg n=1024");
+                        }
+                        given.put(nameValue[0], nameValue[1]);
+                    }
                     default -> positional.add(args[i]);
                 }
             }
@@ -139,9 +159,22 @@ public final class Tc {
             if (all) {
                 out.println("// ===== " + kernel.owner().replace('/', '.') + "." + kernel.name() + " =====");
             }
-            var c = kernel.descriptor() == null //
-                    ? TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), target, TcOptions.DEFAULTS, List.of())
-                    : TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, TcOptions.DEFAULTS, List.of());
+            var method = method(source, kernel);
+            var assumed = new ArrayList<String>();
+            var c = compile(source, kernel, target, method, given, false, assumed);
+            if (!c.succeeded() && method != null && c.diagnostics().stream().anyMatch(d -> NEEDS_VALUES.contains(d.code()))) {
+                // The runtime knows every argument when it compiles a task; here, assume what the domain needs.
+                var retry = compile(source, kernel, target, method, given, true, assumed);
+                if (retry.succeeded()) {
+                    c = retry;
+                    var note = location(kernel) + "note: compiled for " + String.join(", ", assumed) + ": these values must be known when the kernel is compiled,"
+                            + " as they are when TornadoVM runs it (set them with --arg name=value)";
+                    err.println(note);
+                    if (all) {
+                        out.println("// " + note);
+                    }
+                }
+            }
             if (!c.succeeded()) {
                 refused = true;
                 c.diagnostics().forEach(d -> err.println(render(d, kernel)));
@@ -193,11 +226,46 @@ public final class Tc {
         return "[TC] " + d.code() + " " + d.message() + (d.where().isBlank() ? "" : " in " + d.where());
     }
 
+    /** Refusals a value the runtime would know fixes: the launch domain (E3103), an object's layout (E3101). */
+    private static final Set<String> NEEDS_VALUES = Set.of("TC-E3103", "TC-E3101");
+
+    private static TcCompiler.Compilation compile(Frontend.BytecodeSource source, Kernel kernel, TargetCaps target, Method method, Map<String, String> given, boolean assume,
+            List<String> assumed) {
+        // Facts need the loaded class (parameter types and names, object constructors): none in a native image.
+        // Without values given or assumed, no facts at all: the kernel TC compiles before any argument is seen.
+        List<ValueSpecialisation.Fact> facts = method == null || (given.isEmpty() && !assume) ? List.of() : TypeLayouts.facts(method, given, assume, assumed);
+        return TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, TcOptions.DEFAULTS, facts);
+    }
+
+    /** The kernel as a loaded method, when the source loads classes and the class loads. */
+    private static Method method(Frontend.BytecodeSource source, Kernel kernel) {
+        var loader = source.loader();
+        if (loader.isEmpty()) {
+            return null;
+        }
+        try {
+            var owner = Class.forName(kernel.owner().replace('/', '.'), false, loader.get());
+            for (var method : owner.getDeclaredMethods()) {
+                if (method.getName().equals(kernel.name()) && Modifier.isStatic(method.getModifiers())
+                        && (kernel.descriptor() == null || kernel.descriptor().equals(MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString()))) {
+                    return method;
+                }
+            }
+        } catch (ClassNotFoundException | LinkageError e) {
+            // The class does not load (a missing dependency): compile without facts, as from class bytes.
+        }
+        return null;
+    }
+
+    private static String location(Kernel kernel) {
+        return kernel.file() != null && kernel.line() > 0 && kernel.line() < Integer.MAX_VALUE ? kernel.file() + ":" + kernel.line() + ": " : "";
+    }
+
     /** The kernel {@code Class method} names; its descriptor and line when the class file has the method. */
     private static Kernel named(Frontend.BytecodeSource source, String owner, String name) {
         var classFile = source.classFile(owner);
         var line = classFile.stream().flatMap(c -> c.methods().stream()).filter(m -> m.name().equals(name)).findFirst() //
-                .flatMap(Method::code).map(code -> code.lines().stream().mapToInt(ClassFile.LineNumber::line).min().orElse(0)).orElse(0);
+                .flatMap(ClassFile.Method::code).map(code -> code.lines().stream().mapToInt(ClassFile.LineNumber::line).min().orElse(0)).orElse(0);
         return new Kernel(owner, name, null, line, sourceFile(owner));
     }
 
@@ -246,8 +314,11 @@ public final class Tc {
         return kernels;
     }
 
-    /** The kernels of one class: see the class comment for which methods count. */
+    /** The kernels of one class: see the class comment for which methods count. TornadoVM's own API has none. */
     static List<Kernel> kernels(ClassFile classFile) {
+        if (classFile.name().startsWith(API)) {
+            return List.of();
+        }
         var children = deviceKernelChildren(classFile);
         var kernels = new ArrayList<Kernel>();
         for (var m : classFile.methods()) {
@@ -346,7 +417,7 @@ public final class Tc {
     }
 
     private static int usage(PrintStream err) {
-        err.println("usage: tc emit [--target cuda|opencl|metal] [--cc N] [--fp16 on|off] [--fp64 on|off] [--cp PATH] [--stats] (Class method | --all)");
+        err.println("usage: tc emit [--target cuda|opencl|metal] [--cc N] [--fp16 on|off] [--fp64 on|off] [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
         return 2;
     }
 }
