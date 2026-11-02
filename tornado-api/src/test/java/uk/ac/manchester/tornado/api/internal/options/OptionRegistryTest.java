@@ -64,7 +64,7 @@ public class OptionRegistryTest {
 
     @Test
     public void testHarnessKeysAreNotReported() {
-        assertEquals(List.of(), diagnose("tornado.unittests.verbose", "tornado.test.upload.cold"));
+        assertEquals(List.of(), diagnose("tornado.unittests.verbose", "tornado.test.upload.cold", "tornado.benchmarks.skipserial"));
     }
 
     @Test

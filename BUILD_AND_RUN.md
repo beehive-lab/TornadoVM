@@ -13,7 +13,7 @@ make
 
 ### Run
 ```bash
-tornado --jvm="-Dtornado.option=value" -cp <classpath> <MainClass> [args]
+tornado --jvm="-Dtornado.<flag>=<value>" -cp <classpath> <MainClass> [args]
 ```
 
 **Example:**

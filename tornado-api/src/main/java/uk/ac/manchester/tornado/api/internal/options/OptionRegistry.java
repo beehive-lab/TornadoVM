@@ -61,9 +61,10 @@ public final class OptionRegistry {
     private static final String TORNADO_PREFIX = "tornado.";
 
     /**
-     * Keys owned by the test harnesses ({@code tornado-test}, the unit tests), not by TornadoVM.
+     * Keys owned by the test harnesses ({@code tornado-test}, the unit tests) and by the benchmark suite
+     * (tornadovm-benchmark-suite, {@code -Dtornado.benchmarks.skipserial}), not by TornadoVM.
      */
-    private static final List<String> HARNESS_PREFIXES = List.of("tornado.unittests.", "tornado.test.");
+    private static final List<String> HARNESS_PREFIXES = List.of("tornado.unittests.", "tornado.test.", "tornado.benchmarks.");
 
     private static final int MAX_SUGGESTION_DISTANCE = 3;
 

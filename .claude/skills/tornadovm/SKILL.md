@@ -40,7 +40,7 @@ tornado-test uk.ac.manchester.tornado.unittests.arrays.TestArrays -V # a single 
 tornado-test 'uk.ac...TestArrays#testInitByteArray' -V               # a single method
 ```
 
-Useful flags: `-qp/--quickPass`, `-V/--verbose`, `--printExec` (execution times — the flag is `--printExec`, **not** `--printExecutionTimes`), `-pk/--printKernel`, `--device s0.t0.device=0:1` (pick device), `-J/--jvm "-Dtornado.<opt>=..."` (extra JVM flags), `--ea` (assertions).
+Useful flags: `-qp/--quickPass`, `-V/--verbose`, `--printExec` (execution times — the flag is `--printExec`, **not** `--printExecutionTimes`), `-pk/--printKernel`, `--device s0.t0.device=0:1` (pick device), `-J/--jvm="-Dtornado.<opt>=..."` (extra JVM flags; keep the `=`; which flags exist and what they do: the `tornadovm-flags` skill), `--ea` (assertions).
 
 ### Adding a unit test
 - Place it under `tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/<feature>/` (tests live in `src/main/java`, not `src/test`).

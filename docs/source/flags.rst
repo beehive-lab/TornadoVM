@@ -41,6 +41,8 @@ The ``tornado`` wrapper maps these flags to JVM flags for ease of use. For examp
    ``--printKernel``               Prints the generated kernels.
    ``--threadInfo``                Displays the number of threads used.
    ``--printBytecodes``            Prints the TornadoVM bytecodes.
+   ``--dumpBC DIR``                Prints the TornadoVM bytecodes and writes them to a file in ``DIR``.
+   ``--enableConcurrentDevices``   Runs the tasks of a task graph concurrently on their devices.
    ``--devices``                   Lists available hardware devices.
    ``--list-flags``                Lists the JVM flags; add ``--all`` for internal ones.
    ``--enableProfiler console``    Prints profiling metrics as JSON to stdout.
