@@ -20,6 +20,7 @@
  */
 package uk.ac.manchester.tornado.drivers.metal;
 
+import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -247,6 +248,13 @@ public class MetalContext implements MetalContextInterface {
             logger.error(e.getMessage());
         }
         return null;
+    }
+
+    /** Maps the caller's host memory as a Metal buffer without copying it; the memory stays the caller's. */
+    public long mapOnUnifiedMemory(MemorySegment segment) {
+        long buffer = MetalObjects.mapOnUnifiedMemory(contextID, segment);
+        logger.info("unified memory mapped %s @ 0x%x", RuntimeUtilities.humanReadableByteCount(segment.byteSize(), false), buffer);
+        return buffer;
     }
 
     public void releaseBuffer(long bufferId) {

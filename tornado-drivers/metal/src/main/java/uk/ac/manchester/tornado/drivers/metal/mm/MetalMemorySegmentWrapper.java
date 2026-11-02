@@ -49,6 +49,9 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
     private long bufferId;
     private long bufferOffset;
     private long bufferSize;
+    private boolean unifiedMemory;
+    /** The caller's Arena.ofAuto() storage: holding it keeps the memory allocated while Metal maps it. */
+    private MemorySegment hostSegment;
 
     private long subregionSize;
     private Access access;
@@ -74,6 +77,11 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
     @Override
     public long toBuffer() {
         return this.bufferId;
+    }
+
+    @Override
+    public long libraryOffset() {
+        return MetalObjects.bufferOffset(toBuffer()) + bufferOffset + TornadoNativeArray.ARRAY_HEADER;
     }
 
     @Override
@@ -124,6 +132,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int read(long executionPlanId, final Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+        checkTransferSupported();
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         final int returnEvent;
@@ -148,6 +157,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
     @Override
 
     public void write(long executionPlanId, Object reference) {
+        checkTransferSupported();
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
         if (batchSize <= 0) {
@@ -159,6 +169,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
+        checkTransferSupported();
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
 
@@ -173,6 +184,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public List<Integer> enqueueWrite(long executionPlanId, Object reference, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+        checkTransferSupported();
         List<Integer> returnEvents = new ArrayList<>();
         MemorySegment segment;
         segment = getSegmentWithHeader(reference);
@@ -216,13 +228,39 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
         }
     }
 
+    /** Uses the caller's storage as this buffer: Metal maps it in place, nothing is allocated or copied. */
+    public void registerUnifiedMemory(TornadoNativeArray array) {
+        MemorySegment segment = array.getSegmentWithHeader();
+        bufferId = deviceContext.getPlatformContext().mapOnUnifiedMemory(segment);
+        bufferSize = segment.byteSize();
+        unifiedMemory = true;
+        hostSegment = segment;
+    }
+
+    private void checkTransferSupported() {
+        if (unifiedMemory) {
+            throw new TornadoMemoryException("Transfers are not supported for consumeFromUnifiedMemory inputs");
+        }
+    }
+
+    @Override
+    public long getAllocatedSize() {
+        return unifiedMemory ? 0 : size();
+    }
+
     @Override
     public void markAsFreeBuffer() throws TornadoMemoryException {
         if (bufferId == INIT_VALUE) {
             // already released, e.g. by another task-graph of the plan that shares this buffer
             return;
         }
-        deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
+        if (unifiedMemory) {
+            MetalObjects.awaitBuffer(bufferId);
+            deviceContext.getPlatformContext().releaseBuffer(bufferId);
+            hostSegment = null;
+        } else {
+            deviceContext.getBufferProvider().markBufferReleased(bufferId, access);
+        }
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
@@ -233,7 +271,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        return deviceContext.getBufferProvider().deallocate(access);
+        return unifiedMemory ? 0 : deviceContext.getBufferProvider().deallocate(access);
     }
 
     @Override
@@ -257,6 +295,7 @@ public class MetalMemorySegmentWrapper implements XPUBuffer {
 
     @Override
     public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        checkTransferSupported();
         if (!(srcPointer instanceof MetalMemorySegmentWrapper oclMemorySegmentWrapper)) {
             throw new TornadoRuntimeException("[ERROR] copy pointer must be an instance of MetalMemorySegmentWrapper: " + srcPointer);
         }
