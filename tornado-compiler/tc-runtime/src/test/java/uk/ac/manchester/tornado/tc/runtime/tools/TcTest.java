@@ -193,6 +193,28 @@ public class TcTest {
     }
 
     @Test
+    public void classPathAliasesStillWork() {
+        for (var option : List.of("--cp", "-cp", "--classpath")) {
+            var r = run("emit", option, KERNELS + File.pathSeparator + API, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "escapeTime");
+            assertEquals(0, r.status(), option + ": " + r.err());
+        }
+    }
+
+    @Test
+    public void aBadArgValueIsAUsageError(@TempDir Path dir) throws IOException {
+        javac(dir, "Matrices", MATRIX_KERNEL);
+        // An int for which text, a fraction, or a negative size is given: named, not thrown.
+        for (var arg : List.of("arg0=abc", "arg0=1.5")) {
+            var r = run("emit", "--arg", arg, "--cp", KERNELS + File.pathSeparator + API, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "escapeTime");
+            assertEquals(2, r.status(), arg + ": " + r.err());
+            assertTrue(r.err().contains("--arg " + arg + ": arg0 takes an int"), r.err());
+        }
+        var r = run("emit", "--arg", "m=-4", "--cp", dir + File.pathSeparator + API, "--all");
+        assertEquals(2, r.status(), r.err());
+        assertTrue(r.err().contains("--arg m=-4: m takes a size: a non-negative whole number"), r.err());
+    }
+
+    @Test
     public void versionExitsCleanly() {
         var r = run("--version");
         assertEquals(0, r.status());

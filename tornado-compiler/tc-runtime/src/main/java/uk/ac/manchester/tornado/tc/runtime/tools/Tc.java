@@ -135,7 +135,7 @@ public final class Tc {
                     case "--cc" -> cc = Integer.parseInt(value(args, ++i));
                     case "--fp16" -> fp16 = onOff(value(args, ++i));
                     case "--fp64" -> fp64 = onOff(value(args, ++i));
-                    case "--cp" -> classPath = value(args, ++i);
+                    case "--cp", "-cp", "--classpath" -> classPath = value(args, ++i);
                     case "--stats" -> stats = true;
                     case "--all" -> all = true;
                     case "--arg" -> {
@@ -166,7 +166,13 @@ public final class Tc {
             }
             var method = method(source, kernel);
             var assumed = new ArrayList<String>();
-            var c = compile(source, kernel, target, method, given, false, assumed);
+            TcCompiler.Compilation c;
+            try {
+                c = compile(source, kernel, target, method, given, false, assumed);
+            } catch (TypeLayouts.BadArgument e) {
+                err.println("tc: " + e.getMessage());
+                return usage(err);
+            }
             if (!c.succeeded() && method != null && c.diagnostics().stream().anyMatch(d -> NEEDS_VALUES.contains(d.code()))) {
                 // The runtime knows every argument when it compiles a task; here, assume what the domain needs.
                 var retry = compile(source, kernel, target, method, given, true, assumed);

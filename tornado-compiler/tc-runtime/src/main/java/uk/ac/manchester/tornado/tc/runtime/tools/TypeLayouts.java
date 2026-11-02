@@ -55,6 +55,13 @@ final class TypeLayouts {
     private TypeLayouts() {
     }
 
+    /** A {@code --arg} value the parameter's type does not accept. */
+    static final class BadArgument extends IllegalArgumentException {
+        BadArgument(String name, String value, String expected) {
+            super("--arg " + name + "=" + value + ": " + name + " takes " + expected);
+        }
+    }
+
     /** The size TornadoVM examples and tcirviz assume when a launch domain needs a value: integers and object sizes. */
     static final int ASSUMED = 256;
 
@@ -82,19 +89,19 @@ final class TypeLayouts {
                     value = Integer.toString(ASSUMED);
                     assumed.add(parameter.getName() + "=" + value);
                 }
-                facts.add(value == null ? new ValueSpecialisation.Fact.Unknown() : new ValueSpecialisation.Fact.Scalar(scalar(type, value)));
+                facts.add(value == null ? new ValueSpecialisation.Fact.Unknown() : new ValueSpecialisation.Fact.Scalar(scalar(parameter.getName(), type, value)));
             } else if (type.isArray() || isNativeArray(type)) {
                 if (value == null && assume) {
                     value = Integer.toString(ASSUMED_LENGTH);
                     assumed.add(parameter.getName() + ".length=" + value);
                 }
-                facts.add(value == null ? new ValueSpecialisation.Fact.Unknown() : new ValueSpecialisation.Fact.Length(Long.parseLong(value.trim())));
+                facts.add(value == null ? new ValueSpecialisation.Fact.Unknown() : new ValueSpecialisation.Fact.Length(count(parameter.getName(), value, "a length")));
             } else if (isObject(type)) {
                 if (value == null && assume) {
                     value = Integer.toString(ASSUMED);
                     assumed.add(parameter.getName() + "=" + value);
                 }
-                facts.add(value == null ? new ValueSpecialisation.Fact.Instance(Map.of(), describe(type)) : instance(type, Integer.parseInt(value.trim())));
+                facts.add(value == null ? new ValueSpecialisation.Fact.Instance(Map.of(), describe(type)) : instance(type, (int) count(parameter.getName(), value, "a size")));
             } else {
                 facts.add(new ValueSpecialisation.Fact.Unknown());
             }
@@ -106,16 +113,54 @@ final class TypeLayouts {
         return type == int.class || type == long.class || type == short.class || type == byte.class;
     }
 
-    private static Number scalar(Class<?> type, String text) {
+    private static Number scalar(String name, Class<?> type, String text) {
         var value = text.trim();
-        return switch (type.getName()) {
-            case "long" -> Long.parseLong(value);
-            case "float" -> Float.parseFloat(value);
-            case "double" -> Double.parseDouble(value);
-            case "boolean" -> Boolean.parseBoolean(value) ? 1 : 0;
-            case "char" -> value.isEmpty() ? 0 : (int) value.charAt(0);
-            default -> Integer.parseInt(value);
+        try {
+            return switch (type.getName()) {
+                case "long" -> Long.parseLong(value);
+                case "float" -> Float.parseFloat(value);
+                case "double" -> Double.parseDouble(value);
+                case "boolean" -> switch (value) {
+                    case "true" -> 1;
+                    case "false" -> 0;
+                    default -> throw new NumberFormatException(value);
+                };
+                case "char" -> {
+                    if (value.length() != 1) {
+                        throw new NumberFormatException(value);
+                    }
+                    yield (int) value.charAt(0);
+                }
+                case "short" -> (int) Short.parseShort(value);
+                case "byte" -> (int) Byte.parseByte(value);
+                default -> Integer.parseInt(value);
+            };
+        } catch (NumberFormatException e) {
+            throw new BadArgument(name, text, expected(type.getName()));
+        }
+    }
+
+    /** What a parameter of the type takes, as an error message says it: "an int", "true or false". */
+    private static String expected(String type) {
+        return switch (type) {
+            case "boolean" -> "true or false";
+            case "char" -> "one character";
+            case "int" -> "an int";
+            default -> "a " + type;
         };
+    }
+
+    /** A length or size: a non-negative whole number that fits an int. */
+    private static long count(String name, String text, String what) {
+        try {
+            int value = Integer.parseInt(text.trim());
+            if (value >= 0) {
+                return value;
+            }
+        } catch (NumberFormatException e) {
+            // Reported below.
+        }
+        throw new BadArgument(name, text, what + ": a non-negative whole number");
     }
 
     /**
