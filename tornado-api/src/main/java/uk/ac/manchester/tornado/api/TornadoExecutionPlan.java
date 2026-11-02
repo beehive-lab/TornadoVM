@@ -751,7 +751,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * It returns the current memory usage on the device in bytes.
+     * Returns the bytes of runtime-owned device buffers in the current execution. Storage consumed
+     * from unified memory belongs to the caller and is not counted.
      * 
      * @return long
      *     Number of bytes used.

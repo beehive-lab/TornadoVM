@@ -252,6 +252,11 @@ public class TornadoExecutionContext {
     }
 
     public int replaceVariable(Object oldObj, Object newObj) {
+        for (LocalObjectState state : objectState) {
+            if (state.getObject() == oldObj && state.isUnifiedMemory()) {
+                throw new TornadoRuntimeException("Replacing consumeFromUnifiedMemory inputs is not supported");
+            }
+        }
         /*
          * Use the same index the oldObj was assigned. The argument indices are
          * hardcoded in the TornadoVM bytecodes during bytecode generation and must

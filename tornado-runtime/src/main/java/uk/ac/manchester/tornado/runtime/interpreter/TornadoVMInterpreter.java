@@ -900,16 +900,30 @@ public class TornadoVMInterpreter {
                 accesses[allocCounter] = this.objectAccesses.get(objects[allocCounter]);
                 LocalObjectState localState = graphExecutionContext.getLocalStateObject(objects[allocCounter], accesses[allocCounter]);
                 objectStates[allocCounter].setTransferredEveryExecution(localState.isStreamIn() || localState.isStreamOut());
+                objectStates[allocCounter].setUnifiedMemory(localState.isUnifiedMemory());
+                if (localState.isUnifiedMemory()) {
+                    if (sizeBatch != 0) {
+                        throw new TornadoRuntimeException("consumeFromUnifiedMemory does not support memory chunking");
+                    }
+                    if (!objectStates[allocCounter].hasObjectBuffer()) {
+                        interpreterDevice.checkOnUnifiedMemory(dataObject);
+                    }
+                }
                 allocCounter++;
             } else {
                 XPUDeviceBufferState state = resolveObjectState(arg);
-                preAllocatedSizes += state.getXPUBuffer().size();
+                preAllocatedSizes += state.getXPUBuffer().getAllocatedSize();
             }
         }
 
         // total size of objects pre-allocated and current allocation
         long allocationSize = interpreterDevice.allocateObjects(objects, sizeBatch, objectStates, accesses);
         long allocationsTotalSize = allocationSize + preAllocatedSizes;
+        for (XPUDeviceBufferState state : objectStates) {
+            if (state.isUnifiedMemory()) {
+                state.setLockBuffer(true);
+            }
+        }
         increaseBatchNumber(sizeBatch);
 
         // Re-establish the buffer-reuse lock on (re)allocation. Locking otherwise happens only
@@ -943,7 +957,7 @@ public class TornadoVMInterpreter {
         // Register allocations values in the profiler only if the profiler is enabled
         if (TornadoOptions.isProfilerEnabled() && allocationSize > 0) {
             for (XPUDeviceBufferState objectState : objectStates) {
-                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().size());
+                timeProfiler.addValueToMetric(ProfilerType.ALLOCATION_BYTES, TimeProfiler.NO_TASK_NAME, objectState.getXPUBuffer().getAllocatedSize());
             }
         }
         return -1;

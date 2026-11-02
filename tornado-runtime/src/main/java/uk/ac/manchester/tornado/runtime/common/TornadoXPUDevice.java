@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoUnifiedMemoryNotSupported;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
@@ -31,6 +32,27 @@ import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
  * A Tornado accelerator device extending the {@link TornadoDevice} interface.
  */
 public interface TornadoXPUDevice extends TornadoDevice {
+
+    /**
+     * Checks that this device can consume the storage of {@code object} in place. A backend that
+     * supports unified memory overrides this method with its storage requirements.
+     *
+     * @throws TornadoUnifiedMemoryNotSupported
+     *     naming the first requirement that is not met
+     */
+    default void checkOnUnifiedMemory(Object object) {
+        throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory is not supported on " + getDeviceName());
+    }
+
+    @Override
+    default boolean isOnUnifiedMemory(Object object) {
+        try {
+            checkOnUnifiedMemory(object);
+            return true;
+        } catch (TornadoUnifiedMemoryNotSupported e) {
+            return false;
+        }
+    }
 
     /**
      * It returns the preferred scheduling strategy for the Tornado accelerator device.
