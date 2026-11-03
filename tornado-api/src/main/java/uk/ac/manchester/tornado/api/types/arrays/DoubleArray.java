@@ -288,8 +288,11 @@ public final class DoubleArray extends TornadoNativeArray {
      *         The double value to initialize the {@link DoubleArray} instance with.
      */
     public void init(double value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
+        if (Double.doubleToRawLongBits(value) == 0L) {
+            segment.fill(baseIndex, numberOfElements, DOUBLE_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, value, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, DOUBLE_BYTES);
         }
     }
 

@@ -302,8 +302,11 @@ public final class FloatArray extends TornadoNativeArray {
      *         The float value to initialize the {@link FloatArray} instance with.
      */
     public void init(float value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
+        if (Float.floatToRawIntBits(value) == 0) {
+            segment.fill(baseIndex, numberOfElements, FLOAT_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, value, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, FLOAT_BYTES);
         }
     }
 

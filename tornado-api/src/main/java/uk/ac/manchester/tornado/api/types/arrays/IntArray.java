@@ -286,8 +286,11 @@ public final class IntArray extends TornadoNativeArray {
      *         The int value to initialize the {@link IntArray} instance with.
      */
     public void init(int value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
+        if (value == 0) {
+            segment.fill(baseIndex, numberOfElements, INT_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, value, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, INT_BYTES);
         }
     }
 

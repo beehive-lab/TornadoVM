@@ -467,9 +467,7 @@ public final class ByteArray extends TornadoNativeArray {
      *         The byte value to initialize the {@link ByteArray} instance with.
      */
     public void init(byte value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
-        }
+        segment.fill(baseIndex, numberOfElements, BYTE_BYTES, value);
     }
 
     /**

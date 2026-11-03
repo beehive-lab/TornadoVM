@@ -286,8 +286,11 @@ public final class ShortArray extends TornadoNativeArray {
      *         The short value to initialize the {@link ShortArray} instance with.
      */
     public void init(short value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
+        if (value == 0) {
+            segment.fill(baseIndex, numberOfElements, SHORT_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, value, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, SHORT_BYTES);
         }
     }
 

@@ -288,8 +288,11 @@ public final class LongArray extends TornadoNativeArray {
      *         The long value to initialize the {@link LongArray} instance with.
      */
     public void init(long value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
+        if (value == 0L) {
+            segment.fill(baseIndex, numberOfElements, LONG_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, value, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, LONG_BYTES);
         }
     }
 
