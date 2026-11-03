@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# tc: TornadoVM's kernel compiler, headless. Compiles one kernel method from class files and prints
-# the CUDA C++, OpenCL C or MSL it generates; no GPU and no TornadoVM runtime are needed.
-#   tc emit [--target cuda|opencl|metal] [--cp PATH] [--stats] Class method
-# Runs the native image when `build-tc-native` has built one, the JVM otherwise.
+# tc: TornadoVM's kernel compiler, headless. Compiles kernel methods from class files and prints the
+# CUDA C++, OpenCL C or MSL it generates; no GPU and no TornadoVM runtime are needed.
+#   tc emit [--target cuda|opencl|metal] [--cc N] [--arg name=value]... [--cp PATH] (Class method | --all)
+#   tc --version
+# Runs the native image when `build-tc-native` has built one, the JVM otherwise. TORNADOVM_HOME
+# defaults to the SDK this script is in.
 set -euo pipefail
-: "${TORNADOVM_HOME:?source setvars.sh first}"
+export TORNADOVM_HOME="${TORNADOVM_HOME:-$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)}"
 if [ -x "$TORNADOVM_HOME/bin/tc-native" ]; then
   exec "$TORNADOVM_HOME/bin/tc-native" "$@"
 fi
