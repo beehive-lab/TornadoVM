@@ -33,13 +33,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLCommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLContext implements OCLContextInterface {
 
@@ -231,11 +233,11 @@ public class OCLContext implements OCLContextInterface {
 
     public long getProperties() {
         long properties = 0;
-        if (TornadoOptions.ENABLE_OPENCL_PROFILING) {
+        if (OpenCLFlags.PROFILING.get()) {
             properties |= OCLCommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
         }
 
-        if (TornadoOptions.ENABLE_OOO_EXECUTION) {
+        if (RuntimeFlags.OUT_OF_ORDER_EXECUTION.get()) {
             properties |= OCLCommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         return properties;
@@ -288,18 +290,12 @@ public class OCLContext implements OCLContextInterface {
 
     public void cleanup() {
 
-        if (TornadoOptions.DUMP_EVENTS) {
-            for (OCLDeviceContext deviceContext : deviceContexts) {
-                deviceContext.dumpEvents();
-            }
-        }
-
         try {
             long t1 = System.nanoTime();
             clReleaseContext(contextID);
             long t2 = System.nanoTime();
 
-            if (TornadoOptions.FULL_DEBUG) {
+            if (DebugFlags.FULL_DEBUG.get()) {
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t2 - t1) * 1e-9);
             }
         } catch (OCLException e) {

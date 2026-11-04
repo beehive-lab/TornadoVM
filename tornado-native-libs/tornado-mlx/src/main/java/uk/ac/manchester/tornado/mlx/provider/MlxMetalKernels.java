@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.LibraryFlags;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -96,7 +97,7 @@ final class MlxMetalKernels {
     /** One shared event per command queue, signalled at the end of each command buffer. */
     private static final Map<Long, long[]> QUEUE_EVENTS = new ConcurrentHashMap<>();
 
-    private static final String METALLIB = System.getProperty("tornado.mlx.metallib", installedMetallib());
+    private static final String METALLIB = LibraryFlags.MLX_METALLIB.find().orElseGet(MlxMetalKernels::installedMetallib);
 
     private MlxMetalKernels() {
     }
@@ -732,7 +733,7 @@ final class MlxMetalKernels {
      * as the Metal backend does, falling back to {@code waitUntilCompleted} after a short spin.
      */
     /** {@code -Dtornado.mlx.async=true}: commit without waiting for the GPU. */
-    private static final boolean ASYNC = Boolean.getBoolean("tornado.mlx.async");
+    private static final boolean ASYNC = LibraryFlags.MLX_ASYNC.get();
 
     private static void commitAndWait(long queue, long device, long commandBuffer) {
         long[] queueEvent = QUEUE_EVENTS.computeIfAbsent(queue, q -> new long[] { send(device, "newSharedEvent"), 0 });

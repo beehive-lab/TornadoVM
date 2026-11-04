@@ -47,7 +47,7 @@ import uk.ac.manchester.tornado.fuzz.oracle.Oracle;
  * mismatch is a genuine CUDA codegen defect. On a finding it {@link Shrinker
  * shrinks} the expression to a minimal reproducer before emitting the bundle.
  *
- * Requires {@code -Dtornado.fuzz.genDir=<dir>} AND that {@code <dir>} is on the
+ * Requires {@code -Dtornado.fuzz.gen.dir=<dir>} AND that {@code <dir>} is on the
  * launch {@code -cp}. See {@link InProcessCompiler}.
  */
 public final class Phase2Fuzzer {

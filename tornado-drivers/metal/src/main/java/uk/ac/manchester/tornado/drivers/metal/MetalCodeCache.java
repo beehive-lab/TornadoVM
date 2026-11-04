@@ -22,7 +22,6 @@ package uk.ac.manchester.tornado.drivers.metal;
 
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.drivers.metal.enums.MetalBuildStatus.METAL_BUILD_SUCCESS;
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,24 +35,24 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoCompilationException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.MetalFlags;
+import uk.ac.manchester.tornado.api.options.ProfilerFlags;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalBuildStatus;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class MetalCodeCache {
 
-    private static final String FALSE = "False";
     private static final String METAL_SOURCE_SUFFIX = ".metal";
-    private final boolean METAL_CACHE_ENABLE = Boolean.parseBoolean(getProperty("tornado.metal.codecache.enable", FALSE));
-    private final boolean METAL_DUMP_BINS = Boolean.parseBoolean(getProperty("tornado.metal.codecache.dump", FALSE));
-    private final boolean METAL_DUMP_SOURCE = Boolean.parseBoolean(getProperty("tornado.metal.source.dump", FALSE));
+    private final boolean METAL_CACHE_ENABLE = MetalFlags.CODE_CACHE.get();
+    private final boolean METAL_DUMP_BINS = MetalFlags.CODE_CACHE_DUMP.get();
+    private final boolean METAL_DUMP_SOURCE = MetalFlags.SOURCE_DUMP.get();
     private final boolean PRINT_LOAD_TIME = false;
-    private final String METAL_CACHE_DIR = getProperty("tornado.metal.codecache.dir", "/var/metal-codecache");
-    private final String METAL_SOURCE_DIR = getProperty("tornado.metal.source.dir", "/var/metal-compiler");
-    private final String METAL_LOG_DIR = getProperty("tornado.metal.log.dir", "/var/metal-logs");
+    private final String METAL_CACHE_DIR = MetalFlags.CODE_CACHE_DIR.get();
+    private final String METAL_SOURCE_DIR = MetalFlags.SOURCE_DIR.get();
+    private final String METAL_LOG_DIR = MetalFlags.LOG_DIR.get();
 
     private final ConcurrentHashMap<String, MetalInstalledCode> cache;
     private final MetalDeviceContextInterface deviceContext;
@@ -303,12 +302,12 @@ public class MetalCodeCache {
             entryPoint = entryPoint.split("-")[1];
         }
 
-        long beforeLoad = (TornadoOptions.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
+        long beforeLoad = (ProfilerFlags.TIME_IN_NANOSECONDS.get()) ? System.nanoTime() : System.currentTimeMillis();
         MetalProgram program = deviceContext.createProgramWithBinary(binary, new long[] { binary.length });
-        long afterLoad = (TornadoOptions.TIME_IN_NANOSECONDS) ? System.nanoTime() : System.currentTimeMillis();
+        long afterLoad = (ProfilerFlags.TIME_IN_NANOSECONDS.get()) ? System.nanoTime() : System.currentTimeMillis();
 
         if (PRINT_LOAD_TIME) {
-            System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (TornadoOptions.TIME_IN_NANOSECONDS ? " ns" : " ms") + "\n");
+            System.out.println("Binary load time: " + (afterLoad - beforeLoad) + (ProfilerFlags.TIME_IN_NANOSECONDS.get() ? " ns" : " ms") + "\n");
         }
 
         if (program == null) {

@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.TaskFlags;
 import uk.ac.manchester.tornado.drivers.opencl.OCLBackendImpl;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
@@ -53,7 +54,6 @@ import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
@@ -139,7 +139,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
                 return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
             }
             case CL_DEVICE_TYPE_CPU -> {
-                if (TornadoOptions.USE_BLOCK_SCHEDULER) {
+                if (TaskFlags.BLOCK_SCHEDULER.get()) {
                     return TornadoSchedulingStrategy.PER_CPU_BLOCK;
                 } else {
                     return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
@@ -171,7 +171,7 @@ public class VirtualOCLTornadoDevice implements TornadoXPUDevice {
     private TornadoInstalledCode compileTask(SchedulableTask task) {
         // A virtual device has nothing to install on: print the kernel when asked.
         final CompilableTask executable = (CompilableTask) task;
-        return TcKernels.compile(executable, TargetCaps.OPENCL_GENERIC.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER), getDeviceContext(), (entry, source) -> {
+        return TcKernels.compile(executable, TargetCaps.OPENCL_GENERIC.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER), (entry, source) -> {
             if (executable.meta().isPrintKernelEnabled()) {
                 RuntimeUtilities.dumpKernel(source);
             }

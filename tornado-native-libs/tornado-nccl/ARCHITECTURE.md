@@ -118,7 +118,7 @@ also keeps each plan on the same TornadoVM command queue from one step to the ne
 `execute()` increments a step counter and unparks the rank threads. Each thread runs its plan once
 and decrements a counter of ranks still running. The last one unparks the caller. Threads waiting
 for the next step, and the caller waiting for the ranks, first spin with `Thread.onSpinWait()` for
-up to `tornado.nccl.spinWaitMicros` (default 1000 µs) and then park.
+up to `tornado.nccl.spin.wait.micros` (default 1000 µs) and then park.
 
 An `ExecutorService` with futures cost two thread wake-ups in a row on every step, and the ranks
 started the collective at different times. On a two-socket host that doubled the time of a 4 MiB
@@ -269,8 +269,7 @@ when the task is added to a task graph.
 
 | Property | Default | Effect |
 |---|---|---|
-| `tornado.nccl.spinWaitMicros` | `1000` | How long rank threads and the caller spin before parking. `0` parks at once. |
-| `tornado.nccl.benchmark.cudaGraph` | `false` | Benchmarks only: run every plan as a CUDA graph. |
+| `tornado.nccl.spin.wait.micros` | `1000` | How long rank threads and the caller spin before parking. `0` parks at once. |
 
 NCCL's own environment variables (`NCCL_DEBUG`, `NCCL_P2P_DISABLE`, `NCCL_SOCKET_IFNAME`, …) apply
 unchanged.

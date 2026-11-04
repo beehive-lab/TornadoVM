@@ -24,6 +24,7 @@ import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 
 public abstract class TornadoTestBase {
@@ -68,7 +69,7 @@ public abstract class TornadoTestBase {
     }
 
     private boolean getVirtualDeviceEnabled() {
-        return Boolean.parseBoolean(System.getProperty("tornado.virtual.device", "False"));
+        return RuntimeFlags.VIRTUAL_DEVICE.get();
     }
 
     protected Tuple2<Integer, Integer> getDriverAndDeviceIndex() {

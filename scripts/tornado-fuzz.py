@@ -43,7 +43,7 @@ def _pump(stream, q):
 def run_batch(seed, count, phase, out_dir, dump_kernel, hang_timeout):
     jvm = "-Dtornado.cuda.priority=100"
     if dump_kernel:
-        jvm += f" -Dtornado.printKernel=true -Dtornado.print.kernel.dir={out_dir} -Dtornado.print.bytecodes=true"
+        jvm += f" -Dtornado.print.kernel=true -Dtornado.print.kernel.dir={out_dir} -Dtornado.print.bytecodes=true"
     cmd = [
         "tornado",
         "-m", MAIN,
@@ -97,7 +97,7 @@ def record_crash(out_dir, seed, returncode):
         f.write("# CUDA backend fuzz finding — CRASH\n\n")
         f.write("The JVM died (native crash / non-zero exit) while running this seed.\n\n")
         f.write("## Reproduce\n\n```bash\ntornado -m %s \\\n" % MAIN)
-        f.write('    --jvm="-Dtornado.cuda.priority=100 -Dtornado.printKernel=true -Dtornado.print.kernel.dir=$(pwd)" \\\n')
+        f.write('    --jvm="-Dtornado.cuda.priority=100 -Dtornado.print.kernel=true -Dtornado.print.kernel.dir=$(pwd)" \\\n')
         f.write('    --params "seed=%d count=1 phase=1 outDir=/tmp/fuzz"\n```\n\n' % seed)
         f.write("Inspect the copied `hs_err_pid*.log` for the native frame, and the dumped\n")
         f.write("`*.cu` for the CUDA source that triggered it.\n")
@@ -115,7 +115,7 @@ def record_hang(out_dir, seed, hang_timeout):
         f.write("blocked in a native call (a healthy case completes in well under a second).\n")
         f.write("Likely an infinite loop or a deadlocked barrier in the generated CUDA code.\n\n")
         f.write("## Reproduce\n\n```bash\ntimeout %ds tornado -m %s \\\n" % (max(2 * hang_timeout, 30), MAIN))
-        f.write('    --jvm="-Dtornado.cuda.priority=100 -Dtornado.printKernel=true -Dtornado.print.kernel.dir=$(pwd)" \\\n')
+        f.write('    --jvm="-Dtornado.cuda.priority=100 -Dtornado.print.kernel=true -Dtornado.print.kernel.dir=$(pwd)" \\\n')
         f.write('    --params "seed=%d count=1 phase=1 outDir=/tmp/fuzz"\n```\n\n' % seed)
         f.write("Inspect the dumped `*.cu`: check loop bounds and any divergent `__syncthreads`.\n")
     print(f"HANG recorded: seed={seed} (no output for {hang_timeout}s) -> {bundle}", flush=True)

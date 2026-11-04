@@ -29,11 +29,11 @@ import uk.ac.manchester.tornado.api.WorkerGrid1D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 
 /**
@@ -176,7 +176,7 @@ public class TestFloatBitsAndComparisons extends TornadoTestBase {
         // -cl-fast-relaxed-math (TornadoVM's OpenCL default) lets the compiler assume no NaN operands:
         // Intel's folds NaN >= NaN and NaN <= NaN to true. NaN comparisons are only checked without it.
         boolean relaxedNaNs = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() == TornadoVMBackendType.OPENCL //
-                && TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS.contains("-cl-fast-relaxed-math");
+                && OpenCLFlags.COMPILER_FLAGS.get().contains("-cl-fast-relaxed-math");
         for (int i = 0; i < N; i++) {
             if (relaxedNaNs && (Float.isNaN(a.get(i)) || Float.isNaN(b.get(i)))) {
                 continue;

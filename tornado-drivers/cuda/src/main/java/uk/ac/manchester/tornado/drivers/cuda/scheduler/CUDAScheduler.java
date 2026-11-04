@@ -20,11 +20,11 @@
  */
 package uk.ac.manchester.tornado.drivers.cuda.scheduler;
 
+import uk.ac.manchester.tornado.api.options.TaskFlags;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class CUDAScheduler {
 
@@ -89,7 +89,7 @@ public class CUDAScheduler {
                 }
             }
             case CL_DEVICE_TYPE_CPU -> {
-                return TornadoOptions.USE_BLOCK_SCHEDULER ? new CUDACPUScheduler(context) : getInstanceGPUScheduler(context);
+                return TaskFlags.BLOCK_SCHEDULER.get() ? new CUDACPUScheduler(context) : getInstanceGPUScheduler(context);
             }
             default -> new TornadoLogger().fatal("No scheduler available for device: %s", context);
         }

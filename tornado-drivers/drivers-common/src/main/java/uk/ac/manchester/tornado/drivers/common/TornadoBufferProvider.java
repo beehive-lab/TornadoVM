@@ -21,7 +21,6 @@
 package uk.ac.manchester.tornado.drivers.common;
 
 import static uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray.ARRAY_HEADER;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +30,8 @@ import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * This class implements a cache of allocated buffers on the device and also
@@ -58,7 +57,7 @@ public abstract class TornadoBufferProvider {
         this.deviceContext = deviceContext;
         this.usedBuffers = initializeBufferHashMap();
         this.freeBuffers = initializeBufferHashMap();
-        currentMemoryAvailable = TornadoOptions.DEVICE_AVAILABLE_MEMORY;
+        currentMemoryAvailable = RuntimeFlags.DEVICE_MEMORY.get();
     }
 
     private HashMap<Access, ArrayList<BufferContainer>> initializeBufferHashMap() {
@@ -247,7 +246,7 @@ public abstract class TornadoBufferProvider {
     }
 
     public synchronized void resetBuffers(Access access) {
-        freeBuffers(DEVICE_AVAILABLE_MEMORY, access);
+        freeBuffers(RuntimeFlags.DEVICE_MEMORY.get(), access);
     }
 
     private record BufferContainer(long buffer, long size, Access access) {

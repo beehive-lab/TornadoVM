@@ -462,8 +462,8 @@ on its own, so no warm-up is needed. Close the plans before the communicator: a 
 refers to it.
 
 `BenchmarkNcclAllReduce` and `BenchmarkNcclSendRecv` compare a step with an NCCL all-reduce or ring
-exchange against handing the buffers on through the host (`-Dtornado.nccl.benchmark.cudaGraph=true`
-runs every plan as a CUDA graph).
+exchange against handing the buffers on through the host (`--cuda-graph` runs every plan as a CUDA
+graph).
 
 > **cuTENSOR** (`nvidia/cutensor`, tensor contractions / einsum) is implemented
 > on branch `hybrid-cutensor` but is **not part of this build**.

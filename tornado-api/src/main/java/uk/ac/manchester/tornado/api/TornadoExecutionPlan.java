@@ -725,7 +725,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * <p>
      * Shared code is less specialised: it can need more registers and run slower than code
      * compiled for one size, so use it only for workloads whose shapes change, such as model
-     * serving with changing batch or sequence sizes. {@code -Dtornado.tc.dynamicShapes=true}
+     * serving with changing batch or sequence sizes. {@code -Dtornado.tc.dynamic.shapes=true}
      * turns it on for every plan.
      *
      * <p>
@@ -910,7 +910,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * <p>
      * It sets {@code CU_LIMIT_DEV_RUNTIME_PENDING_LAUNCH_COUNT} on the device's CUDA context before
      * the plan runs, so it holds for everything that runs on that device from then on. Without it,
-     * {@code -Dtornado.cuda.dp.pendingLaunchCount} applies, or else the driver's default (2048).
+     * {@code -Dtornado.cuda.dp.pending.launch.count} applies, or else the driver's default (2048).
      * CUDA backend only; a no-op on other backends.
      * </p>
      *

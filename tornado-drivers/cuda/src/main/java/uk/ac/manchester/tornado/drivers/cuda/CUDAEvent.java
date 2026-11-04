@@ -27,7 +27,6 @@ import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_P
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_PROFILING_COMMAND_QUEUED;
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_PROFILING_COMMAND_START;
 import static uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo.CL_PROFILING_COMMAND_SUBMIT;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.ENABLE_OPENCL_PROFILING;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
@@ -35,6 +34,7 @@ import java.util.Arrays;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandExecutionStatus;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAProfilingInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
@@ -159,7 +159,7 @@ public class CUDAEvent implements Event {
     }
 
     private long readEventTime(CUDAProfilingInfo eventType) {
-        if (!ENABLE_OPENCL_PROFILING) {
+        if (!OpenCLFlags.PROFILING.get()) {
             return -1;
         }
         long time = 0;
@@ -263,7 +263,7 @@ public class CUDAEvent implements Event {
 
     @Override
     public long getElapsedTime() {
-        if (!ENABLE_OPENCL_PROFILING) {
+        if (!OpenCLFlags.PROFILING.get()) {
             return 0;
         }
         // CUDA has no absolute event timestamps; use cuEventElapsedTime between the
@@ -277,7 +277,7 @@ public class CUDAEvent implements Event {
      */
     @Override
     public long getDriverDispatchTime() {
-        if (!ENABLE_OPENCL_PROFILING) {
+        if (!OpenCLFlags.PROFILING.get()) {
             return 0;
         }
         CUDAHandles.Event event = CUDAHandles.resolve(oclEventID, CUDAHandles.Event.class);

@@ -34,6 +34,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.math.TornadoMath;
+import uk.ac.manchester.tornado.api.options.TcFlags;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
@@ -795,7 +796,7 @@ public class TestMath extends TornadoTestBase {
             executionPlan.execute();
         }
 
-        boolean fmaEnabled = Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true"));
+        boolean fmaEnabled = TcFlags.ENABLE_FMA.get();
         if (fmaEnabled) {
             boolean anyFused = false;
             for (int i = 0; i < size && !anyFused; i++) {
@@ -858,7 +859,7 @@ public class TestMath extends TornadoTestBase {
             // a guarantee the backend does not make would be asserting a lie.
             return;
         }
-        boolean fmaEnabledGlobally = Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true"));
+        boolean fmaEnabledGlobally = TcFlags.ENABLE_FMA.get();
         if (!fmaEnabledGlobally) {
             // Nothing to distinguish: the JVM-wide option already removed the phase, so both arms
             // are strict and agreeing tells us nothing about the switch.

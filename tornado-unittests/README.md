@@ -26,7 +26,7 @@ mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.Multipl
 
 ```bash
 mvn exec:exec -Dtest.class=uk.ac.manchester.tornado.unittests.foundation.TestFloats \
-  -Dtornado.printKernel=True
+  -Dtornado.print.kernel=True
 ```
 
 #### Expected Output

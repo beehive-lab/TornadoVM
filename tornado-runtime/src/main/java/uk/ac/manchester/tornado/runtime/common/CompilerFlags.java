@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
+import uk.ac.manchester.tornado.api.options.TcFlags;
 
 /**
  * Combines two compiler option strings so that the second overrides the first: how a plan's
@@ -62,6 +64,22 @@ public final class CompilerFlags {
     private static final List<String> REPEATABLE = List.of("I", "include-path", "D", "define-macro", "U", "undefine-macro", "include", "pre-include");
 
     private CompilerFlags() {
+    }
+
+    /**
+     * The NVRTC options every CUDA kernel is compiled with: those of {@code tornado.cuda.compile.profile}, merged with
+     * {@code tornado.cuda.compiler.flags}, plus what {@code tornado.enable.fma=false} needs.
+     *
+     * <p>
+     * The CUDA backend fuses a multiply and an add at two independent stages, so turning off one leaves the other.
+     * {@code enable.fma=false} stops {@code CUDAFMAPhase} emitting an {@code fma()} call; {@code --fmad=false} stops
+     * NVRTC re-contracting the separated multiply and add on the way to PTX. Both are needed to get the host's two
+     * roundings. {@code --fmad=false} is only added when nothing has already specified {@code --fmad}: NVRTC rejects
+     * it when given twice, and the {@code repro} profile sets it. An explicit setting wins.
+     * </p>
+     */
+    public static String cudaDefaults() {
+        return CudaDefaults.VALUE;
     }
 
     /**
@@ -147,5 +165,17 @@ public final class CompilerFlags {
             }
         }
         return ALIASES.getOrDefault(name, name);
+    }
+
+    /** Computed once, the first time it is needed, as the options it reads are fixed for the run. */
+    private static final class CudaDefaults {
+
+        private static final String VALUE = compute();
+
+        private static String compute() {
+            String stated = merge(CudaCompileProfile.parse(CudaFlags.COMPILE_PROFILE.get()).getFlags(), CudaFlags.COMPILER_FLAGS.get());
+            String fmaContraction = TcFlags.ENABLE_FMA.get() || stated.contains("-fmad") ? "" : "--fmad=false";
+            return (stated + " " + fmaContraction).trim().replaceAll("\\s+", " ");
+        }
     }
 }

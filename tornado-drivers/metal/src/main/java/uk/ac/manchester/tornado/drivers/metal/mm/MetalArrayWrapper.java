@@ -28,6 +28,8 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.common.JavaKind;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
@@ -37,7 +39,6 @@ import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public abstract class MetalArrayWrapper<T> implements XPUBuffer {
 
@@ -69,7 +70,7 @@ public abstract class MetalArrayWrapper<T> implements XPUBuffer {
         // MetalLoweringProvider#createNativeArrayAddress), so the host-side layout must use the same
         // constant - not this JVM's real on-heap array base offset (getVMConfig().getArrayBaseOffset),
         // which is unrelated to the device-buffer layout and not stable across host JDKs.
-        arrayHeaderSize = (int) TornadoOptions.PANAMA_OBJECT_HEADER_SIZE;
+        arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         logger = new TornadoLogger(this.getClass());
     }
 
@@ -107,7 +108,7 @@ public abstract class MetalArrayWrapper<T> implements XPUBuffer {
 
         this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(bufferSize, access);
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             logger.info("allocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             logger.info("allocated: %s", toString());
         }
@@ -125,7 +126,7 @@ public abstract class MetalArrayWrapper<T> implements XPUBuffer {
         bufferId = INIT_VALUE;
         bufferSize = INIT_VALUE;
 
-        if (TornadoOptions.FULL_DEBUG) {
+        if (DebugFlags.FULL_DEBUG.get()) {
             logger.info("deallocated: array kind=%s, size=%s, length offset=%d, header size=%d", kind.getJavaName(), humanReadableByteCount(bufferSize, true), arrayLengthOffset, arrayHeaderSize);
             logger.info("deallocated: %s", toString());
         }

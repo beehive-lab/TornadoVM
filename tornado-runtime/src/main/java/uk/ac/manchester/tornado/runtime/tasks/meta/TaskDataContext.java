@@ -30,18 +30,18 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.TornadoEvents;
+import uk.ac.manchester.tornado.api.options.TaskFlags;
+import uk.ac.manchester.tornado.api.options.TcFlags;
 import uk.ac.manchester.tornado.runtime.EventSet;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 
 public class TaskDataContext extends AbstractRTContext {
 
-    public static final String LOCAL_WORKGROUP_SUFFIX = ".local.workgroup.size";
-    public static final String GLOBAL_WORKGROUP_SUFFIX = ".global.workgroup.size";
     protected final Map<TornadoXPUDevice, BitSet> profiles;
     private final byte[] constantData;
     private final ScheduleContext scheduleMetaData;
@@ -91,30 +91,20 @@ public class TaskDataContext extends AbstractRTContext {
         return sb.toString();
     }
 
-    private static String getProperty(String key) {
-        return System.getProperty(key);
-    }
-
     private void inspectLocalWork() {
-        localWorkDefined = getProperty(getId() + LOCAL_WORKGROUP_SUFFIX) != null;
-        if (localWorkDefined) {
-            final String[] values = getProperty(getId() + LOCAL_WORKGROUP_SUFFIX).split(",");
-            localWork = new long[values.length];
-            for (int i = 0; i < values.length; i++) {
-                localWork[i] = Long.parseLong(values[i]);
-            }
-        }
+        Optional<String> configured = TaskFlags.LOCAL_WORK_SIZE.lookup(getId());
+        localWorkDefined = configured.isPresent();
+        configured.ifPresent(values -> localWork = parseWorkSizes(values));
     }
 
     private void inspectGlobalWork() {
-        globalWorkDefined = getProperty(getId() + GLOBAL_WORKGROUP_SUFFIX) != null;
-        if (globalWorkDefined) {
-            final String[] values = getProperty(getId() + GLOBAL_WORKGROUP_SUFFIX).split(",");
-            globalWork = new long[values.length];
-            for (int i = 0; i < values.length; i++) {
-                globalWork[i] = Long.parseLong(values[i]);
-            }
-        }
+        Optional<String> configured = TaskFlags.GLOBAL_WORK_SIZE.lookup(getId());
+        globalWorkDefined = configured.isPresent();
+        configured.ifPresent(values -> globalWork = parseWorkSizes(values));
+    }
+
+    private static long[] parseWorkSizes(String commaSeparated) {
+        return Arrays.stream(commaSeparated.split(",")).mapToLong(Long::parseLong).toArray();
     }
 
     public boolean isLocalWorkDefined() {
@@ -175,10 +165,7 @@ public class TaskDataContext extends AbstractRTContext {
         domain = value;
         Coarseness coarseness = new Coarseness(domain.getDepth());
 
-        final String config = getProperty(getId() + ".coarseness");
-        if (config != null && !config.isEmpty()) {
-            coarseness.applyConfig(config);
-        }
+        TaskFlags.COARSENESS.lookup(getId()).filter(config -> !config.isEmpty()).ifPresent(coarseness::applyConfig);
 
         final int dims = domain.getDepth();
         globalOffset = new long[dims];
@@ -240,27 +227,6 @@ public class TaskDataContext extends AbstractRTContext {
     @Override
     public int getOpenCLGpuBlockX() {
         return isOpenclGpuBlockXDefined() ? super.getOpenCLGpuBlockX() : scheduleMetaData.getOpenCLGpuBlockX();
-    }
-
-    @Override
-    public int getMetalThreadsPerThreadgroupX() {
-        return isMetalThreadgroupSizeDefined()
-                ? super.getMetalThreadsPerThreadgroupX()
-                : scheduleMetaData.getMetalThreadsPerThreadgroupX();
-    }
-
-    @Override
-    public int getMetalThreadsPerThreadgroupY() {
-        return isMetalThreadgroupSizeDefined()
-                ? super.getMetalThreadsPerThreadgroupY()
-                : scheduleMetaData.getMetalThreadsPerThreadgroupY();
-    }
-
-    @Override
-    public int getMetalThreadsPerThreadgroupZ() {
-        return isMetalThreadgroupSizeDefined()
-                ? super.getMetalThreadsPerThreadgroupZ()
-                : scheduleMetaData.getMetalThreadsPerThreadgroupZ();
     }
 
     @Override
@@ -330,6 +296,6 @@ public class TaskDataContext extends AbstractRTContext {
     }
 
     public boolean applyPartialLoopUnroll() {
-        return TornadoOptions.isPartialUnrollEnabled();
+        return TcFlags.PARTIAL_UNROLL.get();
     }
 }

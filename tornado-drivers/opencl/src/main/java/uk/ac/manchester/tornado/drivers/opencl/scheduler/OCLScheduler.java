@@ -20,11 +20,11 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
+import uk.ac.manchester.tornado.api.options.TaskFlags;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLTargetDevice;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLScheduler {
 
@@ -86,7 +86,7 @@ public class OCLScheduler {
                 }
             }
             case CL_DEVICE_TYPE_CPU -> {
-                return TornadoOptions.USE_BLOCK_SCHEDULER ? new OCLCPUScheduler(context) : getInstanceGPUScheduler(context);
+                return TaskFlags.BLOCK_SCHEDULER.get() ? new OCLCPUScheduler(context) : getInstanceGPUScheduler(context);
             }
             default -> new TornadoLogger().fatal("No scheduler available for device: %s", context);
         }

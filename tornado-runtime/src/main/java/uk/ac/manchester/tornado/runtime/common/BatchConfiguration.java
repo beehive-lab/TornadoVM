@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.CharArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -121,7 +122,7 @@ public class BatchConfiguration {
         int totalChunks = (int) (totalSize / batchSize);
         long remainingChunkSize = totalSize % batchSize;
 
-        if (TornadoOptions.DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             System.out.println("Batch Size: " + batchSize);
             System.out.println("Total chunks: " + totalChunks);
             System.out.println("remainingChunkSize: " + remainingChunkSize);

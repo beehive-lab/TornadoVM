@@ -20,15 +20,13 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl.scheduler;
 
-import java.util.Arrays;
-
 import uk.ac.manchester.tornado.api.WorkerGrid;
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.drivers.opencl.OCLGridInfo;
 import uk.ac.manchester.tornado.drivers.opencl.OCLKernel;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public abstract class OCLKernelScheduler {
@@ -59,7 +57,7 @@ public abstract class OCLKernelScheduler {
     }
 
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (ProfilerActivation.isEnabled()) {
             // Metrics captured before blocking
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
 

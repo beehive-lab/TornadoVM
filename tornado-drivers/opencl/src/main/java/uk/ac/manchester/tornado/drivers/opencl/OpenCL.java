@@ -20,8 +20,6 @@
  */
 package uk.ac.manchester.tornado.drivers.opencl;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.VIRTUAL_DEVICE_ENABLED;
-
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteOrder;
@@ -32,6 +30,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.opencl.ffm.OpenCLAPI;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
@@ -56,7 +55,7 @@ public class OpenCL {
     public static final int CL_FALSE = 0;
 
     static {
-        if (VIRTUAL_DEVICE_ENABLED) {
+        if (RuntimeFlags.VIRTUAL_DEVICE.get()) {
             initializeVirtualPlatform();
         } else {
             // Initialize physical platform. The backend talks to the OpenCL ICD loader directly

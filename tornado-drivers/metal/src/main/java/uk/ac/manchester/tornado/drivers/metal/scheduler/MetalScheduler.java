@@ -20,10 +20,10 @@
  */
 package uk.ac.manchester.tornado.drivers.metal.scheduler;
 
+import uk.ac.manchester.tornado.api.options.TaskFlags;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * Factory for Metal kernel schedulers.
@@ -42,7 +42,7 @@ public class MetalScheduler {
                 return new MetalCPUScheduler(context);
             }
             case METAL_DEVICE_TYPE_CPU -> {
-                return TornadoOptions.USE_BLOCK_SCHEDULER ? new MetalCPUScheduler(context) : new MetalAppleGPUScheduler(context);
+                return TaskFlags.BLOCK_SCHEDULER.get() ? new MetalCPUScheduler(context) : new MetalAppleGPUScheduler(context);
             }
             default -> new TornadoLogger().fatal("No scheduler available for device: %s", context);
         }

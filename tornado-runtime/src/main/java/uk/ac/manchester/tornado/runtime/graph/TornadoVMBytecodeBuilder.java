@@ -20,12 +20,11 @@
  */
 package uk.ac.manchester.tornado.runtime.graph;
 
-import static uk.ac.manchester.tornado.runtime.common.Tornado.getProperty;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
 import uk.ac.manchester.tornado.runtime.graph.nodes.AbstractNode;
@@ -44,7 +43,7 @@ import uk.ac.manchester.tornado.runtime.graph.nodes.TaskNode;
 
 public class TornadoVMBytecodeBuilder {
 
-    public static final int MAX_TORNADO_VM_BYTECODE_SIZE = Integer.parseInt(getProperty("tornado.tvm.maxbytecodesize", "4096"));
+    public static final int MAX_TORNADO_VM_BYTECODE_SIZE = RuntimeFlags.MAX_BYTECODE_SIZE.get();
 
     private final byte[] code;
 
@@ -68,7 +67,7 @@ public class TornadoVMBytecodeBuilder {
      * an error.
      *
      * @param sizeInBytes
-     *     requested capacity; never smaller than {@code tornado.tvm.maxbytecodesize}, so an explicit
+     *     requested capacity; never smaller than {@code tornado.tvm.max.bytecode.size}, so an explicit
      *     setting still wins.
      */
     public TornadoVMBytecodeBuilder(boolean isSingleContext, int sizeInBytes) {

@@ -92,10 +92,10 @@ public final class FuzzMain {
         if (phase == 2) {
             InProcessCompiler compiler = new InProcessCompiler();
             if (!compiler.usesSystemLoader()) {
-                System.out.println("WARNING: phase 2 needs -Dtornado.fuzz.genDir=<dir> AND that <dir> on the launch -cp,");
+                System.out.println("WARNING: phase 2 needs -Dtornado.fuzz.gen.dir=<dir> AND that <dir> on the launch -cp,");
                 System.out.println("         else generated classes are invisible to TornadoVM's class reader and every case bails.");
                 System.out.println("         Example: tornado -cp /tmp/gen -m tornado.fuzz/...FuzzMain \\");
-                System.out.println("                    --jvm=\"-Dtornado.fuzz.genDir=/tmp/gen\" --params \"phase=2 ...\"");
+                System.out.println("                    --jvm=\"-Dtornado.fuzz.gen.dir=/tmp/gen\" --params \"phase=2 ...\"");
             }
             phase2 = new Phase2Fuzzer(compiler, coverageGuided);
             System.out.println("Phase 2 generation: " + (coverageGuided ? "coverage-guided" : "fixed fragile-weighted"));

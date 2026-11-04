@@ -21,7 +21,6 @@
 package uk.ac.manchester.tornado.drivers.metal.mm;
 
 import static uk.ac.manchester.tornado.drivers.metal.mm.MetalKernelStackFrame.RESERVED_SLOTS;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.drivers.metal.MetalContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalMemFlags;
@@ -49,7 +49,7 @@ public class MetalMemoryManager implements TornadoMemoryProvider {
 
     @Override
     public long getHeapSize() {
-        return DEVICE_AVAILABLE_MEMORY;
+        return RuntimeFlags.DEVICE_MEMORY.get();
     }
 
     public MetalKernelStackFrame createKernelStackFrame(long executionPlanId, final int numberOfArguments) {
@@ -99,13 +99,6 @@ public class MetalMemoryManager implements TornadoMemoryProvider {
     void allocateAtomicRegion() {
         if (this.atomicsRegionPointer == NON_EXISTING_ADDRESS) {
             this.atomicsRegionPointer = deviceContext.getPlatformContext().createBuffer(MetalMemFlags.METAL_MEM_READ_WRITE | MetalMemFlags.METAL_MEM_ALLOC_HOST_PTR, atomicRegionSize()).getBuffer();
-        }
-    }
-
-    void deallocateAtomicRegion() {
-        if (this.atomicsRegionPointer != NON_EXISTING_ADDRESS) {
-            deviceContext.getPlatformContext().releaseBuffer(this.atomicsRegionPointer);
-            this.atomicsRegionPointer = NON_EXISTING_ADDRESS;
         }
     }
 

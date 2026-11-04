@@ -20,8 +20,6 @@
  */
 package uk.ac.manchester.tornado.runtime.common;
 
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.PRINT_SOURCE_DIRECTORY;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,12 +29,11 @@ import java.io.PrintWriter;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.ProfilerFlags;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.utils.TornadoAPIUtils;
 
@@ -314,10 +311,10 @@ public final class RuntimeUtilities {
 
     public static void dumpKernel(byte[] source) {
         String sourceCode = new String(source);
-        if (PRINT_SOURCE_DIRECTORY.isEmpty()) {
+        if (DebugFlags.PRINT_KERNEL_DIR.get().isEmpty()) {
             System.out.println(sourceCode);
         } else {
-            File fileLog = new File(PRINT_SOURCE_DIRECTORY);
+            File fileLog = new File(DebugFlags.PRINT_KERNEL_DIR.get());
             try {
                 try (FileWriter file = new FileWriter(fileLog, fileLog.exists())) {
                     file.write(sourceCode);
@@ -362,19 +359,8 @@ public final class RuntimeUtilities {
         }
     }
 
-    public static String getTornadoInstanceIP() {
-        String localIP = null;
-        try {
-            InetAddress ip = InetAddress.getLocalHost();
-            localIP = ip.getHostAddress();
-        } catch (UnknownHostException e) {
-            System.out.println("Exception occurred" + e.getMessage());
-        }
-        return localIP;
-    }
-
     public static void profilerFileWriter(String jsonProfile) {
-        try (FileWriter fileWriter = new FileWriter(TornadoOptions.PROFILER_DIRECTORY, true)) {
+        try (FileWriter fileWriter = new FileWriter(ProfilerFlags.PROFILER_DUMP_DIR.get(), true)) {
             PrintWriter printWriter = new PrintWriter(fileWriter);
             printWriter.println(jsonProfile);
         } catch (IOException e) {
@@ -417,13 +403,13 @@ public final class RuntimeUtilities {
     private static String getFilePath() {
         String filePath;
 
-        if (TornadoOptions.DUMP_BYTECODES != null && !TornadoOptions.DUMP_BYTECODES.isEmpty()) {
+        if (!DebugFlags.DUMP_BYTECODES_DIR.get().isEmpty()) {
             // Create directory if it doesn't exist
-            File directory = new File(TornadoOptions.DUMP_BYTECODES);
+            File directory = new File(DebugFlags.DUMP_BYTECODES_DIR.get());
             if (!directory.exists()) {
                 directory.mkdirs();
             }
-            filePath = TornadoOptions.DUMP_BYTECODES + File.separator + BYTECODES_FILENAME;
+            filePath = DebugFlags.DUMP_BYTECODES_DIR.get() + File.separator + BYTECODES_FILENAME;
         } else {
             filePath = BYTECODES_FILENAME;
         }

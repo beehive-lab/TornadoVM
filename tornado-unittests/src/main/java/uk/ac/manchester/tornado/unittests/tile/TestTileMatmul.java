@@ -31,7 +31,6 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.WorkerGrid2D;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -224,39 +223,6 @@ public class TestTileMatmul extends TornadoTestBase {
         runGemm(128, 128, 128);
     }
 
-    /**
-     * The same GEMM with a CUDA Tile launch hint set.
-     *
-     * <p>
-     * {@code -Dtornado.cuda.tile.hints} puts a {@code [[using cutile : hint(0, ...)]]}
-     * attribute on the generated kernel. The hint changes what the tile compiler does with
-     * registers and shared memory - measured on sm_89, {@code occupancy=8} takes the kernel
-     * from 110 registers and 36 KB of shared memory down to 64 and 8 KB - so what this test
-     * checks is the thing a hint must never change: the result.
-     * </p>
-     *
-     * <p>
-     * The property is read at code generation time, in this process, so setting it here
-     * affects the compilation that follows. It is restored afterwards so the rest of the suite
-     * compiles unhinted.
-     * </p>
-     */
-    @Test
-    public void testGemmWithLaunchHint() throws TornadoExecutionPlanException {
-        final String property = "tornado.cuda.tile.hints";
-        String previous = System.getProperty(property);
-        System.setProperty(property, "occupancy=2");
-        try {
-            runGemm(64, 64, 64);
-        } finally {
-            if (previous == null) {
-                System.clearProperty(property);
-            } else {
-                System.setProperty(property, previous);
-            }
-        }
-    }
-
     private static final int LONG_K_TILE_M = 128;
 
     private static final int LONG_K_TILE_N = 128;
@@ -329,8 +295,7 @@ public class TestTileMatmul extends TornadoTestBase {
     private static final int UNROLL_TILE_K = 64;
 
     /**
-     * GEMM with 128x128x64 tiles: the one shape whose k-loop the CUDA backend unrolls by default,
-     * on compute capability 8.x.
+     * GEMM with 128x128x64 tiles, the largest tile shape of these tests.
      */
     public static void matmulUnrollShape(TileContext tc, HalfFloatArray a, HalfFloatArray b, FloatArray c, int m, int n, int k) {
         PartitionView av = tc.partition(tc.view(a, m, k), UNROLL_TILE_MN, UNROLL_TILE_K);
@@ -344,7 +309,7 @@ public class TestTileMatmul extends TornadoTestBase {
         cv.store(acc, tc.bidX(), tc.bidY());
     }
 
-    private void runGemmUnrollShape(String unrollKLoop, String graphName) throws TornadoExecutionPlanException {
+    private void runGemmLargeTiles(String graphName) throws TornadoExecutionPlanException {
         final int m = 256;
         final int n = 256;
         final int k = 512;
@@ -368,17 +333,8 @@ public class TestTileMatmul extends TornadoTestBase {
         worker.setLocalWork(1, 1, 1);
         GridScheduler grid = new GridScheduler(graphName + ".gemm", worker);
 
-        final String property = "tornado.cuda.tile.unrollKLoop";
-        String previous = System.getProperty(property);
-        System.setProperty(property, unrollKLoop);
         try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
             executeOrReportUnsupported(plan, grid);
-        } finally {
-            if (previous == null) {
-                System.clearProperty(property);
-            } else {
-                System.setProperty(property, previous);
-            }
         }
 
         for (int row = 0; row < m; row++) {
@@ -392,29 +348,9 @@ public class TestTileMatmul extends TornadoTestBase {
         }
     }
 
-    /**
-     * {@code -Dtornado.cuda.tile.unrollKLoop=true} forces the straight-line k-loop on every
-     * architecture; the result must not change.
-     */
     @Test
-    public void testGemmKLoopUnrolled() throws TornadoExecutionPlanException {
-        runGemmUnrollShape("true", "tileUnrollTrue");
-    }
-
-    /**
-     * {@code -Dtornado.cuda.tile.unrollKLoop=false} keeps the k-loop rolled on every architecture.
-     */
-    @Test
-    public void testGemmKLoopRolled() throws TornadoExecutionPlanException {
-        runGemmUnrollShape("false", "tileUnrollFalse");
-    }
-
-    /**
-     * The default per-architecture choice.
-     */
-    @Test
-    public void testGemmKLoopAuto() throws TornadoExecutionPlanException {
-        runGemmUnrollShape("auto", "tileUnrollAuto");
+    public void testGemmLargeTiles() throws TornadoExecutionPlanException {
+        runGemmLargeTiles("tileLarge");
     }
 
     @Test

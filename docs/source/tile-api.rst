@@ -431,80 +431,6 @@ Rank coverage is deliberately uneven: rank 3 exists for *addressing*, and arithm
      - the elementwise operations, the comparisons, ``select``, ``scale``, ``cast``, the math
        functions
 
-Launch hints
-************
-
-``-Dtornado.cuda.tile.hints=occupancy=2,num_cta_in_cga=1`` puts a
-``[[ using cutile : hint(0, ...) ]]`` attribute on every generated tile kernel. The keys are
-CUDA Tile's own; ``hint(0, ...)`` applies to all architectures.
-
-The hint reaches the tile compiler and changes its resource decisions. Measured on sm_89 for the
-FP16 GEMM of ``demos/22`` at ``n = 1024``:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Hint
-     - Registers / shared
-     - Kernel time
-   * - none (compiler's choice)
-     - 110 / 36 KB
-     - 65.3 us
-   * - ``occupancy=2``
-     - 110 / 36 KB
-     - 63.2 us (-2.9%, reproducible over three runs)
-   * - ``occupancy=4``
-     - 125 / 20 KB
-     - 132.5 us (2.0x slower)
-   * - ``occupancy=8``
-     - 64 / 8 KB
-     - 459.5 us (7.0x slower)
-
-**Nothing derives hints automatically, and this is why.** The compiler's default is already
-close to the best of these, and forcing occupancy up costs 2x to 7x: a heuristic that maximised
-occupancy would be actively harmful at this shape. Deriving hints from the shapes a JIT knows is
-still the most promising thing this integration could do that a hand-written kernel cannot, but
-it needs a model of the tradeoff rather than a rule of thumb.
-
-One caveat, verified against 13.3.73: **hint keys are not validated**. An invented key and an
-absurd value both compile silently and do nothing, so a hint that appears to have no effect may
-simply not exist.
-
-The ``occupancy`` hint only acts on a straight-line k-loop; on a rolled loop the hinted and plain
-kernels compile identically (see the next section).
-
-K-loop unrolling
-****************
-
-After task specialisation the k-loop of a tile GEMM has a constant trip count, so it can be either
-kept as a loop or fully unrolled into straight-line ``load/load/mma`` steps. Which form is faster
-depends on the architecture and the tile shape. Measured with FP16 GEMMs at ``n = 1024`` to
-``4096``:
-
-.. list-table::
-   :header-rows: 1
-
-   * - GPU
-     - 128x128x64 tiles
-     - Smaller tiles (32x32x32, 64x64x64, 128x128x32)
-   * - A10 (sm_86), RTX 4090 (sm_89)
-     - straight-line 1.5x to 2.4x faster
-     - rolled 1.7x to 6.5x faster
-   * - RTX 5070 Ti (sm_120)
-     - rolled 2.4x to 5.1x faster
-     - rolled 2.5x to 15x faster; some straight-line builds exceed the 120 s compile timeout
-
-By default the CUDA backend unrolls the k-loop only for 128x128x64 tiles on compute capability
-8.x, and keeps it rolled everywhere else. ``-Dtornado.cuda.tile.unrollKLoop`` overrides that
-choice:
-
-* ``auto`` (default): the per-architecture choice above.
-* ``true``: unroll every tile k-loop that fits the unroll budget.
-* ``false``: keep every tile k-loop rolled.
-
-The property is read when a task is compiled, so it can be set for one compilation only, the
-same way as ``tornado.cuda.tile.hints``.
-
 Rank
 ****
 
@@ -700,7 +626,6 @@ Beyond the operation set:
   the tile task silently runs as one block. Use ``tc.sum`` inside the tile instead.
 * TMA does not appear in the generated SASS on Ada (sm_89) because TMA is a Hopper unit; the
   alignment hint only pays off on sm_90 and newer.
-* Launch hints can be set but are not derived. See *Launch hints* above.
 
 Examples
 ********

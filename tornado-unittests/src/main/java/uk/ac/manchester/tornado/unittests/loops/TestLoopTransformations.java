@@ -130,8 +130,6 @@ public class TestLoopTransformations extends TornadoTestBase {
             if (TornadoRuntimeProvider.getTornadoRuntime().getBackend(0).getDevice(i).getPlatformName().toLowerCase().contains("nvidia")) {
                 TornadoBackend driver = TornadoRuntimeProvider.getTornadoRuntime().getBackend(0);
                 driver.setDefaultDevice(i);
-                TornadoRuntimeProvider.setProperty("tornado.unroll.factor", "32");
-                System.setProperty("tornado.unroll.factor", "32");
             }
         }
 

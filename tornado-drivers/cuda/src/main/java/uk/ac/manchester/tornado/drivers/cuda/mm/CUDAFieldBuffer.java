@@ -25,7 +25,6 @@ package uk.ac.manchester.tornado.drivers.cuda.mm;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
 import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
@@ -39,6 +38,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
@@ -89,7 +89,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
             final Field reflectedField = fields[index];
             final Class<?> type = reflectedField.getType();
 
-            if (DEBUG) {
+            if (DebugFlags.DEBUG.get()) {
                 logger.trace("field: name=%s, kind=%s, offset=%d", reflectedField.getName(), type.getName(), offsetOf(reflectedField));
             }
 
@@ -181,7 +181,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
     @Override
     public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
         }
 
@@ -189,7 +189,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
         this.bufferOffset = 0;
         setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
 
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             logger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
         }
     }
@@ -269,7 +269,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
             buffer.position(offsetOf(fields[0]));
             for (int i = 0; i < fields.length; i++) {
                 Field f = fields[i];
-                if (DEBUG) {
+                if (DebugFlags.DEBUG.get()) {
                     logger.trace("writing field: name=%s, offset=%d", f.getName(), offsetOf(f));
                 }
 
@@ -287,7 +287,7 @@ public class CUDAFieldBuffer implements XPUBuffer {
 
             for (int i = 0; i < fields.length; i++) {
                 Field f = fields[i];
-                if (DEBUG) {
+                if (DebugFlags.DEBUG.get()) {
                     logger.trace("reading field: name=%s, offset=%d", f.getName(), offsetOf(f));
                 }
                 buffer.position(offsetOf(f));

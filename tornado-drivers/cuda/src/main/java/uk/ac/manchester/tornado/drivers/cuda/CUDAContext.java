@@ -36,6 +36,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
+import uk.ac.manchester.tornado.api.options.OpenCLFlags;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDACommandQueueProperties;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
 import uk.ac.manchester.tornado.drivers.cuda.ffm.CUDADriverAPI;
@@ -44,7 +47,6 @@ import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAPinnedMemoryRegistry;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class CUDAContext implements CUDAContextInterface {
 
@@ -464,11 +466,11 @@ public class CUDAContext implements CUDAContextInterface {
 
     public long getProperties() {
         long properties = 0;
-        if (TornadoOptions.ENABLE_OPENCL_PROFILING) {
+        if (OpenCLFlags.PROFILING.get()) {
             properties |= CUDACommandQueueProperties.CL_QUEUE_PROFILING_ENABLE;
         }
 
-        if (TornadoOptions.ENABLE_OOO_EXECUTION) {
+        if (RuntimeFlags.OUT_OF_ORDER_EXECUTION.get()) {
             properties |= CUDACommandQueueProperties.CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE;
         }
         return properties;
@@ -539,12 +541,6 @@ public class CUDAContext implements CUDAContextInterface {
             pinnedFrames.clear();
         }
 
-        if (TornadoOptions.DUMP_EVENTS) {
-            for (CUDADeviceContext deviceContext : deviceContexts) {
-                deviceContext.dumpEvents();
-            }
-        }
-
         try {
             long t1 = System.nanoTime();
             synchronized (this) {
@@ -557,7 +553,7 @@ public class CUDAContext implements CUDAContextInterface {
             }
             long t2 = System.nanoTime();
 
-            if (TornadoOptions.FULL_DEBUG) {
+            if (DebugFlags.FULL_DEBUG.get()) {
                 System.out.printf("cleanup: %-10s..........%.9f s%n", "context", (t2 - t1) * 1e-9);
             }
         } catch (CUDAException e) {

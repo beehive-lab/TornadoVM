@@ -26,7 +26,7 @@ import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalGridInfo;
 import uk.ac.manchester.tornado.drivers.metal.MetalKernel;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public abstract class MetalKernelScheduler {
@@ -57,7 +57,7 @@ public abstract class MetalKernelScheduler {
     }
 
     private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (ProfilerActivation.isEnabled()) {
             // Metrics captured before blocking
             meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
 

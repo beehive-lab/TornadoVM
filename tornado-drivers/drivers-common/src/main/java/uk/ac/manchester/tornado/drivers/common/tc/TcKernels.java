@@ -23,17 +23,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Collections;
 
-import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.options.TcFlags;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.runtime.common.KernelAccess;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
-import uk.ac.manchester.tornado.runtime.profiler.FeatureExtractionUtilities;
-import uk.ac.manchester.tornado.runtime.profiler.ProfilerCodeFeatures;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
-import uk.ac.manchester.tornado.tc.ir.analysis.KernelFeatures;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
 /**
@@ -45,10 +41,10 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 public final class TcKernels {
 
     /**
-     * With {@code -Dtornado.tc.compileTimes=true} (and the profiler on), one line per compiled task:
+     * With {@code -Dtornado.tc.compile.times=true} (and the profiler on), one line per compiled task:
      * TC's time and the driver's (NVRTC, clBuildProgram, Metal library) time.
      */
-    private static final boolean REPORT_COMPILE_TIMES = Boolean.getBoolean("tornado.tc.compileTimes");
+    private static final boolean REPORT_COMPILE_TIMES = TcFlags.COMPILE_TIMES.get();
 
     /** The initial values of the {@code AtomicInteger}s a kernel creates, by kernel method. */
     public static final Map<Object, ArrayList<Integer>> ATOMICS = Collections.synchronizedMap(new HashMap<>());
@@ -64,16 +60,10 @@ public final class TcKernels {
     private TcKernels() {
     }
 
-    public static TornadoInstalledCode compile(CompilableTask executable, TargetCaps target, Installer installer) {
-        return compile(executable, target, null, installer);
-    }
-
     /**
-     * Compiles a task for {@code target} and installs it with {@code installer}. With
-     * {@code -Dtornado.feature.extraction=true}, also reports the kernel's code features for
-     * {@code deviceContext}.
+     * Compiles a task for {@code target} and installs it with {@code installer}.
      */
-    public static TornadoInstalledCode compile(CompilableTask executable, TargetCaps target, TornadoDeviceContext deviceContext, Installer installer) {
+    public static TornadoInstalledCode compile(CompilableTask executable, TargetCaps target, Installer installer) {
         final Method method = executable.getMethod();
         final var taskMeta = executable.meta();
         final Access[] access = KernelAccess.of(method, taskMeta.getArgumentsAccess().length);
@@ -85,9 +75,6 @@ public final class TcKernels {
                 (long) executable.getBatchNumber() * executable.getBatchSize(), taskMeta.getId(), taskMeta.isStrictFloatingPoint(), taskMeta.isWorkerGridAvailable(),
                 taskMeta.isDynamicShapes()).orElseThrow();
         profiler.stop(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId());
-        if (TornadoOptions.FEATURE_EXTRACTION && deviceContext != null) {
-            emitFeatures(method, kernel.features(), deviceContext);
-        }
         profiler.sum(ProfilerType.TOTAL_TC_COMPILE_TIME, profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()));
 
         profiler.start(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId());
@@ -154,13 +141,5 @@ public final class TcKernels {
                     profiler.getTaskTimer(ProfilerType.TASK_COMPILE_TC_TIME, taskMeta.getId()), profiler.getTaskTimer(ProfilerType.TASK_COMPILE_DRIVER_TIME, taskMeta.getId()));
         }
         return installed;
-    }
-
-    private static void emitFeatures(Method method, KernelFeatures features, TornadoDeviceContext deviceContext) {
-        var map = FeatureExtractionUtilities.initializeFeatureMap();
-        for (var feature : ProfilerCodeFeatures.values()) {
-            map.put(feature, features.get(KernelFeatures.Feature.valueOf(feature.name())));
-        }
-        FeatureExtractionUtilities.emitFeatureProfileJsonFile(map, method.getDeclaringClass().getSimpleName() + "." + method.getName(), deviceContext);
     }
 }

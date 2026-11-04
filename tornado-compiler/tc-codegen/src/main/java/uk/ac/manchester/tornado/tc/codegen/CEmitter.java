@@ -183,6 +183,11 @@ public final class CEmitter {
 
     private final TargetCaps target;
     private final boolean lineComments;
+    /**
+     * Print int and long arithmetic as plain C (as Graal did): faster where the driver compiler exploits it, wrong
+     * where Java code relies on wrapping.
+     */
+    private final boolean signedOverflowUndefined;
     private final StringBuilder out = new StringBuilder();
     /** The statement each line of {@code out} belongs to (see {@link Result#bodyOrigins}). */
     private final List<S.Stmt> origins = new ArrayList<>();
@@ -211,12 +216,13 @@ public final class CEmitter {
     private String zeroIndex;
     private int flagJumps;
 
-    private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped) {
+    private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped, boolean signedOverflowUndefined) {
         this.dialect = CDialect.of(target.dialect());
         this.target = target;
         this.lineComments = lineComments;
         this.task = task;
         this.wrapped = wrapped;
+        this.signedOverflowUndefined = signedOverflowUndefined;
     }
 
     public static Result emit(S.Kernel kernel, TargetCaps target) {
@@ -237,9 +243,17 @@ public final class CEmitter {
      * and OpenCL C lets the compiler contract unless the kernel says otherwise.
      */
     public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task, boolean contract) {
+        return emit(kernel, target, lineComments, task, contract, false);
+    }
+
+    /**
+     * As above; {@code signedOverflowUndefined} prints int and long arithmetic as plain C instead of wrapping as
+     * Java does.
+     */
+    public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task, boolean contract, boolean signedOverflowUndefined) {
         var wrapped = new HashSet<String>();
         while (true) {
-            var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped));
+            var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped), signedOverflowUndefined);
             if (!contract) {
                 emitter.features.add(CDialect.Feature.NO_CONTRACT);
             }
@@ -828,7 +842,7 @@ public final class CEmitter {
             case Opcode.Binary(var op) -> wrapsLikeJava(op, inst) ? wrapping(op, inst.type(), ops.get(0), ops.get(1)) : binary(op, inst.type(), ops.get(0), ops.get(1));
             case Opcode.Unary(var op) -> switch (op) {
                 // -MIN_VALUE wraps to MIN_VALUE in Java; negate in the unsigned type (see wrapsLikeJava).
-                case NEG -> !SIGNED_OVERFLOW_UNDEFINED && (inst.type().equals(Type.I32) || inst.type().equals(Type.I64))
+                case NEG -> !signedOverflowUndefined && (inst.type().equals(Type.I32) || inst.type().equals(Type.I64))
                         ? new R("(" + typeName(inst.type()) + ") ((" + unsignedName(inst.type()) + ") 0 - (" + unsignedName(inst.type()) + ") " + wrap(expr(ops.get(0)), UNARY) + ")", UNARY)
                         : new R("-" + prefixOperand(expr(ops.get(0))), UNARY);
                 case FNEG -> new R("-" + prefixOperand(expr(ops.get(0))), UNARY);
@@ -924,14 +938,8 @@ public final class CEmitter {
      * target). Arithmetic TC generated and marked {@code nsw} (grid strides, address offsets) cannot
      * overflow and stays plain, which keeps the driver compilers' loop and address optimisations.
      */
-    /**
-     * {@code -Dtornado.tc.signedOverflowUndefined=true} prints int and long arithmetic as plain C (as
-     * Graal did): faster where the driver compiler exploits it, wrong where Java code relies on wrapping.
-     */
-    private static final boolean SIGNED_OVERFLOW_UNDEFINED = Boolean.getBoolean("tornado.tc.signedOverflowUndefined");
-
-    private static boolean wrapsLikeJava(BinaryOp op, Inst inst) {
-        return !SIGNED_OVERFLOW_UNDEFINED && (op == BinaryOp.ADD || op == BinaryOp.SUB || op == BinaryOp.MUL) && (inst.type().equals(Type.I32) || inst.type().equals(Type.I64)) && !inst.hasAttribute("nsw");
+    private boolean wrapsLikeJava(BinaryOp op, Inst inst) {
+        return !signedOverflowUndefined && (op == BinaryOp.ADD || op == BinaryOp.SUB || op == BinaryOp.MUL) && (inst.type().equals(Type.I32) || inst.type().equals(Type.I64)) && !inst.hasAttribute("nsw");
     }
 
     private R wrapping(BinaryOp op, Type type, S.Expr a, S.Expr b) {

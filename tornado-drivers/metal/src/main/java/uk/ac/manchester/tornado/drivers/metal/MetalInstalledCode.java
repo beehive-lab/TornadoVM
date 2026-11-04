@@ -23,13 +23,13 @@ package uk.ac.manchester.tornado.drivers.metal;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
 import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.nio.ByteBuffer;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteBuffer;
@@ -39,10 +39,10 @@ import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalAppleGPUScheduler;
 import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalKernelScheduler;
 import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 public class MetalInstalledCode implements TornadoInstalledCode {
@@ -79,7 +79,7 @@ public class MetalInstalledCode implements TornadoInstalledCode {
         buffer.order(deviceContext.getByteOrder());
         this.isSPIRVBinary = isSPIRVBinary;
         // If native reflection is enabled and debugging requested, print argument info
-        if (kernel != null && TornadoOptions.FULL_DEBUG) {
+        if (kernel != null && DebugFlags.FULL_DEBUG.get()) {
             try {
                 int argc = kernel.getArgCount();
                 logger.debug("kernel reflection: %s args=%d", kernel.getName(), argc);
@@ -135,7 +135,7 @@ public class MetalInstalledCode implements TornadoInstalledCode {
         int index = 0;
 
         // If native reflection is available, print/reflection info in debug mode
-        if (kernel != null && TornadoOptions.FULL_DEBUG) {
+        if (kernel != null && DebugFlags.FULL_DEBUG.get()) {
             try {
                 int argCount = kernel.getArgCount();
                 logger.debug("Native kernel reflection: kernel=%s reflectedArgs=%d", kernel.getName(), argCount);
@@ -145,7 +145,7 @@ public class MetalInstalledCode implements TornadoInstalledCode {
         }
 
         // kernel context
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             try {
                 int argCount = (kernel != null) ? kernel.getArgCount() : 0;
                 logger.info("[Metal-reflection] kernel=%s argCount=%d", (kernel != null ? kernel.getName() : "null"), argCount);
@@ -302,7 +302,7 @@ public class MetalInstalledCode implements TornadoInstalledCode {
     public int submitWithEvents(long executionPlanId, final MetalKernelStackFrame kernelArgs, final XPUBuffer atomicSpace, final TaskDataContext meta, final int[] events, long batchThreads) {
         guarantee(kernel != null, "kernel is null");
 
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getMetalKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 
@@ -357,7 +357,7 @@ public class MetalInstalledCode implements TornadoInstalledCode {
             // Ahead Of Time kernel execution
             task = deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, 1, null, meta.getGlobalWork(), meta.getLocalWork(), null);
         }
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (ProfilerActivation.isEnabled()) {
             Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, task);
             tornadoKernelEvent.waitForEvents(executionPlanId);
             long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
@@ -393,7 +393,7 @@ public class MetalInstalledCode implements TornadoInstalledCode {
 
     private void submitWithoutEvents(long executionPlanId, final MetalKernelStackFrame metalKernelStackFrame, final XPUBuffer atomicSpace, final TaskDataContext meta, long batchThreads) {
         checkKernelNotNull();
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getMetalKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
 

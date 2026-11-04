@@ -294,7 +294,7 @@ too, including each other. The main points:
 - At most 2048 device-side launches may be pending at once by default. A plan
   that launches more (for example one child per thread block of a large grid)
   raises the limit with ``executionPlan.withCUDAPendingLaunchCount(n)``, or,
-  for all plans, with ``-Dtornado.cuda.dp.pendingLaunchCount=n``.
+  for all plans, with ``-Dtornado.cuda.dp.pending.launch.count=n``.
 
 See ``tornado-examples/.../kernelcontext/compute/DynamicParallelismRouting.java``
 for a mixture-of-experts style example.
@@ -594,7 +594,7 @@ executed as ordinary Java.
      - write an ordinary Java loop; there is no iterator API, which would allocate in the kernel
 
 The full surface (the remaining math and bitwise operations, the scans, the strided and raw-byte views, the
-element types, the rank supported per operation, the launch hints and the known limitations) is documented in the
+element types, the rank supported per operation and the known limitations) is documented in the
 :ref:`CUDA Tile Programming guide <tile_api>`.
 You can see more examples on
 `GitHub <https://github.com/beehive-lab/TornadoVM/tree/master/tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/tile>`__.

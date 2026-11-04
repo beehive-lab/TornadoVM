@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceTileNotSupported;
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 
 /**
  * Compiles a generated CUDA Tile C++ kernel to a cubin by driving nvcc.
@@ -188,10 +189,7 @@ public final class CUDATileCompiler {
             return resolvedNvcc;
         }
         var candidates = new ArrayList<String>();
-        String configured = System.getProperty("tornado.cuda.nvcc");
-        if (configured != null && !configured.isBlank()) {
-            candidates.add(configured);
-        }
+        CudaFlags.NVCC.find().filter(path -> !path.isBlank()).ifPresent(candidates::add);
         String cudaPath = System.getenv("CUDA_PATH");
         if (cudaPath != null && !cudaPath.isBlank()) {
             candidates.add(cudaPath + "/bin/nvcc");

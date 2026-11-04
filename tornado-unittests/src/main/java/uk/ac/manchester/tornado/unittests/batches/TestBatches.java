@@ -1038,7 +1038,7 @@ public class TestBatches extends TornadoTestBase {
     public void testBatchWithTwoOutputs() throws TornadoExecutionPlanException {
         long maxAllocMemory = checkMaxHeapAllocationOnDevice(16, MemoryUnit.MB);
         // 8 chunks of 1MB per array: more chunks than this and the per-chunk bytecodes of a
-        // two-task graph outgrow the default tornado.tvm.maxbytecodesize, which is a separate limit.
+        // two-task graph outgrow the default tornado.tvm.max.bytecode.size, which is a separate limit.
         int size = 2 * 1024 * 1024;
         if ((long) size * 4 > maxAllocMemory) {
             size = (int) ((maxAllocMemory / 4 / 3) * 0.9);

@@ -63,7 +63,7 @@ def run_batch(sanitizer, tool, seed, count, phase, only, out_dir, gen_dir):
         cmd += ["-cp", gen_dir]
     cmd += ["-m", MAIN]
     if phase == 2:
-        cmd += ["--jvm=-Dtornado.fuzz.genDir=" + gen_dir]
+        cmd += ["--jvm=-Dtornado.fuzz.gen.dir=" + gen_dir]
     params = f"seed={seed} count={count} phase={phase} outDir={out_dir}"
     if only:
         params += f" only={only}"
@@ -118,7 +118,7 @@ def write_finding(out_dir, tool, seed, errors, block, captured):
         f.write("## Reproduce\n\n```bash\n")
         f.write(f"{tool_repro(tool)} \\\n")
         f.write(f"    tornado -m {MAIN} --params \"seed={seed} count=1 phase=<P> outDir=/tmp/fuzz-san\"\n```\n\n")
-        f.write("Then inspect the generated CUDA-C with `-Dtornado.printKernel=true`.\n")
+        f.write("Then inspect the generated CUDA-C with `-Dtornado.print.kernel=true`.\n")
     print(f"SANITIZER FINDING {tool} seed={seed} errors={errors} -> {bundle}", flush=True)
 
 

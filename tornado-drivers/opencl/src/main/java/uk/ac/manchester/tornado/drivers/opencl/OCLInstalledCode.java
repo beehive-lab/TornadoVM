@@ -29,23 +29,23 @@ import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_DISPATCH_
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_DISPATCH_KERNEL_TIME;
 import static uk.ac.manchester.tornado.api.profiler.ProfilerType.TOTAL_KERNEL_TIME;
 import static uk.ac.manchester.tornado.runtime.common.RuntimeUtilities.isBoxedPrimitive;
-import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.opencl.runtime.OCLTornadoDevice;
 import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLKernelScheduler;
 import uk.ac.manchester.tornado.drivers.opencl.scheduler.OCLScheduler;
 import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.common.ProfilerActivation;
 import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
 import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
 
 /**
@@ -188,7 +188,7 @@ public class OCLInstalledCode implements TornadoInstalledCode {
         int kernelEvent = global == null || global.length == 0 //
                 ? enqueue(executionPlanId, oneWorkItem, oneWorkItem, null)
                 : enqueue(executionPlanId, global, meta.getLocalWork(), null);
-        if (TornadoOptions.isProfilerEnabled()) {
+        if (ProfilerActivation.isEnabled()) {
             recordKernelTime(executionPlanId, kernelEvent, meta);
         }
     }
@@ -251,7 +251,7 @@ public class OCLInstalledCode implements TornadoInstalledCode {
     }
 
     private void logSubmission() {
-        if (DEBUG) {
+        if (DebugFlags.DEBUG.get()) {
             logger.info("kernel submitted: id=0x%x, method = %s, device =%s", kernel.getOclKernelID(), kernel.getName(), deviceContext.getDevice().getDeviceName());
         }
     }
@@ -265,7 +265,7 @@ public class OCLInstalledCode implements TornadoInstalledCode {
     }
 
     private void recordFrameWrite(long executionPlanId, int eventId, TaskDataContext meta, OCLKernelStackFrame frame) {
-        if (!TornadoOptions.isProfilerEnabled()) {
+        if (!ProfilerActivation.isEnabled()) {
             return;
         }
         var event = deviceContext.resolveEvent(executionPlanId, eventId);

@@ -25,6 +25,7 @@ import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
+import uk.ac.manchester.tornado.api.options.CudaFlags;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDAPlatformInfo;
 import uk.ac.manchester.tornado.drivers.cuda.exceptions.CUDAException;
@@ -140,7 +141,7 @@ public class CUDAPlatform implements TornadoPlatformInterface {
      * until the device signals, which frees the host when many streams wait at once.
      */
     static int schedulingFlags() {
-        return switch (System.getProperty("tornado.cuda.sched", "yield")) {
+        return switch (CudaFlags.SCHEDULING.get()) {
             case "spin" -> CUDADriverAPI.CU_CTX_SCHED_SPIN;
             case "blocking" -> CUDADriverAPI.CU_CTX_SCHED_BLOCKING_SYNC;
             case "auto" -> CUDADriverAPI.CU_CTX_SCHED_AUTO;

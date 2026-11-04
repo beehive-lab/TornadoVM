@@ -35,8 +35,8 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoFailureException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.graph.TornadoExecutionContext;
 import uk.ac.manchester.tornado.runtime.graph.TornadoGraph;
 import uk.ac.manchester.tornado.runtime.graph.TornadoVMBytecodeResult;
@@ -174,7 +174,7 @@ public class TornadoVM {
     }
 
     private boolean shouldRunConcurrently(boolean isTaskGraphConcurrent) {
-        return (isTaskGraphConcurrent || TornadoOptions.CONCURRENT_INTERPRETERS) && (executionContext.getValidContextSize() > 1);
+        return (isTaskGraphConcurrent || RuntimeFlags.CONCURRENT_DEVICES.get()) && (executionContext.getValidContextSize() > 1);
     }
 
     public void executeActionOnInterpreters(Consumer<TornadoVMInterpreter> action) {

@@ -22,11 +22,12 @@ package uk.ac.manchester.tornado.runtime.common;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import uk.ac.manchester.tornado.api.options.DebugFlags;
 
 public class TornadoLogger {
 
     private final Logger logger;
-    private final boolean isLogOptionEnabled = TornadoOptions.DEBUG || TornadoOptions.FULL_DEBUG;
+    private final boolean isLogOptionEnabled = DebugFlags.DEBUG.get() || DebugFlags.FULL_DEBUG.get();
 
     public TornadoLogger(Class<?> clazz) {
         if (clazz == null) {

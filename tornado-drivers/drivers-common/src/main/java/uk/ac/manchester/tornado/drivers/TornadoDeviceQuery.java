@@ -26,9 +26,9 @@ import java.util.HashMap;
 
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.options.RuntimeFlags;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.utils.ColoursTerminal;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 /**
  * Program to query all devices reachable from TornadoVM.
@@ -90,7 +90,7 @@ public class TornadoDeviceQuery {
                     deviceInfoBuffer.append("\t\t" + "Global Memory Size: " + formatSize(driver.getDevice(deviceIndex).getMaxGlobalMemory()) + "\n");
                     deviceInfoBuffer.append("\t\t" + "Local Memory Size: " + formatSize(driver.getDevice(deviceIndex).getDeviceLocalMemorySize()) + "\n");
                     deviceInfoBuffer.append("\t\t" + "Workgroup Dimensions: " + driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions().length + "\n");
-                    if (!TornadoOptions.VIRTUAL_DEVICE_ENABLED) {
+                    if (!RuntimeFlags.VIRTUAL_DEVICE.get()) {
                         deviceInfoBuffer.append("\t\t" + "Total Number of Block Threads: " + Arrays.toString(driver.getDevice(deviceIndex).getPhysicalDevice().getDeviceMaxWorkGroupSize()) + "\n");
                     }
                     deviceInfoBuffer.append("\t\t" + "Max WorkGroup Configuration: " + Arrays.toString(driver.getDevice(deviceIndex).getDeviceMaxWorkgroupDimensions()) + "\n");

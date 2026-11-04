@@ -62,8 +62,7 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  * scheduling bug and never floating-point drift.
  *
  * <p>
- * These are ordinary device tests: they pass on any backend. Run the CUDA backend twice,
- * with {@code -Dtornado.cuda.batchGlobalLoads} true and false, to A/B the reordering.
+ * These are ordinary device tests: they pass on any backend.
  *
  * <p>
  * How to run?

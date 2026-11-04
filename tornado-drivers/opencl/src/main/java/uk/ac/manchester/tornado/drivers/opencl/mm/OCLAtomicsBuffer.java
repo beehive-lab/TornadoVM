@@ -30,7 +30,6 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.drivers.opencl.OCLDeviceContext;
 import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
-import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 
 public class OCLAtomicsBuffer implements XPUBuffer {
 
@@ -140,12 +139,7 @@ public class OCLAtomicsBuffer implements XPUBuffer {
 
     @Override
     public long deallocate() {
-        // Do not deallocate the global area for atomics by default since all
-        // atomics go to the same area
-        if (TornadoOptions.cleanUpAtomicsSpace()) {
-            deviceContext.getMemoryManager().deallocateAtomicRegion();
-            return OCLMemoryManager.atomicRegionSize();
-        }
+        // The atomics region is shared by every kernel on the device, so it lives as long as the device.
         return 0;
     }
 
