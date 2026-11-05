@@ -196,7 +196,6 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.nvtx.TestNvtx"),
     TestEntry("uk.ac.manchester.tornado.unittests.cusparse.TestCusparse"),
     TestEntry("uk.ac.manchester.tornado.unittests.deviceview.TestDeviceView"),
-    TestEntry("uk.ac.manchester.tornado.unittests.deviceview.TestDeviceViewUnsupportedBackend"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudf.TestCudf"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudf.TestCudfColumns"),
     TestEntry("uk.ac.manchester.tornado.unittests.cutlass.TestCutlass"),

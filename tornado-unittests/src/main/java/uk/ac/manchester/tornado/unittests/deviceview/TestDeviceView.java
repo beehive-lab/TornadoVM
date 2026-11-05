@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +34,8 @@ import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
 
 /**
  * Device views: native arrays with no host storage, bound to device memory another library owns.
@@ -93,8 +94,16 @@ public class TestDeviceView extends TornadoTestBase {
     @BeforeEach
     public void requireCuda() {
         super.before();
-        assumeTrue(getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() == TornadoVMBackendType.CUDA, "device views are implemented for the CUDA backend");
-        assumeTrue(CudaMemory.isAvailable(), () -> "the CUDA driver library is not loadable: " + CudaMemory.unavailableCause());
+        // Thrown, not assumed. The runner counts these exceptions as Unsupported (see
+        // TornadoHelper.UNSUPPORTED_EXCEPTIONS) and counts an unmet JUnit assumption as a pass, so
+        // on OpenCL or Metal an assumption would report fourteen green ticks for a suite that
+        // never ran a line.
+        if (getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() != TornadoVMBackendType.CUDA) {
+            throw new TornadoVMCUDANotSupported("Device views are implemented for the CUDA backend only");
+        }
+        if (!CudaMemory.isAvailable()) {
+            throw new UnsupportedConfigurationException("The CUDA driver library is not loadable: " + CudaMemory.unavailableCause());
+        }
         CudaMemory.enterPrimaryContext();
     }
 
