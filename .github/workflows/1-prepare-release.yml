@@ -114,7 +114,12 @@ jobs:
           # Central coordinates are still deployed per-JDK (4.0.1-jdk21, -jdk25, -jdk26,
           # -jdk27 — see deploy-maven-central.yml), so this only updates the base
           # version number; any -jdkNN suffix shown in README examples is preserved.
-          sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+)?(</version>)|\1${{ env.VERSION }}\2\3|g' README.md
+          # [a-z]* keeps -jdk22plus: a bare -jdk[0-9]+ stops at "22", the closing tag then fails
+          # to match, and the coordinate is silently never bumped.
+          sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*)?(</version>)|\1${{ env.VERSION }}\2\3|g' README.md
+
+          # JBang //DEPS coordinates in the "Use TornadoVM in your project" snippet.
+          sed -i -E 's|(//DEPS io\.github\.beehive-lab:[a-z-]+:)[0-9]+\.[0-9]+\.[0-9]+|\1${{ env.VERSION }}|g' README.md
 
           # Update the SDKMAN! per-backend candidate versions in the install table
           # (e.g. `5.2.0-opencl`). The table lists one row per backend without a JDK
@@ -154,11 +159,12 @@ jobs:
             # here are per-JDK (<version>5.2.0-jdk21</version>, etc. — see
             # deploy-maven-central.yml), so preserve the existing -jdkNN suffix
             # (captured as \1) and only bump the leading version number.
-            sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+)?(</version>)|\1${{ env.VERSION }}\2\3|g' docs/source/installation.rst
+            sed -i -E 's|(<version>)[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*)?(</version>)|\1${{ env.VERSION }}\2\3|g' docs/source/installation.rst
+            sed -i -E 's|(//DEPS io\.github\.beehive-lab:[a-z-]+:)[0-9]+\.[0-9]+\.[0-9]+|\1${{ env.VERSION }}|g' docs/source/installation.rst
 
             # Update the SDKMAN `sdk install tornadovm X.Y.Z-jdkNN-backend` examples,
             # preserving the existing -jdkNN-backend suffix the same way.
-            sed -i -E 's/(sdk install tornadovm )[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+-(opencl|cuda|metal|full))/\1${{ env.VERSION }}\2/g' docs/source/installation.rst
+            sed -i -E 's/(sdk install tornadovm )[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*-(opencl|cuda|metal|full))/\1${{ env.VERSION }}\2/g' docs/source/installation.rst
 
             # Add new version to "Versions available" list (insert before previous version)
             sed -i "/^\* ${{ env.PREV_VERSION }}$/i\\ * ${{ env.VERSION }}" docs/source/installation.rst
