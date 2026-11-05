@@ -81,7 +81,7 @@ public class TestExecutor extends TornadoTestBase {
             // Select the default device for the execution plan. This is optional: if no
             // device is specified, TornadoVM will launch kernels on the default device.
             // However, developers could print device information from the default device.
-            TornadoDevice defaultDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
+            TornadoDevice defaultDevice = TornadoExecutionPlan.getDefaultDevice();
 
             // e.g., Query the device name
             String deviceName = defaultDevice.getPhysicalDevice().getDeviceName();
@@ -476,7 +476,7 @@ public class TestExecutor extends TornadoTestBase {
             executionPlan.execute();
 
             // Enable the history through the chain, and execute through a chain node
-            TornadoExecutionPlan node = executionPlan.withPlanResultsHistory().withDevice(TornadoExecutionPlan.DEFAULT_DEVICE);
+            TornadoExecutionPlan node = executionPlan.withPlanResultsHistory().withDevice(TornadoExecutionPlan.getDefaultDevice());
             final int numExecutions = 3;
             TornadoExecutionResult[] results = new TornadoExecutionResult[numExecutions];
             for (int i = 0; i < numExecutions; i++) {

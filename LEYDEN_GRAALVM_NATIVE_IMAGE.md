@@ -73,8 +73,10 @@ The rest of each run is the JVM, the drivers and the GPU. Creating a CUDA contex
 
 | SDK (`make` target) | Runs on | `--enable-preview` | Leyden AOT cache | AppCDS | Native image |
 |---|---|---|---|---|---|
-| `jdk21` (`make BACKEND=...`) | JDK 21 | yes, the SDK and your application | no (needs JDK 25) | yes | no¹ |
-| `jdk22plus` (`make jdk22plus BACKEND=...`) | JDK 22–27 | no | JDK 25+ | yes | GraalVM for JDK 25+ |
+| `jdk21` (`make jdk21 BACKEND=...`) | JDK 21 | yes, the SDK and your application | no (needs JDK 25) | yes | no¹ |
+| `jdk22plus` (`make jdk22plus BACKEND=...`) | JDK 22+ | no | JDK 25+ | yes | GraalVM for JDK 25+ |
+
+A plain `make BACKEND=...` picks `jdk21` or `jdk22plus` from the `JAVA_HOME` it runs under.
 
 ¹ `build-tc-native` can build the stand-alone compiler `tc` with a GraalVM for JDK 21. Native images
 of whole applications need the FFM API without preview, so they need the `jdk22plus` SDK.

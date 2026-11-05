@@ -81,7 +81,7 @@ public class TestUnderDemandTransfers extends TornadoTestBase {
      */
     @Test
     public void testCopyBackFromTheTaskDevice() throws TornadoExecutionPlanException {
-        TornadoDevice graphDevice = TornadoExecutionPlan.DEFAULT_DEVICE;
+        TornadoDevice graphDevice = TornadoExecutionPlan.getDefaultDevice();
         TornadoDevice other = null;
         var map = TornadoExecutionPlan.getTornadoDeviceMap();
         for (int b = 0; b < map.getNumBackends() && other == null; b++) {

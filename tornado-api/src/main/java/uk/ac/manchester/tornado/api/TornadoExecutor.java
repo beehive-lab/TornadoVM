@@ -331,6 +331,10 @@ class TornadoExecutor {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withStrictFloatingPoint);
     }
 
+    void withDynamicShapes() {
+        immutableTaskGraphList.forEach(ImmutableTaskGraph::withDynamicShapes);
+    }
+
     void withCompilerFlags(TornadoVMBackendType backendType, String compilerFlags) {
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withCompilerFlags(backendType, compilerFlags));
     }

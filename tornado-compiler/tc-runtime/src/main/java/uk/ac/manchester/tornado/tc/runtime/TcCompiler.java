@@ -80,9 +80,18 @@ public final class TcCompiler {
     public record Stage(String name, Kind kind, String text, long nanos, int size) {
     }
 
-    /** The result of compiling one function. */
+    /**
+     * The result of compiling one function. {@code readsLengths} is false when the function (its
+     * callees inlined) reads no array length, so its code does not depend on the lengths of its
+     * array arguments; true when it does or when that was not checked (no argument facts).
+     */
     public record Compilation(String function, TargetCaps target, boolean succeeded, String source, String entryName, List<Stage> stages, List<Diagnostic> diagnostics, long nanos,
-            List<ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics, KernelFeatures features) {
+            List<ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics, KernelFeatures features, boolean readsLengths) {
+
+        public Compilation(String function, TargetCaps target, boolean succeeded, String source, String entryName, List<Stage> stages, List<Diagnostic> diagnostics, long nanos,
+                List<ParallelLoopLowering.Domain> domain, AtomicSlots.Info atomics, KernelFeatures features) {
+            this(function, target, succeeded, source, entryName, stages, diagnostics, nanos, domain, atomics, features, true);
+        }
     }
 
     private static final class Failed extends RuntimeException {
@@ -105,6 +114,8 @@ public final class TcCompiler {
     private final TargetCaps target;
     private final TcOptions options;
     private List<ValueSpecialisation.Fact> facts = List.of();
+    /** Whether the function reads an array length, found when it is specialised (see {@link Compilation#readsLengths}). */
+    private boolean readsLengths = true;
     /** The kernel's module with its callees, from Java; null when compiling one function of IR text. */
     private IrModule module;
     private final List<Stage> stages = new ArrayList<>();
@@ -264,7 +275,7 @@ public final class TcCompiler {
         }
         var p = parent.compilation();
         var source1 = CEmitter.link(parent.emitted(), children, target);
-        return new Compilation(p.function(), p.target(), true, source1, p.entryName(), p.stages(), p.diagnostics(), p.nanos() + nanos, p.domain(), p.atomics(), p.features());
+        return new Compilation(p.function(), p.target(), true, source1, p.entryName(), p.stages(), p.diagnostics(), p.nanos() + nanos, p.domain(), p.atomics(), p.features(), p.readsLengths());
     }
 
     /** The kernels {@code function} launches from the device. */
@@ -304,7 +315,7 @@ public final class TcCompiler {
         var stages = new ArrayList<>(c.stages());
         var size = stages.size() > 1 ? stages.get(1).size() : 0;
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
-        return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics(), c.features()),
+        return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics(), c.features(), c.readsLengths()),
                 c.succeeded() ? compiler.function : null, c.succeeded() ? compiler.emitted : null);
     }
 
@@ -370,6 +381,7 @@ public final class TcCompiler {
 
     /** Folds what the argument values made constant (loop bounds such as n + 1), so later steps see constants. */
     private List<Diagnostic> specialise() {
+        readsLengths = function.blocks().stream().anyMatch(b -> b.insts().stream().anyMatch(i -> i.opcode() instanceof uk.ac.manchester.tornado.tc.ir.Opcode.ArrayLength));
         ValueSpecialisation.run(function, facts);
         // Through inlined getters too: merging blocks removes the call's return argument.
         for (int round = 0; round < 4 && (new Canonicalizer().run(function) | new CfgSimplify().run(function)); round++) {
@@ -492,7 +504,7 @@ public final class TcCompiler {
             event.commit();
         }
         return new Compilation(function.name(), target, ok, source, entry, List.copyOf(stages), diagnostics, nanos, ParallelLoopLowering.domain(function), AtomicSlots.info(function),
-                ok ? KernelFeatures.of(function) : KernelFeatures.NONE);
+                ok ? KernelFeatures.of(function) : KernelFeatures.NONE, readsLengths);
     }
 
     private void check(String name, Verifier.Stage stage) {

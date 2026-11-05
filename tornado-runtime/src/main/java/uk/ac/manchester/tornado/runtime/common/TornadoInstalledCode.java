@@ -40,4 +40,9 @@ public interface TornadoInstalledCode {
     default java.util.List<String> getDeviceLaunchTree() {
         return java.util.List.of();
     }
+
+    /** The largest work-group this code can launch with on its device, or {@code Integer.MAX_VALUE} when the backend does not say. */
+    default int maxThreadsPerBlock() {
+        return Integer.MAX_VALUE;
+    }
 }

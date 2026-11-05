@@ -24,7 +24,7 @@ ifneq ($(UNSUPPORTED_BACKENDS),)
 $(error [ERROR] Unsupported backends specified in BACKEND: $(subst $(SPACE),$(COMMA)$(SPACE),$(UNSUPPORTED_BACKENDS)). Supported backends: $(subst $(SPACE),$(COMMA)$(SPACE),$(SUPPORTED_BACKENDS)))
 endif
 
-# JDK profile used by the `sdk` and `test-nogpu` targets
+# JDK profile used by the `build` (plain `make`), `metal`, `cuda`, `sdk` and `test-nogpu` targets
 # { jdk21, jdk22plus }, derived from JAVA_HOME rather than hardcoded.
 #
 # It has to be derived: bin/compile checks that JAVA_HOME matches the requested profile, so a fixed
@@ -33,7 +33,7 @@ endif
 # two independent goals, and the second one does not inherit the first one's profile.
 #
 # Override explicitly with:  make sdk JDK=<jdk21|jdk22plus> BACKEND=<backends>
-# or use the sdk-jdkNN targets below, which pin the profile and ignore this variable.
+# or use the jdk21/jdk22plus and sdk-jdkNN targets below, which pin the profile and ignore this variable.
 JDK ?= $(shell v=$$("$${JAVA_HOME:-/nonexistent}/bin/java" -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -1); \
                if [ "$$v" = "21" ] || [ -z "$$v" ]; then echo jdk21; else echo jdk22plus; fi)
 
@@ -41,7 +41,10 @@ JDK ?= $(shell v=$$("$${JAVA_HOME:-/nonexistent}/bin/java" -version 2>&1 | sed -
 # from 22 up. Map the legacy names onto it so `JDK=jdk25` and CI callers keep working.
 JDK_PROFILE = $(if $(filter jdk21,$(JDK)),$(JDK),jdk22plus)
 
-build jdk21:
+build:
+	bin/compile --jdk $(JDK_PROFILE) --backend $(BACKEND)
+
+jdk21:
 	bin/compile --jdk jdk21 --backend $(BACKEND)
 
 rebuild-deps-jdk21:
@@ -63,10 +66,10 @@ mvn-single-threaded-jdk22plus:
 
 
 metal:
-	bin/compile --jdk jdk21 --backend metal,opencl
+	bin/compile --jdk $(JDK_PROFILE) --backend metal,opencl
 
 cuda:
-	bin/compile --jdk jdk21 --backend cuda
+	bin/compile --jdk $(JDK_PROFILE) --backend cuda
 
 sdk:
 	bin/compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)

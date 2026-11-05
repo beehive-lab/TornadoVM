@@ -1256,6 +1256,10 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.withStrictFloatingPoint();
     }
 
+    void withDynamicShapes() {
+        taskGraphImpl.withDynamicShapes();
+    }
+
     void withGridScheduler(GridScheduler gridScheduler) {
         taskGraphImpl.withGridScheduler(gridScheduler);
     }
