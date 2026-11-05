@@ -59,11 +59,11 @@ final class TcArguments {
             } else if (reduced && argument != null && argument.getClass().isArray() && argument.getClass().getComponentType().isPrimitive()) {
                 // The same for a Java array (float[], int[], ...).
                 facts.add(new ValueSpecialisation.Fact.Reduce(java.lang.reflect.Array.getLength(argument)));
-            } else if (argument instanceof TornadoNativeArray array && array.isDeviceView()) {
+            } else if (argument instanceof TornadoNativeArray array && array.isCUDADeviceView()) {
                 // A view of memory another library owns: no header, and its length is folded in only
                 // when the view asked for it -- otherwise rebinding it to a new row count would key a
                 // fresh compilation for every batch.
-                var binding = array.deviceViewBinding();
+                var binding = array.cudaDeviceViewBinding();
                 facts.add(new ValueSpecialisation.Fact.DeviceView(binding.isLengthVisibleToKernel() ? binding.logicalLength() : -1));
             } else if (argument instanceof TornadoNativeArray array) {
                 // In a batch each device buffer holds one chunk of batchThreads elements (with its

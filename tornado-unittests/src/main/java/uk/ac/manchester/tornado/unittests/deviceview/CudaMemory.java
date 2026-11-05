@@ -26,7 +26,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 /**
- * Device memory allocated outside TornadoVM, which is what a {@code deviceView} exists to bind to.
+ * Device memory allocated outside TornadoVM, which is what a {@code cudaDeviceView} exists to bind to.
  *
  * <p>
  * It calls the CUDA driver API directly and retains the device's <b>primary</b> context, which is

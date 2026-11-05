@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.api.memory;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * The device-only state of a {@code deviceView} native array: an array that has no host
+ * The device-only state of a {@code cudaDeviceView} native array: an array that has no host
  * {@code MemorySegment} and whose storage is a device allocation somebody else owns.
  *
  * <p>
@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * cannot rebind one view underneath each other; a view belongs to one task at a time.
  * </p>
  */
-public final class DeviceViewBinding {
+public final class CUDADeviceViewBinding {
 
     /** No owner: the token {@link #bind} uses when the caller passes {@code null}. */
     private static final Object NO_OWNER = new Object();
@@ -73,7 +73,7 @@ public final class DeviceViewBinding {
      */
     private volatile long lengthFoldedIntoKernel = -1;
 
-    public DeviceViewBinding(long capacityElements, int elementSize) {
+    public CUDADeviceViewBinding(long capacityElements, int elementSize) {
         if (capacityElements < 0) {
             throw new IllegalArgumentException("A device view cannot have a negative capacity: " + capacityElements);
         }
@@ -253,14 +253,14 @@ public final class DeviceViewBinding {
     public long requireBoundPointer() {
         long address = devicePointer;
         if (address == 0) {
-            throw new IllegalStateException("This device view has no device address bound: call bindExternalBuffer(view, address, bytes) before executing the plan");
+            throw new IllegalStateException("This device view has no device address bound: call bindCUDADeviceBuffer(view, address, bytes) before executing the plan");
         }
         return address;
     }
 
     @Override
     public String toString() {
-        return "DeviceViewBinding[capacity=" + capacityElements + " elements of " + elementSize + "B, logicalLength=" + logicalLength + (isBound()
+        return "CUDADeviceViewBinding[capacity=" + capacityElements + " elements of " + elementSize + "B, logicalLength=" + logicalLength + (isBound()
                 ? ", bound to 0x" + Long.toHexString(devicePointer) + " (" + deviceByteLength + "B, device " + deviceIndex + (readOnly ? ", read-only" : ", read-write") + ")"
                 : ", unbound") + "]";
     }

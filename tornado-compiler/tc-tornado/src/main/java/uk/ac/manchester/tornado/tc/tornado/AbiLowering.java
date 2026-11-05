@@ -49,7 +49,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * <li>An unused {@code KernelContext} parameter is removed from the signature.</li>
  * </ul>
  *
- * <p>A parameter may instead be <b>headerless</b>: a {@code deviceView} bound to memory a foreign
+ * <p>A parameter may instead be <b>headerless</b>: a {@code cudaDeviceView} bound to memory a foreign
  * library owns, laid out as that library laid it out, with no header in front of the elements.
  * Element {@code i} of such a parameter is at {@code base + i * sizeof(T)}, and {@code array.length}
  * on it cannot be lowered at all -- there is no header to read it from -- so it must have been

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.TornadoDeviceContext;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceViewNotSupported;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
@@ -262,7 +263,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Binds an existing device allocation to a {@code deviceView} argument of this plan, for the
+     * Binds an existing device allocation to a {@code cudaDeviceView} argument of this plan, for the
      * executions that follow.
      *
      * <p>
@@ -273,27 +274,34 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * batches is the expected use; one view belongs to one plan at a time.
      * </p>
      *
+     * <p>
+     * CUDA backend only. A plan that runs on any other backend refuses the binding with
+     * {@link TornadoDeviceViewNotSupported} here, rather than at execution.
+     * </p>
+     *
      * @param view
-     *     An array created by a {@code deviceView} factory, e.g. {@code FloatArray.deviceView(n)}.
+     *     An array created by a {@code cudaDeviceView} factory, e.g. {@code FloatArray.cudaDeviceView(n)}.
      * @param devicePointer
      *     Device address of the first element.
      * @param byteLength
      *     How many bytes are valid at that address; must be a whole number of elements and must fit
      *     in the view's capacity.
      * @return {@link TornadoExecutionPlan}
+     * @throws TornadoDeviceViewNotSupported
+     *     if this plan does not run on the CUDA backend.
      * @since 8.0.1
      */
-    public TornadoExecutionPlan bindExternalBuffer(TornadoNativeArray view, long devicePointer, long byteLength) {
-        return bindExternalBuffer(view, devicePointer, byteLength, -1, -1, false);
+    public TornadoExecutionPlan bindCUDADeviceBuffer(TornadoNativeArray view, long devicePointer, long byteLength) {
+        return bindCUDADeviceBuffer(view, devicePointer, byteLength, -1, -1, false);
     }
 
     /**
-     * Binds an existing device allocation to a {@code deviceView} argument of this plan, stating the
+     * Binds an existing device allocation to a {@code cudaDeviceView} argument of this plan, stating the
      * device it belongs to, how many of its elements hold data, and whether the kernel may write
-     * through it. See {@link #bindExternalBuffer(TornadoNativeArray, long, long)}.
+     * through it. See {@link #bindCUDADeviceBuffer(TornadoNativeArray, long, long)}.
      *
      * @param view
-     *     An array created by a {@code deviceView} factory.
+     *     An array created by a {@code cudaDeviceView} factory.
      * @param devicePointer
      *     Device address of the first element.
      * @param byteLength
@@ -310,27 +318,33 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      * @since 8.0.1
      */
-    public TornadoExecutionPlan bindExternalBuffer(TornadoNativeArray view, long devicePointer, long byteLength, long logicalLength, int deviceIndex, boolean readOnly) {
+    public TornadoExecutionPlan bindCUDADeviceBuffer(TornadoNativeArray view, long devicePointer, long byteLength, long logicalLength, int deviceIndex, boolean readOnly) {
         Objects.requireNonNull(view, "view");
-        if (!view.isDeviceView()) {
-            throw new IllegalArgumentException("Only an array created by a deviceView factory can be bound to an external device address. "
+        if (!view.isCUDADeviceView()) {
+            throw new IllegalArgumentException("Only an array created by a cudaDeviceView factory can be bound to an external device address. "
                     + "A normal array owns a TornadoVM buffer with a header, and overwriting that with a foreign pointer would corrupt both.");
         }
+        TornadoDevice planDevice = tornadoExecutor.getDevice(0);
+        // Per device, not per build: a single installation may be built with several backends
+        // (make BACKEND=opencl,cuda), so what matters is the backend this plan runs on.
+        if (planDevice != null && planDevice.getTornadoVMBackend() != TornadoVMBackendType.CUDA) {
+            throw new TornadoDeviceViewNotSupported("Device views are implemented for the CUDA backend only, and this plan runs on " + planDevice.getTornadoVMBackend()
+                    + ". Binding borrows a raw device address, which " + planDevice.getTornadoVMBackend() + " has no equivalent of; use an ordinary array instead.");
+        }
         if (deviceIndex >= 0) {
-            TornadoDevice planDevice = tornadoExecutor.getDevice(0);
             TornadoDeviceContext planContext = planDevice == null ? null : planDevice.getDeviceContext();
             if (planContext != null && planContext.getDeviceIndex() != deviceIndex) {
                 throw new IllegalArgumentException("The address belongs to device " + deviceIndex + " but this plan runs on device " + planContext.getDeviceIndex()
                         + "; a device address is only valid in its own device's context.");
             }
         }
-        view.deviceViewBinding().bind(devicePointer, byteLength, logicalLength, deviceIndex, readOnly, rootNode.executionFrame);
+        view.cudaDeviceViewBinding().bind(devicePointer, byteLength, logicalLength, deviceIndex, readOnly, rootNode.executionFrame);
         return this;
     }
 
     /**
-     * Releases the binding of a {@code deviceView} argument made with
-     * {@link #bindExternalBuffer(TornadoNativeArray, long, long)}. The device memory is the caller's
+     * Releases the binding of a {@code cudaDeviceView} argument made with
+     * {@link #bindCUDADeviceBuffer(TornadoNativeArray, long, long)}. The device memory is the caller's
      * and is not freed. A view must be unbound before another plan may bind it.
      *
      * @param view
@@ -338,12 +352,12 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @return {@link TornadoExecutionPlan}
      * @since 8.0.1
      */
-    public TornadoExecutionPlan unbindExternalBuffer(TornadoNativeArray view) {
+    public TornadoExecutionPlan unbindCUDADeviceBuffer(TornadoNativeArray view) {
         Objects.requireNonNull(view, "view");
-        if (!view.isDeviceView()) {
+        if (!view.isCUDADeviceView()) {
             throw new IllegalArgumentException("This array is not a device view, so it has no external binding to release");
         }
-        view.deviceViewBinding().unbind(rootNode.executionFrame);
+        view.cudaDeviceViewBinding().unbind(rootNode.executionFrame);
         return this;
     }
 

@@ -103,8 +103,8 @@ public class TestDeviceView extends TornadoTestBase {
     /** A view allocates nothing and refuses the host operations it cannot serve. */
     @Test
     public void testViewHasNoHostStorage() {
-        FloatArray view = FloatArray.deviceView(1024);
-        assertTrue(view.isDeviceView());
+        FloatArray view = FloatArray.cudaDeviceView(1024);
+        assertTrue(view.isCUDADeviceView());
         assertEquals(1024, view.getSize());
         assertEquals(1024L * Float.BYTES, view.getNumBytesOfSegment());
         // No header on the device, so both byte counts agree.
@@ -114,7 +114,7 @@ public class TestDeviceView extends TornadoTestBase {
 
         // An ordinary array is untouched by any of this.
         FloatArray normal = new FloatArray(1024);
-        assertTrue(!normal.isDeviceView());
+        assertTrue(!normal.isCUDADeviceView());
         assertEquals(1024, normal.getSize());
         assertEquals(1024L * Float.BYTES + 16, normal.getNumBytesOfSegmentWithHeader());
         normal.set(7, 3.5f);
@@ -126,22 +126,22 @@ public class TestDeviceView extends TornadoTestBase {
     public void testLogicalLengthFollowsTheBinding() {
         long pointer = CudaMemory.allocate(64L * Float.BYTES);
         try {
-            FloatArray view = FloatArray.deviceView(64);
+            FloatArray view = FloatArray.cudaDeviceView(64);
             TaskGraph graph = new TaskGraph("lengths").task("t", TestDeviceView::addViews, view, view, view, 1);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
 
-            plan.bindExternalBuffer(view, pointer, 64L * Float.BYTES);
+            plan.bindCUDADeviceBuffer(view, pointer, 64L * Float.BYTES);
             assertEquals(64, view.getSize());
 
-            plan.unbindExternalBuffer(view);
-            plan.bindExternalBuffer(view, pointer, 16L * Float.BYTES, 10, -1, false);
+            plan.unbindCUDADeviceBuffer(view);
+            plan.bindCUDADeviceBuffer(view, pointer, 16L * Float.BYTES, 10, -1, false);
             assertEquals(10, view.getSize());
 
-            plan.unbindExternalBuffer(view);
+            plan.unbindCUDADeviceBuffer(view);
             // A binding larger than the view can address is refused rather than silently clamped.
-            assertThrows(IllegalArgumentException.class, () -> plan.bindExternalBuffer(view, pointer, 4096L * Float.BYTES));
+            assertThrows(IllegalArgumentException.class, () -> plan.bindCUDADeviceBuffer(view, pointer, 4096L * Float.BYTES));
             // A normal array cannot be bound to a foreign address at all.
-            assertThrows(IllegalArgumentException.class, () -> plan.bindExternalBuffer(new FloatArray(8), pointer, 32));
+            assertThrows(IllegalArgumentException.class, () -> plan.bindCUDADeviceBuffer(new FloatArray(8), pointer, 32));
         } finally {
             CudaMemory.free(pointer);
         }
@@ -168,16 +168,16 @@ public class TestDeviceView extends TornadoTestBase {
         try {
             CudaMemory.copyToDevice(inPointer, inputValues);
 
-            FloatArray in = FloatArray.deviceView(rows);
-            FloatArray out = FloatArray.deviceView(rows);
+            FloatArray in = FloatArray.cudaDeviceView(rows);
+            FloatArray out = FloatArray.cudaDeviceView(rows);
 
             TaskGraph graph = new TaskGraph("mixed") //
                     .transferToDevice(DataTransferMode.EVERY_EXECUTION, weights) //
                     .task("scale", TestDeviceView::scaleMixed, weights, in, out, rows) //
                     .transferToHost(DataTransferMode.EVERY_EXECUTION, weights);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
-            plan.bindExternalBuffer(in, inPointer, (long) rows * Float.BYTES, rows, -1, true);
-            plan.bindExternalBuffer(out, outPointer, (long) rows * Float.BYTES, rows, -1, false);
+            plan.bindCUDADeviceBuffer(in, inPointer, (long) rows * Float.BYTES, rows, -1, true);
+            plan.bindCUDADeviceBuffer(out, outPointer, (long) rows * Float.BYTES, rows, -1, false);
             plan.execute();
             CudaMemory.synchronizeContext();
 
@@ -201,9 +201,9 @@ public class TestDeviceView extends TornadoTestBase {
     @Test
     public void testRebindBetweenExecutions() {
         final int capacity = 2048;
-        FloatArray a = FloatArray.deviceView(capacity);
-        FloatArray b = FloatArray.deviceView(capacity);
-        FloatArray out = FloatArray.deviceView(capacity);
+        FloatArray a = FloatArray.cudaDeviceView(capacity);
+        FloatArray b = FloatArray.cudaDeviceView(capacity);
+        FloatArray out = FloatArray.cudaDeviceView(capacity);
 
         long[] pointers = new long[6];
         for (int i = 0; i < pointers.length; i++) {
@@ -228,13 +228,13 @@ public class TestDeviceView extends TornadoTestBase {
                 CudaMemory.copyToDevice(rightPointer, right);
 
                 if (round > 0) {
-                    plan.unbindExternalBuffer(a);
-                    plan.unbindExternalBuffer(b);
-                    plan.unbindExternalBuffer(out);
+                    plan.unbindCUDADeviceBuffer(a);
+                    plan.unbindCUDADeviceBuffer(b);
+                    plan.unbindCUDADeviceBuffer(out);
                 }
-                plan.bindExternalBuffer(a, leftPointer, (long) rows * Float.BYTES, rows, -1, true);
-                plan.bindExternalBuffer(b, rightPointer, (long) rows * Float.BYTES, rows, -1, true);
-                plan.bindExternalBuffer(out, pointers[4], (long) rows * Float.BYTES, rows, -1, false);
+                plan.bindCUDADeviceBuffer(a, leftPointer, (long) rows * Float.BYTES, rows, -1, true);
+                plan.bindCUDADeviceBuffer(b, rightPointer, (long) rows * Float.BYTES, rows, -1, true);
+                plan.bindCUDADeviceBuffer(out, pointers[4], (long) rows * Float.BYTES, rows, -1, false);
                 plan.execute();
                 CudaMemory.synchronizeContext();
 
@@ -263,12 +263,12 @@ public class TestDeviceView extends TornadoTestBase {
         long outPointer = CudaMemory.allocate((long) rows * Float.BYTES);
         try {
             CudaMemory.copyToDevice(inPointer, inputValues);
-            FloatArray in = FloatArray.deviceView(rows);
-            FloatArray out = FloatArray.deviceView(rows);
+            FloatArray in = FloatArray.cudaDeviceView(rows);
+            FloatArray out = FloatArray.cudaDeviceView(rows);
             TaskGraph graph = new TaskGraph("loop").task("loop", TestDeviceView::loopOverViews, in, out, rows, iterations);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
-            plan.bindExternalBuffer(in, inPointer, (long) rows * Float.BYTES, rows, -1, true);
-            plan.bindExternalBuffer(out, outPointer, (long) rows * Float.BYTES, rows, -1, false);
+            plan.bindCUDADeviceBuffer(in, inPointer, (long) rows * Float.BYTES, rows, -1, true);
+            plan.bindCUDADeviceBuffer(out, outPointer, (long) rows * Float.BYTES, rows, -1, false);
             plan.execute();
             CudaMemory.synchronizeContext();
 
@@ -302,14 +302,14 @@ public class TestDeviceView extends TornadoTestBase {
         try {
             CudaMemory.copyToDevice(indexPointer, indices);
             CudaMemory.copyToDevice(valuePointer, values);
-            IntArray indexView = IntArray.deviceView(rows);
-            FloatArray valueView = FloatArray.deviceView(rows);
-            FloatArray outView = FloatArray.deviceView(rows);
+            IntArray indexView = IntArray.cudaDeviceView(rows);
+            FloatArray valueView = FloatArray.cudaDeviceView(rows);
+            FloatArray outView = FloatArray.cudaDeviceView(rows);
             TaskGraph graph = new TaskGraph("gather").task("gather", TestDeviceView::gatherThroughIntView, indexView, valueView, outView, rows);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
-            plan.bindExternalBuffer(indexView, indexPointer, (long) rows * Integer.BYTES, rows, -1, true);
-            plan.bindExternalBuffer(valueView, valuePointer, (long) rows * Float.BYTES, rows, -1, true);
-            plan.bindExternalBuffer(outView, outPointer, (long) rows * Float.BYTES, rows, -1, false);
+            plan.bindCUDADeviceBuffer(indexView, indexPointer, (long) rows * Integer.BYTES, rows, -1, true);
+            plan.bindCUDADeviceBuffer(valueView, valuePointer, (long) rows * Float.BYTES, rows, -1, true);
+            plan.bindCUDADeviceBuffer(outView, outPointer, (long) rows * Float.BYTES, rows, -1, false);
             plan.execute();
             CudaMemory.synchronizeContext();
 
@@ -329,16 +329,16 @@ public class TestDeviceView extends TornadoTestBase {
     public void testAViewCannotBeBoundByTwoPlans() {
         long pointer = CudaMemory.allocate(256L * Float.BYTES);
         try {
-            FloatArray view = FloatArray.deviceView(256);
+            FloatArray view = FloatArray.cudaDeviceView(256);
             TaskGraph graph = new TaskGraph("owner").task("t", TestDeviceView::addViews, view, view, view, 1);
             TornadoExecutionPlan first = new TornadoExecutionPlan(graph.snapshot());
             TornadoExecutionPlan second = new TornadoExecutionPlan(graph.snapshot());
-            first.bindExternalBuffer(view, pointer, 256L * Float.BYTES);
-            assertThrows(IllegalStateException.class, () -> second.bindExternalBuffer(view, pointer, 256L * Float.BYTES));
-            assertThrows(IllegalStateException.class, () -> second.unbindExternalBuffer(view));
-            first.unbindExternalBuffer(view);
-            second.bindExternalBuffer(view, pointer, 256L * Float.BYTES);
-            second.unbindExternalBuffer(view);
+            first.bindCUDADeviceBuffer(view, pointer, 256L * Float.BYTES);
+            assertThrows(IllegalStateException.class, () -> second.bindCUDADeviceBuffer(view, pointer, 256L * Float.BYTES));
+            assertThrows(IllegalStateException.class, () -> second.unbindCUDADeviceBuffer(view));
+            first.unbindCUDADeviceBuffer(view);
+            second.bindCUDADeviceBuffer(view, pointer, 256L * Float.BYTES);
+            second.unbindCUDADeviceBuffer(view);
         } finally {
             CudaMemory.free(pointer);
         }
@@ -347,8 +347,8 @@ public class TestDeviceView extends TornadoTestBase {
     /** Executing with a view that was never bound fails instead of launching against address 0. */
     @Test
     public void testUnboundViewIsRefused() {
-        FloatArray in = FloatArray.deviceView(32);
-        FloatArray out = FloatArray.deviceView(32);
+        FloatArray in = FloatArray.cudaDeviceView(32);
+        FloatArray out = FloatArray.cudaDeviceView(32);
         TaskGraph graph = new TaskGraph("unbound").task("add", TestDeviceView::addViews, in, in, out, 32);
         TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
         assertThrows(RuntimeException.class, plan::execute);
@@ -384,14 +384,14 @@ public class TestDeviceView extends TornadoTestBase {
         try {
             CudaMemory.copyToDevice(leftPointer, values);
             CudaMemory.copyToDevice(rightPointer, values);
-            FloatArray viewA = FloatArray.deviceView(rows);
-            FloatArray viewB = FloatArray.deviceView(rows);
-            FloatArray viewOut = FloatArray.deviceView(rows);
+            FloatArray viewA = FloatArray.cudaDeviceView(rows);
+            FloatArray viewB = FloatArray.cudaDeviceView(rows);
+            FloatArray viewOut = FloatArray.cudaDeviceView(rows);
             TaskGraph viewGraph = new TaskGraph("headerless").task("add", TestDeviceView::addViews, viewA, viewB, viewOut, rows);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(viewGraph.snapshot());
-            plan.bindExternalBuffer(viewA, leftPointer, (long) rows * Float.BYTES, rows, -1, true);
-            plan.bindExternalBuffer(viewB, rightPointer, (long) rows * Float.BYTES, rows, -1, true);
-            plan.bindExternalBuffer(viewOut, outPointer, (long) rows * Float.BYTES, rows, -1, false);
+            plan.bindCUDADeviceBuffer(viewA, leftPointer, (long) rows * Float.BYTES, rows, -1, true);
+            plan.bindCUDADeviceBuffer(viewB, rightPointer, (long) rows * Float.BYTES, rows, -1, true);
+            plan.bindCUDADeviceBuffer(viewOut, outPointer, (long) rows * Float.BYTES, rows, -1, false);
             plan.execute();
             CudaMemory.synchronizeContext();
 
@@ -437,13 +437,13 @@ public class TestDeviceView extends TornadoTestBase {
             CudaMemory.copyToDevice(inPointer, values);
             CudaMemory.copyToDevice(outPointer, new float[] { -99, -99, -99, -99 });
 
-            FloatArray in = FloatArray.deviceView(4);
-            FloatArray out = FloatArray.deviceView(4);
+            FloatArray in = FloatArray.cudaDeviceView(4);
+            FloatArray out = FloatArray.cudaDeviceView(4);
             TaskGraph graph = new TaskGraph("unused-context") //
                     .task("copy", TestDeviceView::copyAfterUnusedContext, new KernelContext(), in, out, 4);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
-            plan.bindExternalBuffer(in, inPointer, 4L * Float.BYTES, 4, -1, true);
-            plan.bindExternalBuffer(out, outPointer, 4L * Float.BYTES, 4, -1, false);
+            plan.bindCUDADeviceBuffer(in, inPointer, 4L * Float.BYTES, 4, -1, true);
+            plan.bindCUDADeviceBuffer(out, outPointer, 4L * Float.BYTES, 4, -1, false);
             plan.execute();
             CudaMemory.synchronizeContext();
 
@@ -469,20 +469,20 @@ public class TestDeviceView extends TornadoTestBase {
     public void testALengthVisibleViewRefusesToChangeLength() {
         long pointer = CudaMemory.allocate(16L * Float.BYTES);
         try {
-            FloatArray view = FloatArray.deviceView(16);
-            view.deviceViewBinding().setLengthVisibleToKernel(true);
+            FloatArray view = FloatArray.cudaDeviceView(16);
+            view.cudaDeviceViewBinding().setLengthVisibleToKernel(true);
             TaskGraph graph = new TaskGraph("fixed-length").task("t", TestDeviceView::addViews, view, view, view, 1);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
 
-            plan.bindExternalBuffer(view, pointer, 16L * Float.BYTES, 16, -1, false);
-            plan.unbindExternalBuffer(view);
+            plan.bindCUDADeviceBuffer(view, pointer, 16L * Float.BYTES, 16, -1, false);
+            plan.unbindCUDADeviceBuffer(view);
             // Shrinking is the dangerous direction and growing is the confusing one; both are refused.
-            assertThrows(IllegalStateException.class, () -> plan.bindExternalBuffer(view, pointer, 8L * Float.BYTES, 8, -1, false));
-            assertThrows(IllegalStateException.class, () -> view.deviceViewBinding().setLogicalLength(4));
+            assertThrows(IllegalStateException.class, () -> plan.bindCUDADeviceBuffer(view, pointer, 8L * Float.BYTES, 8, -1, false));
+            assertThrows(IllegalStateException.class, () -> view.cudaDeviceViewBinding().setLogicalLength(4));
             // Rebinding at the same length is still fine.
-            plan.bindExternalBuffer(view, pointer, 16L * Float.BYTES, 16, -1, false);
+            plan.bindCUDADeviceBuffer(view, pointer, 16L * Float.BYTES, 16, -1, false);
             assertEquals(16, view.getSize());
-            plan.unbindExternalBuffer(view);
+            plan.unbindCUDADeviceBuffer(view);
         } finally {
             CudaMemory.free(pointer);
         }
@@ -493,14 +493,14 @@ public class TestDeviceView extends TornadoTestBase {
     public void testLogicalLengthCannotExceedTheBoundSpan() {
         long pointer = CudaMemory.allocate(64L * Float.BYTES);
         try {
-            FloatArray view = FloatArray.deviceView(64);
+            FloatArray view = FloatArray.cudaDeviceView(64);
             TaskGraph graph = new TaskGraph("span").task("t", TestDeviceView::addViews, view, view, view, 1);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
-            plan.bindExternalBuffer(view, pointer, 8L * Float.BYTES, 8, -1, false);
+            plan.bindCUDADeviceBuffer(view, pointer, 8L * Float.BYTES, 8, -1, false);
             // Within the view's capacity of 64, but beyond the 8 elements actually bound.
-            assertThrows(IllegalArgumentException.class, () -> view.deviceViewBinding().setLogicalLength(32));
+            assertThrows(IllegalArgumentException.class, () -> view.cudaDeviceViewBinding().setLogicalLength(32));
             assertEquals(8, view.getSize());
-            plan.unbindExternalBuffer(view);
+            plan.unbindCUDADeviceBuffer(view);
         } finally {
             CudaMemory.free(pointer);
         }
@@ -525,18 +525,18 @@ public class TestDeviceView extends TornadoTestBase {
             CudaMemory.copyToDevice(firstOut, new float[] { -99 });
             CudaMemory.copyToDevice(protectedOut, new float[] { -99 });
 
-            FloatArray in = FloatArray.deviceView(1);
-            FloatArray out = FloatArray.deviceView(1);
+            FloatArray in = FloatArray.cudaDeviceView(1);
+            FloatArray out = FloatArray.cudaDeviceView(1);
             TaskGraph graph = new TaskGraph("readonly-reuse").task("add", TestDeviceView::addViews, in, in, out, 1);
             TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot());
-            plan.bindExternalBuffer(in, inPointer, Float.BYTES, 1, -1, true);
-            plan.bindExternalBuffer(out, firstOut, Float.BYTES, 1, -1, false);
+            plan.bindCUDADeviceBuffer(in, inPointer, Float.BYTES, 1, -1, true);
+            plan.bindCUDADeviceBuffer(out, firstOut, Float.BYTES, 1, -1, false);
             plan.execute();
             CudaMemory.synchronizeContext();
             assertEquals(20.0f, CudaMemory.copyFloatsToHost(firstOut, 1)[0], DELTA);
 
-            plan.unbindExternalBuffer(out);
-            plan.bindExternalBuffer(out, protectedOut, Float.BYTES, 1, -1, true);
+            plan.unbindCUDADeviceBuffer(out);
+            plan.bindCUDADeviceBuffer(out, protectedOut, Float.BYTES, 1, -1, true);
             assertThrows(RuntimeException.class, plan::execute, "a task that writes must not run against a read-only binding");
             CudaMemory.synchronizeContext();
             assertEquals(-99.0f, CudaMemory.copyFloatsToHost(protectedOut, 1)[0], DELTA,

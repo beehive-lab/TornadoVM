@@ -21,7 +21,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 
-import uk.ac.manchester.tornado.api.memory.DeviceViewBinding;
+import uk.ac.manchester.tornado.api.memory.CUDADeviceViewBinding;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -479,15 +479,15 @@ public final class ByteArray extends TornadoNativeArray {
     /**
      * Constructs a {@link ByteArray} that is a device view: no host memory is allocated, and the
      * array stands for a device allocation somebody else owns, bound later with
-     * {@code bindExternalBuffer}.
+     * {@code bindCUDADeviceBuffer}.
      */
-    private ByteArray(DeviceViewBinding binding) {
+    private ByteArray(CUDADeviceViewBinding binding) {
         this.numberOfElements = binding.capacityElements();
         this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
         this.baseIndex = arrayHeaderSize / BYTE_BYTES;
         this.segmentByteSize = 0;
         this.segment = null;
-        markAsDeviceView(binding);
+        markAsCUDADeviceView(binding);
     }
 
     /**
@@ -495,23 +495,23 @@ public final class ByteArray extends TornadoNativeArray {
      * foreign device memory. Unlike {@code new ByteArray(n)} this allocates nothing, on the host or
      * on the device, and the view carries no array header, so element {@code i} is at
      * {@code address + i * 1}. Bind an address with
-     * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan#bindExternalBuffer} before
+     * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan#bindCUDADeviceBuffer} before
      * executing a plan that uses it. Host accessors are not available on a view, and the address
-     * stays the caller's to free. {@link DeviceViewBinding} states the contract in full.
+     * stays the caller's to free. {@link CUDADeviceViewBinding} states the contract in full.
      *
      * @param capacityElements
      *         the largest number of elements any binding of this view may hold.
      * @return A detached {@link ByteArray} device view.
      */
-    public static ByteArray deviceView(long capacityElements) {
-        return new ByteArray(new DeviceViewBinding(checkNumElements(capacityElements), BYTE_BYTES));
+    public static ByteArray cudaDeviceView(long capacityElements) {
+        return new ByteArray(new CUDADeviceViewBinding(checkNumElements(capacityElements), BYTE_BYTES));
     }
 
     /**
-     * Creates a device-only view. See {@link #deviceView(long)}.
+     * Creates a device-only view. See {@link #cudaDeviceView(long)}.
      */
-    public static ByteArray deviceView(int capacityElements) {
-        return deviceView((long) capacityElements);
+    public static ByteArray cudaDeviceView(int capacityElements) {
+        return cudaDeviceView((long) capacityElements);
     }
 
     @Override
@@ -521,7 +521,7 @@ public final class ByteArray extends TornadoNativeArray {
 
     @Override
     public long getSizeLong() {
-        return isDeviceView() ? deviceViewBinding().logicalLength() : numberOfElements;
+        return isCUDADeviceView() ? cudaDeviceViewBinding().logicalLength() : numberOfElements;
     }
 
     /**
@@ -531,7 +531,7 @@ public final class ByteArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
-        checkNotDeviceView("getSegment()");
+        checkNotCUDADeviceView("getSegment()");
         return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
@@ -542,7 +542,7 @@ public final class ByteArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
-        checkNotDeviceView("getSegmentWithHeader()");
+        checkNotCUDADeviceView("getSegmentWithHeader()");
         return segment.getSegment();
     }
 
@@ -554,7 +554,7 @@ public final class ByteArray extends TornadoNativeArray {
     @Override
     public long getNumBytesOfSegmentWithHeader() {
         // A device view has no header, so both byte counts are the same: the payload it spans.
-        return isDeviceView() ? getNumBytesOfSegment() : segmentByteSize;
+        return isCUDADeviceView() ? getNumBytesOfSegment() : segmentByteSize;
     }
 
     /**
@@ -564,7 +564,7 @@ public final class ByteArray extends TornadoNativeArray {
      */
     @Override
     public long getNumBytesOfSegment() {
-        return isDeviceView() ? getSizeLong() * BYTE_BYTES : segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+        return isCUDADeviceView() ? getSizeLong() * BYTE_BYTES : segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
     /**

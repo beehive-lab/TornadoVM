@@ -409,7 +409,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         } else if (!type.isPrimitive()) {
             // A device view stands for memory another library owns: borrow its address instead of
             // allocating, transferring or freeing anything (see CUDAExternalDeviceBuffer).
-            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isDeviceView()) {
+            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isCUDADeviceView()) {
                 return new CUDAExternalDeviceBuffer(deviceContext, nativeArray, access);
             }
             if (object instanceof AtomicInteger) {

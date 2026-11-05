@@ -25,13 +25,13 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.DeviceViewBinding;
+import uk.ac.manchester.tornado.api.memory.CUDADeviceViewBinding;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 
 /**
- * The device buffer of a {@code deviceView} array: a CUDA address somebody else allocated, which
+ * The device buffer of a {@code cudaDeviceView} array: a CUDA address somebody else allocated, which
  * TornadoVM borrows for the length of a kernel and gives back untouched.
  *
  * <p>
@@ -40,7 +40,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
  * (there is no host segment to copy to or from), and not freed on release or on
  * {@code freeDeviceMemory()} -- freeing a cuDF or RMM allocation from under its owner would be a
  * use-after-free in that library. The address itself is read from the array's
- * {@link DeviceViewBinding} on every use, so rebinding the view between executions -- a new batch,
+ * {@link CUDADeviceViewBinding} on every use, so rebinding the view between executions -- a new batch,
  * a different pointer, a different row count -- takes effect without reallocating anything.
  * </p>
  *
@@ -54,7 +54,7 @@ public class CUDAExternalDeviceBuffer implements XPUBuffer {
 
     private final CUDADeviceContext deviceContext;
     private final TornadoNativeArray view;
-    private final DeviceViewBinding binding;
+    private final CUDADeviceViewBinding binding;
     private final Access access;
     private final int sizeOfType;
 
@@ -63,7 +63,7 @@ public class CUDAExternalDeviceBuffer implements XPUBuffer {
     public CUDAExternalDeviceBuffer(CUDADeviceContext deviceContext, TornadoNativeArray view, Access access) {
         this.deviceContext = deviceContext;
         this.view = view;
-        this.binding = view.deviceViewBinding();
+        this.binding = view.cudaDeviceViewBinding();
         this.access = access;
         this.sizeOfType = binding.elementSize();
     }
