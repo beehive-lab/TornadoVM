@@ -94,10 +94,6 @@ public class TestDeviceView extends TornadoTestBase {
     @BeforeEach
     public void requireCuda() {
         super.before();
-        // Thrown, not assumed. The runner counts these exceptions as Unsupported (see
-        // TornadoHelper.UNSUPPORTED_EXCEPTIONS) and counts an unmet JUnit assumption as a pass, so
-        // on OpenCL or Metal an assumption would report fourteen green ticks for a suite that
-        // never ran a line.
         if (getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() != TornadoVMBackendType.CUDA) {
             throw new TornadoVMCUDANotSupported("Device views are implemented for the CUDA backend only");
         }
