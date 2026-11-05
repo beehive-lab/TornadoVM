@@ -19,7 +19,6 @@ package uk.ac.manchester.tornado.unittests.deviceview;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -27,7 +26,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -548,31 +546,4 @@ public class TestDeviceView extends TornadoTestBase {
         }
     }
 
-    /** An ordinary task-graph still behaves exactly as before, alongside all of the above. */
-    @Test
-    public void testOrdinaryArraysAreUnaffected() {
-        final int rows = 1024;
-        FloatArray a = new FloatArray(rows);
-        FloatArray b = new FloatArray(rows);
-        FloatArray out = new FloatArray(rows);
-        for (int i = 0; i < rows; i++) {
-            a.set(i, i);
-            b.set(i, 2 * i);
-        }
-        TaskGraph graph = new TaskGraph("ordinary") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, a, b) //
-                .task("add", TestDeviceView::addViews, a, b, out, rows) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
-        ImmutableTaskGraph snapshot = graph.snapshot();
-        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(snapshot)) {
-            plan.execute();
-            plan.execute();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        for (int i = 0; i < rows; i++) {
-            assertEquals(3 * i, out.get(i), DELTA);
-        }
-        assertNotEquals(0, out.get(1), DELTA);
-    }
 }

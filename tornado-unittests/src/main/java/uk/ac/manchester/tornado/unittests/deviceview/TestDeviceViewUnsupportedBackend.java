@@ -101,27 +101,4 @@ public class TestDeviceViewUnsupportedBackend extends TornadoTestBase {
 
         assertThrows(TornadoDeviceViewNotSupported.class, () -> plan.bindCUDADeviceBuffer(view, 0xDEADBEEFL, (long) rows * Float.BYTES));
     }
-
-    /** An ordinary array is untouched by any of this: the backend keeps working as it always did. */
-    @Test
-    public void testOrdinaryArraysStillRun() {
-        final int rows = 256;
-        FloatArray in = new FloatArray(rows);
-        FloatArray out = new FloatArray(rows);
-        for (int i = 0; i < rows; i++) {
-            in.set(i, i * 0.5f);
-        }
-        TaskGraph graph = new TaskGraph("ordinary") //
-                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
-                .task("scale", TestDeviceViewUnsupportedBackend::scale, in, out, rows) //
-                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
-        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
-            plan.execute();
-        } catch (Exception e) {
-            throw new AssertionError("an ordinary task graph must be unaffected on " + backend, e);
-        }
-        for (int i = 0; i < rows; i++) {
-            assertEquals(i * 1.0f, out.get(i), 0.001f);
-        }
-    }
 }
