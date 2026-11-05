@@ -202,17 +202,10 @@ public final class AbiLowering {
         if (headerlessParams.isEmpty()) {
             return;
         }
-        // An array chosen at run time reaches a block argument from several places, and a loop
-        // carries one back to itself. Asking "are all the values reaching this argument already
-        // known headerless" never becomes true inside a cycle: the backedge is the argument itself,
-        // which is what is being decided. A loop over two headerless arrays was therefore refused
-        // as a mix of layouts although no headered array existed anywhere in it.
-        //
-        // So start optimistically instead. Assume every array block argument is headerless, then
-        // repeatedly demote any whose incoming values include something known headered. A cycle
-        // with no headered value entering it from outside keeps the assumption, which is correct,
-        // because every value that can reach it is headerless. One that does meet a headered value
-        // is demoted on the first pass and stays demoted.
+        // Optimistic, not pessimistic: assume every array block argument is headerless, then demote
+        // the ones an incoming headered value reaches. Growing a known-headerless set instead never
+        // terminates on a cycle, because the backedge is the argument being decided, so a loop over
+        // two headerless arrays would be refused as a mix although no headered array is in it.
         var candidates = new ArrayList<uk.ac.manchester.tornado.tc.ir.BlockArg>();
         for (var block : function.blocks()) {
             if (block == function.entry()) {

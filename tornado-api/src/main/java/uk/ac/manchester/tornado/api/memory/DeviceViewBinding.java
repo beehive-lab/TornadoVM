@@ -40,11 +40,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * </p>
  *
  * <p>
- * Kernel-visible length. The device allocation has no header, so a kernel cannot read the length
- * out of it. {@link #isLengthVisibleToKernel()} (off by default) folds {@link #logicalLength()} into
- * the kernel as a constant, which makes {@code getSize()} work inside the kernel at the cost of a
- * recompilation whenever the length changes. Kernels that run on a varying number of rows should
- * leave it off and take the row count as an ordinary {@code int} parameter instead.
+ * A kernel cannot read a length out of a headerless allocation, so {@code getSize()} works inside
+ * one only when {@link #isLengthVisibleToKernel()} is on. It is off by default.
  * </p>
  *
  * <p>
@@ -70,15 +67,9 @@ public final class DeviceViewBinding {
     private final AtomicReference<Object> owner = new AtomicReference<>();
 
     /**
-     * The logical length that has been folded into compiled code, once that has happened.
-     *
-     * <p>
-     * A view whose length the kernel can see has that length compiled into the kernel as a
-     * constant. Rebinding the view to a different length afterwards does not recompile anything:
-     * the installed code keeps the old constant and keeps reading that many elements, which for a
-     * shorter binding is past the end of what was bound. The length is therefore allowed to be
-     * visible to a kernel or to change, but not both.
-     * </p>
+     * The logical length that has been folded into compiled code, once that has happened. Rebinding
+     * to a different length does not recompile, so the installed constant would outlive the binding
+     * it described; {@link #isLengthVisibleToKernel()} says what is done about that.
      */
     private volatile long lengthFoldedIntoKernel = -1;
 

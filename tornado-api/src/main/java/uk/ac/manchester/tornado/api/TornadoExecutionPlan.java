@@ -266,19 +266,11 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * executions that follow.
      *
      * <p>
-     * The address is <b>borrowed</b>. TornadoVM reads and (for a read-write view) writes through it
-     * and nothing else: it never allocates a buffer of its own for the view, never copies host data
-     * into it, never copies it back out, never writes a native-array header into it and never frees
-     * it. Keeping the allocation alive and valid for as long as the plan may run, and freeing it
-     * afterwards, is the caller's job -- as is making the data visible to this plan's stream if
-     * another stream produced it.
-     * </p>
-     *
-     * <p>
-     * Rebinding between batches is the expected use: call it again with a different address and a
-     * different length, and the next {@link #execute()} uses those. A view may only be bound by one
-     * plan at a time, so two tasks sharing a view is an error rather than a silent race; use one
-     * view per task.
+     * The address is <b>borrowed</b>: TornadoVM reads and (for a read-write view) writes through it
+     * and does nothing else to it -- no allocation, no implicit transfer in either direction, no
+     * header written into it, no free. Keeping it alive while the plan may run, freeing it after,
+     * and making another stream's data visible to this one are the caller's. Rebinding between
+     * batches is the expected use; one view belongs to one plan at a time.
      * </p>
      *
      * @param view
