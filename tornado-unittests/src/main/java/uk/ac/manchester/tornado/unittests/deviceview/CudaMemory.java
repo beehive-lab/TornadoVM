@@ -79,6 +79,11 @@ final class CudaMemory {
         return unavailable == null;
     }
 
+    /** Why the driver library could not be loaded, so a skipped run says which library is missing. */
+    static String unavailableCause() {
+        return unavailable == null ? "available" : unavailable.toString();
+    }
+
     /** Makes device 0's primary context current on this thread, so the allocations below land on it. */
     static void enterPrimaryContext() {
         try (Arena arena = Arena.ofConfined()) {
