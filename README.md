@@ -270,8 +270,33 @@ Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` versio
     <artifactId>tornado-runtime</artifactId>
     <version>8.0.0-jdk21</version>
   </dependency>
+  <!-- One or more backends: tornado-drivers-opencl, tornado-drivers-metal, tornado-drivers-cuda -->
+  <dependency>
+    <groupId>io.github.beehive-lab</groupId>
+    <artifactId>tornado-drivers-opencl</artifactId>
+    <version>8.0.0-jdk21</version>
+  </dependency>
 </dependencies>
 ```
+
+**No SDK needed.** Every backend binds its native library (OpenCL, Metal, CUDA driver) through `java.lang.foreign`, so these jars are a complete runtime on the plain classpath. `tornado-drivers-opencl` and `tornado-drivers-metal` are on Maven Central from the release after 8.0.0. The JVM flags:
+
+- `--enable-native-access=ALL-UNNAMED`: silences the restricted-method warning.
+- `--enable-preview`: `-jdk21` artifacts only.
+- `-Dtornado.enabled.backends=opencl|metal|cuda`: picks a backend when several are on the classpath.
+
+Settings and code-cache dumps go to `$TORNADOVM_HOME` if set, otherwise `~/.tornadovm` (override with `-Dtornado.home=...`).
+
+The same with [JBang](https://www.jbang.dev):
+
+```java
+//JAVA 25
+//DEPS io.github.beehive-lab:tornado-runtime:8.0.0-jdk22plus
+//DEPS io.github.beehive-lab:tornado-drivers-opencl:8.0.0-jdk22plus
+//RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
+```
+
+For `-jdk21` artifacts use `//JAVA 21` and add `//PREVIEW`.
 
 ---
 

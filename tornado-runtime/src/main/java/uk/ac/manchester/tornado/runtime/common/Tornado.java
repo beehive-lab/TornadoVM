@@ -23,6 +23,7 @@ package uk.ac.manchester.tornado.runtime.common;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -32,6 +33,8 @@ import uk.ac.manchester.tornado.api.TornadoSetting;
 public final class Tornado implements TornadoSetting {
 
     private static final String TORNADOVM_HOME_VARIABLE = "TORNADOVM_HOME";
+
+    private static final String TORNADO_HOME_PROPERTY = "tornado.home";
 
     private static final Properties settings = System.getProperties();
 
@@ -69,8 +72,24 @@ public final class Tornado implements TornadoSetting {
     }
 
     private static void tryLoadSettings() {
-        final String tornadoRoot = System.getenv(TORNADOVM_HOME_VARIABLE);
-        loadSettings(tornadoRoot + "/etc/tornado.properties");
+        loadSettings(getTornadoHome() + "/etc/tornado.properties");
+    }
+
+    /**
+     * Root directory for TornadoVM's settings file and on-disk caches. Resolved from the
+     * {@code tornado.home} system property, then the {@code TORNADOVM_HOME} environment variable (set
+     * by the SDK), and finally {@code ~/.tornadovm}, so that an application using TornadoVM purely as
+     * Maven dependencies, with no SDK installed, still gets a valid location.
+     */
+    public static String getTornadoHome() {
+        String home = System.getProperty(TORNADO_HOME_PROPERTY);
+        if (home == null || home.isBlank()) {
+            home = System.getenv(TORNADOVM_HOME_VARIABLE);
+        }
+        if (home == null || home.isBlank()) {
+            home = Paths.get(System.getProperty("user.home"), ".tornadovm").toString();
+        }
+        return home;
     }
 
     @Override
