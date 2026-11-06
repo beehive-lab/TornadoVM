@@ -267,6 +267,13 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * executions that follow.
      *
      * <p>
+     * Use this method for device buffers owned by another library, including shared Metal buffers
+     * that the CPU can access. Eligible host-backed TornadoVM arrays instead use
+     * {@link TaskGraph#consumeFromUnifiedMemory(Object...)}. These are separate API contracts;
+     * shared physical memory does not make a device view eligible for consumption.
+     * </p>
+     *
+     * <p>
      * The buffer is <b>borrowed</b>: TornadoVM reads and (for a read-write view) writes through it
      * and does nothing else to it -- no allocation, no implicit transfer in either direction, no
      * header written into it, no free. Keeping it alive while the plan may run, freeing it after,

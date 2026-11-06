@@ -43,11 +43,17 @@ public interface TornadoDevice {
     }
 
     /**
-     * Whether the storage of {@code object} is in unified memory that this device can consume in
-     * place, meeting every storage requirement of
+     * Whether {@code object} has host-backed storage that this device can consume in place,
+     * meeting every storage requirement of
      * {@link uk.ac.manchester.tornado.api.TaskGraph#consumeFromUnifiedMemory(Object...)}. The query
      * binds nothing. It does not check task accesses or the execution mode, and the answer changes
      * if the storage is closed.
+     *
+     * <p>Device views return false because they are excluded from the consumption API, even when
+     * their foreign buffers use shared Metal storage. This result does not establish whether a
+     * foreign buffer is physically shared or CPU-accessible. Use
+     * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan#bindDeviceBuffer(uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray, long, long)}
+     * for foreign device buffers.
      *
      * @param object
      *     the array to check
