@@ -29,6 +29,7 @@ import java.util.ServiceLoader;
 import uk.ac.manchester.tornado.api.TornadoBackend;
 import uk.ac.manchester.tornado.api.TornadoRuntime;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.runtime.common.RuntimeServiceLoader;
 import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
 import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
 
@@ -42,7 +43,7 @@ public final class TornadoCoreRuntime implements TornadoRuntime {
 
     private TornadoCoreRuntime() {
         vmConfig = new TornadoVMConfigAccess();
-        List<TornadoBackendProvider> installed = ServiceLoader.load(TornadoBackendProvider.class).stream().map(ServiceLoader.Provider::get).toList();
+        List<TornadoBackendProvider> installed = RuntimeServiceLoader.load(TornadoBackendProvider.class).stream().map(ServiceLoader.Provider::get).toList();
         backends = new Backends(installed, TornadoOptions.ENABLED_BACKENDS, this::createBackend);
     }
 
