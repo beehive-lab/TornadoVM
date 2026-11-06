@@ -760,8 +760,13 @@ public class CUDACommandQueue extends CommandQueue {
         return recordEvent(queue);
     }
 
-    static void clFlush(long queueId) throws CUDAException {
-        synchronizeStream(queueId);
+    /**
+     * Nothing to do: unlike an OpenCL queue, a CUDA stream starts work as soon as it is enqueued,
+     * so there is nothing to submit. Synchronising here made the flush that ends every interpreter
+     * run a host wait, so a plan of several task-graphs waited for each graph in turn.
+     * {@link #clFinish} waits.
+     */
+    static void clFlush(long queueId) {
     }
 
     static void clFinish(long queueId) throws CUDAException {
@@ -994,18 +999,20 @@ public class CUDACommandQueue extends CommandQueue {
     }
 
     /**
-     * Launches a previously instantiated graph on this queue's stream and
-     * blocks until completion so that captured device-to-host copies are
-     * visible to the host once this call returns. With
-     * {@code tornado.cuda.graph.asyncLaunch}, a graph that copies nothing to
-     * the host returns as soon as it is launched.
+     * Launches a previously instantiated graph on this queue's stream. A graph that copies to the
+     * host is waited for here, so that its copies are visible to the host once this call returns.
+     * Any other graph is left running and the stream marked pending: the synchronise that closes
+     * the execution waits for it, and a plan of several graphs waits once for all of them. With
+     * {@code tornado.cuda.graph.asyncLaunch} the stream is not marked pending either, and only a
+     * later copy to the host waits for the graph.
      */
     public void launchGraph(long graphExecHandle) {
-        if (ASYNC_GRAPH_LAUNCH && !hostCopyGraphs.contains(graphExecHandle)) {
-            // Not marked pending: the stream orders it before anything enqueued later, and a
-            // later copy to the host drains the stream with it.
+        if (!hostCopyGraphs.contains(graphExecHandle)) {
             CUDAHandles.Queue queue = CUDAHandles.resolve(commandQueuePtr, CUDAHandles.Queue.class);
             CUDADriverAPI.cuCtxSetCurrent(queue.context());
+            if (!ASYNC_GRAPH_LAUNCH) {
+                queue.markPending();
+            }
             long result = CUDADriverAPI.cuGraphLaunch(graphExecHandle, queue.stream());
             if (result != 0) {
                 throw new TornadoBailoutRuntimeException("cuGraphLaunch failed. CUresult=" + result);
@@ -1025,12 +1032,7 @@ public class CUDACommandQueue extends CommandQueue {
     }
 
     public void flushEvents() {
-        try {
-            clFlush(commandQueuePtr);
-        } catch (CUDAException e) {
-            e.printStackTrace();
-            throw new TornadoBailoutRuntimeException(e.getMessage());
-        }
+        clFlush(commandQueuePtr);
     }
 
     public long getContextId() {
@@ -1267,11 +1269,7 @@ public class CUDACommandQueue extends CommandQueue {
     }
 
     public void flush() {
-        try {
-            clFlush(commandQueuePtr);
-        } catch (CUDAException e) {
-            throw new TornadoBailoutRuntimeException(e.getMessage());
-        }
+        clFlush(commandQueuePtr);
     }
 
     public long enqueueBarrier(long[] waitEvents) {

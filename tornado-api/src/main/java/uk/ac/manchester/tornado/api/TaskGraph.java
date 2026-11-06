@@ -1093,6 +1093,14 @@ public class TaskGraph implements TaskGraphInterface {
         taskGraphImpl.execute(executionPackage).waitOn();
     }
 
+    /**
+     * Runs the graph without waiting for the device; the caller waits with
+     * {@link TornadoTaskGraphInterface#waitOn()} on the returned graph.
+     */
+    TornadoTaskGraphInterface executeWithoutWaiting(ExecutorFrame executionPackage) {
+        return taskGraphImpl.execute(executionPackage);
+    }
+
     void withPreCompilation(ExecutorFrame executionPackage) {
         taskGraphImpl.withPreCompilation(executionPackage);
     }
