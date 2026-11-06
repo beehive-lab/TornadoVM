@@ -145,8 +145,6 @@
                 <include>io.github.beehive-lab:tornado-drivers-common</include>
                 <include>io.github.beehive-lab:tornado-drivers-opencl</include>
                 <include>io.github.beehive-lab:tornado-drivers-metal</include>
-                <include>io.github.beehive-lab:tornado-examples</include>
-                <include>io.github.beehive-lab:tornado-unittests</include>
                 <include>io.github.beehive-lab:tornado-cublas</include>
                 <include>io.github.beehive-lab:tornado-clblast</include>
                 <include>io.github.beehive-lab:tornado-curand</include>
@@ -163,6 +161,52 @@
             <binaries>
                 <outputDirectory>share/java/tornado</outputDirectory>
                 <unpack>false</unpack>
+                <dependencySets>
+                    <dependencySet>
+                        <!-- Dependencies come from tornado-assembly's own, which include the test and example modules and
+                             JUnit: those go to share/java/tornado-misc (next module set) -->
+                        <outputDirectory>share/java/tornado</outputDirectory>
+                        <excludes>
+                            <exclude>io.github.beehive-lab:tornado-examples</exclude>
+                            <exclude>io.github.beehive-lab:tornado-unittests</exclude>
+                            <exclude>org.junit.jupiter:*</exclude>
+                            <exclude>org.junit.platform:*</exclude>
+                            <exclude>org.opentest4j:*</exclude>
+                            <exclude>org.opentest4j.reporting:*</exclude>
+                            <exclude>org.apiguardian:*</exclude>
+                            <exclude>org.jspecify:*</exclude>
+                        </excludes>
+                    </dependencySet>
+                </dependencySets>
+            </binaries>
+        </moduleSet>
+        <moduleSet>
+            <!-- The test and example modules stay off the runtime module path (share/java/tornado): tornado.unittests
+                 provides a TornadoLibraryProvider, so service binding from tornado.runtime would resolve it, JUnit and
+                 jdk.incubator.vector in every application's boot layer (which also stops a JDK AOT cache from archiving
+                 the module graph). bin/tornado adds share/java/tornado-misc only when the command runs one of them. -->
+            <useAllReactorProjects>true</useAllReactorProjects>
+            <includes>
+                <include>io.github.beehive-lab:tornado-examples</include>
+                <include>io.github.beehive-lab:tornado-unittests</include>
+            </includes>
+            <binaries>
+                <outputDirectory>share/java/tornado-misc</outputDirectory>
+                <unpack>false</unpack>
+                <dependencySets>
+                    <dependencySet>
+                        <!-- Only JUnit and its dependencies: the TornadoVM modules are in share/java/tornado -->
+                        <outputDirectory>share/java/tornado-misc</outputDirectory>
+                        <includes>
+                            <include>org.junit.jupiter:*</include>
+                            <include>org.junit.platform:*</include>
+                            <include>org.opentest4j:*</include>
+                            <include>org.opentest4j.reporting:*</include>
+                            <include>org.apiguardian:*</include>
+                            <include>org.jspecify:*</include>
+                        </includes>
+                    </dependencySet>
+                </dependencySets>
             </binaries>
         </moduleSet>
     </moduleSets>
