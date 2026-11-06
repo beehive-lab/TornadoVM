@@ -28,7 +28,7 @@ You can be running a TornadoVM example on a GPU in three commands:
    $ tornado --devices
 
    # 3. Run an example
-   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-5.0.0-jdk21.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
+   $ java @$TORNADOVM_HOME/tornado-argfile -cp $TORNADOVM_HOME/share/java/tornado/tornado-examples-8.1.0.jar uk.ac.manchester.tornado.examples.compute.MatrixVectorRowMajor
 
 See :ref:`installation` for all install options (SDKMAN!, the official downloads page, Maven Central, or Docker images), or :ref:`build-from-source` if you want to build TornadoVM yourself.
 

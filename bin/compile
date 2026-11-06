@@ -366,6 +366,35 @@ export PATH="$TORNADOVM_HOME/bin:$PATH"
         print(f"   [Unix-env]: {setvars_sh_path}")
 
 
+def check_runtime_module_path(tornado_home):
+    """
+    Fails the build when share/java/tornado, the module path of every TornadoVM application, holds
+    anything but the TornadoVM modules: the test and example modules or a third-party jar such as
+    JUnit belong in share/java/tornado-misc (see tornado-assembly/assembly.xml).
+
+    A module there is resolved in every application. tornado.unittests, for example, provides a
+    TornadoLibraryProvider, so service binding pulled it, JUnit and jdk.incubator.vector into every run.
+
+    Args:
+        tornado_home (str): The SDK directory (TORNADOVM_HOME).
+    """
+    runtime_dir = os.path.join(tornado_home, "share", "java", "tornado")
+    if not os.path.isdir(runtime_dir):
+        return
+    misplaced = sorted(
+        jar for jar in os.listdir(runtime_dir)
+        if jar.endswith(".jar") and (
+            not (jar.startswith("tornado-") or jar.startswith("tc-"))
+            or jar.startswith("tornado-unittests-")
+            or jar.startswith("tornado-examples-")))
+    if misplaced:
+        print(f"[ERROR] {runtime_dir} is the runtime module path and must hold only the TornadoVM modules.")
+        print("[ERROR] Move these jars to share/java/tornado-misc in tornado-assembly/assembly.xml:")
+        for jar in misplaced:
+            print(f"[ERROR]   {jar}")
+        sys.exit(-1)
+
+
 def post_installation_actions(backend_profiles, mvn_build_result, args):
     """
     Performs post-installation actions.
@@ -386,6 +415,7 @@ def post_installation_actions(backend_profiles, mvn_build_result, args):
         # Create tornado.backend file in the extracted SDK
         # Maven filtering should handle this, but as a fallback (especially on Windows), ensure it exists
         tornado_home = os.environ.get('TORNADOVM_HOME')
+        check_runtime_module_path(tornado_home)
         backend_file_path = os.path.join(f"{tornado_home}", "etc", "tornado.backend")
         os.makedirs(os.path.dirname(backend_file_path), exist_ok=True)
         with open(backend_file_path, "w") as backend_file:

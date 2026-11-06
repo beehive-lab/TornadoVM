@@ -884,7 +884,7 @@ def validate_sdk(archive_path, jdk_home, skip_windows_executables=False, test_hy
 
         # Locate the examples JAR (name includes version, e.g. tornado-examples-4.0.0.jar)
         examples_jars = glob.glob(
-            os.path.join(tornado_home, "share", "java", "tornado", "tornado-examples-*.jar")
+            os.path.join(tornado_home, "share", "java", "tornado-misc", "tornado-examples-*.jar")
         )
         if not examples_jars:
             warn(f"  tornado-examples JAR not found in {basename} — skipping")
