@@ -41,23 +41,52 @@ There are two SDK families, and ``<jdk-version>`` selects between them:
 
 Only the JDK 21 SDK is tied to a single JDK. The ``jdk22plus`` SDK is built once and runs unchanged on any JDK from 22 onwards — switching JDK needs no reinstall and no rebuild, only ``tornado --generate-argfile`` if you launch via the argfile rather than the ``tornado`` command.
 
-The TornadoVM API is also published on Maven Central, so you can add it directly to an existing Java project without installing the SDK at all. The artifact version's suffix must match the SDK family you run on: ``-jdk21`` or ``-jdk22plus``.
+TornadoVM is also published on Maven Central, so you can add it directly to an existing Java project without installing the SDK at all. The artifact version's suffix must match the JDK family you run on: ``-jdk21`` or ``-jdk22plus``. Add ``tornado-runtime`` plus at least one backend driver: ``tornado-drivers-opencl``, ``tornado-drivers-metal`` or ``tornado-drivers-cuda``. The OpenCL and Metal drivers are on Maven Central from the release after 8.0.0.
 
 .. code-block:: xml
 
    <!-- JDK 21 -->
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
-      <artifactId>tornado-api</artifactId>
+      <artifactId>tornado-runtime</artifactId>
+      <version>8.0.0-jdk21</version>
+   </dependency>
+   <dependency>
+      <groupId>io.github.beehive-lab</groupId>
+      <artifactId>tornado-drivers-opencl</artifactId>
       <version>8.0.0-jdk21</version>
    </dependency>
 
    <!-- JDK 22 and newer, including 27 -->
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
-      <artifactId>tornado-api</artifactId>
-      <version>5.2.1-jdk22plus</version>
+      <artifactId>tornado-runtime</artifactId>
+      <version>8.0.0-jdk22plus</version>
    </dependency>
+   <dependency>
+      <groupId>io.github.beehive-lab</groupId>
+      <artifactId>tornado-drivers-opencl</artifactId>
+      <version>8.0.0-jdk22plus</version>
+   </dependency>
+
+Every backend binds its native library through ``java.lang.foreign``, so these jars are a complete runtime on the plain classpath. Run with:
+
+- ``--enable-native-access=ALL-UNNAMED``, which silences the restricted-method warning.
+- ``--enable-preview``, for ``-jdk21`` artifacts only.
+- ``-Dtornado.enabled.backends=opencl`` (or ``metal``, ``cuda``), to pick a backend when several are on the classpath.
+
+Settings and code-cache dumps go to ``$TORNADOVM_HOME`` if it is set, otherwise to ``~/.tornadovm``. Override this with ``-Dtornado.home=<dir>``.
+
+With `JBang <https://www.jbang.dev>`_:
+
+.. code-block:: java
+
+   //JAVA 25
+   //DEPS io.github.beehive-lab:tornado-runtime:8.0.0-jdk22plus
+   //DEPS io.github.beehive-lab:tornado-drivers-opencl:8.0.0-jdk22plus
+   //RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
+
+For ``-jdk21`` artifacts use ``//JAVA 21`` and add ``//PREVIEW``.
 
 Docker images and cloud (AWS) images are also available; see :ref:`docker` and :ref:`cloud`.
 

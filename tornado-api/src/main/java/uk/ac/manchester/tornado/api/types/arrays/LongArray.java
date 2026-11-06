@@ -20,6 +20,8 @@ package uk.ac.manchester.tornado.api.types.arrays;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.internal.annotations.SegmentElementSize;
 
+import uk.ac.manchester.tornado.api.memory.CUDADeviceViewBinding;
+
 import java.lang.foreign.MemorySegment;
 import java.nio.LongBuffer;
 import java.util.Arrays;
@@ -296,14 +298,52 @@ public final class LongArray extends TornadoNativeArray {
      *
      * @return
      */
+    /**
+     * Constructs a {@link LongArray} that is a device view: no host memory is allocated, and the
+     * array stands for a device allocation somebody else owns, bound later with
+     * {@code bindCUDADeviceBuffer}.
+     */
+    private LongArray(CUDADeviceViewBinding binding) {
+        this.numberOfElements = binding.capacityElements();
+        this.arrayHeaderSize = (int) TornadoNativeArray.ARRAY_HEADER;
+        this.baseIndex = arrayHeaderSize / LONG_BYTES;
+        this.segmentByteSize = 0;
+        this.segment = null;
+        markAsCUDADeviceView(binding);
+    }
+
+    /**
+     * Creates a device-only view that can address up to {@code capacityElements} elements of
+     * foreign device memory. Unlike {@code new LongArray(n)} this allocates nothing, on the host or
+     * on the device, and the view carries no array header, so element {@code i} is at
+     * {@code address + i * 8}. Bind an address with
+     * {@link uk.ac.manchester.tornado.api.TornadoExecutionPlan#bindCUDADeviceBuffer} before
+     * executing a plan that uses it. Host accessors are not available on a view, and the address
+     * stays the caller's to free. {@link CUDADeviceViewBinding} states the contract in full.
+     *
+     * @param capacityElements
+     *         the largest number of elements any binding of this view may hold.
+     * @return A detached {@link LongArray} device view.
+     */
+    public static LongArray cudaDeviceView(long capacityElements) {
+        return new LongArray(new CUDADeviceViewBinding(checkNumElements(capacityElements), LONG_BYTES));
+    }
+
+    /**
+     * Creates a device-only view. See {@link #cudaDeviceView(long)}.
+     */
+    public static LongArray cudaDeviceView(int capacityElements) {
+        return cudaDeviceView((long) capacityElements);
+    }
+
     @Override
     public int getSize() {
-        return toIntSize(numberOfElements);
+        return toIntSize(getSizeLong());
     }
 
     @Override
     public long getSizeLong() {
-        return numberOfElements;
+        return isCUDADeviceView() ? cudaDeviceViewBinding().logicalLength() : numberOfElements;
     }
 
     /**
@@ -313,6 +353,7 @@ public final class LongArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegment() {
+        checkNotCUDADeviceView("getSegment()");
         return segment.getSegment().asSlice(TornadoNativeArray.ARRAY_HEADER);
     }
 
@@ -323,6 +364,7 @@ public final class LongArray extends TornadoNativeArray {
      */
     @Override
     public MemorySegment getSegmentWithHeader() {
+        checkNotCUDADeviceView("getSegmentWithHeader()");
         return segment.getSegment();
     }
 
@@ -333,7 +375,8 @@ public final class LongArray extends TornadoNativeArray {
      */
     @Override
     public long getNumBytesOfSegmentWithHeader() {
-        return segmentByteSize;
+        // A device view has no header, so both byte counts are the same: the payload it spans.
+        return isCUDADeviceView() ? getNumBytesOfSegment() : segmentByteSize;
     }
 
     /**
@@ -343,7 +386,7 @@ public final class LongArray extends TornadoNativeArray {
      */
     @Override
     public long getNumBytesOfSegment() {
-        return segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
+        return isCUDADeviceView() ? getSizeLong() * LONG_BYTES : segmentByteSize - TornadoNativeArray.ARRAY_HEADER;
     }
 
     /**

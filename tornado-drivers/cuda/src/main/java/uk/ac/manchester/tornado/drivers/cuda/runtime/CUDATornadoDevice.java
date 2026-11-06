@@ -62,6 +62,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAAtomicsBuffer;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAExternalDeviceBuffer;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDACharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDADoubleArrayWrapper;
@@ -416,6 +417,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 }
             }
         } else if (!type.isPrimitive()) {
+            // A device view stands for memory another library owns: borrow its address instead of
+            // allocating, transferring or freeing anything (see CUDAExternalDeviceBuffer).
+            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isCUDADeviceView()) {
+                return new CUDAExternalDeviceBuffer(deviceContext, nativeArray, access);
+            }
             if (object instanceof AtomicInteger) {
                 result = new CUDAAtomicsBuffer(new int[] {}, deviceContext, access);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
@@ -524,6 +530,12 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             buffer = state.getXPUBuffer();
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
+            }
+            if (buffer instanceof CUDAExternalDeviceBuffer external) {
+                // Reusing a locked buffer skips allocate(), which is where a borrowed view's access
+                // contract was checked. The binding can have changed since; check it again here, so
+                // that every execution is validated rather than only the first.
+                external.validateForAccess(access);
             }
         } else if (state.isUnifiedMemory()) {
             buffer = newUnifiedMemoryBufferRegistration(object, state, access);

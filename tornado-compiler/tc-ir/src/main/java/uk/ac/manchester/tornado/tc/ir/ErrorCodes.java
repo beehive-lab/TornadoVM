@@ -81,6 +81,8 @@ public final class ErrorCodes {
             Map.entry("TC-E3101", new Entry(Category.UNSUPPORTED, "this object argument cannot be described to TC (its class is not the declared one, or it overrides methods)")),
             Map.entry("TC-E3102", new Entry(Category.UNSUPPORTED, "this field of an object argument cannot be accessed on the device yet")),
             Map.entry("TC-E3103", new Entry(Category.BAILOUT, "the bounds of @Parallel loops must be known when the task is compiled: constants, task arguments or array sizes")),
+            Map.entry("TC-E3104", new Entry(Category.UNSUPPORTED, "getSize() on a device view the kernel does not know the length of: pass the length as a parameter instead")),
+            Map.entry("TC-E3105", new Entry(Category.UNSUPPORTED, "an array that is a headerless device view on one path and a normal array on another cannot be addressed both ways")),
             Map.entry("TC-E3201", new Entry(Category.BAILOUT, "a @Parallel loop must count i = start; i < end; i += step with a step that does not change in the loop")),
             Map.entry("TC-E3202", new Entry(Category.BAILOUT, "at most three @Parallel loops can be nested (x, y, z)")),
             Map.entry("TC-E3204", new Entry(Category.BAILOUT, "a @Reduce reduction must be out[k] = out[k] op value (op: + * min max), one per @Parallel loop, on every iteration")),
