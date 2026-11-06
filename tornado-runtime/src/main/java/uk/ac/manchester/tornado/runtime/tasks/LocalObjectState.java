@@ -54,6 +54,8 @@ public class LocalObjectState {
 
     private boolean onDevice;
 
+    private boolean unifiedMemory;
+
     /**
      * For each variable, we need to keep track of all devices in which there is a shadow
      * copy. This is achieved by using the {@link DataObjectState} object.
@@ -94,6 +96,14 @@ public class LocalObjectState {
 
     public boolean isOnDevice() {
         return onDevice;
+    }
+
+    public boolean isUnifiedMemory() {
+        return unifiedMemory;
+    }
+
+    public void setUnifiedMemory(boolean unifiedMemory) {
+        this.unifiedMemory = unifiedMemory;
     }
 
     public void setStreamIn(boolean streamIn) {
@@ -138,6 +148,7 @@ public class LocalObjectState {
         newLocalObjectState.underDemand = this.underDemand;
         newLocalObjectState.dataObjectState = dataObjectState.clone();
         newLocalObjectState.onDevice = this.onDevice;
+        newLocalObjectState.unifiedMemory = this.unifiedMemory;
         return newLocalObjectState;
     }
 

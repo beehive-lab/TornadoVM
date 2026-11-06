@@ -30,6 +30,34 @@ import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 public interface TornadoDevice {
 
     /**
+     * Whether this device shares memory with the host and its backend supports
+     * {@link uk.ac.manchester.tornado.api.TaskGraph#consumeFromUnifiedMemory(Object...)}. When false,
+     * a task graph that consumes from unified memory on this device fails when the plan compiles;
+     * use an ordinary transfer instead. A true result does not make every array eligible: the
+     * storage requirements are listed on {@code consumeFromUnifiedMemory}.
+     *
+     * @return true if this device can consume host storage in place
+     */
+    default boolean isUnifiedMemorySupported() {
+        return false;
+    }
+
+    /**
+     * Whether the storage of {@code object} is in unified memory that this device can consume in
+     * place, meeting every storage requirement of
+     * {@link uk.ac.manchester.tornado.api.TaskGraph#consumeFromUnifiedMemory(Object...)}. The query
+     * binds nothing. It does not check task accesses or the execution mode, and the answer changes
+     * if the storage is closed.
+     *
+     * @param object
+     *     the array to check
+     * @return true if this device can consume the storage of {@code object} in place
+     */
+    default boolean isOnUnifiedMemory(Object object) {
+        return false;
+    }
+
+    /**
      * It allocates an object in the pre-defined heap of the target device. It also
      * ensures that there is enough space for the input object.
      *
