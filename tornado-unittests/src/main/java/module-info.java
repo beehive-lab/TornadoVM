@@ -37,6 +37,7 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.cutlass;
     exports uk.ac.manchester.tornado.unittests.cuvs;
     exports uk.ac.manchester.tornado.unittests.mlx;
+    exports uk.ac.manchester.tornado.unittests.deviceview;
     exports uk.ac.manchester.tornado.unittests.fields;
     exports uk.ac.manchester.tornado.unittests.flatmap;
     exports uk.ac.manchester.tornado.unittests.fuzz;

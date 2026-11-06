@@ -353,7 +353,7 @@ public final class TcCompiler {
             new Step("optimize", c -> true, TcCompiler::optimize, Verifier.Stage.PRE_ABI),
             new Step("local-arrays", c -> LocalArrays.hasPending(c.function), c -> LocalArrays.run(c.function), Verifier.Stage.PRE_ABI),
             new Step("legality", c -> true, c -> Legality.run(c.function, c.target), Verifier.Stage.PRE_ABI),
-            new Step("abi", c -> true, c -> AbiLowering.run(c.function, c.target, c.layouts()), Verifier.Stage.POST_ABI),
+            new Step("abi", c -> true, c -> AbiLowering.run(c.function, c.target, c.layouts(), ValueSpecialisation.headerlessParameters(c.facts)), Verifier.Stage.POST_ABI),
             new Step("optimize.post-abi", c -> true, c -> {
                 PassManager.standard(Verifier.Stage.POST_ABI).verifyEach(c.options.verifyEach())
                         .observe((run, fn) -> TcTrace.current().ir("optimize.post-abi", run.pass(), run.changed(), run.nanos(), fn)).run(c.function);

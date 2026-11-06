@@ -49,7 +49,16 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * <li>An unused {@code KernelContext} parameter is removed from the signature.</li>
  * </ul>
  *
- * <p>Error codes: {@code TC-E3101} construct not yet supported by ABI lowering.</p>
+ * <p>A parameter may instead be <b>headerless</b>: a {@code cudaDeviceView} bound to memory a foreign
+ * library owns, laid out as that library laid it out, with no header in front of the elements.
+ * Element {@code i} of such a parameter is at {@code base + i * sizeof(T)}, and {@code array.length}
+ * on it cannot be lowered at all -- there is no header to read it from -- so it must have been
+ * folded to a constant by {@link ValueSpecialisation} first. The two kinds are per argument: one
+ * kernel can take a headered input, a headerless input and a headerless output at once.</p>
+ *
+ * <p>Error codes: {@code TC-E3101} construct not yet supported by ABI lowering;
+ * {@code TC-E3104} {@code getSize()} on an unspecialised device view;
+ * {@code TC-E3105} a value that is headered on one path and headerless on another.</p>
  */
 public final class AbiLowering {
 
@@ -59,15 +68,22 @@ public final class AbiLowering {
     /** Element type of each array parameter, recorded before parameters become pointers. */
     private final java.util.Map<Value, Type> elements = new java.util.IdentityHashMap<>();
 
+    /** Indices (Java parameter order) of the array parameters that carry no header. */
+    private final java.util.Set<Integer> headerlessParams;
+
+    /** Array values -- parameters and the block arguments they flow into -- that carry no header. */
+    private final java.util.Set<Value> headerless = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
     /** Layouts of the object arguments' device copies, by simple class name. */
     private final java.util.Map<String, ObjectLayout> layouts;
     /** Class of each object-valued pointer (parameters and loaded references). */
     private final java.util.Map<Value, String> classes = new java.util.IdentityHashMap<>();
     private final java.util.Map<FieldKey, Value> references = new java.util.HashMap<>();
 
-    private AbiLowering(TargetCaps target, java.util.Map<String, ObjectLayout> layouts) {
+    private AbiLowering(TargetCaps target, java.util.Map<String, ObjectLayout> layouts, java.util.Set<Integer> headerlessParams) {
         this.target = target;
         this.layouts = layouts;
+        this.headerlessParams = headerlessParams;
     }
 
     /** Lowers {@code function} in place; returns diagnostics for constructs it cannot lower. */
@@ -77,9 +93,17 @@ public final class AbiLowering {
 
     /** As {@link #run(Function, TargetCaps)}, with the layouts of object arguments ({@link ObjectLayout}). */
     public static List<Diagnostic> run(Function function, TargetCaps target, List<ObjectLayout> layouts) {
+        return run(function, target, layouts, java.util.Set.of());
+    }
+
+    /**
+     * As {@link #run(Function, TargetCaps, List)}, with the parameter positions (Java order) that are
+     * headerless device views and so are addressed from the parameter itself rather than past a header.
+     */
+    public static List<Diagnostic> run(Function function, TargetCaps target, List<ObjectLayout> layouts, java.util.Set<Integer> headerlessParams) {
         var byName = new java.util.HashMap<String, ObjectLayout>();
         layouts.forEach(l -> byName.putIfAbsent(l.className(), l));
-        var lowering = new AbiLowering(target, byName);
+        var lowering = new AbiLowering(target, byName, headerlessParams);
         lowering.lower(function);
         return List.copyOf(lowering.diagnostics);
     }
@@ -87,10 +111,21 @@ public final class AbiLowering {
     private void lower(Function function) {
         var printer = new IrPrinter(false);
         printer.printFunction(function);
-        for (var param : List.copyOf(function.params())) {
+        // The positions the headerless facts refer to are positions in the function's parameter list
+        // as it arrives. This loop also removes parameters from that same list, so asking the live
+        // list where a parameter is gives a different answer once anything before it has gone: an
+        // unused KernelContext ahead of the arrays shifts every later array down one, and the first
+        // headerless input is then taken for a conventional one and read a header's width into the
+        // buffer. Fix the positions first, from a snapshot, and the removals cannot move them.
+        var original = List.copyOf(function.params());
+        for (int position = 0; position < original.size(); position++) {
+            var param = original.get(position);
             switch (param.type()) {
                 case ArrayType(var element) -> {
                     elements.put(param, element);
+                    if (headerlessParams.contains(position)) {
+                        headerless.add(param);
+                    }
                     param.setType(new Type.PointerType(AddressSpace.GLOBAL));
                 }
                 // The ABI drops KernelContext: its uses were replaced by intrinsics in the frontend.
@@ -119,6 +154,7 @@ public final class AbiLowering {
                 }
             }
         }
+        propagateHeaderless(function, printer);
         // Dominator order: a reference is lowered (and its class known) before the fields read through it.
         for (var block : new uk.ac.manchester.tornado.tc.ir.analysis.DominatorTree(function).reversePostorder()) {
             for (var inst : List.copyOf(block.insts())) {
@@ -137,9 +173,12 @@ public final class AbiLowering {
                         for (int k = 0; k < inst.operandCount(); k++) {
                             if (elements.containsKey(inst.operand(k))) {
                                 var array = inst.operand(k);
-                                var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
-                                data.setDerivedName(array.name().isEmpty() ? "data" : array.name() + "_data");
-                                inst.setOperand(k, data);
+                                long header = headerBytesOf(array);
+                                if (header != 0) {
+                                    var data = b.pointerOffset(array, b.constInt(Type.I64, header));
+                                    data.setDerivedName(array.name().isEmpty() ? "data" : array.name() + "_data");
+                                    inst.setOperand(k, data);
+                                }
                             }
                         }
                     }
@@ -151,6 +190,97 @@ public final class AbiLowering {
                 }
             }
         }
+    }
+
+    /**
+     * An array chosen at run time reaches a block argument from several places. It is headerless only
+     * if every array that can reach it is: mixing the two would make one of them read at the wrong
+     * address, so a merge of both is refused rather than lowered one way or the other. Iterated to a
+     * fixed point, since a block argument can feed another one (a loop-carried array).
+     */
+    private void propagateHeaderless(Function function, IrPrinter printer) {
+        if (headerlessParams.isEmpty()) {
+            return;
+        }
+        // Optimistic, not pessimistic: assume every array block argument is headerless, then demote
+        // the ones an incoming headered value reaches. Growing a known-headerless set instead never
+        // terminates on a cycle, because the backedge is the argument being decided, so a loop over
+        // two headerless arrays would be refused as a mix although no headered array is in it.
+        var candidates = new ArrayList<uk.ac.manchester.tornado.tc.ir.BlockArg>();
+        for (var block : function.blocks()) {
+            if (block == function.entry()) {
+                continue;
+            }
+            for (var arg : block.args()) {
+                if (elements.containsKey(arg)) {
+                    candidates.add(arg);
+                    headerless.add(arg);
+                }
+            }
+        }
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (var arg : candidates) {
+                if (!headerless.contains(arg)) {
+                    continue;
+                }
+                var block = arg.block();
+                int index = block.args().indexOf(arg);
+                for (var incoming : incoming(function, block, index)) {
+                    if (!headerless.contains(incoming)) {
+                        headerless.remove(arg);
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+        // Now that the solution has settled, a merge that really does mix the two layouts is one
+        // whose incoming values disagree. Those are refused: the two are addressed differently and
+        // there is no single correct way to read the result.
+        for (var arg : candidates) {
+            var block = arg.block();
+            int index = block.args().indexOf(arg);
+            if (mixesLayouts(function, block, index)) {
+                diagnostics.add(new Diagnostic("TC-E3105", "the array reaching this point is a headerless device view on one path and a normal array on another, "
+                        + "and the two are addressed differently; keep them apart", "%" + printer.name(arg), uk.ac.manchester.tornado.tc.ir.Loc.UNKNOWN));
+            }
+        }
+    }
+
+    private boolean mixesLayouts(Function function, uk.ac.manchester.tornado.tc.ir.Block block, int index) {
+        boolean withHeader = false;
+        boolean without = false;
+        for (var incoming : incoming(function, block, index)) {
+            if (headerless.contains(incoming)) {
+                without = true;
+            } else {
+                withHeader = true;
+            }
+        }
+        return withHeader && without;
+    }
+
+    private static List<Value> incoming(Function function, uk.ac.manchester.tornado.tc.ir.Block block, int index) {
+        var values = new ArrayList<Value>();
+        for (var predecessor : function.blocks()) {
+            var terminator = predecessor.terminator().orElse(null);
+            if (terminator == null) {
+                continue;
+            }
+            for (var successor : terminator.successors()) {
+                if (successor.target() == block && index < successor.args().size()) {
+                    values.add(successor.args().get(index));
+                }
+            }
+        }
+        return values;
+    }
+
+    /** Bytes between an array's base and its first element: none for a headerless device view. */
+    private long headerBytesOf(Value array) {
+        return headerless.contains(array) ? 0 : target.arrayHeaderBytes();
     }
 
     private void lowerLoad(Inst inst) {
@@ -304,6 +434,13 @@ public final class AbiLowering {
     }
 
     private void lowerLength(Inst inst) {
+        if (headerless.contains(inst.operand(0))) {
+            // There is no header to read the count from, and reading one would dereference whatever the
+            // foreign library happens to have placed at the start of its buffer.
+            diagnostics.add(new Diagnostic("TC-E3104", "getSize() on a device view whose length the kernel does not know: "
+                    + "pass the length as an int parameter, or create the view with its length visible to the kernel", "%" + inst.operand(0).name(), inst.loc()));
+            return;
+        }
         var b = IrBuilder.insertingBefore(inst);
         var count = b.load(inst.operand(0), Type.I64);
         var length = inst.type().equals(Type.I64) ? count : b.convert(ConvertOp.TRUNC, count, Type.I32);
@@ -327,8 +464,13 @@ public final class AbiLowering {
             var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);
             return b.pointerOffset(array, ParallelLoopLowering.noSignedWrap(b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element)))));
         }
-        var data = b.pointerOffset(array, b.constInt(Type.I64, target.arrayHeaderBytes()));
-        data.setDerivedName(array.name().isEmpty() ? "data" : array.name() + "_data");
+        long header = headerBytesOf(array);
+        // A headerless device view's elements start at the pointer itself, so there is no data pointer
+        // to derive: indexing it through a `+ 0` offset would only add an instruction for GVN to remove.
+        var data = header == 0 ? array : b.pointerOffset(array, b.constInt(Type.I64, header));
+        if (data != array) {
+            data.setDerivedName(array.name().isEmpty() ? "data" : array.name() + "_data");
+        }
         var wide = index.type().equals(Type.I64) ? index : b.convert(ConvertOp.SEXT, index, Type.I64);
         // A sign-extended int index times an element size cannot overflow a long.
         var scaled = ParallelLoopLowering.noSignedWrap(b.binary(BinaryOp.MUL, wide, b.constInt(Type.I64, sizeOf(element))));

@@ -52,6 +52,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP8NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceDynamicParallelismNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceViewNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
@@ -69,7 +70,7 @@ public class TornadoHelper {
     private static final List<Class<? extends Throwable>> UNSUPPORTED_EXCEPTIONS = List.of(UnsupportedConfigurationException.class, TornadoNoOpenCLPlatformException.class,
             TornadoVMMultiDeviceNotSupported.class, TornadoVMOpenCLNotSupported.class, TornadoVMMetalNotSupported.class, TornadoVMCUDANotSupported.class,
             TornadoDeviceFP64NotSupported.class, TornadoDeviceFP16NotSupported.class, TornadoDeviceMMANotSupported.class,
-            TornadoDeviceDynamicParallelismNotSupported.class, TornadoLibraryTaskNotSupported.class);
+            TornadoDeviceDynamicParallelismNotSupported.class, TornadoDeviceViewNotSupported.class, TornadoLibraryTaskNotSupported.class);
 
     private static boolean isUnsupported(Throwable exception) {
         return UNSUPPORTED_EXCEPTIONS.stream().anyMatch(type -> type.isInstance(exception));
