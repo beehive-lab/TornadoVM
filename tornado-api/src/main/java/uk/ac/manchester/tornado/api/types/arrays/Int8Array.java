@@ -266,9 +266,7 @@ public final class Int8Array extends TornadoNativeArray {
      *         The byte value to initialize the {@link Int8Array} instance with.
      */
     public void init(byte value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
-        }
+        segment.fill(baseIndex, numberOfElements, INT8_BYTES, value);
     }
 
     /**

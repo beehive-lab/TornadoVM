@@ -39,6 +39,11 @@ import uk.ac.manchester.tornado.tc.ir.Value;
  * initialised.</li>
  * <li>{@link Fact.Scalar}: uses of a primitive parameter become the constant; the parameter stays in
  * the signature, as on the Graal path.</li>
+ * <li>{@link Fact.DeviceView}: the parameter is a {@code cudaDeviceView} bound to foreign device memory,
+ * so it has no header and {@link AbiLowering} addresses it from the pointer itself. Its length folds
+ * like {@link Fact.Length} only when the view asked for that; otherwise the kernel may not read it at
+ * all, and the length stays out of the fact so that rebinding the view to a different number of rows
+ * reuses the same compiled kernel.</li>
  * </ul>
  */
 public final class ValueSpecialisation {
@@ -49,6 +54,14 @@ public final class ValueSpecialisation {
         }
 
         record Length(long elements) implements Fact {
+        }
+
+        /**
+         * A headerless {@code cudaDeviceView} parameter. {@code elements} is the logical length to fold
+         * {@code getSize()} to, or -1 when the kernel must not read the length -- which is the default,
+         * because a view rebound per batch would otherwise key a new compilation per row count.
+         */
+        record DeviceView(long elements) implements Fact {
         }
 
         /**
@@ -123,6 +136,8 @@ public final class ValueSpecialisation {
         for (int i = 0; i < Math.min(params.size(), facts.size()); i++) {
             if (facts.get(i) instanceof Fact.Length(var elements)) {
                 lengths.put(params.get(i), elements);
+            } else if (facts.get(i) instanceof Fact.DeviceView(var elements) && elements >= 0) {
+                lengths.put(params.get(i), elements);
             }
         }
         int folded = 0;
@@ -186,18 +201,8 @@ public final class ValueSpecialisation {
         for (int i = 0; i < Math.min(params.size(), facts.size()); i++) {
             var param = params.get(i);
             switch (facts.get(i)) {
-                case Fact.Length(var elements) when param.type() instanceof Type.ArrayType -> {
-                    for (var user : List.copyOf(param.users())) {
-                        // getSize() is i32 and throws beyond Integer.MAX_VALUE in Java: only getSizeLong() folds then.
-                        if (user.opcode() instanceof Opcode.ArrayLength && (user.type().equals(Type.I64) || elements <= Integer.MAX_VALUE)) {
-                            var constant = IrBuilder.insertingBefore(user).constInt(user.type(), elements);
-                            constant.setName(user.name());
-                            user.replaceAllUsesWith(constant);
-                            user.erase();
-                            folded++;
-                        }
-                    }
-                }
+                case Fact.Length(var elements) when param.type() instanceof Type.ArrayType -> folded += foldLength(param, elements);
+                case Fact.DeviceView(var elements) when elements >= 0 && param.type() instanceof Type.ArrayType -> folded += foldLength(param, elements);
                 case Fact.Instance(var finals, var layouts, var lengths) when param.type() instanceof Type.ObjectType -> {
                     // Lengths of native arrays held in fields (output.getSize() in an instance-method task).
                     for (var user : List.copyOf(param.users())) {
@@ -242,6 +247,33 @@ public final class ValueSpecialisation {
             }
         }
         return folded;
+    }
+
+    /** Folds {@code array.length} of {@code param} to {@code elements}; returns how many uses folded. */
+    private static int foldLength(Value param, long elements) {
+        int folded = 0;
+        for (var user : List.copyOf(param.users())) {
+            // getSize() is i32 and throws beyond Integer.MAX_VALUE in Java: only getSizeLong() folds then.
+            if (user.opcode() instanceof Opcode.ArrayLength && (user.type().equals(Type.I64) || elements <= Integer.MAX_VALUE)) {
+                var constant = IrBuilder.insertingBefore(user).constInt(user.type(), elements);
+                constant.setName(user.name());
+                user.replaceAllUsesWith(constant);
+                user.erase();
+                folded++;
+            }
+        }
+        return folded;
+    }
+
+    /** The parameter positions that are headerless device views, for {@link AbiLowering}. */
+    public static java.util.Set<Integer> headerlessParameters(List<Fact> facts) {
+        var headerless = new java.util.HashSet<Integer>();
+        for (int i = 0; i < facts.size(); i++) {
+            if (facts.get(i) instanceof Fact.DeviceView) {
+                headerless.add(i);
+            }
+        }
+        return headerless;
     }
 
     /** All facts unknown: no specialisation. */

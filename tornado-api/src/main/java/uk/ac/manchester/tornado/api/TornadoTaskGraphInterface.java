@@ -99,6 +99,8 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     void consumeFromDevice(Object... objects);
 
+    void consumeFromUnifiedMemory(Object... objects);
+
     void dump();
 
     void withPreCompilation(ExecutorFrame executionPackage);

@@ -34,6 +34,16 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     private boolean lockBuffer;
     private long partialSize;
     private boolean reuseBuffer = false;
+    private boolean unifiedMemory;
+
+    @Override
+    public boolean isUnifiedMemory() {
+        return unifiedMemory;
+    }
+
+    public void setUnifiedMemory(boolean unifiedMemory) {
+        this.unifiedMemory = unifiedMemory;
+    }
 
     @Override
     public void setXPUBuffer(XPUBuffer value) {
@@ -119,6 +129,7 @@ public class XPUDeviceBufferState implements DeviceBufferState {
     public XPUDeviceBufferState createSnapshot() {
         XPUDeviceBufferState xpuDeviceBufferState = new XPUDeviceBufferState();
         xpuDeviceBufferState.setLockBuffer(this.isLockedBuffer());
+        xpuDeviceBufferState.setUnifiedMemory(this.isUnifiedMemory());
         return xpuDeviceBufferState;
     }
 

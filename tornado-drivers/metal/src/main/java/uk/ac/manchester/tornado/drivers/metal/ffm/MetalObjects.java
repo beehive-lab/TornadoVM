@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoUnifiedMemoryNotSupported;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
@@ -75,6 +77,20 @@ public final class MetalObjects {
     private static final MethodHandle DISPATCH_DATA_CREATE = FFMSupport.downcall(FFMSupport.loadLibrary("/usr/lib/libSystem.B.dylib", "libSystem.dylib"),
             FunctionDescriptor.of(C_LONG, C_POINTER, C_LONG, C_POINTER, C_POINTER), "dispatch_data_create");
 
+    private static final MethodHandle GETPAGESIZE = FFMSupport.downcall(FFMSupport.loadLibrary("/usr/lib/libSystem.B.dylib", "libSystem.dylib"), FunctionDescriptor.of(C_INT), "getpagesize");
+
+    private static final MethodHandle VM_REGION_RECURSE = FFMSupport.downcall(FFMSupport.loadLibrary("/usr/lib/libSystem.B.dylib", "libSystem.dylib"),
+            FunctionDescriptor.of(C_INT, C_INT, C_POINTER, C_POINTER, C_POINTER, C_POINTER, C_POINTER), "mach_vm_region_recurse");
+    private static final MemorySegment MACH_TASK_SELF = FFMSupport.findSymbol(FFMSupport.loadLibrary("/usr/lib/libSystem.B.dylib", "libSystem.dylib"), "mach_task_self_");
+    private static final long PAGE_SIZE = pageSize();
+
+    /**
+     * Where the host memory starts inside each buffer made by {@link #mapOnUnifiedMemory}: such a
+     * buffer begins at the page holding the memory, so its contents start this many bytes in.
+     * Buffers made by {@link #createBuffer} are absent and start at 0.
+     */
+    private static final Map<Long, Long> UNIFIED_MEMORY_OFFSETS = new ConcurrentHashMap<>();
+
     private MetalObjects() {
     }
 
@@ -102,6 +118,8 @@ public final class MetalObjects {
     private static final class Arg {
         int kind;
         long buffer;
+        /** Byte offset the device buffer is bound at; non-zero only for a no-copy buffer. */
+        long offset;
         byte[] bytes;
         long size;
     }
@@ -329,6 +347,7 @@ public final class MetalObjects {
     public static void releaseMemObject(long buffer) {
         // A command buffer still in flight keeps its own reference to the buffer.
         BUFFER_USES.remove(buffer);
+        UNIFIED_MEMORY_OFFSETS.remove(buffer);
         ObjCRuntime.release(buffer);
     }
 
@@ -547,6 +566,7 @@ public final class MetalObjects {
         Arg arg = new Arg();
         arg.kind = 0;
         arg.buffer = buffer;
+        arg.offset = bufferOffset(buffer);
         placeArg(state, index, arg);
     }
 
@@ -668,7 +688,7 @@ public final class MetalObjects {
                     switch (arg.kind) {
                         case 0 -> {
                             if (arg.buffer != 0) {
-                                MetalAPI.setBuffer(encoder, arg.buffer, 0, i);
+                                MetalAPI.setBuffer(encoder, arg.buffer, arg.offset, i);
                                 BUFFER_USES.put(arg.buffer, new BufferUse(queue, value));
                             }
                         }
@@ -974,7 +994,7 @@ public final class MetalObjects {
     public static long writeArray(long buffer, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes) {
         awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
-        long contents = MetalAPI.bufferContents(buffer);
+        long contents = MetalAPI.bufferContents(buffer) + bufferOffset(buffer);
         if (contents == 0) {
             return -1;
         }
@@ -989,7 +1009,7 @@ public final class MetalObjects {
     public static long readArray(long buffer, Object array, ValueLayout layout, int elementOffset, int elementCount, long offset, long bytes) {
         awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
-        long contents = MetalAPI.bufferContents(buffer);
+        long contents = MetalAPI.bufferContents(buffer) + bufferOffset(buffer);
         if (contents == 0) {
             return -1;
         }
@@ -1003,7 +1023,7 @@ public final class MetalObjects {
     public static long writeSegment(long buffer, long hostPointer, long hostOffset, long offset, long bytes) {
         awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
-        long contents = MetalAPI.bufferContents(buffer);
+        long contents = MetalAPI.bufferContents(buffer) + bufferOffset(buffer);
         if (contents == 0 || hostPointer == 0) {
             return -1;
         }
@@ -1018,7 +1038,7 @@ public final class MetalObjects {
     public static long readSegment(long buffer, long hostPointer, long hostOffset, long offset, long bytes) {
         awaitBuffer(buffer);
         long queuedNs = System.nanoTime();
-        long contents = MetalAPI.bufferContents(buffer);
+        long contents = MetalAPI.bufferContents(buffer) + bufferOffset(buffer);
         if (contents == 0 || hostPointer == 0) {
             return -1;
         }
@@ -1174,11 +1194,121 @@ public final class MetalObjects {
         try (ObjCRuntime.AutoreleasePool pool = new ObjCRuntime.AutoreleasePool()) {
             long commandBuffer = MetalAPI.commandBuffer(queue);
             long blit = MetalAPI.blitCommandEncoder(commandBuffer);
-            MetalAPI.blitCopy(blit, source, sourceOffset, destination, headerBytes, copySize);
+            MetalAPI.blitCopy(blit, source, bufferOffset(source) + sourceOffset, destination, bufferOffset(destination) + headerBytes, copySize);
             MetalAPI.endEncoding(blit);
             commitAndWait(queue, commandBuffer);
         }
         return destination;
+    }
+
+    // ------------------------------------------------------------------ unified-memory map
+
+    /**
+     * Maps existing host memory as a shared-storage buffer without copying it. Metal takes whole
+     * pages, so the buffer covers the pages holding the memory and is bound {@link #bufferOffset}
+     * bytes in. The memory must outlive the buffer.
+     *
+     * @return the buffer handle, owned by the caller
+     */
+    public static long mapOnUnifiedMemory(long context, MemorySegment segment) {
+        long device = MetalAPI.queueDevice(context);
+        checkUnifiedMemory(device, segment);
+        long address = segment.address();
+        long start = address - address % PAGE_SIZE;
+        long offset = address - start;
+        long length = ((offset + segment.byteSize() + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+        long buffer = MetalAPI.newBufferWithBytesNoCopy(device, start, length, MetalAPI.MTL_RESOURCE_STORAGE_MODE_SHARED);
+        if (buffer == 0) {
+            throw new TornadoMemoryException("consumeFromUnifiedMemory: Metal refused to map " + segment.byteSize() + " bytes of host memory");
+        }
+        if (MetalAPI.bufferContents(buffer) + offset != address) {
+            ObjCRuntime.release(buffer);
+            throw new TornadoMemoryException("consumeFromUnifiedMemory: Metal buffer contents do not alias the supplied host storage");
+        }
+        UNIFIED_MEMORY_OFFSETS.put(buffer, offset);
+        return buffer;
+    }
+
+    /**
+     * Checks Metal's requirements for {@link #mapOnUnifiedMemory}: page rounding, alignment and the
+     * VM region. The caller has already checked that the segment is live native memory owned by an
+     * automatic arena.
+     *
+     * @throws TornadoUnifiedMemoryNotSupported
+     *     naming the first requirement that is not met
+     */
+    public static void checkUnifiedMemory(long device, MemorySegment segment) {
+        if (device == 0) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: no Metal device is available");
+        }
+        long address = segment.address();
+        long bytes = segment.byteSize();
+        if (address <= 0 || bytes <= 0 || bytes > Long.MAX_VALUE - address - PAGE_SIZE) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: the backing address or extent is invalid or would overflow page rounding");
+        }
+        if (address % Integer.BYTES != 0) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: the array header must be aligned to at least four bytes");
+        }
+        if (!segment.isMapped() && (address % PAGE_SIZE != 0 || bytes % PAGE_SIZE != 0)) {
+            throw new TornadoUnifiedMemoryNotSupported(
+                    "consumeFromUnifiedMemory: non-mapped backing must contain whole pages and start on a page boundary; the rounded allocation extent cannot be proved");
+        }
+        long start = address - address % PAGE_SIZE;
+        long length = ((address - start + bytes + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+        if (length > MetalAPI.deviceMaxBufferLength(device)) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: the page-rounded backing exceeds the Metal device's maximum buffer length");
+        }
+        if (!isReadableRegion(start, length)) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: the page-rounded backing does not lie within one readable VM region");
+        }
+    }
+
+    /** Where the buffer's own memory starts inside it: non-zero only for a unified-memory buffer. */
+    public static long bufferOffset(long buffer) {
+        if (UNIFIED_MEMORY_OFFSETS.isEmpty()) {
+            return 0;
+        }
+        Long offset = UNIFIED_MEMORY_OFFSETS.get(buffer);
+        return offset == null ? 0 : offset;
+    }
+
+    /** Number of live unified-memory Metal buffers, for backend diagnostics. */
+    public static int liveUnifiedMemoryBuffers() {
+        return UNIFIED_MEMORY_OFFSETS.size();
+    }
+
+    /** Page rounding must remain within one readable VM region, as required by Metal. */
+    private static boolean isReadableRegion(long start, long length) {
+        if (VM_REGION_RECURSE == null || MACH_TASK_SELF == null) {
+            return false;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment address = arena.allocate(C_LONG);
+            MemorySegment size = arena.allocate(C_LONG);
+            MemorySegment depth = arena.allocate(C_INT);
+            // vm_region_submap_info_data_64_t: 19 natural_t fields (76 bytes).
+            MemorySegment info = arena.allocate(19L * Integer.BYTES, Integer.BYTES);
+            MemorySegment count = arena.allocate(C_INT);
+            address.set(C_LONG, 0, start);
+            depth.set(C_INT, 0, Integer.MAX_VALUE);
+            count.set(C_INT, 0, 19);
+            int task = FFMSupport.asSegment(MACH_TASK_SELF.address(), Integer.BYTES).get(C_INT, 0);
+            int result = (int) VM_REGION_RECURSE.invokeExact(task, address, size, depth, info, count);
+            long base = address.get(C_LONG, 0);
+            long extent = size.get(C_LONG, 0);
+            // protection is the first field; is_submap is at byte 48 in the packed Mach ABI.
+            return result == 0 && (info.get(C_INT, 0) & 1) != 0 && info.get(C_INT, 48) == 0 && base <= start && start - base <= extent && length <= extent - (start - base);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    private static long pageSize() {
+        try {
+            return (int) GETPAGESIZE.invokeExact();
+        } catch (Throwable t) {
+            throw new IllegalStateException("getpagesize", t);
+        }
     }
 
     // ------------------------------------------------------------------ little-endian byte helpers

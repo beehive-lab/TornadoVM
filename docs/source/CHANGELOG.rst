@@ -7,6 +7,44 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 8.1.0
+---------------
+06/11/26
+
+Improvements
+~~~~~~~~~~~~
+
+- `#1319 <https://github.com/beehive-lab/TornadoVM/pull/1319>`_: [cuda] Bind a kernel argument to device memory another library owns 
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#1293 <https://github.com/beehive-lab/TornadoVM/pull/1293>`_: [release] glibc-compatible CUDA shims, build-platform-sdks.py, and a complete Maven Central deploy
+
+Bug Fixes
+~~~~~~~~~~~~
+
+- `#1308 <https://github.com/beehive-lab/TornadoVM/pull/1308>`_: [runtime] Copies back on demand: from the task's device, and a partial range only once
+- `#1303 <https://github.com/beehive-lab/TornadoVM/pull/1303>`_: [TC][OpenCL] Unroll loops that store into private memory at a variable address (NVIDIA 'unsupported operation')
+- `#1305 <https://github.com/beehive-lab/TornadoVM/pull/1305>`_: [CUDA] Keep pinned host memory allocated until it is unregistered (cuMemcpyHtoDAsync INVALID_VALUE after dropped plans)
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1323 <https://github.com/beehive-lab/TornadoVM/pull/1323>`_: Fill native arrays in bulk in init()
+- `#1315 <https://github.com/beehive-lab/TornadoVM/pull/1315>`_: [API] TaskGraph.consumeFromUnifiedMemory: consume host arrays in place on unified-memory devices
+- `#1322 <https://github.com/beehive-lab/TornadoVM/pull/1322>`_: [build] Wait for the OpenCL and Metal drivers on Maven Central before dispatching downstream
+- `#1320 <https://github.com/beehive-lab/TornadoVM/pull/1320>`_: [build] Publish OpenCL and Metal drivers to Maven Central; run without an SDK
+- `#1316 <https://github.com/beehive-lab/TornadoVM/pull/1316>`_: tc emit: every kernel of a file, CUDA target options, object parameters and compiler-style diagnostics
+- `#1313 <https://github.com/beehive-lab/TornadoVM/pull/1313>`_: Pick the make build profile from JAVA_HOME so plain make works on JDK 22+
+- `#1311 <https://github.com/beehive-lab/TornadoVM/pull/1311>`_: [API] TornadoExecutionPlan.initializeDeviceAsync: initialise the device while the program sets up
+- `#1310 <https://github.com/beehive-lab/TornadoVM/pull/1310>`_: [Runtime] Create each backend the first time it is needed
+- `#1299 <https://github.com/beehive-lab/TornadoVM/pull/1299>`_: Share TC kernels across array sizes with an opt-in dynamic shapes plan option
+- `#1307 <https://github.com/beehive-lab/TornadoVM/pull/1307>`_: [build] Group library-task modules and their native shims under tornado-native-libs/
+- `#1306 <https://github.com/beehive-lab/TornadoVM/pull/1306>`_: [TC][CUDA Tile] Masked loads and stores when the tile shape does not divide the tensor (partial tiles read past the edge)
+- `#1294 <https://github.com/beehive-lab/TornadoVM/pull/1294>`_: CI: dispatch the TornadoVM version bump to tornadovm-benchmark-suite
+
+
 TornadoVM 8.0.0
 ---------------
 26/10/26
