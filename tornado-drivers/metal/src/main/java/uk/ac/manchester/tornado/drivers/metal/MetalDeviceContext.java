@@ -601,6 +601,12 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
     }
 
     @Override
+    public void finishDeviceViewWork(long executionPlanId) {
+        // Queues are per thread: this finds the queue of the thread that launched the work.
+        MetalObjects.awaitBorrowedBuffers(getCommandQueue(executionPlanId).getCommandQueuePtr());
+    }
+
+    @Override
     public void flushEvents(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);
         commandQueue.flushEvents();

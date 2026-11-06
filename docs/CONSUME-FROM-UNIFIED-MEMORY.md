@@ -4,6 +4,12 @@ On devices that share memory with the host, a task graph can read an existing na
 in place instead of copying it into a device buffer. This suits large read-only inputs, such
 as model weights, that would otherwise exist twice.
 
+Use `consumeFromUnifiedMemory` for eligible host-backed TornadoVM arrays. Use
+`bindDeviceBuffer` for GPU buffers owned by another library, including shared Metal buffers
+that the CPU can access. These are separate API contracts: shared physical memory does not
+change which API applies. A device view exposes an existing device buffer to kernels, not a
+host `MemorySegment` to the consumption API.
+
 ```java
 TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
 
@@ -29,6 +35,9 @@ rather than another graph's device buffer. Ordinary transfers of other objects a
 - `TornadoDevice.isOnUnifiedMemory(array)` returns true when, in addition, the array's storage
   meets every requirement below, so this device can consume that array in place. It binds
   nothing and does not check task accesses or the execution mode.
+  For a device view it returns `false` because views are excluded from the consumption API,
+  even when the underlying buffer uses shared Metal storage. This result does not establish
+  whether that foreign buffer is physically shared or CPU-accessible.
 
 A graph whose device or storage fails these checks is rejected when the plan compiles with
 `TornadoUnifiedMemoryNotSupported`, whose message names the requirement that is not met.
@@ -46,7 +55,8 @@ without real shared memory, use ordinary transfers.
 
 Checked by `isOnUnifiedMemory` and when the plan compiles:
 
-- The object is a `TornadoNativeArray`, and every task only reads it.
+- The object is a host-backed `TornadoNativeArray`, and every task only reads it. Device views
+  are refused; bind their existing device buffers with `bindDeviceBuffer` instead.
 - Its memory is owned by `Arena.ofAuto()`. The device buffer keeps the segment reachable,
   so the memory cannot be freed while a device uses it. Closeable arenas and foreign or
   global segments are refused.
@@ -73,6 +83,10 @@ that overlap the consumed bytes. Memory chunking (`withBatch`), reduction rewrit
 execution-graph capture, intra-plan concurrency and per-task device selection are not
 supported; a graph must use one device. Errors never fall back to copying or to sequential
 Java.
+
+The overlap check covers host storage only. A device view exposes no host `MemorySegment`
+to compare, so the caller must ensure that the device buffer bound to a view does not overlap
+consumed bytes, including when the buffer uses shared Metal storage.
 
 ## Accounting
 

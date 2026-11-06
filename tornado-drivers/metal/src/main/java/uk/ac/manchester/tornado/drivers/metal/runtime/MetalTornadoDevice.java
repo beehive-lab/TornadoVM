@@ -66,6 +66,7 @@ import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalCharArrayWrapper;
+import uk.ac.manchester.tornado.drivers.metal.mm.MetalExternalDeviceBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalFieldBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalIntArrayWrapper;
@@ -151,6 +152,9 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
         if (!(object instanceof TornadoNativeArray array)) {
             throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory only supports TornadoNativeArray inputs");
         }
+        if (array.isDeviceView()) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: a device view has no host storage to consume; bind its device buffer instead");
+        }
         MemorySegment segment = array.getSegmentWithHeader();
         if (!segment.isNative()) {
             throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: the backing storage must be native memory");
@@ -165,6 +169,17 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
                     "consumeFromUnifiedMemory: the backing storage must be owned by Arena.ofAuto(); closeable arenas and foreign/global storage are unsupported");
         }
         MetalObjects.checkUnifiedMemory(physical.getDevicePointer(), segment);
+    }
+
+    @Override
+    public void checkDeviceView(TornadoNativeArray view, Access access) {
+        MetalExternalDeviceBuffer.validateBinding(view.deviceViewBinding(), getDeviceContext(), access);
+    }
+
+    /** A plan gives the owner of a borrowed buffer nothing to wait on for this backend's command queue. */
+    @Override
+    public void finishDeviceViewWork(long executionPlanId) {
+        getDeviceContext().finishDeviceViewWork(executionPlanId);
     }
 
     @Override
@@ -444,6 +459,11 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
                 }
             }
         } else if (!type.isPrimitive()) {
+            // A device view stands for memory another library owns: borrow its MTLBuffer instead of
+            // allocating, transferring or freeing anything (see MetalExternalDeviceBuffer).
+            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isDeviceView()) {
+                return new MetalExternalDeviceBuffer(deviceContext, nativeArray, access);
+            }
             if (object instanceof AtomicInteger) {
                 result = new MetalAtomicsBuffer(new int[] {}, deviceContext, access);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
@@ -553,6 +573,11 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
             buffer = state.getXPUBuffer();
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
+            }
+            if (buffer instanceof MetalExternalDeviceBuffer external) {
+                // Reusing a locked buffer skips the buffer's allocate(), which is where a borrowed
+                // view's binding is checked. It can have changed since.
+                external.validateForAccess(access);
             }
         } else if (state.isUnifiedMemory()) {
             buffer = newUnifiedMemoryBufferRegistration(object, batchSize, state, access);

@@ -145,6 +145,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     private static boolean appleOpenCLProfilerWarningShown = false;
 
     private static final Pattern SIZE_PATTERN = Pattern.compile("(\\d+)(MB|mg|gb|GB)");
+    private static final String DEVICE_VIEWS_REFUSE_BATCH = "Device views do not support withBatch memory chunking: bind one view per batch instead";
+    private static final String DEVICE_VIEWS_REFUSE_CUDA_GRAPH = "Device views do not support withCUDAGraph: a captured graph would ignore a rebinding, and replay it without checking the binding";
     private static final CompileInfo COMPILE_ONLY = new CompileInfo(true, false);
     private static final CompileInfo COMPILE_AND_UPDATE = new CompileInfo(true, true);
     private static final CompileInfo NOT_COMPILE_UPDATE = new CompileInfo(false, false);
@@ -981,6 +983,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         final TornadoGraph tornadoGraph = TornadoGraphBuilder.buildGraph(executionContext, buffer);
         validateUnifiedMemory();
+        validateDeviceViews();
 
         if (setNewDevice) {
             // setNewDevice does not need to propagate any further as executionContext is
@@ -1125,7 +1128,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     private void deoptimiseToSequentialJava(TornadoBailoutRuntimeException e) {
-        if (hasUnifiedMemory()) {
+        if (hasUnifiedMemory() || hasDeviceViews()) {
             throw e;
         }
         dumpDeoptimisationReason(e);
@@ -1301,6 +1304,35 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return unifiedMemoryDeclared;
     }
 
+    @Override
+    public boolean hasDeviceViews() {
+        for (Object object : executionContext.getObjects()) {
+            if (object instanceof TornadoNativeArray array && array.isDeviceView()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Refuses the execution modes that cannot honour a device view's binding, before any bytecode for
+     * them exists. A batch splits an allocation TornadoVM does not own. A captured CUDA graph keeps the
+     * address it was captured with and replays without allocating, so a rebinding would be ignored and
+     * its binding would not be checked again. {@link #withBatch} and {@link #withCUDAGraph} refuse a
+     * graph that has its views by then; this covers views the graph got afterwards.
+     */
+    private void validateDeviceViews() {
+        if (!hasDeviceViews()) {
+            return;
+        }
+        if (executionContext.getBatchSize() != TornadoExecutionContext.INIT_VALUE) {
+            throw new TornadoRuntimeException(DEVICE_VIEWS_REFUSE_BATCH);
+        }
+        if (executionContext.isExecutionGraphEnabled()) {
+            throw new TornadoRuntimeException(DEVICE_VIEWS_REFUSE_CUDA_GRAPH);
+        }
+    }
+
     private void validateUnifiedMemory() {
         for (LocalObjectState state : executionContext.getObjectStates()) {
             if (!state.isUnifiedMemory()) {
@@ -1336,6 +1368,9 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         for (LocalObjectState state : executionContext.getObjectStates()) {
             if (!state.isUnifiedMemory()) {
                 MemorySegment other = switch (state.getObject()) {
+                    // A device view has no host segment to compare. This proves nothing about the
+                    // buffer bound to it, whose overlap with an import is the caller's to rule out.
+                    case TornadoNativeArray array when array.isDeviceView() -> null;
                     case TornadoNativeArray array -> array.getSegmentWithHeader();
                     case TornadoCollectionInterface<?> collection -> collection.getSegmentWithHeader();
                     case TornadoImagesInterface<?> image -> image.getSegmentWithHeader();
@@ -1907,6 +1942,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 if (hasUnifiedMemory()) {
                     throw new TornadoRuntimeException("consumeFromUnifiedMemory does not support reduction rewriting");
                 }
+                if (hasDeviceViews()) {
+                    // The rewrite can run tasks on host threads and on other devices, which a view cannot follow.
+                    throw new TornadoRuntimeException("Task graphs with device views do not support reduction rewriting");
+                }
                 rewriteTaskForReduceSkeleton(analysisTaskGraph);
                 abstractTaskGraph = this;
             }
@@ -2023,6 +2062,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
         if (!TornadoOptions.RECOVER_BAILOUT) {
             throw new TornadoBailoutRuntimeException("[TornadoVM] Error - Recover option disabled", cause);
+        } else if (hasDeviceViews()) {
+            // A view has no host storage for sequential Java to run on.
+            if (cause instanceof RuntimeException error) {
+                throw error;
+            }
+            throw new TornadoRuntimeException("Device views do not support sequential fallback");
         } else {
             runAllTasksJavaSequential();
         }
@@ -2362,12 +2407,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     @Override
     public void withBatch(String batchSize) {
+        // A plan that has run does not compile again for this, so validateDeviceViews would be too late.
+        if (hasDeviceViews()) {
+            throw new TornadoRuntimeException(DEVICE_VIEWS_REFUSE_BATCH);
+        }
         this.batchSizeBytes = parseSizeToBytes(batchSize);
         executionContext.setBatchSize(this.batchSizeBytes);
     }
 
     @Override
     public void withCUDAGraph() {
+        // A plan that has run does not compile again for this, so validateDeviceViews would be too late.
+        if (hasDeviceViews()) {
+            throw new TornadoRuntimeException(DEVICE_VIEWS_REFUSE_CUDA_GRAPH);
+        }
         executionContext.setExecutionGraphEnabled(true);
     }
 

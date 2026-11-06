@@ -62,6 +62,15 @@ public interface XPUBuffer {
         return getBufferOffset() + TornadoNativeArray.ARRAY_HEADER;
     }
 
+    /**
+     * What a kernel launch binds for this buffer, read on every launch: by default the
+     * {@link #toBuffer()} handle. A buffer whose kernel argument is more than a handle returns a value
+     * its backend's launch understands.
+     */
+    default Object kernelArgument() {
+        return toBuffer();
+    }
+
     void read(long executionPlanId, Object reference);
 
     int read(long executionPlanId, Object reference, long hostOffset, long partialReadSize, int[] events, boolean useDeps);

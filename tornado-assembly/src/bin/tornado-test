@@ -579,7 +579,7 @@ __THREAD_INFO__ = "-Dtornado.threadInfo=True "
 __UNCOMPRESSED_POINTERS__ = "-XX:-UseCompressedOops -XX:-UseCompressedClassPointers "
 __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __GC__ = "-Xmx6g "
-# --enable-native-access for the test module, because some tests reach libcuda directly through
+# --enable-native-access for the test module, because some tests reach libcuda or Metal directly through
 # the FFM API to stand in for a library that owns its own device memory. Without it the lookup
 # throws IllegalCallerException, the tests guard on that with assumeTrue, and a skipped test is
 # reported by this runner exactly like a passing one -- so a whole suite can report green while

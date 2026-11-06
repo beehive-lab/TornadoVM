@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.api.profiler.TornadoProfiler;
 import uk.ac.manchester.tornado.api.runtime.TaskContextInterface;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.EmptyEvent;
 import uk.ac.manchester.tornado.runtime.common.BatchConfiguration;
 import uk.ac.manchester.tornado.runtime.common.ColoursTerminal;
@@ -143,6 +144,9 @@ public class TornadoVMInterpreter {
      * without running it.
      */
     private boolean transfersOnly = false;
+
+    /** Whether this interpreter's task graph has met a device view; once set, it stays set. */
+    private boolean usesDeviceViews = false;
     private boolean executionGraphEnabled = true;
 
     private TornadoLogger logger = new TornadoLogger(this.getClass());
@@ -894,6 +898,17 @@ public class TornadoVMInterpreter {
 
         for (int arg : args) {
             Object dataObject = this.objects.get(arg);
+            if (dataObject instanceof TornadoNativeArray view && view.isDeviceView()) {
+                // Set before the checks: an execution they refuse still has to be rewound. These run
+                // for persisted views and on backends without device views too, and they run before
+                // anything is allocated. A backend's allocate() checks again for its direct callers.
+                usesDeviceViews = true;
+                if (sizeBatch != 0) {
+                    throw new TornadoRuntimeException("A device view cannot be used in a batched task-graph: its device memory is a fixed allocation somebody else owns, "
+                            + "so TornadoVM cannot split it into chunks. Bind one view per batch instead.");
+                }
+                interpreterDevice.checkDeviceView(view, this.objectAccesses.get(dataObject));
+            }
             if (!isPersistentObject(dataObject) || !hasDeviceBuffer(arg)) {
                 objects[allocCounter] = this.objects.get(arg);
                 objectStates[allocCounter] = resolveObjectState(arg);
@@ -1406,7 +1421,7 @@ public class TornadoVMInterpreter {
                 final XPUDeviceBufferState objectState = globalState.getDeviceBufferState(interpreterDevice);
                 if (!isObjectInAtomicRegion(objectState, interpreterDevice, task)) {
                     // Add a reference (arrays, vector types, panama regions)
-                    stackFrame.addCallArgument(objectState.getXPUBuffer().toBuffer(), true);
+                    stackFrame.addCallArgument(objectState.getXPUBuffer().kernelArgument(), true);
                 } else {
                     // Add the atomic buffer
                     atomicsArray = interpreterDevice.updateAtomicRegionAndObjectState(task, atomicsArray, i, objects.get(argIndex), objectState);
@@ -1725,11 +1740,37 @@ public class TornadoVMInterpreter {
     }
 
     public Event execute() {
+        final Event barrier;
         try {
-            return execute(false);
+            barrier = execute(false);
         } catch (RuntimeException | Error e) {
             abortCaptureAfterFailure(e);
+            finishDeviceViewsAfterFailure(e);
             throw e;
+        }
+        if (usesDeviceViews) {
+            // Here rather than in flush() or sync(): those depend on options and on batching, and the
+            // device's queues are per thread, so this has to run on the thread that launched the work.
+            interpreterDevice.finishDeviceViewWork(graphExecutionContext.getExecutionPlanId());
+        }
+        return barrier;
+    }
+
+    /**
+     * Rewinds the bytecodes, so that the plan can run again once the view is rebound, and waits for
+     * the work launched before the failure, so that the caller can free a borrowed buffer as soon as
+     * the failure reaches it. A failure of the wait is attached to the execution's failure as a
+     * suppressed exception, so the execution's failure is the one reported.
+     */
+    private void finishDeviceViewsAfterFailure(Throwable failure) {
+        if (!usesDeviceViews) {
+            return;
+        }
+        bytecodeResult.reset();
+        try {
+            interpreterDevice.finishDeviceViewWork(graphExecutionContext.getExecutionPlanId());
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure.addSuppressed(cleanupFailure);
         }
     }
 
@@ -1759,6 +1800,11 @@ public class TornadoVMInterpreter {
         transfersOnly = true;
         try {
             execute(false);
+        } catch (RuntimeException | Error e) {
+            if (usesDeviceViews) {
+                bytecodeResult.reset();
+            }
+            throw e;
         } finally {
             transfersOnly = false;
         }

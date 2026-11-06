@@ -1005,6 +1005,11 @@ public class TaskGraph implements TaskGraphInterface {
      * {@link TornadoDevice#isUnifiedMemorySupported()} to choose between this declaration and an
      * ordinary transfer, and {@link TornadoDevice#isOnUnifiedMemory(Object)} to check a single array.
      *
+     * <p>Use this declaration for eligible host-backed arrays. Device views of foreign buffers use
+     * {@link TornadoExecutionPlan#bindDeviceBuffer(uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray, long, long)}
+     * instead, including shared Metal buffers that the CPU can access. Device views are excluded
+     * from consumption by this API contract, not by the physical location of their buffers.
+     *
      * <p>Storage requirements, checked when the plan compiles:
      * <ul>
      * <li>each object is a {@code TornadoNativeArray} that every task only reads;</li>
@@ -1019,7 +1024,10 @@ public class TaskGraph implements TaskGraphInterface {
      * closure releases the device binding, never the storage.
      *
      * <p>Within a plan, transfers, device writes and overlapping ordinary buffers conflict with this
-     * declaration. Memory chunking, reductions, execution-graph capture, intra-plan concurrency and
+     * declaration. The overlap check only covers host storage: a device view exposes no host
+     * {@code MemorySegment} to compare, so the caller must ensure that the device buffer bound to a
+     * view does not overlap consumed storage, including when it uses shared Metal storage.
+     * Memory chunking, reductions, execution-graph capture, intra-plan concurrency and
      * per-task device selection are not supported. Every failure raises an error; TornadoVM never
      * falls back to copying or to sequential Java. A device or storage that cannot be consumed raises
      * {@code TornadoUnifiedMemoryNotSupported}, naming the requirement that is not met.

@@ -26,7 +26,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 /**
- * Device memory allocated outside TornadoVM, which is what a {@code cudaDeviceView} exists to bind to.
+ * Device memory allocated outside TornadoVM, which is what a {@code deviceView} exists to bind to.
  *
  * <p>
  * It calls the CUDA driver API directly and retains the device's <b>primary</b> context, which is
@@ -36,7 +36,7 @@ import java.lang.invoke.MethodHandle;
  * because both sides are in the same context.
  * </p>
  */
-final class CudaMemory {
+final class CudaMemory implements ForeignDeviceMemory {
 
     private static final Linker LINKER = Linker.nativeLinker();
 
@@ -68,9 +68,6 @@ final class CudaMemory {
         }
     }
 
-    private CudaMemory() {
-    }
-
     private static MethodHandle handle(SymbolLookup lookup, String name, FunctionDescriptor descriptor) {
         return LINKER.downcallHandle(lookup.find(name).orElseThrow(() -> new UnsatisfiedLinkError(name)), descriptor);
     }
@@ -100,7 +97,8 @@ final class CudaMemory {
         }
     }
 
-    static long allocate(long bytes) {
+    @Override
+    public long allocate(long bytes) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment out = arena.allocate(Long.BYTES, Long.BYTES);
             check((int) cuMemAlloc.invokeExact(out, bytes), "cuMemAlloc");
@@ -110,7 +108,8 @@ final class CudaMemory {
         }
     }
 
-    static void free(long devicePointer) {
+    @Override
+    public void free(long devicePointer) {
         try {
             check((int) cuMemFree.invokeExact(devicePointer), "cuMemFree");
         } catch (Throwable t) {
@@ -118,34 +117,37 @@ final class CudaMemory {
         }
     }
 
-    static void copyToDevice(long devicePointer, float[] values) {
+    @Override
+    public void copyToDevice(long devicePointer, long byteOffset, float[] values) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment host = arena.allocate((long) values.length * Float.BYTES, Float.BYTES);
             for (int i = 0; i < values.length; i++) {
                 host.setAtIndex(ValueLayout.JAVA_FLOAT, i, values[i]);
             }
-            check((int) cuMemcpyHtoD.invokeExact(devicePointer, host, (long) values.length * Float.BYTES), "cuMemcpyHtoD");
+            check((int) cuMemcpyHtoD.invokeExact(devicePointer + byteOffset, host, (long) values.length * Float.BYTES), "cuMemcpyHtoD");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static void copyToDevice(long devicePointer, int[] values) {
+    @Override
+    public void copyToDevice(long devicePointer, long byteOffset, int[] values) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment host = arena.allocate((long) values.length * Integer.BYTES, Integer.BYTES);
             for (int i = 0; i < values.length; i++) {
                 host.setAtIndex(ValueLayout.JAVA_INT, i, values[i]);
             }
-            check((int) cuMemcpyHtoD.invokeExact(devicePointer, host, (long) values.length * Integer.BYTES), "cuMemcpyHtoD");
+            check((int) cuMemcpyHtoD.invokeExact(devicePointer + byteOffset, host, (long) values.length * Integer.BYTES), "cuMemcpyHtoD");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static float[] copyFloatsToHost(long devicePointer, int count) {
+    @Override
+    public float[] copyFloatsToHost(long devicePointer, long byteOffset, int count) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment host = arena.allocate((long) count * Float.BYTES, Float.BYTES);
-            check((int) cuMemcpyDtoH.invokeExact(host, devicePointer, (long) count * Float.BYTES), "cuMemcpyDtoH");
+            check((int) cuMemcpyDtoH.invokeExact(host, devicePointer + byteOffset, (long) count * Float.BYTES), "cuMemcpyDtoH");
             float[] values = new float[count];
             for (int i = 0; i < count; i++) {
                 values[i] = host.getAtIndex(ValueLayout.JAVA_FLOAT, i);
@@ -160,7 +162,8 @@ final class CudaMemory {
      * Waits for everything in the context, including the stream TornadoVM launched on. The copies
      * above run on the legacy default stream, which a non-blocking stream does not order against.
      */
-    static void synchronizeContext() {
+    @Override
+    public void synchronize() {
         try {
             check((int) cuCtxSynchronize.invokeExact(), "cuCtxSynchronize");
         } catch (Throwable t) {
