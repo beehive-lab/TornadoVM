@@ -284,8 +284,11 @@ public final class CharArray extends TornadoNativeArray {
      *         The char value to initialize the {@link ByteArray} instance with.
      */
     public void init(char value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value, baseIndex);
+        if (value == '\u0000') {
+            segment.fill(baseIndex, numberOfElements, CHAR_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, value, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, CHAR_BYTES);
         }
     }
 
