@@ -28,6 +28,7 @@ import java.util.List;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.ffm.MetalAPI;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
@@ -137,7 +138,36 @@ public class Metal {
         if (parameters.length != accesses.length) {
             throw new TornadoRuntimeException("[ERROR] Accesses and objects array should match in size");
         }
+        if (!hasDeviceView(parameters)) {
+            launchAndReadBack(executionContextId, tornadoDevice, metalCode, taskMeta, accesses, parameters);
+            return;
+        }
 
+        // Reading back a device view does nothing, so nothing below waits for the kernel on its behalf.
+        // The interpreter finishes its executions the same way.
+        try {
+            launchAndReadBack(executionContextId, tornadoDevice, metalCode, taskMeta, accesses, parameters);
+        } catch (RuntimeException | Error failure) {
+            try {
+                tornadoDevice.finishDeviceViewWork(executionContextId);
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw failure;
+        }
+        tornadoDevice.finishDeviceViewWork(executionContextId);
+    }
+
+    private static boolean hasDeviceView(Object... parameters) {
+        for (Object parameter : parameters) {
+            if (parameter instanceof TornadoNativeArray array && array.isDeviceView()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void launchAndReadBack(Long executionContextId, MetalTornadoDevice tornadoDevice, MetalInstalledCode metalCode, TaskDataContext taskMeta, Access[] accesses, Object... parameters) {
         // Copy-in variables
         ArrayList<XPUDeviceBufferState> states = new ArrayList<>();
         for (int i = 0; i < accesses.length; i++) {
@@ -173,7 +203,7 @@ public class Metal {
 
         // Pass arguments to the call callWrapper
         for (int i = 0; i < numArgs; i++) {
-            callWrapper.addCallArgument(states.get(i).getXPUBuffer().toBuffer(), true);
+            callWrapper.addCallArgument(states.get(i).getXPUBuffer().kernelArgument(), true);
         }
 
         // Run the code

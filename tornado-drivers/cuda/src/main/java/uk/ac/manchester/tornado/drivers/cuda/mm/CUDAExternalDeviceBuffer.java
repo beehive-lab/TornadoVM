@@ -23,15 +23,16 @@ package uk.ac.manchester.tornado.drivers.cuda.mm;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
-import uk.ac.manchester.tornado.api.memory.CUDADeviceViewBinding;
+import uk.ac.manchester.tornado.api.memory.DeviceViewBinding;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
 
 /**
- * The device buffer of a {@code cudaDeviceView} array: a CUDA address somebody else allocated, which
+ * The device buffer of a {@code deviceView} array: a CUDA address somebody else allocated, which
  * TornadoVM borrows for the length of a kernel and gives back untouched.
  *
  * <p>
@@ -40,7 +41,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContext;
  * (there is no host segment to copy to or from), and not freed on release or on
  * {@code freeDeviceMemory()} -- freeing a cuDF or RMM allocation from under its owner would be a
  * use-after-free in that library. The address itself is read from the array's
- * {@link CUDADeviceViewBinding} on every use, so rebinding the view between executions -- a new batch,
+ * {@link DeviceViewBinding} on every use, so rebinding the view between executions -- a new batch,
  * a different pointer, a different row count -- takes effect without reallocating anything.
  * </p>
  *
@@ -54,7 +55,7 @@ public class CUDAExternalDeviceBuffer implements XPUBuffer {
 
     private final CUDADeviceContext deviceContext;
     private final TornadoNativeArray view;
-    private final CUDADeviceViewBinding binding;
+    private final DeviceViewBinding binding;
     private final Access access;
     private final int sizeOfType;
 
@@ -63,14 +64,14 @@ public class CUDAExternalDeviceBuffer implements XPUBuffer {
     public CUDAExternalDeviceBuffer(CUDADeviceContext deviceContext, TornadoNativeArray view, Access access) {
         this.deviceContext = deviceContext;
         this.view = view;
-        this.binding = view.cudaDeviceViewBinding();
+        this.binding = view.deviceViewBinding();
         this.access = access;
         this.sizeOfType = binding.elementSize();
     }
 
     @Override
     public long toBuffer() {
-        return binding.requireBoundPointer();
+        return binding.requireBoundBuffer() + binding.byteOffset();
     }
 
     @Override
@@ -139,12 +140,25 @@ public class CUDAExternalDeviceBuffer implements XPUBuffer {
      * </p>
      */
     public void validateForAccess(Access requestedAccess) {
-        long bound = binding.requireBoundPointer();
-        if (requestedAccess != Access.READ_ONLY && binding.isReadOnly()) {
-            throw new TornadoRuntimeException("The task writes to this device view, but it is bound read-only at 0x" + Long.toHexString(bound)
-                    + ". Bind it read-write, or give the task a separate output view.");
+        validateBinding(binding, deviceContext.getDeviceIndex(), requestedAccess);
+    }
+
+    /**
+     * Checks a binding against the device about to use it and what the task will do to it, and only
+     * then treats its handle as a device address.
+     */
+    public static void validateBinding(DeviceViewBinding binding, int deviceIndex, Access access) {
+        binding.validateForLaunch(TornadoVMBackendType.CUDA, deviceIndex, access);
+        // A device address is unsigned, so wrapping past the top of the address space is checked as such.
+        long base = binding.deviceBuffer();
+        long address = base + binding.byteOffset();
+        long end = address + binding.deviceByteLength();
+        if (Long.compareUnsigned(address, base) < 0 || Long.compareUnsigned(end, address) < 0) {
+            throw new TornadoRuntimeException("The device view's range at 0x" + Long.toHexString(base) + " wraps around the address space");
         }
-        binding.noteLengthFoldedIntoKernel();
+        if (Long.remainderUnsigned(address, binding.elementSize()) != 0) {
+            throw new TornadoRuntimeException("The device address 0x" + Long.toHexString(address) + " is not aligned to the " + binding.elementSize() + "-byte element size");
+        }
     }
 
     @Override
@@ -160,6 +174,12 @@ public class CUDAExternalDeviceBuffer implements XPUBuffer {
     @Override
     public long size() {
         return binding.deviceByteLength();
+    }
+
+    /** Borrowed: none of these bytes are the runtime's. */
+    @Override
+    public long getAllocatedSize() {
+        return 0;
     }
 
     @Override

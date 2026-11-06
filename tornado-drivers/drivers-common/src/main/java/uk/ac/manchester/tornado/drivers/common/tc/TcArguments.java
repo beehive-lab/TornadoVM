@@ -25,6 +25,7 @@ import java.util.Map;
 
 import uk.ac.manchester.tornado.api.KernelContext;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.common.FieldLayout;
 import uk.ac.manchester.tornado.tc.tornado.ObjectLayout;
@@ -54,16 +55,20 @@ final class TcArguments {
             var argument = arguments[i];
             boolean reduced = i < annotations.length && java.util.Arrays.stream(annotations[i]).anyMatch(Reduce.class::isInstance);
             if (reduced && argument instanceof TornadoNativeArray array) {
+                if (array.isDeviceView()) {
+                    // A reduction argument is compiled as headered, which would read past the start of foreign memory.
+                    throw new TornadoRuntimeException("A device view cannot be the @Reduce parameter of " + method.getName() + ": reduction needs a TornadoVM array");
+                }
                 // The runtime has already swapped in the per-work-group partial-results array.
                 facts.add(new ValueSpecialisation.Fact.Reduce(array.getSizeLong()));
             } else if (reduced && argument != null && argument.getClass().isArray() && argument.getClass().getComponentType().isPrimitive()) {
                 // The same for a Java array (float[], int[], ...).
                 facts.add(new ValueSpecialisation.Fact.Reduce(java.lang.reflect.Array.getLength(argument)));
-            } else if (argument instanceof TornadoNativeArray array && array.isCUDADeviceView()) {
+            } else if (argument instanceof TornadoNativeArray array && array.isDeviceView()) {
                 // A view of memory another library owns: no header, and its length is folded in only
                 // when the view asked for it -- otherwise rebinding it to a new row count would key a
                 // fresh compilation for every batch.
-                var binding = array.cudaDeviceViewBinding();
+                var binding = array.deviceViewBinding();
                 facts.add(new ValueSpecialisation.Fact.DeviceView(binding.isLengthVisibleToKernel() ? binding.logicalLength() : -1));
             } else if (argument instanceof TornadoNativeArray array) {
                 // In a batch each device buffer holds one chunk of batchThreads elements (with its

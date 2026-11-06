@@ -46,7 +46,8 @@ without real shared memory, use ordinary transfers.
 
 Checked by `isOnUnifiedMemory` and when the plan compiles:
 
-- The object is a `TornadoNativeArray`, and every task only reads it.
+- The object is a `TornadoNativeArray`, and every task only reads it. A device view has no host
+  storage to consume, so it is refused; bind its device buffer with `bindDeviceBuffer` instead.
 - Its memory is owned by `Arena.ofAuto()`. The device buffer keeps the segment reachable,
   so the memory cannot be freed while a device uses it. Closeable arenas and foreign or
   global segments are refused.
@@ -73,6 +74,9 @@ that overlap the consumed bytes. Memory chunking (`withBatch`), reduction rewrit
 execution-graph capture, intra-plan concurrency and per-task device selection are not
 supported; a graph must use one device. Errors never fall back to copying or to sequential
 Java.
+
+The overlap check covers host storage only. A device view has none to compare, so the caller
+must ensure that the device buffer bound to a view does not overlap consumed bytes.
 
 ## Accounting
 

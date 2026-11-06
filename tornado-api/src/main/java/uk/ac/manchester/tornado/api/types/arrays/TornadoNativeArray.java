@@ -22,6 +22,7 @@ import java.lang.management.ManagementFactory;
 import java.util.List;
 
 import uk.ac.manchester.tornado.api.memory.CUDADeviceViewBinding;
+import uk.ac.manchester.tornado.api.memory.DeviceViewBinding;
 
 import static java.lang.String.format;
 
@@ -151,20 +152,20 @@ public abstract sealed class TornadoNativeArray //
     public abstract int getElementSize();
 
     /**
-     * The device-only state of this array when it was created by a {@code cudaDeviceView} factory, and
+     * The device-only state of this array when it was created by a {@code deviceView} factory, and
      * {@code null} for an ordinary array. Set once, by the factory.
      */
-    private CUDADeviceViewBinding cudaDeviceView;
+    private DeviceViewBinding deviceView;
 
     /**
-     * Marks this instance as a device view. Called by the {@code cudaDeviceView} factories only; an
+     * Marks this instance as a device view. Called by the {@code deviceView} factories only; an
      * array that already allocated host storage must never become one.
      */
-    protected final void markAsCUDADeviceView(CUDADeviceViewBinding binding) {
-        if (this.cudaDeviceView != null) {
+    protected final void markAsDeviceView(DeviceViewBinding binding) {
+        if (this.deviceView != null) {
             throw new IllegalStateException("This array is already a device view");
         }
-        this.cudaDeviceView = binding;
+        this.deviceView = binding;
     }
 
     /**
@@ -173,29 +174,54 @@ public abstract sealed class TornadoNativeArray //
      * default for every array built with a constructor or a {@code fromX} factory is {@code false},
      * and nothing about those arrays changes.
      */
-    public final boolean isCUDADeviceView() {
-        return cudaDeviceView != null;
+    public final boolean isDeviceView() {
+        return deviceView != null;
     }
 
     /**
-     * The binding of this device view, for code that reads or changes the device address and the
+     * The binding of this device view, for code that reads or changes the device buffer and the
      * logical length.
      *
      * @throws IllegalStateException
      *         if this array is not a device view.
      */
-    public final CUDADeviceViewBinding cudaDeviceViewBinding() {
-        if (cudaDeviceView == null) {
+    public final DeviceViewBinding deviceViewBinding() {
+        if (deviceView == null) {
             throw new IllegalStateException("This array is not a device view: it was allocated on the host and has a header on the device");
         }
-        return cudaDeviceView;
+        return deviceView;
+    }
+
+    /**
+     * Whether this array is a device view created by a {@code cudaDeviceView} factory, the
+     * compatibility form of {@link #isDeviceView()} for code written against the CUDA-only API.
+     */
+    public final boolean isCUDADeviceView() {
+        return deviceView instanceof CUDADeviceViewBinding;
+    }
+
+    /**
+     * The binding of a view created by a {@code cudaDeviceView} factory, the compatibility form of
+     * {@link #deviceViewBinding()} for code written against the CUDA-only API.
+     *
+     * @throws IllegalStateException
+     *         if this array is not a device view, or if a {@code deviceView} factory created it.
+     */
+    public final CUDADeviceViewBinding cudaDeviceViewBinding() {
+        if (deviceView instanceof CUDADeviceViewBinding binding) {
+            return binding;
+        }
+        if (deviceView != null) {
+            throw new IllegalStateException("This device view was created by a deviceView factory: use deviceViewBinding()");
+        }
+        throw new IllegalStateException("This array is not a device view: it was allocated on the host and has a header on the device");
     }
 
     /** Fails when an operation that needs host storage is attempted on a device view. */
-    protected final void checkNotCUDADeviceView(String operation) {
-        if (cudaDeviceView != null) {
+    protected final void checkNotDeviceView(String operation) {
+        if (deviceView != null) {
             throw new UnsupportedOperationException(operation + " is not available on a device view: the data lives in memory that TornadoVM does not own and cannot read from the host. "
-                    + "Copy it out with the owning library instead. View: " + cudaDeviceView);
+                    + "Copy it out with the owning library instead. View: " + deviceView);
         }
     }
 }

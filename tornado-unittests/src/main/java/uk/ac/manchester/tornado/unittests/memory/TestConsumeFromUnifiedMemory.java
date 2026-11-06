@@ -416,6 +416,17 @@ public class TestConsumeFromUnifiedMemory extends TornadoTestBase {
         }
     }
 
+    /** A device view has no host storage to consume, on any device. */
+    @Test
+    public void testDeviceViewRejected() throws Exception {
+        FloatArray view = FloatArray.deviceView(SIZE);
+        assertFalse(isOnUnifiedMemory(view));
+        requireUnifiedMemory();
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph("view", view, new FloatArray(SIZE), new FloatArray(SIZE)).snapshot())) {
+            assertNotOnUnifiedMemory(plan::execute, "device view");
+        }
+    }
+
     @Test
     public void testMetalRejectsUnprovenPageExtent() throws Exception {
         requireMetalUnifiedMemory();

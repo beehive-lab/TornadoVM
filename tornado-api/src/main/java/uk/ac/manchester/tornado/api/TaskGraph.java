@@ -1019,7 +1019,9 @@ public class TaskGraph implements TaskGraphInterface {
      * closure releases the device binding, never the storage.
      *
      * <p>Within a plan, transfers, device writes and overlapping ordinary buffers conflict with this
-     * declaration. Memory chunking, reductions, execution-graph capture, intra-plan concurrency and
+     * declaration. The overlap check only covers host storage: a device view has none to compare, so
+     * the caller must ensure that the device buffer bound to a view does not overlap consumed storage.
+     * Memory chunking, reductions, execution-graph capture, intra-plan concurrency and
      * per-task device selection are not supported. Every failure raises an error; TornadoVM never
      * falls back to copying or to sequential Java. A device or storage that cannot be consumed raises
      * {@code TornadoUnifiedMemoryNotSupported}, naming the requirement that is not met.

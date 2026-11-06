@@ -136,6 +136,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     @Override
+    public void checkDeviceView(TornadoNativeArray view, Access access) {
+        CUDAExternalDeviceBuffer.validateBinding(view.deviceViewBinding(), getDeviceContext().getDeviceIndex(), access);
+    }
+
+    @Override
     public boolean isUnifiedMemorySupported() {
         // Not implemented yet. CUDA support needs hardware where the GPU shares memory with the
         // host (an integrated GPU or coherent CPU-GPU memory), not driver-managed page migration.
@@ -419,7 +424,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         } else if (!type.isPrimitive()) {
             // A device view stands for memory another library owns: borrow its address instead of
             // allocating, transferring or freeing anything (see CUDAExternalDeviceBuffer).
-            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isCUDADeviceView()) {
+            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isDeviceView()) {
                 return new CUDAExternalDeviceBuffer(deviceContext, nativeArray, access);
             }
             if (object instanceof AtomicInteger) {
