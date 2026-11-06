@@ -17,9 +17,9 @@ Via SDKMAN!:
    sdk install tornadovm                              # default: latest version, JDK 21, OpenCL backend
    sdk install tornadovm <version>-<jdk-version>-<backend>
    # e.g.:
-   sdk install tornadovm 8.0.0-jdk21-cuda
-   sdk install tornadovm 5.2.1-jdk22plus-metal
-   sdk install tornadovm 5.2.1-jdk22plus-opencl
+   sdk install tornadovm 8.1.0-jdk21-cuda
+   sdk install tornadovm 8.1.0-jdk22plus-metal
+   sdk install tornadovm 8.1.0-jdk22plus-opencl
 
 To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (``<backend>`` is ``opencl``, ``cuda``, ``metal``, or ``full`` for all backends). Run ``sdk list tornadovm`` to see all available combinations.
 
@@ -49,24 +49,24 @@ TornadoVM is also published on Maven Central, so you can add it directly to an e
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-runtime</artifactId>
-      <version>8.0.0-jdk21</version>
+      <version>8.1.0-jdk21</version>
    </dependency>
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-drivers-opencl</artifactId>
-      <version>8.0.0-jdk21</version>
+      <version>8.1.0-jdk21</version>
    </dependency>
 
    <!-- JDK 22 and newer, including 27 -->
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-runtime</artifactId>
-      <version>8.0.0-jdk22plus</version>
+      <version>8.1.0-jdk22plus</version>
    </dependency>
    <dependency>
       <groupId>io.github.beehive-lab</groupId>
       <artifactId>tornado-drivers-opencl</artifactId>
-      <version>8.0.0-jdk22plus</version>
+      <version>8.1.0-jdk22plus</version>
    </dependency>
 
 Every backend binds its native library through ``java.lang.foreign``, so these jars are a complete runtime on the plain classpath. Run with:
@@ -82,8 +82,8 @@ With `JBang <https://www.jbang.dev>`_:
 .. code-block:: java
 
    //JAVA 25
-   //DEPS io.github.beehive-lab:tornado-runtime:8.0.0-jdk22plus
-   //DEPS io.github.beehive-lab:tornado-drivers-opencl:8.0.0-jdk22plus
+   //DEPS io.github.beehive-lab:tornado-runtime:8.1.0-jdk22plus
+   //DEPS io.github.beehive-lab:tornado-drivers-opencl:8.1.0-jdk22plus
    //RUNTIME_OPTIONS --enable-native-access=ALL-UNNAMED
 
 For ``-jdk21`` artifacts use ``//JAVA 21`` and add ``//PREVIEW``.

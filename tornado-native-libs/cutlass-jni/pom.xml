@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.beehive-lab</groupId>
         <artifactId>tornado-drivers</artifactId>
-        <version>${revision}</version>
+        <version>8.1.0</version>
         <relativePath>../../tornado-drivers/pom.xml</relativePath>
     </parent>
     <artifactId>tornado-drivers-cutlass-jni</artifactId>
