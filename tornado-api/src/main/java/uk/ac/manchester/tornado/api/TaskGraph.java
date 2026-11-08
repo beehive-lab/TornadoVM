@@ -999,6 +999,30 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
+     * Uses objects directly from the device buffers of a task-graph of another execution plan, which
+     * persisted them ({@link #persistOnDevice(Object...)}) and has executed at least once: nothing is
+     * copied through the host. The objects are the same Java objects the producer uses. Both plans
+     * run on the same device.
+     *
+     * <p>
+     * Every execution of this graph reads what the producer's latest execution left in those
+     * buffers. The producer owns them: closing this plan leaves them allocated, and the producer's
+     * plan must stay open while this one runs.
+     * </p>
+     *
+     * @param producer
+     *     The task-graph, of another plan, that persisted the objects.
+     * @param objects
+     *     List of Java objects (usually arrays) to be consumed from the producer's device buffers.
+     * @return {@link TaskGraph}
+     */
+    @Override
+    public TaskGraph consumeFromDevice(ImmutableTaskGraph producer, Object... objects) {
+        taskGraphImpl.consumeFromDevice(producer.getTaskGraphImplementation(), objects);
+        return this;
+    }
+
+    /**
      * Consumes existing native-array storage in place on a device that shares memory with the host,
      * without allocating a device buffer or copying the contents. Unlike
      * {@link #consumeFromDevice(Object...)}, no producing task graph is required. Use

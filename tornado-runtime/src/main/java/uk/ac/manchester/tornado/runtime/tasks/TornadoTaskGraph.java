@@ -171,6 +171,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     /** The other task-graphs of the same execution plan, used to resolve named producers. */
     private List<TornadoTaskGraphInterface> planTaskGraphs;
+    /** Producers in other execution plans, from consumeFromDevice(producer, ...). */
+    private List<TornadoTaskGraphInterface> externalProducers = new ArrayList<>();
     private Set<Object> argumentsLookUp;
     /** Set by consumeFromUnifiedMemory; keeps its checks off every graph that never declared it. */
     private boolean unifiedMemoryDeclared;
@@ -339,6 +341,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.taskToPersistentObjectMap = Collections.unmodifiableMap(this.taskToPersistentObjectMap);
 
         newTaskGraph.lastExecutedTaskGraph = this.lastExecutedTaskGraph;
+        newTaskGraph.externalProducers = List.copyOf(this.externalProducers);
 
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         newTaskGraph.hlBuffer = this.hlBuffer;
@@ -793,8 +796,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      * @return whether at least one object was resolved this way.
      */
     private boolean aliasNamedProducers() {
-        if (planTaskGraphs == null) {
+        if (planTaskGraphs == null && externalProducers.isEmpty()) {
             return false;
+        }
+        List<TornadoTaskGraphInterface> candidates = new ArrayList<>(externalProducers);
+        if (planTaskGraphs != null) {
+            candidates.addAll(planTaskGraphs);
         }
         boolean aliased = false;
         for (Map.Entry<String, List<Object>> entry : executionContext.getPersistedTaskToObjectsMap().entrySet()) {
@@ -803,7 +810,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 continue;
             }
             TornadoTaskGraph producer = null;
-            for (TornadoTaskGraphInterface candidate : planTaskGraphs) {
+            for (TornadoTaskGraphInterface candidate : candidates) {
                 if (candidate instanceof TornadoTaskGraph taskGraph && producerName.equals(taskGraph.taskGraphName)) {
                     producer = taskGraph;
                     break;
@@ -1417,6 +1424,17 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             }
 
             argumentsLookUp.add(parameter);
+        }
+    }
+
+    @Override
+    public void consumeFromDevice(TornadoTaskGraphInterface producer, Object... objects) {
+        if (producer == null) {
+            throw new TornadoRuntimeException("[ERROR] null producer task-graph passed into consumeFromDevice() in task-graph " + executionContext.getId());
+        }
+        consumeFromDevice(producer.getTaskGraphName(), objects);
+        if (!externalProducers.contains(producer)) {
+            externalProducers.add(producer);
         }
     }
 
