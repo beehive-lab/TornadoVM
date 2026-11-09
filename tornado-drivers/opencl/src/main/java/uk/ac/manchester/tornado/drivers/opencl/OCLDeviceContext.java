@@ -35,12 +35,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.common.power.PowerMetric;
 import uk.ac.manchester.tornado.drivers.common.utils.EventDescriptor;
 import uk.ac.manchester.tornado.drivers.opencl.enums.OCLDeviceType;
+import uk.ac.manchester.tornado.drivers.opencl.exceptions.OCLException;
 import uk.ac.manchester.tornado.drivers.opencl.mm.OCLMemoryManager;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLEmptyPowerMetricHandler;
 import uk.ac.manchester.tornado.drivers.opencl.power.OCLNvidiaPowerMetricHandler;
@@ -160,6 +162,60 @@ public class OCLDeviceContext implements OCLDeviceContextInterface {
         long oclEvent = commandQueue.enqueueBarrier();
         OCLEventPool eventPool = getOCLEventPool(executionPlanId);
         return (commandQueue.getOpenclVersion() < 120) ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
+    }
+
+    /**
+     * Records a fence after the work the calling thread has enqueued for the plan: a marker event
+     * the caller owns, outside the plan's event pool, so another queue of this context can wait on
+     * it. Returns 0 when the queue has no markers (OpenCL 1.1); the work has then been waited for.
+     */
+    public long recordFence(long executionPlanId) {
+        OCLCommandQueue commandQueue = getCommandQueue(executionPlanId);
+        if (commandQueue.getOpenclVersion() < 120) {
+            commandQueue.finish();
+            return 0;
+        }
+        try {
+            return OCLCommandQueue.clEnqueueMarkerWithWaitList(commandQueue.getCommandQueuePtr(), null);
+        } catch (OCLException e) {
+            throw new TornadoBailoutRuntimeException(e.getMessage());
+        }
+    }
+
+    /** Makes the plan's queue wait, on the device, for a fence of any plan of this context. */
+    public void waitFence(long executionPlanId, long fence) {
+        if (fence == 0) {
+            return;
+        }
+        try {
+            OCLCommandQueue.clEnqueueWaitForEvents(getCommandQueue(executionPlanId).getCommandQueuePtr(), new long[] { 1, fence });
+        } catch (OCLException e) {
+            throw new TornadoBailoutRuntimeException(e.getMessage());
+        }
+    }
+
+    /** Blocks the calling thread until a fence recorded by {@link #recordFence} has completed. */
+    public static void awaitFence(long fence) {
+        if (fence == 0) {
+            return;
+        }
+        try {
+            OCLEvent.clWaitForEvents(new long[] { fence });
+        } catch (OCLException e) {
+            throw new TornadoBailoutRuntimeException(e.getMessage());
+        }
+    }
+
+    /** Releases a fence recorded by {@link #recordFence}; enqueued waits keep their own reference. */
+    public static void releaseFence(long fence) {
+        if (fence == 0) {
+            return;
+        }
+        try {
+            OCLEvent.clReleaseEvent(fence);
+        } catch (OCLException e) {
+            throw new TornadoBailoutRuntimeException(e.getMessage());
+        }
     }
 
     @Override

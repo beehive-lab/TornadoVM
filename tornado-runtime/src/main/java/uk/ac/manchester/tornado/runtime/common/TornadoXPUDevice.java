@@ -324,4 +324,57 @@ public interface TornadoXPUDevice extends TornadoDevice {
         // no-op by default
     }
 
+    /**
+     * Marks the end of the work the calling thread has enqueued so far for the execution plan, and
+     * returns a fence that another execution plan can wait on with {@link #waitFence}. Used to order
+     * the work of two plans that share device buffers ({@code consumeFromDevice(producer, ...)}).
+     *
+     * <p>
+     * The default waits on the host for the plan's work and returns {@code null}, which every
+     * other fence method treats as already complete.
+     * </p>
+     *
+     * @param executionPlanId
+     *     the execution plan whose work the fence marks
+     * @return an opaque fence, or {@code null} when the work has already completed
+     */
+    default Object recordFence(long executionPlanId) {
+        sync(executionPlanId);
+        return null;
+    }
+
+    /**
+     * Makes the work the calling thread enqueues next for the execution plan start only after the
+     * fence has completed. Backends wait on the device where they can, so the host does not block.
+     *
+     * @param executionPlanId
+     *     the execution plan that has to wait
+     * @param fence
+     *     a fence returned by {@link #recordFence}, possibly for another execution plan
+     */
+    default void waitFence(long executionPlanId, Object fence) {
+        // the default fence is complete when it is recorded
+    }
+
+    /**
+     * Blocks the calling thread until the fence has completed.
+     *
+     * @param fence
+     *     a fence returned by {@link #recordFence}
+     */
+    default void awaitFence(Object fence) {
+        // the default fence is complete when it is recorded
+    }
+
+    /**
+     * Releases the backend resources of a fence that nothing will wait on any more. Waits already
+     * enqueued with {@link #waitFence} are not affected.
+     *
+     * @param fence
+     *     a fence returned by {@link #recordFence}
+     */
+    default void releaseFence(Object fence) {
+        // the default fence holds no resources
+    }
+
 }
