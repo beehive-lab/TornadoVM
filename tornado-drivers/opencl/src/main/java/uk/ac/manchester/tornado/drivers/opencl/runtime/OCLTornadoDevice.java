@@ -632,6 +632,35 @@ public class OCLTornadoDevice implements TornadoXPUDevice, TcTargetDevice, Torna
     }
 
     @Override
+    public Object recordFence(long executionPlanId) {
+        if (getDeviceContext() instanceof OCLDeviceContext context) {
+            return context.recordFence(executionPlanId);
+        }
+        return TornadoXPUDevice.super.recordFence(executionPlanId);
+    }
+
+    @Override
+    public void waitFence(long executionPlanId, Object fence) {
+        if (fence instanceof Long handle && getDeviceContext() instanceof OCLDeviceContext context) {
+            context.waitFence(executionPlanId, handle);
+        }
+    }
+
+    @Override
+    public void awaitFence(Object fence) {
+        if (fence instanceof Long handle) {
+            OCLDeviceContext.awaitFence(handle);
+        }
+    }
+
+    @Override
+    public void releaseFence(Object fence) {
+        if (fence instanceof Long handle) {
+            OCLDeviceContext.releaseFence(handle);
+        }
+    }
+
+    @Override
     public int enqueueMarker(long executionPlanId) {
         return getDeviceContext().enqueueMarker(executionPlanId);
     }

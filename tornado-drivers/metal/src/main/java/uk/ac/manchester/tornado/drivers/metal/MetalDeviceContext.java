@@ -161,6 +161,21 @@ public class MetalDeviceContext implements MetalDeviceContextInterface {
         return (commandQueue.getOpenclVersion() < 120) ? -1 : eventPool.registerEvent(metalEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
+    /** A point in a command queue's work: reached once its shared event has the value. */
+    public record Fence(long queue, long value) {
+    }
+
+    /** Records a fence after the work the calling thread has encoded for the plan, committing it. */
+    public Fence recordFence(long executionPlanId) {
+        long queue = getCommandQueue(executionPlanId).getCommandQueuePtr();
+        return new Fence(queue, MetalObjects.markFence(queue));
+    }
+
+    /** Blocks the calling thread until the work before the fence has finished. */
+    public static void awaitFence(Fence fence) {
+        MetalObjects.awaitFence(fence.queue(), fence.value());
+    }
+
     @Override
     public int enqueueMarker(long executionPlanId) {
         MetalCommandQueue commandQueue = getCommandQueue(executionPlanId);

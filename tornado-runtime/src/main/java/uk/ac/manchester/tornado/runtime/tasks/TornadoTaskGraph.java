@@ -52,6 +52,7 @@ import java.util.regex.Pattern;
 
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.KernelContext;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.tile.TileContext;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoTaskGraphInterface;
@@ -171,6 +172,19 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     /** The other task-graphs of the same execution plan, used to resolve named producers. */
     private List<TornadoTaskGraphInterface> planTaskGraphs;
+    /** Producers in other execution plans, from consumeFromDevice(producer, ...). */
+    private List<TornadoTaskGraphInterface> externalProducers = new ArrayList<>();
+    /**
+     * Objects whose device buffers this graph shares with a graph of another execution plan: the
+     * ones it consumes from an external producer, and the ones an external consumer takes from it.
+     * Their device work is ordered through {@link SharedBufferFences}.
+     */
+    private Set<Object> crossPlanObjects = Collections.newSetFromMap(Collections.synchronizedMap(new IdentityHashMap<>()));
+    /**
+     * Held while the graph runs or frees its buffers, and by a graph of another plan while it
+     * binds this graph's buffers, so it never sees a buffer half allocated or already released.
+     */
+    private final Object executionLock = new Object();
     private Set<Object> argumentsLookUp;
     /** Set by consumeFromUnifiedMemory; keeps its checks off every graph that never declared it. */
     private boolean unifiedMemoryDeclared;
@@ -339,6 +353,8 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         newTaskGraph.taskToPersistentObjectMap = Collections.unmodifiableMap(this.taskToPersistentObjectMap);
 
         newTaskGraph.lastExecutedTaskGraph = this.lastExecutedTaskGraph;
+        newTaskGraph.externalProducers = List.copyOf(this.externalProducers);
+        newTaskGraph.crossPlanObjects.addAll(this.crossPlanObjects);
 
         newTaskGraph.streamOutObjects = Collections.unmodifiableList(this.streamOutObjects);
         newTaskGraph.hlBuffer = this.hlBuffer;
@@ -793,8 +809,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      * @return whether at least one object was resolved this way.
      */
     private boolean aliasNamedProducers() {
-        if (planTaskGraphs == null) {
+        if (planTaskGraphs == null && externalProducers.isEmpty()) {
             return false;
+        }
+        List<TornadoTaskGraphInterface> candidates = new ArrayList<>(externalProducers);
+        if (planTaskGraphs != null) {
+            candidates.addAll(planTaskGraphs);
         }
         boolean aliased = false;
         for (Map.Entry<String, List<Object>> entry : executionContext.getPersistedTaskToObjectsMap().entrySet()) {
@@ -803,7 +823,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                 continue;
             }
             TornadoTaskGraph producer = null;
-            for (TornadoTaskGraphInterface candidate : planTaskGraphs) {
+            for (TornadoTaskGraphInterface candidate : candidates) {
                 if (candidate instanceof TornadoTaskGraph taskGraph && producerName.equals(taskGraph.taskGraphName)) {
                     producer = taskGraph;
                     break;
@@ -812,11 +832,32 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             if (producer == null || producer == this) {
                 continue;
             }
+            if (externalProducers.contains(producer)) {
+                aliased |= importFromExternalProducer(producer, entry.getValue());
+                continue;
+            }
             for (Object objectToSync : entry.getValue()) {
                 aliased |= importDeviceBuffer(producer, objectToSync);
             }
         }
         return aliased;
+    }
+
+    /**
+     * Binds the buffers of a producer from another execution plan. The producer's lock keeps its
+     * thread from allocating or releasing those buffers meanwhile. Without a buffer to bind, the
+     * graph would silently run on a buffer of its own, so that is an error.
+     */
+    private boolean importFromExternalProducer(TornadoTaskGraph producer, List<Object> objects) {
+        synchronized (producer.executionLock) {
+            for (Object object : objects) {
+                if (!importDeviceBuffer(producer, object)) {
+                    throw new TornadoRuntimeException("[ERROR] Task-graph " + taskGraphName + " consumes " + object + " from task-graph " + producer.taskGraphName
+                            + " of another execution plan, which has no device buffer for it: the producer has to persist it, run at least once before, and stay open.");
+                }
+            }
+        }
+        return !objects.isEmpty();
     }
 
     /**
@@ -1421,6 +1462,52 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
     }
 
     @Override
+    public void consumeFromDevice(TornadoTaskGraphInterface producer, Object... objects) {
+        if (producer == null) {
+            throw new TornadoRuntimeException("[ERROR] null producer task-graph passed into consumeFromDevice() in task-graph " + executionContext.getId());
+        }
+        consumeFromDevice(producer.getTaskGraphName(), objects);
+        if (!externalProducers.contains(producer)) {
+            externalProducers.add(producer);
+        }
+        // Both sides order their device work on these buffers from now on. The producer learns it
+        // here, before its next run, so that run already leaves a fence for this graph to wait on.
+        Collections.addAll(crossPlanObjects, objects);
+        if (producer instanceof TornadoTaskGraph producerGraph) {
+            Collections.addAll(producerGraph.crossPlanObjects, objects);
+        }
+    }
+
+    /**
+     * The device buffers this graph shares with graphs of other execution plans, as currently bound.
+     */
+    private List<XPUBuffer> crossPlanBuffers(TornadoXPUDevice device) {
+        if (crossPlanObjects.isEmpty()) {
+            return List.of();
+        }
+        Object[] objects;
+        synchronized (crossPlanObjects) {
+            objects = crossPlanObjects.toArray();
+        }
+        List<XPUBuffer> buffers = new ArrayList<>(objects.length);
+        for (Object object : objects) {
+            Access access = getObjectAccess(object);
+            if (access == null) {
+                continue;
+            }
+            LocalObjectState state = executionContext.getLocalStateObject(object, access);
+            if (state == null) {
+                continue;
+            }
+            XPUBuffer buffer = state.getDataObjectState().getDeviceBufferState(device).getXPUBuffer();
+            if (buffer != null) {
+                buffers.add(buffer);
+            }
+        }
+        return buffers;
+    }
+
+    @Override
     public void consumeFromDevice(Object... objects) {
         for (Object parameter : objects) {
             checkNotUnifiedMemory(parameter);
@@ -1640,6 +1727,20 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             return;
         }
 
+        if (!crossPlanObjects.isEmpty()) {
+            synchronized (executionLock) {
+                // Another plan may still read or write these buffers on the device: wait for its
+                // last use before releasing anything. A later run of that plan finds no buffer to
+                // bind and reports it.
+                SharedBufferFences.retire(crossPlanBuffers(meta().getXPUDevice()));
+                freeResources();
+            }
+            return;
+        }
+        freeResources();
+    }
+
+    private void freeResources() {
         vm.destroyExecutionGraphs();
         LibraryRegistry.destroyContexts(executionPlanId);
         freeIOObjects();
@@ -2047,6 +2148,23 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
         updatePersistedObjectState();
 
+        if (crossPlanObjects.isEmpty()) {
+            return executeBoundGraph();
+        }
+        // Buffers shared with another execution plan: wait for that plan's last use of them, run,
+        // then leave a fence that plan's next use waits for. The device does not order two queues.
+        synchronized (executionLock) {
+            TornadoXPUDevice device = meta().getXPUDevice();
+            SharedBufferFences.acquire(crossPlanBuffers(device), device, executionPlanId, executionContext.isIntraPlanConcurrencyEnabled());
+            TornadoTaskGraphInterface result = executeBoundGraph();
+            // collected again: the first run allocates the buffers it shares
+            SharedBufferFences.publish(crossPlanBuffers(device), device, executionPlanId);
+            return result;
+        }
+    }
+
+    /** Runs the graph once its device buffers are bound. */
+    private TornadoTaskGraphInterface executeBoundGraph() {
         TornadoTaskGraphInterface reduceTaskGraph = null;
         if (TornadoOptions.EXPERIMENTAL_REDUCE && !(getId().startsWith(GENERATED_TASK_GRAPH_PREFIX))) {
             reduceTaskGraph = analyzeSkeletonAndRun();

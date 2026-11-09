@@ -654,6 +654,35 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     }
 
     @Override
+    public Object recordFence(long executionPlanId) {
+        if (getDeviceContext() instanceof CUDADeviceContext context) {
+            return context.recordFence(executionPlanId);
+        }
+        return TornadoXPUDevice.super.recordFence(executionPlanId);
+    }
+
+    @Override
+    public void waitFence(long executionPlanId, Object fence) {
+        if (fence instanceof Long handle && getDeviceContext() instanceof CUDADeviceContext context) {
+            context.waitFence(executionPlanId, handle);
+        }
+    }
+
+    @Override
+    public void awaitFence(Object fence) {
+        if (fence instanceof Long handle) {
+            CUDADeviceContext.awaitFence(handle);
+        }
+    }
+
+    @Override
+    public void releaseFence(Object fence) {
+        if (fence instanceof Long handle) {
+            CUDADeviceContext.releaseFence(handle);
+        }
+    }
+
+    @Override
     public int enqueueMarker(long executionPlanId) {
         return getDeviceContext().enqueueMarker(executionPlanId);
     }
