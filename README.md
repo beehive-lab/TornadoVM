@@ -210,7 +210,7 @@ TornadoVM is used to accelerate machine learning and deep learning, computer vis
 ### Prerequisites
 
 - min **JDK 21** — `JAVA_HOME` must point to it
-- GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, or macOS for Metal)
+- GCC/G++ ≥ 13, plus the driver for your target (OpenCL runtime, CUDA Toolkit, ROCm for HIP, or macOS for Metal)
 - For the NVIDIA library tasks (cuBLAS / cuFFT / cuDNN): the **CUDA Toolkit** with the corresponding libraries; for cuDF, RAPIDS libcudf (see `tornado-native-libs/tornado-cudf/README.md`); on systems with multiple toolkits, `/usr/local/cuda` (or `$CUDA_PATH`) is preferred
 
 ### Install via SDKMAN!
@@ -299,7 +299,7 @@ No. TornadoVM is a plug-in to your existing OpenJDK or GraalVM installation. It 
 <details>
 <summary><b>Which hardware is supported?</b></summary>
 
-Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; and integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali). Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend.
+Multi-core CPUs; dedicated GPUs from NVIDIA, AMD, and Intel; and integrated GPUs (Apple Silicon M1–M4, Intel HD Graphics, ARM Mali). Backends can be installed individually or together, and tasks can migrate between devices at runtime. NVIDIA GPUs can be driven either through the **CUDA** backend (with the library and Tensor Core features above) or through the OpenCL backend. AMD GPUs can be driven through the **HIP** backend (HIP C++ compiled by hipRTC; build from source with `make BACKEND=hip`) or through the OpenCL backend.
 </details>
 
 <details>
