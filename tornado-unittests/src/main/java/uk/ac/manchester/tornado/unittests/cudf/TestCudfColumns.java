@@ -50,6 +50,7 @@ import uk.ac.manchester.tornado.cudf.enums.ParquetColumnType;
 import uk.ac.manchester.tornado.cudf.provider.CudfLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Typed, nullable Parquet reads and set membership: the two cuDF primitives a lakehouse scan needs
@@ -90,13 +91,16 @@ public class TestCudfColumns extends TornadoTestBase {
     @BeforeEach
     public void cudfMustBeAvailable() throws IOException {
         if (!CudfLibraryProvider.isAvailable() || !Cudf.isColumnsAvailable() || !Cudf.isWriterAvailable() || !Cudf.isSortKeysAvailable()) {
-            throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) with readParquetColumns is not built on this host");
+            throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so, or libtornado-hipdf.so for HIP) with readParquetColumns is not built on this host");
         }
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuDF library tasks require the CUDA backend (default device is " + backendType + ")";
+        // the hipDF build of the shim serves HIP devices, the RAPIDS one CUDA devices
+        TornadoVMBackendType shimBackend = CudfLibraryProvider.isHipdf() ? TornadoVMBackendType.HIP : TornadoVMBackendType.CUDA;
+        if (backendType != shimBackend) {
+            String message = "cuDF library tasks require the " + shimBackend + " backend for this build of the shim (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
+                case HIP -> throw new TornadoVMHIPNotSupported(message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }

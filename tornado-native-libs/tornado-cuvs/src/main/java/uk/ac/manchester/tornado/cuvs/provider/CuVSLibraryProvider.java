@@ -32,7 +32,7 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider;
 import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 
 /**
- * Library-task provider for NVIDIA cuVS.
+ * Library-task provider for NVIDIA cuVS, and on AMD GPUs for hipVS, its HIP port with the same C API.
  *
  * <p>One {@code cuvsResources_t} per execution plan, bound to the plan's CUDA stream with {@code cuvsStreamSet}, so
  * cuVS calls are ordered with the Java kernels and transfers of the same task graph. TornadoVM device buffers are
@@ -90,8 +90,14 @@ public final class CuVSLibraryProvider implements TornadoLibraryProvider {
 
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
-        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport;
+        // CUDA devices, or HIP devices with hipVS: the Metal backend also implements TornadoNativeStreamSupport
+        TornadoVMBackendType backend = CuVSNativeLib.isHipvs() ? TornadoVMBackendType.HIP : TornadoVMBackendType.CUDA;
+        return device.getTornadoVMBackend() == backend && device instanceof TornadoNativeStreamSupport;
+    }
+
+    /** Whether the library is hipVS, whose tasks run on HIP devices rather than CUDA ones. */
+    public static boolean isHipvs() {
+        return CuVSNativeLib.isHipvs();
     }
 
     @Override

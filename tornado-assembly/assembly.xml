@@ -190,6 +190,7 @@
                 <include>io.github.beehive-lab:tornado-drivers-cusparse-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-cutlass-jni:jar:libs</include>
                 <include>io.github.beehive-lab:tornado-drivers-ck-hip:jar:libs</include>
+                <include>io.github.beehive-lab:tornado-drivers-cudf-hip:jar:libs</include>
             </includes>
         </dependencySet>
     </dependencySets>

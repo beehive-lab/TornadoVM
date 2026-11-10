@@ -56,9 +56,10 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
-            <!-- Native kernels built from Composable Kernel with CMake; they need ROCm and ship only in the SDK. -->
+            <!-- Native libraries built with CMake against ROCm (Composable Kernel kernels, the hipDF build of the cuDF shim); they ship only in the SDK. -->
             <modules>
                 <module>ck-hip</module>
+                <module>cudf-hip</module>
             </modules>
         </profile>
     </profiles>

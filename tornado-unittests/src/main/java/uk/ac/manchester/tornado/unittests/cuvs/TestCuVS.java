@@ -46,6 +46,7 @@ import uk.ac.manchester.tornado.cuvs.provider.CuVSLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * <p>
@@ -61,16 +62,19 @@ public class TestCuVS extends TornadoTestBase {
     private static final double OVERLAP_BATCHED = 0.8;
 
     /**
-     * cuVS library tasks require the CUDA backend and the cuVS C library (libcuvs_c). Unavailable configurations
+     * cuVS library tasks require the CUDA backend and the cuVS C library (libcuvs_c), or the HIP backend and hipVS. Unavailable configurations
      * throw the typed *NotSupported exceptions that the TornadoTestRunner counts as [UNSUPPORTED].
      */
     @BeforeEach
     public void cuVSMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuVS library tasks require the CUDA backend (default device is " + backendType + ")";
+        // hipVS serves HIP devices, cuVS CUDA devices
+        TornadoVMBackendType libraryBackend = CuVSLibraryProvider.isHipvs() ? TornadoVMBackendType.HIP : TornadoVMBackendType.CUDA;
+        if (backendType != libraryBackend) {
+            String message = "cuVS library tasks require the " + libraryBackend + " backend for this library (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
+                case HIP -> throw new TornadoVMHIPNotSupported(message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }
