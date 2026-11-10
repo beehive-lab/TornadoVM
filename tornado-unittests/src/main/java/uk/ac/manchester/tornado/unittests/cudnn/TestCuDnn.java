@@ -38,7 +38,9 @@ import uk.ac.manchester.tornado.cudnn.CuDnn;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cudnn.provider.CuDnnLibraryProvider;
+import uk.ac.manchester.tornado.cudnn.provider.MIOpenLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Unit tests for cuDNN library tasks (FP32, NCHW). Skipped ([UNSUPPORTED])
@@ -59,8 +61,14 @@ public class TestCuDnn extends TornadoTestBase {
     @BeforeEach
     public void cuDnnMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!MIOpenLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("MIOpen is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuDNN library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "cuDNN library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

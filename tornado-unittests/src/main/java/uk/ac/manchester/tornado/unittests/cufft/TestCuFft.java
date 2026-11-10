@@ -37,7 +37,9 @@ import uk.ac.manchester.tornado.cufft.CuFft;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cufft.provider.CuFftLibraryProvider;
+import uk.ac.manchester.tornado.cufft.provider.HipFftLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Unit tests for cuFFT library tasks. Skipped ([UNSUPPORTED]) unless the
@@ -58,8 +60,14 @@ public class TestCuFft extends TornadoTestBase {
     @BeforeEach
     public void cuFftMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!HipFftLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("hipFFT is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuFFT library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "cuFFT library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

@@ -102,8 +102,9 @@ public final class LibraryRegistry {
         while (iterator.hasNext()) {
             Map.Entry<ContextKey, LibraryContext> entry = iterator.next();
             if (entry.getKey().executionPlanId() == executionPlanId) {
+                // The provider that created the context: one library may have a provider per backend.
                 for (TornadoLibraryProvider provider : getProviders()) {
-                    if (provider.libraryName().equals(entry.getKey().libraryName())) {
+                    if (provider.libraryName().equals(entry.getKey().libraryName()) && provider.canHandle(entry.getKey().device())) {
                         makeCurrent(entry.getKey().device());
                         provider.destroyContext(entry.getValue());
                         break;

@@ -36,9 +36,11 @@ import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.curand.CuRand;
 import uk.ac.manchester.tornado.curand.provider.CuRandLibraryProvider;
+import uk.ac.manchester.tornado.curand.provider.HipRandLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Random number generation on the device through cuRAND.
@@ -56,8 +58,14 @@ public class TestCuRand extends TornadoTestBase {
     @BeforeEach
     public void curandMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!HipRandLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("hipRAND is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuRAND library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "cuRAND library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

@@ -39,7 +39,9 @@ import uk.ac.manchester.tornado.cusparse.Cusparse;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cusparse.provider.CusparseLibraryProvider;
+import uk.ac.manchester.tornado.cusparse.provider.HipsparseLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Exhaustive tests for the NVIDIA cuSPARSE library-task provider
@@ -56,8 +58,14 @@ public class TestCusparse extends TornadoTestBase {
     @BeforeEach
     public void cusparseMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!HipsparseLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("hipSPARSE is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuSPARSE library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "cuSPARSE library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

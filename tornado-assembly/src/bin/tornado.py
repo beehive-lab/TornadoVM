@@ -1278,7 +1278,8 @@ class TornadoVMRunnerTool():
             tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CURAND_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__ + "," + __CUDF_MODULE__ + "," + __CUVS_MODULE__ + "," + __NCCL_MODULE__
         if ("hip-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + hip + " "
-            tornadoAddModules = tornadoAddModules + "," + __HIP_MODULE__
+            hipModules = [__HIP_MODULE__, __CUBLAS_MODULE__, __CUFFT_MODULE__, __CURAND_MODULE__, __CUSPARSE_MODULE__, __NCCL_MODULE__, __CUDNN_MODULE__]
+            tornadoAddModules = tornadoAddModules + "," + ",".join(m for m in hipModules if m not in tornadoAddModules.split(","))
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
