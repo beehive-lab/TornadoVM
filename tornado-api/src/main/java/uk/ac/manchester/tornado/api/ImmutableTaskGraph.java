@@ -170,6 +170,10 @@ public class ImmutableTaskGraph {
         taskGraph.transferDataToDevice(executionPackage, objects);
     }
 
+    void uploadWithNextExecution(ExecutorFrame executionPackage, Object... objects) {
+        taskGraph.uploadWithNextExecution(executionPackage, objects);
+    }
+
     void dumpProfiles() {
         taskGraph.dumpProfiles();
     }

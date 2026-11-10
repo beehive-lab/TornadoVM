@@ -63,6 +63,12 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
      */
     void transferDataToDevice(ExecutorFrame executionPackage, Object... objects);
 
+    /**
+     * Marks the given objects as changed on the host: the next execution of this task-graph uploads
+     * them as part of that execution. Uploads them now where that is not possible.
+     */
+    void uploadWithNextExecution(ExecutorFrame executionPackage, Object... objects);
+
     void withBatch(String batchSize);
 
     void withCUDAGraph();

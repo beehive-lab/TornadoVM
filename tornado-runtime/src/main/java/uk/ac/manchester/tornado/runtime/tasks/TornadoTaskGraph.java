@@ -1175,6 +1175,55 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         }
     }
 
+    /** When the host contents of an object this graph takes reach the device, once the host has changed them. */
+    private enum Upload {
+        /** The graph uploads it on every execution anyway, or its first upload is still to come. */
+        ALREADY_DUE,
+        /** Its first-execution transfer runs again in the next execution. */
+        WITH_NEXT_EXECUTION,
+        /** No transfer of the next execution can carry it: it is uploaded at once. */
+        NOW
+    }
+
+    private Upload uploadOf(Object object, XPUDeviceBufferState deviceState) {
+        if (streamInObjects.contains(object)) {
+            return Upload.ALREADY_DUE;
+        }
+        boolean transferredOnce = inputModesObjects.stream().anyMatch(input -> input.object == object && input.mode == DataTransferMode.FIRST_EXECUTION);
+        boolean replayedOrBatched = executionContext.isExecutionGraphEnabled() || batchSizeBytes != TornadoExecutionContext.INIT_VALUE;
+        if (!transferredOnce || replayedOrBatched) {
+            return Upload.NOW;
+        }
+        return deviceState.hasObjectBuffer() && deviceState.hasContent() ? Upload.WITH_NEXT_EXECUTION : Upload.ALREADY_DUE;
+    }
+
+    @Override
+    public void uploadWithNextExecution(ExecutorFrame executionPackage, Object... objects) {
+        for (Object object : objects) {
+            checkNotUnifiedMemory(object);
+        }
+        final List<Object> now = new ArrayList<>();
+        for (Object object : objects) {
+            if (object == null || !argumentsLookUp.contains(object)) {
+                continue;
+            }
+            // On the device that holds it: a task may run on another device than the graph's.
+            final DataObjectState dataObjectState = executionContext.getLocalStateObject(object, getObjectAccess(object)).getDataObjectState();
+            final XPUDeviceBufferState deviceState = dataObjectState.getDeviceBufferState(deviceHolding(dataObjectState));
+            switch (uploadOf(object, deviceState)) {
+                case ALREADY_DUE -> {
+                }
+                // The first-execution transfer uploads an object whose device copy has no contents:
+                // it does so again in the next execution, in line with that execution's launches.
+                case WITH_NEXT_EXECUTION -> deviceState.setContents(false);
+                case NOW -> now.add(object);
+            }
+        }
+        if (!now.isEmpty()) {
+            transferDataToDevice(executionPackage, now.toArray());
+        }
+    }
+
     private boolean ownsAnyOf(Object... objects) {
         for (Object object : objects) {
             if (object != null && argumentsLookUp.contains(object)) {

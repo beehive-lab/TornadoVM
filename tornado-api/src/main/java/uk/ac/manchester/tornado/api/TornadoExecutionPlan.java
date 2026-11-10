@@ -1003,6 +1003,34 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
+     * Tells the plan that the host has changed the given objects: the next execution uploads their
+     * current host contents before it runs its tasks, as part of that execution. Use it for an input
+     * declared {@link uk.ac.manchester.tornado.api.enums.DataTransferMode#FIRST_EXECUTION} that the
+     * program updates now and then, such as a small block of parameters between the steps of a
+     * simulation: the input does not have to be {@code EVERY_EXECUTION}, and the update costs no
+     * round trip to the device of its own, as {@link #transferToDevice(Object...)} does.
+     *
+     * <p>The call itself moves no data and returns at once; the host contents are read when the
+     * plan next executes, so later changes made before that execution are uploaded too. Calling it
+     * again before the execution changes nothing.
+     *
+     * <p>Each object is uploaded by the task-graphs of this plan that take it as a parameter;
+     * graphs that do not know it ignore it. Where an upload cannot ride on the next execution, the
+     * object is uploaded before this call returns, as by {@link #transferToDevice(Object...)}: an
+     * object the graph does not transfer itself (one it consumes from the device), a graph launched
+     * through a CUDA graph (its captured launches are replayed as they were), or a plan that runs
+     * in batches. An object transferred {@code EVERY_EXECUTION} needs nothing.
+     *
+     * @param objects
+     *     Host objects the next execution must upload.
+     * @return {@link TornadoExecutionPlan}
+     */
+    public TornadoExecutionPlan uploadWithNextExecution(Object... objects) {
+        tornadoExecutor.uploadWithNextExecution(executionFrame, objects);
+        return this;
+    }
+
+    /**
      * Sets how many kernel launches from device code ({@link KernelContext#launch}, CUDA Dynamic
      * Parallelism) may be pending at once on the device this plan runs on. A device-side launch
      * beyond the limit fails and its kernel does not run (the failure is printed from the device).
