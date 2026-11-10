@@ -22,7 +22,7 @@ Pre-requisites
 
   * OpenCL: GPUs and CPUs >= 2.1
   * NVIDIA driver + CUDA Toolkit 10.0+ (12.0+ on Windows) for the **PTX** backend; CUDA Toolkit 13.0+ for the **CUDA** backend
-  * AMD ROCm 7+ (Linux), or ROCm from `TheRock <https://github.com/ROCm/TheRock>`_'s Python packages (Windows), with hipRTC, for the **HIP** backend; ``ROCM_PATH`` names its root (the AMD HIP SDK for Windows is not supported)
+  * AMD ROCm 10.1+ from `TheRock <https://github.com/ROCm/TheRock>`_'s Python packages (Linux, or native Windows), with hipRTC, for the **HIP** backend; ``ROCM_PATH`` names its root, which ``rocm-sdk path --root`` prints (the AMD HIP SDK for Windows is not supported)
   * Intel compute-runtime and/or GPU drivers (OpenCL)
 
 Supported Platforms
@@ -32,9 +32,9 @@ Supported Platforms
    :header: "OS", "OpenCL Backend", "PTX Backend", "CUDA Backend", "Metal Backend", "HIP Backend"
    :widths: 22, 28, 12, 12, 13, 13
 
-   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, "CUDA 10.0+", "CUDA 13.0+", "Not supported", "ROCm 7+"
+   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, "CUDA 10.0+", "CUDA 13.0+", "Not supported", "TheRock ROCm 10.1+"
    "Apple M1/M2/M3/M4/M5", "OpenCL for GPUs and CPUs >= 1.2", "Not supported", "Not supported", "macOS (Apple Silicon)", "Not supported"
-   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1", "CUDA 12.0+", "CUDA 13.0+", "Not supported", "TheRock ROCm (native)"
+   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1", "CUDA 12.0+", "CUDA 13.0+", "Not supported", "TheRock ROCm 10.1+ (native)"
 
 For Intel-based macOS users, OpenCL support can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
@@ -96,7 +96,7 @@ To rebuild with a different backend selection later:
 
    For NVIDIA GPUs, TornadoVM provides two backends: **PTX** (emits PTX assembly directly) and **CUDA** (generates CUDA C, compiled to PTX via NVRTC). Build the CUDA backend on its own with ``make BACKEND=cuda``. See :ref:`hybrid-api` for native library integration (cuBLAS, cuFFT, cuDNN) on top of the CUDA backend.
 
-   For AMD GPUs, the **HIP** backend generates HIP C++ and compiles it with hipRTC for the GPU's own architecture (``gfx90a``, ``gfx942``, ``gfx1100``, ...). Build it on its own with ``make BACKEND=hip``, with ``ROCM_PATH`` set to the ROCm root. On Windows, install ROCm from TheRock's Python packages and set ``ROCM_PATH`` to the directory ``rocm-sdk path --root`` prints; the AMD HIP SDK for Windows is not supported.
+   For AMD GPUs, the **HIP** backend generates HIP C++ and compiles it with hipRTC for the GPU's own architecture (``gfx90a``, ``gfx942``, ``gfx1100``, ...). Build it on its own with ``make BACKEND=hip``. Install ROCm 10.1 or newer from TheRock's Python packages, on Linux or Windows, and set ``ROCM_PATH`` to the directory ``rocm-sdk path --root`` prints; the AMD HIP SDK for Windows is not supported.
 
 Windows builds require the Visual Studio developer tools and a Python virtual environment:
 

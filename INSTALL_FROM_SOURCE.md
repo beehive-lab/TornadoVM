@@ -91,7 +91,7 @@ options:
 * `opencl`: Enables the OpenCL backend (requires OpenCL drivers)
 * `cuda`: Enables the CUDA backend, which generates CUDA C and compiles it to PTX via NVRTC (requires the NVIDIA CUDA Toolkit, NVRTC and `libcuda`)
 * `metal`: Enables the Metal backend (macOS with Apple Silicon)
-* `hip`: Enables the HIP backend for AMD GPUs, which generates HIP C++ and compiles it with hipRTC (requires ROCm 7 or newer on Linux, or ROCm installed from [TheRock](https://github.com/ROCm/TheRock)'s Python packages on Windows, with `ROCM_PATH` set to the ROCm root, which `rocm-sdk path --root` prints for TheRock packages; the AMD HIP SDK for Windows is not supported)
+* `hip`: Enables the HIP backend for AMD GPUs, which generates HIP C++ and compiles it with hipRTC (requires ROCm 10.1 or newer installed from [TheRock](https://github.com/ROCm/TheRock)'s Python packages, on Linux or natively on Windows, with `ROCM_PATH` set to the ROCm root, which `rocm-sdk path --root` prints; the AMD HIP SDK for Windows is not supported)
 
 > **Tip:** The CUDA backend can also be built directly with `make BACKEND=cuda`. Build it on its own (not together with OpenCL): with both backends installed, the unit tests may silently run on the OpenCL device and report false positives. See the [CUDA backend documentation](https://tornadovm.readthedocs.io/en/latest/cuda-backend.html) for the supported / in-progress feature status. The same applies to the HIP backend: build it on its own with `make BACKEND=hip`.
 
