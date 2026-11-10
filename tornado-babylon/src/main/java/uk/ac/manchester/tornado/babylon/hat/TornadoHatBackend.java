@@ -190,8 +190,10 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
 
     /** Where a HAT buffer's current contents are: on the host, in one plan's device memory, or both. */
     private static final class Residence {
-        /** The plan whose device memory holds the current contents, or null. */
-        Dispatch device;
+        /** Whose device memory holds the current contents: a kernel's own plan, the shared plan, or null. */
+        Object device;
+        /** In the shared plan: the graph that owns the buffer's device memory. */
+        Holder holder;
         /** That plan's TornadoVM object for the buffer. */
         ByteArray object;
         /** That plan's last execution, to copy the buffer back with. */
@@ -212,9 +214,18 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         }
     }
 
-    private static void toHost(Residence r) {
+    /** The execution to copy {@code r}'s buffer back with; in the shared plan, with its owner's graph selected. */
+    private uk.ac.manchester.tornado.api.TornadoExecutionResult resultOf(Residence r) {
+        if (r.holder != null) {
+            shared.plan.withGraph(r.holder.index);
+            return r.holder.result;
+        }
+        return r.result;
+    }
+
+    private void toHost(Residence r) {
         if (!r.hostCurrent) {
-            r.result.transferToHost(r.object);
+            resultOf(r).transferToHost(r.object);
             r.hostCurrent = true;
             r.dirty = new java.util.HashSet<>();
             if (TRACE) {
@@ -257,7 +268,7 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
             toHost(r);
             return;
         }
-        r.result.transferToHost(new uk.ac.manchester.tornado.api.DataRange(r.object).withOffset(range[0]).withSize(range[1]));
+        resultOf(r).transferToHost(new uk.ac.manchester.tornado.api.DataRange(r.object).withOffset(range[0]).withSize(range[1]));
         if (TRACE) {
             System.err.println("[hat residency] copied back " + member + " (" + range[1] + " bytes)");
         }
@@ -296,6 +307,11 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         var key = key(kernel, ndRange, args);
         key.add(tile);
         boolean[] built = new boolean[1];
+        if (SHARED && inShared(key)) {
+            built[0] = launchShared(kernel, ndRange, tile, args, key);
+            commit(event, kernel, ndRange, tile, built[0]);
+            return;
+        }
         Dispatch dispatch;
         synchronized (plans) {
             dispatch = plans.get(key);
@@ -320,30 +336,388 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
             dispatch = unresident(key, kernel, ndRange, args, tile, dispatch);
             built[0] = true;
         }
+        if (SHARED && dispatch.resident() && handsOff(dispatch)) {
+            // A buffer comes from another kernel's device memory: both kernels move to the shared plan.
+            launchShared(kernel, ndRange, tile, args, key);
+            commit(event, kernel, ndRange, tile, true);
+            return;
+        }
         if (dispatch.resident()) {
             launchResident(kernel, dispatch, args);
         } else {
-            // HAT memory is the truth between dispatches: in before every launch, out after it.
-            for (int i = 0; i < dispatch.buffers().size(); i++) {
-                if (dispatch.segments().get(i) != null) {
-                    MemorySegment.copy(dispatch.segments().get(i), 0, dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i).byteSize());
-                }
-            }
-            launch(kernel, dispatch);
-            for (int i = 0; i < dispatch.buffers().size(); i++) {
-                if (dispatch.segments().get(i) != null) {
-                    MemorySegment.copy(dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i), 0, dispatch.segments().get(i).byteSize());
-                }
+            launchOrdinary(kernel, dispatch);
+        }
+        commit(event, kernel, ndRange, tile, built[0]);
+    }
+
+    /**
+     * A launch of a plan that moves every buffer in and out itself. What another kernel left on the
+     * device comes home first (the launch uploads host memory), and afterwards the host has the
+     * current contents of every buffer of the launch.
+     */
+    private synchronized void launchOrdinary(Method kernel, Dispatch dispatch) {
+        for (Object arg : dispatch.origin().args()) {
+            if (arg instanceof Buffer buffer && residences.get(buffer) instanceof Residence r) {
+                toHost(r);
             }
         }
+        for (int i = 0; i < dispatch.buffers().size(); i++) {
+            if (dispatch.segments().get(i) != null) {
+                MemorySegment.copy(dispatch.segments().get(i), 0, dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i).byteSize());
+            }
+        }
+        launch(kernel, dispatch);
+        for (int i = 0; i < dispatch.buffers().size(); i++) {
+            if (dispatch.segments().get(i) != null) {
+                MemorySegment.copy(dispatch.buffers().get(i).getSegment(), 0, dispatch.segments().get(i), 0, dispatch.segments().get(i).byteSize());
+            }
+        }
+        for (Object arg : dispatch.origin().args()) {
+            if (arg instanceof Buffer buffer && residences.get(buffer) instanceof Residence r) {
+                r.device = null; // no plan's device memory is newer than the host now
+            }
+        }
+    }
+
+    private static void commit(uk.ac.manchester.tornado.babylon.Events.Dispatch event, Method kernel, NDRange ndRange, boolean tile, boolean built) {
         event.end();
         if (event.shouldCommit()) {
             event.kernel = kernel.getDeclaringClass().getSimpleName() + "." + kernel.getName();
             event.range = String.valueOf(ndRange);
             event.tile = tile;
-            event.newPlan = built[0];
+            event.newPlan = built;
             event.commit();
         }
+    }
+
+    // ---- one plan for all kernels: a buffer's device memory is shared by the kernels that use it
+
+    /**
+     * {@code -Dtornado.hat.shared=false}: a plan of its own per kernel instead. A buffer one kernel
+     * wrote then reaches another kernel through the host (copied back, uploaded again): HandOff, two
+     * kernels over two 16 MB buffers, 3.85 ms per step that way.
+     */
+    private static final boolean SHARED = RESIDENT && ZERO_COPY && !CUDA_GRAPH && !"false".equals(System.getProperty("tornado.hat.shared"));
+
+    /**
+     * The graph that owns a buffer's device memory in the shared plan. Running it uploads the buffer
+     * (inside the execution, from pinned memory) and launches one thread that does nothing; the
+     * kernels' graphs take the buffer from it ({@code consumeFromDevice}).
+     */
+    private static final class Holder {
+        final ByteArray object;
+        String name;
+        int index;
+        /** Its last execution in the current plan (to copy the buffer back with), or null: not uploaded yet. */
+        uk.ac.manchester.tornado.api.TornadoExecutionResult result;
+
+        Holder(ByteArray object) {
+            this.object = object;
+        }
+    }
+
+    /** What a holder's graph launches: nothing. The graph is there for its transfers. */
+    public static void hold(uk.ac.manchester.tornado.api.KernelContext context, ByteArray buffer) {
+        if (context.globalIdx < 0) {
+            buffer.set(0, buffer.get(0));
+        }
+    }
+
+    private static final class SharedKernel {
+        final Method kernel;
+        final NDRange range;
+        final boolean tile;
+        final Object[] args;
+        final boolean[] written;
+        /** Its graph in the current plan, or -1: not in it yet. */
+        int index = -1;
+        /** Launches, and those that had to upload every buffer again. */
+        int launches;
+        int uploadedAll;
+
+        SharedKernel(Method kernel, NDRange range, boolean tile, Object[] args, boolean[] written) {
+            this.kernel = kernel;
+            this.range = range;
+            this.tile = tile;
+            this.args = args;
+            this.written = written;
+        }
+    }
+
+    /** The shared plan: a graph per buffer and a graph per kernel (kernel, range, buffers, scalar values). */
+    private final class Shared {
+        TornadoExecutionPlan plan;
+        /** By last use. */
+        final java.util.LinkedHashMap<List<Object>, SharedKernel> kernels = new java.util.LinkedHashMap<>(16, 0.75f, true);
+        final java.util.Map<Object, Holder> holders = new java.util.IdentityHashMap<>();
+        /** How many scalar values or ranges each kernel over the same buffers was dispatched with. */
+        final java.util.Map<List<Object>, java.util.Set<List<Object>>> variants = new java.util.HashMap<>();
+    }
+
+    private final Shared shared = new Shared();
+
+    /**
+     * A kernel dispatched with more scalar values or ranges than this over the same buffers keeps a
+     * plan of its own per value from then on: each new one would rebuild the shared plan.
+     */
+    private static final int SHARED_VARIANTS = 3;
+
+    private synchronized boolean inShared(List<Object> key) {
+        return shared.kernels.containsKey(key);
+    }
+
+    /** Whether a kernel over these buffers may still join the shared plan (see SHARED_VARIANTS); counts {@code key}. */
+    private boolean admits(List<Object> key, Origin origin) {
+        var shape = new ArrayList<Object>();
+        shape.add(origin.kernel());
+        for (Object arg : origin.args()) {
+            if (arg instanceof Buffer buffer) {
+                shape.add(System.identityHashCode(buffer));
+            }
+        }
+        var seen = shared.variants.computeIfAbsent(shape, k -> new java.util.HashSet<>());
+        if (seen.contains(key)) {
+            return true;
+        }
+        if (seen.size() >= SHARED_VARIANTS) {
+            return false;
+        }
+        seen.add(key);
+        return true;
+    }
+
+    /**
+     * Whether a launch of this kernel's own plan would take a buffer from where another kernel left
+     * it: in another plan's device memory (through the host: a copy back and an upload) or in the
+     * shared plan's. If so, this kernel and those others move to the shared plan, where a buffer's
+     * device memory is the same for all of them. A kernel that only ever meets its own buffers
+     * (HAT's matmul, Life) keeps its own plan, and pays nothing for the shared one.
+     */
+    private synchronized boolean handsOff(Dispatch dispatch) {
+        if (!(arena() instanceof HeaderArena)) {
+            return false;
+        }
+        var moving = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Dispatch, Boolean>());
+        boolean handOff = false;
+        for (Object arg : dispatch.origin().args()) {
+            if (arg instanceof Buffer buffer && residences.get(buffer) instanceof Residence r && r.device != null && r.device != dispatch) {
+                handOff = true;
+                if (r.device instanceof Dispatch other) {
+                    moving.add(other);
+                }
+            }
+        }
+        if (!handOff) {
+            return false;
+        }
+        moving.add(dispatch);
+        boolean joined = false;
+        for (var plan : moving) {
+            List<Object> key;
+            synchronized (plans) {
+                key = plans.entrySet().stream().filter(e -> e.getValue() == plan).map(java.util.Map.Entry::getKey).findFirst().orElse(null);
+            }
+            if (key == null || !plan.resident() || !admits(key, plan.origin())) {
+                continue;
+            }
+            var origin = plan.origin();
+            shared.kernels.put(key, new SharedKernel(origin.kernel(), origin.range(), origin.tile(), origin.args(), plan.written()));
+            synchronized (plans) {
+                plans.remove(key);
+            }
+            release(plan);
+            joined |= plan == dispatch;
+        }
+        return joined;
+    }
+
+    /** A launch through the shared plan; true when the plan was (re)built for it. */
+    private synchronized boolean launchShared(Method kernel, NDRange range, boolean tile, Object[] args, List<Object> key) {
+        boolean built = false;
+        var k = shared.kernels.get(key);
+        if (k != null && k.launches >= ADAPT_AFTER && k.uploadedAll == k.launches) {
+            // Every launch uploaded every buffer again (one dispatch per compute call, HAT's matmul):
+            // an ordinary plan of its own moves them inside one execution (see ADAPT_AFTER).
+            shared.kernels.remove(key);
+            for (Object arg : args) {
+                if (arg instanceof Buffer buffer && residences.get(buffer) instanceof Residence r && r.device == shared) {
+                    toHost(r);
+                    r.device = null;
+                }
+            }
+            var own = prepare(kernel, range, args, tile, false);
+            synchronized (plans) {
+                plans.put(key, own);
+            }
+            if (TRACE) {
+                System.err.println("[hat residency] ordinary plan for " + kernel.getName() + " from now on: its launches upload every buffer");
+            }
+            launchOrdinary(kernel, own);
+            return true;
+        }
+        if (k == null) {
+            for (int i = 0; i < args.length; i++) {
+                if (args[i] instanceof Buffer buffer) {
+                    HatLayouts.record(kernel, i, (GroupLayout) MappableIface.getLayout(buffer));
+                }
+            }
+            k = new SharedKernel(kernel, range, tile, args.clone(), written(kernel));
+            shared.kernels.put(key, k);
+            var eldest = shared.kernels.entrySet().iterator();
+            while (shared.kernels.size() > MAX_PLANS) {
+                eldest.next();
+                eldest.remove();
+            }
+        }
+        if (k.index < 0 || shared.plan == null) {
+            rebuildShared();
+            built = true;
+        }
+        int buffers = 0;
+        int uploads = 0;
+        for (Object arg : args) {
+            if (arg instanceof Buffer buffer) {
+                buffers++;
+                var holder = shared.holders.get(buffer);
+                var r = residences.computeIfAbsent(buffer, b -> new Residence());
+                if (r.device == shared && holder.result != null) {
+                    continue; // current in the shared device memory
+                }
+                uploads++;
+                toHost(r); // from a kernel's own plan, if that is where it is current
+                long start = System.nanoTime();
+                holder.result = execute(kernel, shared.plan.withGraph(holder.index));
+                trace("uploaded", buffer);
+                if (TRACE) {
+                    System.err.printf("[hat residency]   in %.3f ms%n", (System.nanoTime() - start) / 1e6);
+                }
+                r.device = shared;
+                r.holder = holder;
+                r.object = holder.object;
+                r.result = null;
+            }
+        }
+        k.launches++;
+        if (buffers > 0 && uploads == buffers) {
+            k.uploadedAll++;
+        }
+        execute(kernel, shared.plan.withGraph(k.index));
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof Buffer buffer && k.written[i]) {
+                var r = residences.get(buffer);
+                r.hostCurrent = false;
+                var members = uk.ac.manchester.tornado.babylon.tc.HatWrites.written(kernel, i);
+                if (members == null || r.dirty == null) {
+                    r.dirty = null;
+                } else {
+                    r.dirty.addAll(members);
+                }
+            }
+        }
+        return built;
+    }
+
+    private static uk.ac.manchester.tornado.api.TornadoExecutionResult execute(Method kernel, TornadoExecutionPlan plan) {
+        try {
+            return plan.execute();
+        } catch (Exception e) {
+            throw new RuntimeException("TornadoVM could not run HAT kernel " + kernel.getName() + ": " + e.getMessage(), e);
+        }
+    }
+
+    /** Brings home what only the shared plan's device memory holds, and closes it. */
+    private void closeShared() {
+        residences.forEach((buffer, r) -> {
+            if (r.device == shared) {
+                toHost(r);
+                r.device = null;
+                r.holder = null;
+                r.object = null;
+            }
+        });
+        if (shared.plan != null) {
+            try {
+                shared.plan.close();
+            } catch (Exception e) {
+                // its device memory is released when the plan is collected
+            }
+            shared.plan = null;
+        }
+        shared.holders.values().forEach(h -> h.result = null);
+    }
+
+    /** The shared plan for the kernels known now: built again when a kernel it does not have is dispatched. */
+    private void rebuildShared() {
+        closeShared();
+        var headers = (HeaderArena) arena();
+        var used = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<Object, Boolean>());
+        for (var k : shared.kernels.values()) {
+            for (Object arg : k.args) {
+                if (arg instanceof Buffer buffer) {
+                    used.add(buffer);
+                    shared.holders.computeIfAbsent(buffer, b -> {
+                        var bytes = ByteArray.fromSegmentShallow(headers.tornadoSegment(MappableIface.getMemorySegment(buffer)).orElseThrow());
+                        HatLayouts.record(bytes, (GroupLayout) MappableIface.getLayout(buffer));
+                        return new Holder(bytes);
+                    });
+                }
+            }
+        }
+        shared.holders.keySet().retainAll(used);
+        var graphs = new ArrayList<uk.ac.manchester.tornado.api.ImmutableTaskGraph>();
+        var grids = new GridScheduler();
+        long id = GRAPHS.incrementAndGet();
+        Method hold;
+        try {
+            hold = TornadoHatBackend.class.getMethod("hold", uk.ac.manchester.tornado.api.KernelContext.class, ByteArray.class);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e);
+        }
+        for (var holder : shared.holders.values()) {
+            holder.index = graphs.size();
+            holder.name = "hat" + id + "_buffer" + holder.index;
+            var graph = new TaskGraph(holder.name).transferToDevice(DataTransferMode.EVERY_EXECUTION, holder.object);
+            addTask(graph, "t", hold, new Object[] { new uk.ac.manchester.tornado.api.KernelContext(), holder.object });
+            graph.persistOnDevice(holder.object);
+            grids.addWorkerGrid(holder.name + ".t", new WorkerGrid1D(1));
+            graphs.add(graph.snapshot());
+        }
+        for (var k : shared.kernels.values()) {
+            k.index = graphs.size();
+            String name = "hat" + id + "_" + k.kernel.getName().replaceAll("[^A-Za-z0-9_]", "_") + k.index;
+            var graph = new TaskGraph(name);
+            Object[] tornadoArgs = new Object[k.args.length];
+            var objects = new java.util.LinkedHashSet<ByteArray>();
+            for (int i = 0; i < k.args.length; i++) {
+                if (k.args[i] instanceof Buffer buffer) {
+                    var holder = shared.holders.get(buffer);
+                    HatLayouts.record(k.kernel, i, (GroupLayout) MappableIface.getLayout(buffer));
+                    if (objects.add(holder.object)) {
+                        graph.consumeFromDevice(holder.name, holder.object);
+                    }
+                    tornadoArgs[i] = holder.object;
+                } else {
+                    tornadoArgs[i] = k.args[i];
+                }
+            }
+            addTask(graph, "t", k.kernel, tornadoArgs);
+            if (!objects.isEmpty()) {
+                graph.persistOnDevice(objects.toArray());
+            }
+            grids.addWorkerGrid(name + ".t", k.tile ? tileGrid(k.range) : workerGrid(k.range));
+            graphs.add(graph.snapshot());
+        }
+        var plan = new TornadoExecutionPlan(graphs.toArray(uk.ac.manchester.tornado.api.ImmutableTaskGraph[]::new));
+        String device = System.getProperty("hat.t.device");
+        if (device != null && device.matches("\\d+:\\d+")) {
+            String[] d = device.split(":");
+            plan.withDevice(TornadoExecutionPlan.getDevice(Integer.parseInt(d[0]), Integer.parseInt(d[1])));
+        }
+        plan.withGridScheduler(grids);
+        if (STRICT_FP) {
+            plan.withStrictFloatingPoint();
+        }
+        shared.plan = plan;
     }
 
     private static uk.ac.manchester.tornado.api.TornadoExecutionResult launch(Method kernel, Dispatch dispatch) {
@@ -394,6 +768,7 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
             if (args[i] instanceof Buffer buffer) {
                 var r = residences.get(buffer);
                 r.device = dispatch;
+                r.holder = null;
                 r.object = dispatch.buffers().get(b++);
                 if (written[i]) {
                     r.hostCurrent = false;
@@ -437,7 +812,11 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
     /** One execution plan per kernel, buffers, scalar values and range: compiled once, launched on every dispatch. */
     /** {@code reuse}: launches, and launches that had to upload every buffer again (resident plans). */
     private record Dispatch(TornadoExecutionPlan plan, List<ByteArray> buffers, List<MemorySegment> segments, boolean resident, boolean[] written, boolean[] executed,
-            int[] reuse) {
+            int[] reuse, Origin origin) {
+    }
+
+    /** What a plan was made for. */
+    private record Origin(Method kernel, NDRange range, boolean tile, Object[] args) {
     }
 
     /**
@@ -487,6 +866,9 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
             plans.clear();
         }
         all.forEach(this::release);
+        synchronized (this) {
+            closeShared();
+        }
     }
 
     private static List<Object> key(Method kernel, NDRange range, Object[] args) {
@@ -565,7 +947,7 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         if (CUDA_GRAPH) {
             plan.withCUDAGraph();
         }
-        return new Dispatch(plan, buffers, segments, resident, resident ? written(kernel) : null, new boolean[1], new int[2]);
+        return new Dispatch(plan, buffers, segments, resident, resident ? written(kernel) : null, new boolean[1], new int[2], new Origin(kernel, range, tile, args.clone()));
     }
 
     private static WorkerGrid tileGrid(NDRange range) {
