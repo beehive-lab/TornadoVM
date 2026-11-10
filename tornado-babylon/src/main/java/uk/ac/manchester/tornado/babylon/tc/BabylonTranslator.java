@@ -82,6 +82,10 @@ final class BabylonTranslator {
         /** The bound layout of the HAT buffer passed as parameter {@code index} of the function, or null. */
         GroupLayout bufferLayout(int index);
 
+        /** The function passes a HAT buffer of this {@code layout} to {@code callee} as its parameter {@code parameter}. */
+        default void calleeLayout(Method callee, int parameter, GroupLayout layout) {
+        }
+
         /** Called for each {@code call} emitted: the callee must be added to the module. */
         void callee(Method method, String name);
 
@@ -820,7 +824,7 @@ final class BabylonTranslator {
                 var index = bufferParams.get(v(operands.get(i)));
                 var layout = index == null ? null : context.bufferLayout(index);
                 if (layout != null) {
-                    HatLayouts.record(method, i, layout);
+                    context.calleeLayout(method, i, layout);
                 }
                 if (index != null && context.method() != null) {
                     HatWrites.passes(context.method(), index, method, i);

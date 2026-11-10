@@ -466,6 +466,7 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
                 HatLayouts.record(kernel, i, (GroupLayout) MappableIface.getLayout(buffer));
                 var inPlace = ZERO_COPY && arena() instanceof HeaderArena headers ? headers.tornadoSegment(segment) : java.util.Optional.<MemorySegment>empty();
                 var bytes = inPlace.isPresent() ? ByteArray.fromSegmentShallow(inPlace.get()) : ByteArray.fromSegment(segment);
+                HatLayouts.record(bytes, (GroupLayout) MappableIface.getLayout(buffer));
                 tornadoArgs[i] = bytes;
                 buffers.add(bytes);
                 // wrapped in place: nothing to copy around the launch

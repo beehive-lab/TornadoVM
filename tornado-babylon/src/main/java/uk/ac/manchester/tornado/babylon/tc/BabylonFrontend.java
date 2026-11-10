@@ -227,9 +227,12 @@ public final class BabylonFrontend implements ModelFrontend {
     private static Frontend.ModuleResult translateModule(Frontend.BytecodeSource source, ClassLoader loader, Method kernel) {
         var module = new IrModule();
         var pending = new ArrayDeque<Object[]>();
+        // The HAT buffer layouts of this translation: the kernel's from the task, its callees' from their callers.
+        var layouts = new java.util.HashMap<Method, java.util.Map<Integer, java.lang.foreign.GroupLayout>>();
+        layouts.put(kernel, taskLayouts(kernel));
         try {
             var kernelName = Frontend.kernelName(kernel.getDeclaringClass().getName(), kernel.getName());
-            module.add(BabylonTranslator.translate(lowered(source, kernel), context(source, loader, kernel, pending), kernelName, true, sourceFile(kernel)));
+            module.add(BabylonTranslator.translate(lowered(source, kernel), context(source, loader, kernel, pending, layouts), kernelName, true, sourceFile(kernel)));
             while (!pending.isEmpty()) {
                 var next = pending.poll();
                 var method = (Method) next[0];
@@ -238,7 +241,7 @@ public final class BabylonFrontend implements ModelFrontend {
                     continue;
                 }
                 if (method.isAnnotationPresent(Reflect.class)) {
-                    module.add(BabylonTranslator.translate(lowered(source, method), context(source, loader, method, pending), name, false, sourceFile(method)));
+                    module.add(BabylonTranslator.translate(lowered(source, method), context(source, loader, method, pending, layouts), name, false, sourceFile(method)));
                 } else {
                     var owner = method.getDeclaringClass().getName().replace('.', '/');
                     var fromBytecode = Frontend.translateCallee(source, owner, method.getName(), descriptor(method), name);
@@ -259,7 +262,44 @@ public final class BabylonFrontend implements ModelFrontend {
         return new Frontend.ModuleResult(Optional.of(module), List.of(), () -> Op.ofMethod(kernel).map(m -> m.toText()).orElse(""));
     }
 
-    private static BabylonTranslator.Context context(Frontend.BytecodeSource source, ClassLoader loader, Method function, ArrayDeque<Object[]> pending) {
+    /**
+     * The layouts of the HAT buffers among the arguments of the task being compiled, by parameter; with
+     * no task (the runtime's questions about the kernel), the layouts it was last launched with.
+     */
+    private static java.util.Map<Integer, java.lang.foreign.GroupLayout> taskLayouts(Method kernel) {
+        var layouts = new java.util.HashMap<Integer, java.lang.foreign.GroupLayout>();
+        var arguments = Frontend.taskArguments();
+        int parameters = kernel.getParameterCount();
+        for (int i = 0; i < parameters; i++) {
+            var layout = arguments != null && arguments.length == parameters ? HatLayouts.of(arguments[i]) : null;
+            if (layout == null) {
+                layout = HatLayouts.last(kernel, i);
+            }
+            if (layout != null) {
+                layouts.put(i, layout);
+            }
+        }
+        return layouts;
+    }
+
+    @Override
+    public Object taskKey(Method method, Object[] arguments) {
+        // A HAT kernel's code depends on its buffers' bound layouts (member offsets, array lengths).
+        java.util.List<Object> key = null;
+        for (int i = 0; i < arguments.length; i++) {
+            var layout = HatLayouts.of(arguments[i]);
+            if (layout != null) {
+                if (key == null) {
+                    key = new java.util.ArrayList<>(java.util.Collections.nCopies(arguments.length, null));
+                }
+                key.set(i, layout);
+            }
+        }
+        return key;
+    }
+
+    private static BabylonTranslator.Context context(Frontend.BytecodeSource source, ClassLoader loader, Method function, ArrayDeque<Object[]> pending,
+            java.util.Map<Method, java.util.Map<Integer, java.lang.foreign.GroupLayout>> layouts) {
         return new BabylonTranslator.Context() {
             @Override
             public Class<?> load(JavaType type) {
@@ -272,7 +312,12 @@ public final class BabylonFrontend implements ModelFrontend {
 
             @Override
             public java.lang.foreign.GroupLayout bufferLayout(int index) {
-                return HatLayouts.layout(function, index);
+                return layouts.getOrDefault(function, java.util.Map.of()).get(index);
+            }
+
+            @Override
+            public void calleeLayout(Method callee, int parameter, java.lang.foreign.GroupLayout layout) {
+                layouts.computeIfAbsent(callee, k -> new java.util.HashMap<>()).put(parameter, layout);
             }
 
             @Override

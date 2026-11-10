@@ -33,4 +33,15 @@ public interface ModelFrontend {
 
     /** The kernel's module (the kernel first), or empty to leave the method to the bytecode frontend. */
     Optional<Frontend.ModuleResult> translate(Frontend.BytecodeSource source, String className, String methodName, String descriptor);
+
+    /**
+     * What a translation of {@code method} takes from a task's arguments beyond what the compiler
+     * already specialises on (lengths, scalar values, object layouts): a value with {@code equals}
+     * and {@code hashCode}, or null for nothing. Two tasks share a compiled kernel only when their
+     * keys are equal. While such a task is compiled, {@link Frontend#taskArguments()} gives
+     * {@link #translate} the same arguments.
+     */
+    default Object taskKey(java.lang.reflect.Method method, Object[] arguments) {
+        return null;
+    }
 }

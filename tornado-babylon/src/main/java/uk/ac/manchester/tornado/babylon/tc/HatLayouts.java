@@ -23,23 +23,41 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The bound memory layouts of the HAT buffers a kernel is launched with, by kernel method and
- * parameter index. A HAT buffer's layout depends on the instance (an S32Array's sequence length is
- * its size), so the backend records it before each launch and the frontend reads it while translating.
+ * The bound memory layouts of HAT buffers. A buffer's layout depends on the instance (an S32Array's
+ * sequence length is its size; in a buffer of two arrays the second starts where the first one ends),
+ * so it is recorded with the TornadoVM object that stands for the buffer, and the frontend reads the
+ * layouts of the arguments of the task it compiles ({@code Frontend.taskArguments()}).
+ *
+ * <p>The runtime also asks about a kernel with no task at hand (which parameters it writes): for
+ * that, the last layout a kernel's parameter was launched with is kept by method, and any one will do,
+ * since the answer does not depend on sizes.</p>
  */
 public final class HatLayouts {
 
-    private static final Map<Method, Map<Integer, GroupLayout>> LAYOUTS = new ConcurrentHashMap<>();
+    private static final Map<Object, GroupLayout> BY_OBJECT = java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+    private static final Map<Method, Map<Integer, GroupLayout>> LAST = new ConcurrentHashMap<>();
 
     private HatLayouts() {
     }
 
-    public static void record(Method kernel, int parameter, GroupLayout layout) {
-        LAYOUTS.computeIfAbsent(kernel, k -> new ConcurrentHashMap<>()).put(parameter, layout);
+    /** {@code object} (a {@code ByteArray} over a HAT buffer's memory) is the buffer of this {@code layout}. */
+    public static void record(Object object, GroupLayout layout) {
+        BY_OBJECT.put(object, layout);
     }
 
-    static GroupLayout layout(Method kernel, int parameter) {
-        var forKernel = LAYOUTS.get(kernel);
+    /** {@code kernel} is launched with a buffer of this {@code layout} as its parameter {@code parameter}. */
+    public static void record(Method kernel, int parameter, GroupLayout layout) {
+        LAST.computeIfAbsent(kernel, k -> new ConcurrentHashMap<>()).put(parameter, layout);
+    }
+
+    /** The layout of the HAT buffer {@code object} stands for, or null when it is not one. */
+    public static GroupLayout of(Object object) {
+        return object == null ? null : BY_OBJECT.get(object);
+    }
+
+    /** The layout {@code kernel}'s parameter was last launched with, or null. */
+    static GroupLayout last(Method kernel, int parameter) {
+        var forKernel = LAST.get(kernel);
         return forKernel == null ? null : forKernel.get(parameter);
     }
 }

@@ -96,7 +96,7 @@ public final class TcHook {
      * layouts, batches, worker grids). The task id is left out: it reaches the code only through
      * device-launch labels, and an entry that printed one is reused only for the same task.
      */
-    private record Key(Method method, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
+    private record Key(Method method, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts, List<Object> model) {
     }
 
     /** A kernel's tasks with their scalar values left out. */
@@ -104,7 +104,9 @@ public final class TcHook {
         private static final Object SCALAR = new Object();
 
         static Shape of(Key key) {
-            return new Shape(key.method(), key.target(), key.options(), key.facts().stream().map(f -> f instanceof ValueSpecialisation.Fact.Scalar ? SCALAR : (Object) f).toList());
+            var facts = new java.util.ArrayList<Object>(key.facts().stream().map(f -> f instanceof ValueSpecialisation.Fact.Scalar ? SCALAR : (Object) f).toList());
+            facts.addAll(key.model());
+            return new Shape(key.method(), key.target(), key.options(), facts);
         }
     }
 
@@ -299,6 +301,13 @@ public final class TcHook {
     /** As above, for a task of a plan with {@code withDynamicShapes()} when {@code dynamicShapes} (see {@link #DYNAMIC_SHAPES}). */
     public static Optional<Kernel> compile(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId,
             boolean strictFloatingPoint, boolean workerGrid, boolean dynamicShapes) {
+        // Model frontends read the task's arguments while they translate (Frontend.taskArguments()).
+        return Frontend.withTaskArguments(arguments,
+                () -> compileTask(method, arguments, target, batchThreads, numThreads, batchIndexOffset, taskId, strictFloatingPoint, workerGrid, dynamicShapes));
+    }
+
+    private static Optional<Kernel> compileTask(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId,
+            boolean strictFloatingPoint, boolean workerGrid, boolean dynamicShapes) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         var facts = TcArguments.facts(method, arguments, batchThreads, batchIndexOffset);
         if (workerGrid) {
@@ -308,7 +317,7 @@ public final class TcHook {
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
-        var key = new Key(method, target, options.withTask("?"), List.copyOf(facts));
+        var key = new Key(method, target, options.withTask("?"), List.copyOf(facts), Frontend.taskKeys(method, arguments));
         boolean shared = (DYNAMIC_SHAPES || dynamicShapes) && MEMOIZE && !SPECIALISED.contains(new MethodKey(method, target, options.withTask("?")))
                 && !readsLengths(name, owner, loader, descriptor, options, key, taskId);
         if (shared) {
@@ -355,6 +364,12 @@ public final class TcHook {
      */
     public static Optional<Kernel> compileSpecialised(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset, String taskId,
             boolean strictFloatingPoint, boolean workerGrid) {
+        return Frontend.withTaskArguments(arguments,
+                () -> compileTaskSpecialised(method, arguments, target, batchThreads, numThreads, batchIndexOffset, taskId, strictFloatingPoint, workerGrid));
+    }
+
+    private static Optional<Kernel> compileTaskSpecialised(Method method, Object[] arguments, TargetCaps target, long batchThreads, long numThreads, long batchIndexOffset,
+            String taskId, boolean strictFloatingPoint, boolean workerGrid) {
         var name = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         var facts = TcArguments.facts(method, arguments, batchThreads, batchIndexOffset);
         if (workerGrid) {
@@ -364,7 +379,7 @@ public final class TcHook {
         var loader = owner.getClassLoader() != null ? owner.getClassLoader() : ClassLoader.getSystemClassLoader();
         var descriptor = MethodType.methodType(method.getReturnType(), method.getParameterTypes()).toMethodDescriptorString();
         var options = TcOptions.fromSystemProperties().withTask(taskId).withStrictFloatingPoint(strictFloatingPoint);
-        var result = compileOrReuse(name, owner, loader, descriptor, options, new Key(method, target, options.withTask("?"), List.copyOf(facts)), taskId);
+        var result = compileOrReuse(name, owner, loader, descriptor, options, new Key(method, target, options.withTask("?"), List.copyOf(facts), Frontend.taskKeys(method, arguments)), taskId);
         return result.isEmpty() ? Optional.empty() : kernel(name, result.get(), facts, numThreads, false);
     }
 
@@ -432,7 +447,7 @@ public final class TcHook {
     /** {@code key} with every array length unknown. */
     private static Key withoutLengths(Key key) {
         return new Key(key.method(), key.target(), key.options(),
-                key.facts().stream().map(f -> f instanceof ValueSpecialisation.Fact.Length ? (ValueSpecialisation.Fact) new ValueSpecialisation.Fact.Unknown() : f).toList());
+                key.facts().stream().map(f -> f instanceof ValueSpecialisation.Fact.Length ? (ValueSpecialisation.Fact) new ValueSpecialisation.Fact.Unknown() : f).toList(), key.model());
     }
 
     /**
@@ -493,7 +508,7 @@ public final class TcHook {
             Scalars scalars, String taskId) {
         var facts = new java.util.ArrayList<>(key.facts());
         varying.stream().forEach(i -> facts.set(i, new ValueSpecialisation.Fact.Unknown()));
-        var genericKey = new Key(key.method(), key.target(), key.options(), List.copyOf(facts));
+        var genericKey = new Key(key.method(), key.target(), key.options(), List.copyOf(facts), key.model());
         boolean known = COMPILATIONS.containsKey(genericKey);
         Optional<Compiled> result;
         try {

@@ -68,6 +68,56 @@ public class HatTasksChecks {
         a.set(context.globalIdx, 7f);
     }
 
+    /** A buffer of two arrays: where {@code b} starts depends on the length of {@code a}. */
+    public interface Pair extends optkl.ifacemapper.Buffer {
+        int n();
+
+        int a(long index);
+
+        void a(long index, int value);
+
+        int m();
+
+        int b(long index);
+
+        void b(long index, int value);
+
+        optkl.ifacemapper.Schema<Pair> schema = optkl.ifacemapper.Schema.of(Pair.class, p -> p.arrayLen("n").array("a").arrayLen("m").array("b"));
+
+        static Pair create(Accelerator accelerator, int length) {
+            return create(accelerator, length, length);
+        }
+
+        static Pair create(Accelerator accelerator, int n, int m) {
+            Pair pair = optkl.ifacemapper.BoundSchema.of(accelerator, schema, n, m).allocate();
+            for (int i = 0; i < n; i++) {
+                pair.a(i, i);
+            }
+            for (int i = 0; i < m; i++) {
+                pair.b(i, -1);
+            }
+            return pair;
+        }
+    }
+
+    @Reflect
+    public static void successor(Pair pair) {
+        pair.b(GIX(), pair.a(GIX()) + 1);
+    }
+
+    @Reflect
+    public static void successors(hat.ComputeContext cc, Pair pair, int length) {
+        cc.dispatchKernel(hat.NDRange.of1D(length), () -> successor(pair));
+    }
+
+    private static void expectSuccessors(Pair pair, int length) {
+        expect(pair.n() == length && pair.m() == length, "lengths " + pair.n() + ", " + pair.m() + " of a pair of " + length);
+        for (int i = 0; i < length; i++) {
+            expect(pair.a(i) == i, "a[" + i + "] = " + pair.a(i) + " of a pair of " + length);
+            expect(pair.b(i) == i + 1, "b[" + i + "] = " + pair.b(i) + " of a pair of " + length);
+        }
+    }
+
     public static void notReflected(F32Array data) {
         data.array(GIX(), 0f);
     }
@@ -179,6 +229,52 @@ public class HatTasksChecks {
             }
             for (int i = 0; i < n; i++) {
                 expect(data.array(i) == 3f, "data[" + i + "] = " + data.array(i));
+            }
+        });
+
+        check("one kernel, two buffer shapes", () -> {
+            // Both graphs exist before either is compiled: each must get its own buffer's layout.
+            int small = 16;
+            int large = 96;
+            var first = Pair.create(accelerator, small);
+            var second = Pair.create(accelerator, large);
+            var graphA = new TaskGraph("shapeA").transferToDevice(DataTransferMode.EVERY_EXECUTION, hat.of(first));
+            hat.task(graphA, "successor", HatTasksChecks::successor, first);
+            graphA.transferToHost(DataTransferMode.EVERY_EXECUTION, hat.of(first));
+            var graphB = new TaskGraph("shapeB").transferToDevice(DataTransferMode.EVERY_EXECUTION, hat.of(second));
+            hat.task(graphB, "successor", HatTasksChecks::successor, second);
+            graphB.transferToHost(DataTransferMode.EVERY_EXECUTION, hat.of(second));
+            try (var a = new TornadoExecutionPlan(graphA.snapshot()); var b = new TornadoExecutionPlan(graphB.snapshot())) {
+                a.withDevice(device).withGridScheduler(new GridScheduler("shapeA.successor", new WorkerGrid1D(small))).execute();
+                b.withDevice(device).withGridScheduler(new GridScheduler("shapeB.successor", new WorkerGrid1D(large))).execute();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            expectSuccessors(first, small);
+            expectSuccessors(second, large);
+        });
+
+        check("one kernel, two shapes, dispatched", () -> {
+            for (int length : new int[] { 16, 96, 16, 40 }) {
+                var pair = Pair.create(accelerator, length);
+                accelerator.compute((Accelerator.@Reflect Compute) cc -> successors(cc, pair, length));
+                expectSuccessors(pair, length);
+            }
+        });
+
+        check("one kernel, same size, two layouts", () -> {
+            // The same number of bytes, but b starts elsewhere: not the same compiled kernel.
+            for (int[] nm : new int[][] { { 24, 8 }, { 8, 24 }, { 24, 8 } }) {
+                var pair = Pair.create(accelerator, nm[0], nm[1]);
+                int length = Math.min(nm[0], nm[1]);
+                accelerator.compute((Accelerator.@Reflect Compute) cc -> successors(cc, pair, length));
+                expect(pair.n() == nm[0] && pair.m() == nm[1], "lengths " + pair.n() + ", " + pair.m());
+                for (int i = 0; i < nm[0]; i++) {
+                    expect(pair.a(i) == i, "a[" + i + "] = " + pair.a(i) + " of a pair of " + nm[0] + ", " + nm[1]);
+                }
+                for (int i = 0; i < nm[1]; i++) {
+                    expect(pair.b(i) == (i < length ? i + 1 : -1), "b[" + i + "] = " + pair.b(i) + " of a pair of " + nm[0] + ", " + nm[1]);
+                }
             }
         });
 

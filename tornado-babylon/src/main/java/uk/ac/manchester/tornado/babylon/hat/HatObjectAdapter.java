@@ -45,8 +45,11 @@ public final class HatObjectAdapter implements ObjectAdapter {
     static ByteArray objectFor(Buffer buffer) {
         return OBJECTS.computeIfAbsent(buffer, b -> {
             var segment = MappableIface.getMemorySegment(buffer);
-            return ByteArray.fromSegmentShallow(HeaderArena.find(segment).orElseThrow(() -> new IllegalArgumentException(
+            var object = ByteArray.fromSegmentShallow(HeaderArena.find(segment).orElseThrow(() -> new IllegalArgumentException(
                     "a HAT buffer passed to TornadoVM must be allocated with TornadoBuffers or by an Accelerator on TornadoHatBackend")));
+            // The frontend compiles a task's kernel for the layouts of the task's own buffers.
+            HatLayouts.record(object, (GroupLayout) MappableIface.getLayout(buffer));
+            return object;
         });
     }
 

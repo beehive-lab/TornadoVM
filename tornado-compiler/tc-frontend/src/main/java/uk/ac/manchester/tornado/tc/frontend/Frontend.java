@@ -316,6 +316,47 @@ public final class Frontend {
     private static final List<ModelFrontend> MODEL_FRONTENDS = java.util.ServiceLoader.load(ModelFrontend.class, Frontend.class.getClassLoader()).stream()
             .map(java.util.ServiceLoader.Provider::get).toList();
 
+    private static final ThreadLocal<Object[]> TASK_ARGUMENTS = new ThreadLocal<>();
+
+    /**
+     * For model frontends: the arguments of the task whose kernel is being compiled on this thread (the
+     * receiver first for an instance method), or null when a method is translated for no task in
+     * particular (the runtime's questions about a kernel: which parameters it writes, ...).
+     */
+    public static Object[] taskArguments() {
+        return TASK_ARGUMENTS.get();
+    }
+
+    /** Runs {@code body}, a compilation for a task with these {@code arguments} (see {@link #taskArguments()}). */
+    public static <T> T withTaskArguments(Object[] arguments, java.util.function.Supplier<T> body) {
+        var outer = TASK_ARGUMENTS.get();
+        TASK_ARGUMENTS.set(arguments);
+        try {
+            return body.get();
+        } finally {
+            if (outer == null) {
+                TASK_ARGUMENTS.remove();
+            } else {
+                TASK_ARGUMENTS.set(outer);
+            }
+        }
+    }
+
+    /** The model frontends' keys for a task of {@code method} (see {@link ModelFrontend#taskKey}); empty when none has one. */
+    public static List<Object> taskKeys(java.lang.reflect.Method method, Object[] arguments) {
+        if (MODEL_FRONTENDS.isEmpty()) {
+            return List.of();
+        }
+        var keys = new java.util.ArrayList<Object>();
+        for (var model : MODEL_FRONTENDS) {
+            var key = model.taskKey(method, arguments);
+            if (key != null) {
+                keys.add(key);
+            }
+        }
+        return List.copyOf(keys);
+    }
+
     /** The TC type of a JVM field descriptor, as the bytecode frontend types kernel parameters. */
     public static uk.ac.manchester.tornado.tc.ir.Type typeOf(String descriptor) {
         return Bindings.type(descriptor);
