@@ -78,8 +78,8 @@ final class Checks {
                 new Check("device", "warp-sum", "32-lane warp reduction (KernelContext.simdSum)", TargetCaps::warps32, "32-lane warps", Checks::warpSum),
                 new Check("device", "device-launch", "a kernel launching a kernel (KernelContext.launch)", TargetCaps::deviceLaunch, "device-side launches (CUDA dynamic parallelism)",
                         Checks::deviceLaunch),
-                new Check("tensor-cores", "mma-f16", "F16 tensor-core GEMM (mma.sync m16n8k16)", TargetCaps::mma, "tensor cores (CUDA sm_80+)", Checks::mmaF16),
-                new Check("tensor-cores", "mma-fp8", "FP8 e4m3 tensor-core GEMM (mma.sync m16n8k32)", TargetCaps::fp8Mma, "FP8 tensor cores (CUDA sm_89+, NVRTC 12.4+)",
+                new Check("tensor-cores", "mma-f16", "F16 tensor-core GEMM (mma.sync m16n8k16)", TargetCaps::mma, "tensor cores (CUDA sm_80+, or AMD MFMA/WMMA)", Checks::mmaF16),
+                new Check("tensor-cores", "mma-fp8", "FP8 e4m3 tensor-core GEMM (mma.sync m16n8k32)", TargetCaps::fp8Mma, "FP8 tensor cores (CUDA sm_89+ with NVRTC 12.4+, or AMD MFMA/WMMA)",
                         Checks::mmaFp8)));
         return checks;
     }
@@ -118,6 +118,28 @@ final class Checks {
     static void close(float expected, float actual, float relative, String where) {
         if (!(Math.abs(expected - actual) <= relative * Math.max(1f, Math.abs(expected)))) {
             throw new AssertionError(where + ": expected " + expected + ", got " + actual);
+        }
+    }
+
+    /**
+     * The relative error an MMA result may have, against the sum of the magnitudes of its products, on matrix
+     * instructions that do not accumulate exactly: gfx11 (RDNA3/3.5) WMMA can be one or two float ulps off even when
+     * every product and partial sum is exact, and the gfx1250 FP8 WMMA keeps about 14 to 16 bits while summing its
+     * products. Zero elsewhere, where the result must be bit-exact.
+     */
+    static double mmaTolerance(TargetCaps caps, boolean fp8) {
+        return switch (caps.matrixCores()) {
+            case WMMA_GFX11 -> 1e-6;
+            case WMMA_GFX1250 -> fp8 ? 1e-4 : 0;
+            default -> 0;
+        };
+    }
+
+    static void mmaResult(float expected, float actual, double magnitude, double tolerance, String where) {
+        if (tolerance == 0) {
+            same(expected, actual, where);
+        } else if (!(Math.abs((double) actual - expected) <= tolerance * magnitude)) {
+            throw new AssertionError(where + ": expected " + expected + ", got " + actual + " (relative error over " + tolerance + ")");
         }
     }
 
@@ -458,11 +480,14 @@ final class Checks {
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 float expected = 0;
+                double magnitude = 0;
                 for (int p = 0; p < k; p++) {
-                    expected += a.get(i * k + p).getFloat32() * b.get(p * n + j).getFloat32();
+                    float product = a.get(i * k + p).getFloat32() * b.get(p * n + j).getFloat32();
+                    expected += product;
+                    magnitude += Math.abs(product);
                 }
                 // Small integers and halves: exact in f32 whatever the order.
-                same(expected, c.get(i * n + j), "c[" + i + "][" + j + "]");
+                mmaResult(expected, c.get(i * n + j), magnitude, mmaTolerance(caps, false), "c[" + i + "][" + j + "]");
             }
         }
         return m + "x" + n + "x" + k;
@@ -488,10 +513,13 @@ final class Checks {
         for (int i = 0; i < m; i++) {
             for (int j = 0; j < n; j++) {
                 float expected = 0;
+                double magnitude = 0;
                 for (int p = 0; p < k; p++) {
-                    expected += FP8.e4m3ToFloat(a.get(i * k + p)) * FP8.e4m3ToFloat(b.get(p * n + j));
+                    float product = FP8.e4m3ToFloat(a.get(i * k + p)) * FP8.e4m3ToFloat(b.get(p * n + j));
+                    expected += product;
+                    magnitude += Math.abs(product);
                 }
-                same(expected, c.get(i * n + j), "c[" + i + "][" + j + "]");
+                mmaResult(expected, c.get(i * n + j), magnitude, mmaTolerance(caps, true), "c[" + i + "][" + j + "]");
             }
         }
         return m + "x" + n + "x" + k;
