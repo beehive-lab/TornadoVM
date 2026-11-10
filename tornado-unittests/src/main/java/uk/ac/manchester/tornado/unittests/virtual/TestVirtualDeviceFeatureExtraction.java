@@ -131,6 +131,7 @@ public class TestVirtualDeviceFeatureExtraction extends TornadoTestBase {
     public void testVirtualDeviceFeatures() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
+        assertNotBackend(TornadoVMBackendType.HIP);
 
         testVirtuaLDeviceFeatureExtraction("virtualDeviceFeaturesGPU.json");
     }

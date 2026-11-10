@@ -321,6 +321,7 @@ public class TestAtomics extends TornadoTestBase {
     public void testAtomic05_precompiled() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
+        assertNotBackend(TornadoVMBackendType.HIP);
 
         final int size = 32;
         IntArray a = new IntArray(size);

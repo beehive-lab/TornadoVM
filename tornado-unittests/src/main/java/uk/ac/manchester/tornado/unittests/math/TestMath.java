@@ -853,8 +853,8 @@ public class TestMath extends TornadoTestBase {
     @Test
     public void testStrictFloatingPointIsPerPlan() throws TornadoExecutionPlanException {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            // Implemented for CUDA; elsewhere the call is accepted and does nothing, and asserting
+        if (backendType != TornadoVMBackendType.CUDA && backendType != TornadoVMBackendType.HIP) {
+            // Implemented for CUDA and HIP; elsewhere the call is accepted and does nothing, and asserting
             // a guarantee the backend does not make would be asserting a lie.
             return;
         }

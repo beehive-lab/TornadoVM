@@ -27,6 +27,7 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
@@ -160,6 +161,44 @@ public class TestCopyDevicePointers extends TornadoTestBase {
             executionPlan.withGraph(1).execute();
 
             IntStream.range(0, row.getSize()).forEach(i -> assertEquals(15.1f, row.get(i), 0.01f));
+        }
+    }
+
+    /**
+     * Maps a multi-megabyte block of rows between two task-graphs and checks every element the kernel
+     * saw. Without ordering the copy against the destination launch this failed on a Radeon 8060S under
+     * Windows. On Linux it passes either way, because compiling the destination kernel in its first
+     * execution leaves the copy time to finish, so there it checks the mapped data only.
+     */
+    @Test
+    public void testCopyDevicePointersLargeRegion() throws TornadoExecutionPlanException {
+        assertNotBackend(TornadoVMBackendType.OPENCL);
+        assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.CUDA);
+        final int rows = 1024;
+        final int columns = 4096;
+        final int firstRow = 256;
+        final int mappedRows = 512;
+
+        FloatArray matrix = new FloatArray(rows * columns);
+        TaskGraph taskGraph1 = new TaskGraph("s0") //
+                .task("s0", TestCopyDevicePointers::iterativeUpdate2D, matrix, rows, columns) //
+                .transferToHost(DataTransferMode.UNDER_DEMAND, matrix);
+
+        FloatArray block = new FloatArray(mappedRows * columns);
+        TaskGraph taskGraph2 = new TaskGraph("s1") //
+                .transferToDevice(DataTransferMode.UNDER_DEMAND, block) //
+                .task("s1", TestCopyDevicePointers::computeRow, block) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, block);
+
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph1.snapshot(), taskGraph2.snapshot())) {
+            executionPlan.withGraph(0).execute();
+            executionPlan.mapOnDeviceMemoryRegion(block, matrix, firstRow * columns, 0, 1);
+            executionPlan.withGraph(1).execute();
+
+            for (int i = 0; i < block.getSize(); i++) {
+                assertEquals(firstRow + i / columns + 0.1f, block.get(i), 0.01f, "element " + i);
+            }
         }
     }
 }

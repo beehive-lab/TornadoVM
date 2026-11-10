@@ -76,8 +76,8 @@ public class TestHalfFloatValueConversion extends TornadoTestBase {
      */
     private void assumeCudaBackend() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "This HalfFloat value-conversion fix targets the CUDA backend (default device is " + backendType + ")";
+        if (backendType != TornadoVMBackendType.CUDA && backendType != TornadoVMBackendType.HIP) {
+            String message = "This HalfFloat value-conversion fix targets the CUDA and HIP backends (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

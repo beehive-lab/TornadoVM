@@ -66,8 +66,8 @@ public class TestFP8ElementwiseCopy extends TornadoTestBase {
      */
     private void assumeCudaBackend() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "FP8 device kernels require the CUDA backend (default device is " + backendType + ")";
+        if (backendType != TornadoVMBackendType.CUDA && backendType != TornadoVMBackendType.HIP) {
+            String message = "FP8 device kernels require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

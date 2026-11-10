@@ -70,6 +70,7 @@ public class LocalMemoryFail extends TornadoTestBase {
     public void testTooMuchLocalMemoryIsReported() {
         assertNotBackend(TornadoVMBackendType.OPENCL, "Only the Metal driver's report of a refused pipeline is checked here.");
         assertNotBackend(TornadoVMBackendType.CUDA, "Only the Metal driver's report of a refused pipeline is checked here.");
+        assertNotBackend(TornadoVMBackendType.HIP, "Only the Metal driver's report of a refused pipeline is checked here.");
 
         FloatArray input = new FloatArray(SIZE);
         FloatArray output = new FloatArray(SIZE);

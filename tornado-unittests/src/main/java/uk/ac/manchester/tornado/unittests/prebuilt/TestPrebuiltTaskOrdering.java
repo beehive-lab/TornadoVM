@@ -75,6 +75,7 @@ public class TestPrebuiltTaskOrdering extends TornadoTestBase {
             case OPENCL -> ".cl";
             case METAL -> ".metal";
             case CUDA -> ".cu";
+            case HIP -> ".hip";
             default -> throw new TornadoRuntimeException("Backend not supported");
         };
         return basePath + fileStem + extension;
