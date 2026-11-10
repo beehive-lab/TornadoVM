@@ -38,9 +38,11 @@ import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
 import uk.ac.manchester.tornado.cutlass.Cutlass;
+import uk.ac.manchester.tornado.cutlass.provider.ComposableKernelLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Unit tests for the NVIDIA CUTLASS library-task provider ({@code nvidia/cutlass}).
@@ -56,8 +58,14 @@ public class TestCutlass extends TornadoTestBase {
     @BeforeEach
     public void cutlassMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!ComposableKernelLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("libtornado-ck (Composable Kernel) is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "CUTLASS library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "CUTLASS library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

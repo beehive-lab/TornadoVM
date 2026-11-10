@@ -51,5 +51,15 @@
                 <module>cutlass-jni</module>
             </modules>
         </profile>
+        <profile>
+            <id>hip-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <!-- Native kernels built from Composable Kernel with CMake; they need ROCm and ship only in the SDK. -->
+            <modules>
+                <module>ck-hip</module>
+            </modules>
+        </profile>
     </profiles>
 </project>

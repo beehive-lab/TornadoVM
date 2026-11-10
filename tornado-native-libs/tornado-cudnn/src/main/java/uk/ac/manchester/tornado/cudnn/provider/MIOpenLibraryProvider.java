@@ -38,8 +38,9 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * counterpart of {@link CuDnnLibraryProvider}, with the same per-(device, execution plan) context (a
  * MIOpen handle bound to the plan's stream, convolution plans per shape and direction created in
  * {@link #prepare} before graph capture, and a grow-only workspace whose outgrown predecessors stay
- * allocated until the context is destroyed). The fused SDPA functions are not handled here: MIOpen's
- * attention operation has no FP16 solution on these GPUs.
+ * allocated until the context is destroyed). The fused SDPA functions run on the FP16 attention
+ * kernels of AMD Composable Kernel that TornadoVM builds into libtornado-ck ({@link CkAttentionNativeLib}),
+ * because MIOpen's attention operation has no FP16 solution on these GPUs.
  */
 public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
 
@@ -116,7 +117,7 @@ public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
             case "cudnnConv2d", "cudnnConv2dFP16", "cudnnConv2dNHWC", "cudnnConv2dNHWCFP16", "cudnnConv2dBackwardData", "cudnnConv2dBackwardDataFP16", "cudnnConv2dBackwardFilter",
                     "cudnnConv2dBackwardFilterFP16" -> getOrCreateConvPlan((MIOpenContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10],
                             (int) p[11], descriptor.getFunctionName().endsWith("FP16"), descriptor.getFunctionName().contains("NHWC"), direction(descriptor.getFunctionName()));
-            case "sdpaForward", "sdpaForwardPackedQkv" -> throw sdpaNotSupported(descriptor.getFunctionName());
+            case "sdpaForward", "sdpaForwardPackedQkv" -> checkSdpaAvailable(descriptor.getFunctionName());
             default -> {
                 // simple ops have no per-shape native state
             }
@@ -153,7 +154,8 @@ public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
             case "cudnnConv2dNHWCFP16" -> conv2d(context, invocation, true, true);
             case "cudnnConv2dBackwardData", "cudnnConv2dBackwardDataFP16", "cudnnConv2dBackwardFilter", "cudnnConv2dBackwardFilterFP16" -> conv2dBackward(context, invocation,
                     functionName.endsWith("FP16"), direction(functionName));
-            case "sdpaForward", "sdpaForwardPackedQkv" -> throw sdpaNotSupported(functionName);
+            case "sdpaForward" -> sdpa(context, invocation);
+            case "sdpaForwardPackedQkv" -> sdpaPacked(context, invocation);
             default -> throw new TornadoRuntimeException("[ERROR] MIOpen does not implement cuDNN function: " + functionName);
         };
         MIOpenNativeLib.checkStatus(status, functionName);
@@ -196,12 +198,53 @@ public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
                         context.workspaceBytes);
     }
 
-    /**
-     * MIOpen's multi-head attention operation has a solution only for FP32 tensors in packed BHSD layout
-     * on these GPUs; it accepts neither the FP16 tensors nor the strides these functions take.
-     */
-    private static TornadoLibraryTaskNotSupported sdpaNotSupported(String functionName) {
-        return new TornadoLibraryTaskNotSupported("[UNSUPPORTED] " + functionName + " (fused FP16 attention) is not available on HIP devices: MIOpen has no FP16 attention solution");
+    private static void checkSdpaAvailable(String functionName) {
+        if (!CkAttentionNativeLib.isAvailable()) {
+            throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] " + functionName + " on HIP devices needs libtornado-ck, the attention kernels built from Composable Kernel; "
+                    + "this TornadoVM build does not include it");
+        }
+    }
+
+    /** (q, k, v, o, b, h, sQ, sKv, d, scale, causal), packed BHSD. */
+    private static int sdpa(MIOpenContext context, LibraryInvocation invocation) {
+        int b = (int) invocation.getArg(4);
+        int h = (int) invocation.getArg(5);
+        int sQ = (int) invocation.getArg(6);
+        int sKv = (int) invocation.getArg(7);
+        int d = (int) invocation.getArg(8);
+        long qB = (long) h * sQ * d;
+        long kvB = (long) h * sKv * d;
+        long[] strides = { qB, (long) sQ * d, d, 1, kvB, (long) sKv * d, d, 1, kvB, (long) sKv * d, d, 1, qB, (long) sQ * d, d, 1 };
+        return sdpaForward(context, invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), invocation.getDevicePointer(3), b, h, sQ, sKv, d,
+                (float) invocation.getArg(9), (boolean) invocation.getArg(10), strides);
+    }
+
+    /** (qkv, o, b, h, s, d, scale, causal): q, k and v at element offsets 0, h d and 2 h d of each token's row. */
+    private static int sdpaPacked(MIOpenContext context, LibraryInvocation invocation) {
+        int b = (int) invocation.getArg(2);
+        int h = (int) invocation.getArg(3);
+        int s = (int) invocation.getArg(4);
+        int d = (int) invocation.getArg(5);
+        long row = 3L * h * d;
+        long qkvB = s * row;
+        long out = (long) h * d;
+        // element strides of (batch, head, token, dim) for q, k, v, then o
+        long[] strides = { qkvB, d, row, 1, qkvB, d, row, 1, qkvB, d, row, 1, s * out, d, out, 1 };
+        long qkv = invocation.getDevicePointer(0);
+        long headBytes = (long) h * d * Short.BYTES;
+        return sdpaForward(context, qkv, qkv + headBytes, qkv + 2 * headBytes, invocation.getDevicePointer(1), b, h, s, s, d, (float) invocation.getArg(6), (boolean) invocation.getArg(7),
+                strides);
+    }
+
+    private static int sdpaForward(MIOpenContext context, long q, long k, long v, long o, int b, int h, int sQ, int sKv, int d, float scale, boolean causal, long[] strides) {
+        int status = CkAttentionNativeLib.sdpaForward(context.stream, q, k, v, o, b, h, sQ, sKv, d, scale, causal, strides);
+        return switch (status) {
+            case CkAttentionNativeLib.SUCCESS -> 0;
+            case CkAttentionNativeLib.NO_KERNEL -> throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] fused SDPA: libtornado-ck has no attention kernel for this GPU and head dimension " + d);
+            case CkAttentionNativeLib.HIP_FAILURE -> throw new TornadoRuntimeException("[ERROR] fused SDPA: the attention kernel failed to launch (HIP error)");
+            default -> throw new TornadoRuntimeException("[ERROR] fused SDPA: invalid arguments for the attention kernel (b=" + b + ", h=" + h + ", sQ=" + sQ + ", sKv=" + sKv + ", d=" + d
+                    + "; head dim multiple of 8, <= 256)");
+        };
     }
 
     private static long getOrCreateConvPlan(MIOpenContext context, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, boolean nhwc, int direction) {
