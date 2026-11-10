@@ -163,6 +163,31 @@ public final class Intrinsics {
         cudaTyped("math.abs", "i64", "($0 < 0 ? (long long) (0ull - (unsigned long long) $0) : $0)");
         openCl();
         metal();
+        hip();
+    }
+
+    /**
+     * HIP C++ spellings where they differ from CUDA's; {@link #lookup} falls back to the CUDA row for
+     * every other intrinsic. A KernelContext warp is 32 lanes, which on a 64-wide wavefront is one half
+     * of it: shuffles name a width of 32, and votes read the half of the wavefront's ballot that holds
+     * the lane, so the results are those of a 32-lane warp at either width.
+     */
+    private static void hip() {
+        TABLE.put(new Key("tornado.simd.sum", Dialect.HIP, ""), Spelling.withHelper("tc_warp_sum($0)", "tc_warp_sum"));
+        hipRow("tornado.simd.shuffle_down", "__shfl_down($0, $1, 32)");
+        hipRow("tornado.simd.broadcast_first", "__shfl($0, 0, 32)");
+        TABLE.put(new Key("tornado.simd.any", Dialect.HIP, ""), Spelling.withHelper("(tc_warp_bits(__ballot($0)) != 0u)", "tc_warp_bits"));
+        TABLE.put(new Key("tornado.simd.all", Dialect.HIP, ""), Spelling.withHelper("(tc_warp_bits(__ballot($0)) == tc_warp_bits(__ballot(1)))", "tc_warp_bits"));
+        TABLE.put(new Key("tornado.simd.ballot", Dialect.HIP, ""), Spelling.withHelper("(int) tc_warp_bits(__ballot($0))", "tc_warp_bits"));
+        TABLE.put(new Key("tornado.dp4a", Dialect.HIP, ""),
+                Spelling.withHelper("tc_dp4a(*((const int *) ((const char *) $0 + $1)), *((const int *) ((const char *) $2 + $3)), $4)", "tc_dp4a"));
+        TABLE.put(new Key("tornado.dp4a.packed", Dialect.HIP, ""), Spelling.withHelper("tc_dp4a($0, $1, $2)", "tc_dp4a"));
+        TABLE.put(new Key("math.min", Dialect.HIP, "i64"), Spelling.withHelper("tc_llmin($0, $1)", "tc_llmin"));
+        TABLE.put(new Key("math.max", Dialect.HIP, "i64"), Spelling.withHelper("tc_llmax($0, $1)", "tc_llmax"));
+    }
+
+    private static void hipRow(String name, String template) {
+        TABLE.put(new Key(name, Dialect.HIP, ""), Spelling.of(template));
     }
 
     /** OpenCL C 1.2 spellings (OpenCL C specification, built-in functions). */
@@ -329,7 +354,11 @@ public final class Intrinsics {
 
     /** Every template of {@code dialect} (what {@link Naming} scans for the names it calls). */
     static List<String> templates(Dialect dialect) {
-        return TABLE.entrySet().stream().filter(e -> e.getKey().dialect() == dialect).map(e -> e.getValue().template()).toList();
+        var own = TABLE.entrySet().stream().filter(e -> e.getKey().dialect() == dialect).map(e -> e.getValue().template());
+        if (dialect == Dialect.HIP) {
+            return java.util.stream.Stream.concat(own, templates(Dialect.CUDA).stream()).toList();
+        }
+        return own.toList();
     }
 
     /** The spelling of {@code name} for {@code dialect}, preferring a row for {@code type}. */
@@ -338,7 +367,11 @@ public final class Intrinsics {
         if (typed != null) {
             return Optional.of(typed);
         }
-        return Optional.ofNullable(TABLE.get(new Key(name, dialect, "")));
+        var untyped = TABLE.get(new Key(name, dialect, ""));
+        if (untyped == null && dialect == Dialect.HIP) {
+            return lookup(name, Dialect.CUDA, type);
+        }
+        return Optional.ofNullable(untyped);
     }
 
     /**

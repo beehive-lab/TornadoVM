@@ -294,6 +294,62 @@ final class Helpers {
                     """));
 
     /**
+     * HIP helpers where the CUDA one does not apply; every other helper is the CUDA one, since HIP C++
+     * accepts it unchanged. The warp operations name their width: a KernelContext warp is 32 lanes.
+     */
+    private static final Map<String, String> HIP = Map.ofEntries(
+            Map.entry("tc_warp_sum", """
+                    __device__ static inline float tc_warp_sum(float v) {
+                      for (int lane = 16; lane > 0; lane >>= 1) v += __shfl_xor(v, lane, 32);
+                      return v;
+                    }
+                    """),
+            // The 32 ballot bits of the lane's warp: the low half of a 64-wide wavefront's ballot for
+            // lanes 0-31, the high half for lanes 32-63 (all of it on a 32-wide wavefront).
+            Map.entry("tc_warp_bits", """
+                    __device__ static inline unsigned tc_warp_bits(unsigned long long ballot) {
+                      return (unsigned) (ballot >> (__lane_id() & 32u));
+                    }
+                    """),
+            // Signed int8 dot product of the four bytes of a and b, plus c (CUDA's __dp4a).
+            Map.entry("tc_dp4a", """
+                    __device__ static inline int tc_dp4a(int a, int b, int c) {
+                      return c + (int) (signed char) a * (int) (signed char) b + (int) (signed char) (a >> 8) * (int) (signed char) (b >> 8)
+                          + (int) (signed char) (a >> 16) * (int) (signed char) (b >> 16) + (int) (a >> 24) * (int) (b >> 24);
+                    }
+                    """),
+            // cp.async as a plain copy: the slot is written before the copying thread reaches its wait, so
+            // commit and wait have nothing to do (the barrier after the wait publishes it to the block).
+            Map.entry("tc_cp_async_4", """
+                    __device__ static inline void tc_cp_async_4(int *dst, const char *src) {
+                      *dst = *(const int *) src;
+                    }
+                    """),
+            Map.entry("tc_cp_async_16", """
+                    __device__ static inline void tc_cp_async_16(int *dst, const char *src) {
+                      *(int4 *) dst = *(const int4 *) src;
+                    }
+                    """),
+            Map.entry("tc_cp_async_commit", """
+                    __device__ static inline void tc_cp_async_commit() {
+                    }
+                    """),
+            Map.entry("tc_cp_async_wait", """
+                    __device__ static inline void tc_cp_async_wait(int n) {
+                    }
+                    """),
+            Map.entry("tc_llmin", """
+                    __device__ static inline long long tc_llmin(long long a, long long b) {
+                      return a < b ? a : b;
+                    }
+                    """),
+            Map.entry("tc_llmax", """
+                    __device__ static inline long long tc_llmax(long long a, long long b) {
+                      return a > b ? a : b;
+                    }
+                    """));
+
+    /**
      * OpenCL C helpers, from the JLS like the CUDA ones. OpenCL 1.2 has no float atomics: they are a
      * compare-and-swap loop on the bits (global memory).
      */
@@ -531,6 +587,11 @@ final class Helpers {
             case CUDA -> CUDA.values();
             case OPENCL -> OPENCL.values();
             case METAL -> METAL.values();
+            case HIP -> {
+                var all = new java.util.HashMap<>(CUDA);
+                all.putAll(HIP);
+                yield all.values();
+            }
         };
     }
 
@@ -539,6 +600,7 @@ final class Helpers {
             case CUDA -> CUDA.get(helper);
             case OPENCL -> OPENCL.get(helper);
             case METAL -> METAL.get(helper);
+            case HIP -> HIP.getOrDefault(helper, CUDA.get(helper));
         };
         if (text == null) {
             throw new IllegalArgumentException("no " + dialect + " definition for helper " + helper);

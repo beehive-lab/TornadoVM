@@ -38,7 +38,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * with the pragma);</li>
  * <li>TC-E4015: warp operations, written for 32-lane warps, on another SIMD width;</li>
  * <li>TC-E4016: a device launch where kernels cannot launch kernels;</li>
- * <li>TC-E4017: tensor-core MMA or {@code cp.async} below CUDA sm_80;</li>
+ * <li>TC-E4017: tensor-core MMA or {@code cp.async} below CUDA sm_80, or MMA on an AMD GPU without matrix cores;</li>
  * <li>TC-E4018: FP8 tensor-core MMA below sm_89, or with an NVRTC older than 12.4 (PTX ISA 8.4);</li>
  * <li>TC-E4010, TC-E4011: CUDA Tile kernels ({@link TileTyping#checkTarget}).</li>
  * </ul>
@@ -61,7 +61,7 @@ public final class Legality {
         // Local memory is not checked here: the driver is the authority, and its limit is not the one the
         // device reports (CUDA takes up to the opt-in size, 99 KB on sm_89, against 48 KB reported;
         // NVIDIA's OpenCL adds its own bytes; Metal's pipeline aligns). It refuses with the reason.
-        if (target.warpSize() != 32) {
+        if (!target.warps32()) {
             insts(function).filter(i -> intrinsic(i, "tornado.simd.")).findFirst()
                     .ifPresent(i -> problems.add(at(function, i, "TC-E4015", "warp operations are written for 32-lane warps; the device's SIMD width is " + target.warpSize())));
         }
@@ -80,6 +80,11 @@ public final class Legality {
                         : "FP8 tensor-core MMA needs PTX ISA 8.4 (NVRTC 12.4 or newer); NVRTC is " + target.nvrtcVersion() / 1000 + "." + target.nvrtcVersion() % 1000));
             }
         }
+        // HIP copies asynchronously-staged tiles synchronously, which any AMD GPU can do; MMA needs matrix cores.
+        if (target.dialect() == TargetCaps.Dialect.HIP && !target.mma()) {
+            insts(function).filter(i -> intrinsic(i, "tornado.mma.")).findFirst()
+                    .ifPresent(i -> problems.add(at(function, i, "TC-E4017", "tensor-core MMA needs AMD matrix cores (MFMA or WMMA); the device is " + hipArch(target))));
+        }
         insts(function).filter(i -> intrinsic(i, "tornado.vector.lane_at") || intrinsic(i, "tornado.vector.insert_at")).findFirst()
                 .ifPresent(i -> problems.add(at(function, i, "TC-E1010", "vector lanes can only be accessed at a constant index (a loop over lanes must have a constant trip count to unroll)")));
                 if (TileTyping.usesTiles(function)) {
@@ -90,6 +95,10 @@ public final class Legality {
             }
         }
         return problems;
+    }
+
+    private static String hipArch(TargetCaps target) {
+        return target.arch().isEmpty() ? "an AMD GPU without them" : target.arch();
     }
 
     private static Stream<Inst> insts(Function function) {

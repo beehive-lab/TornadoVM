@@ -102,7 +102,7 @@ public final class Naming {
             }
         }
         switch (dialect) {
-            case CUDA -> {
+            case CUDA, HIP -> {
                 reserved.addAll(CPP_KEYWORDS);
                 reserved.addAll(CUDA);
                 prefixes = TC_PREFIXES;

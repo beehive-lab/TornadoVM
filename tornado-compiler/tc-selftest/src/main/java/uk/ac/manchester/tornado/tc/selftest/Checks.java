@@ -75,7 +75,7 @@ final class Checks {
                 // ---- strict floating point
                 Check.of("strict-fp", "ieee-edges", "withStrictFloatingPoint(): denormals, NaN and signed zeros as on the JVM", Checks::ieeeEdges),
                 // ---- device features
-                new Check("device", "warp-sum", "32-lane warp reduction (KernelContext.simdSum)", caps -> caps.warpSize() == 32, "32-lane warps", Checks::warpSum),
+                new Check("device", "warp-sum", "32-lane warp reduction (KernelContext.simdSum)", TargetCaps::warps32, "32-lane warps", Checks::warpSum),
                 new Check("device", "device-launch", "a kernel launching a kernel (KernelContext.launch)", TargetCaps::deviceLaunch, "device-side launches (CUDA dynamic parallelism)",
                         Checks::deviceLaunch),
                 new Check("tensor-cores", "mma-f16", "F16 tensor-core GEMM (mma.sync m16n8k16)", TargetCaps::mma, "tensor cores (CUDA sm_80+)", Checks::mmaF16),

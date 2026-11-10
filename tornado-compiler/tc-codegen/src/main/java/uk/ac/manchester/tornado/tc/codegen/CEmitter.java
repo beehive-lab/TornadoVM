@@ -878,7 +878,7 @@ public final class CEmitter {
             case REM -> javaDivision(type, a, "%", b, type.equals(Type.I64) ? "java_lrem" : "java_irem");
             case FDIV -> infix(a, "/", b, MUL);
             // fmodf is CUDA's float spelling; OpenCL C and MSL overload fmod for float.
-            case FREM -> new R((type.equals(Type.F32) && target.dialect() == TargetCaps.Dialect.CUDA ? "fmodf(" : "fmod(") + expr(a).text + ", " + expr(b).text + ")", ATOM);
+            case FREM -> new R((type.equals(Type.F32) && (target.dialect() == TargetCaps.Dialect.CUDA || target.dialect() == TargetCaps.Dialect.HIP) ? "fmodf(" : "fmod(") + expr(a).text + ", " + expr(b).text + ")", ATOM);
             case AND -> infix(a, "&", b, BAND);
             case OR -> infix(a, "|", b, BOR);
             case XOR -> infix(a, "^", b, BXOR);
@@ -1037,8 +1037,8 @@ public final class CEmitter {
                 var converted = dialect.saturatingToInt(from, to, features) + "(" + v.text + ")";
                 // Java converts NaN to 0. The CUDA and OpenCL saturating conversions give MIN_VALUE for
                 // NaN except from float to int (measured: __float2ll_rz, __double2int_rz and NVIDIA's
-                // convert_long_sat_rtz), so NaN is tested first; Metal's helpers already do.
-                if (target.dialect() == TargetCaps.Dialect.METAL || from.equals(Type.F32) && to.equals(Type.I32)) {
+                // convert_long_sat_rtz), so NaN is tested first; the Metal and HIP helpers already do.
+                if (target.dialect() == TargetCaps.Dialect.METAL || target.dialect() == TargetCaps.Dialect.HIP || from.equals(Type.F32) && to.equals(Type.I32)) {
                     yield new R(converted, ATOM);
                 }
                 var x = wrap(v, UNARY);

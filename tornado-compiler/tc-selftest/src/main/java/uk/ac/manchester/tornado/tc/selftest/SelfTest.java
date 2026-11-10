@@ -191,6 +191,9 @@ public final class SelfTest {
                 sb.append(", NVRTC ").append(caps.nvrtcVersion() / 1000).append('.').append(caps.nvrtcVersion() % 1000);
             }
         }
+        if (caps.dialect() == TargetCaps.Dialect.HIP && !caps.arch().isEmpty()) {
+            sb.append(' ').append(caps.arch());
+        }
         sb.append(", fp64 ").append(yes(caps.fp64())).append(", fp16 ").append(yes(caps.fp16()));
         sb.append(", warp ").append(caps.warpSize() == 0 ? "unknown" : caps.warpSize());
         sb.append(", local memory ").append(caps.localMemoryBytes() / 1024).append(" KB, work-group ").append(caps.maxWorkGroupSize());

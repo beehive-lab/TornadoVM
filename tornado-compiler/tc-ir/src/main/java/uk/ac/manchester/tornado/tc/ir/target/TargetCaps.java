@@ -34,12 +34,23 @@ package uk.ac.manchester.tornado.tc.ir.target;
  * @param nvrtcVersion        the NVRTC that compiles CUDA kernels as major*1000+minor (12004 for 12.4); 0 when
  *                            unknown or not CUDA. NVRTC stamps the PTX with its own ISA version, so an
  *                            instruction newer than the toolkit cannot be expressed on any GPU.
+ * @param arch                the AMD GPU architecture a HIP kernel is compiled for ({@code gfx942}), without
+ *                            feature suffixes; empty elsewhere
  */
 public record TargetCaps(Dialect dialect, int computeCapability, boolean fp64, boolean fp16, int arrayHeaderBytes, int maxWorkGroupSize, int localMemoryBytes, int warpSize,
-        boolean deviceLaunch, int nvrtcVersion) {
+        boolean deviceLaunch, int nvrtcVersion, String arch) {
 
     public enum Dialect {
-        CUDA, OPENCL, METAL
+        CUDA, OPENCL, METAL, HIP
+    }
+
+    public TargetCaps {
+        arch = arch == null ? "" : arch;
+    }
+
+    public TargetCaps(Dialect dialect, int computeCapability, boolean fp64, boolean fp16, int arrayHeaderBytes, int maxWorkGroupSize, int localMemoryBytes, int warpSize, boolean deviceLaunch,
+            int nvrtcVersion) {
+        this(dialect, computeCapability, fp64, fp16, arrayHeaderBytes, maxWorkGroupSize, localMemoryBytes, warpSize, deviceLaunch, nvrtcVersion, "");
     }
 
     /** NVIDIA GeForce RTX 4090 through NVRTC: the first parity target. */
@@ -58,8 +69,31 @@ public record TargetCaps(Dialect dialect, int computeCapability, boolean fp64, b
      */
     public static final TargetCaps METAL_APPLE = new TargetCaps(Dialect.METAL, 0, false, true, 16, 1024, 32 * 1024, 32, false, 0);
 
+    /**
+     * An AMD GPU through HIP and hipRTC, for headless use: an MI300-class (gfx942) device with 64-wide
+     * wavefronts, 64 KB of LDS per work-group and no device-side launches.
+     */
+    public static final TargetCaps HIP_GFX942 = hip("gfx942", true, true, 16, 1024, 64 * 1024, 64);
+
+    /**
+     * A HIP device as its driver describes it. HIP has no compute capability in the CUDA sense (it
+     * reports the gfx major and minor, which must not be read as an sm_ number), and kernels cannot
+     * launch kernels.
+     */
+    public static TargetCaps hip(String arch, boolean fp64, boolean fp16, int arrayHeaderBytes, int maxWorkGroupSize, int localMemoryBytes, int warpSize) {
+        return new TargetCaps(Dialect.HIP, 0, fp64, fp16, arrayHeaderBytes, maxWorkGroupSize, localMemoryBytes, warpSize, false, 0, arch);
+    }
+
     public TargetCaps withArrayHeaderBytes(int bytes) {
-        return new TargetCaps(dialect, computeCapability, fp64, fp16, bytes, maxWorkGroupSize, localMemoryBytes, warpSize, deviceLaunch, nvrtcVersion);
+        return new TargetCaps(dialect, computeCapability, fp64, fp16, bytes, maxWorkGroupSize, localMemoryBytes, warpSize, deviceLaunch, nvrtcVersion, arch);
+    }
+
+    /**
+     * Whether KernelContext's warp operations, which are defined for 32-lane warps, run on this target:
+     * 32-lane warps, or HIP on a 64-wide wavefront, which treats each half of the wavefront as a warp.
+     */
+    public boolean warps32() {
+        return warpSize == 32 || dialect == Dialect.HIP && warpSize == 64;
     }
 
     /** NVRTC 12.4, the first to emit PTX ISA 8.4 (FP8 {@code mma.sync}). */
