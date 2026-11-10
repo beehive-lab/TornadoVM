@@ -118,6 +118,20 @@ public class HatTasksChecks {
         }
     }
 
+    @Reflect
+    public static void addValue(F32Array data, float value) {
+        data.array(GIX(), data.array(GIX()) + value);
+    }
+
+    /** One dispatch per step, each with another scalar value: each is a plan of its own. */
+    @Reflect
+    public static void addValues(hat.ComputeContext cc, F32Array data, int length, int steps) {
+        for (int step = 0; step < steps; step++) {
+            float value = step;
+            cc.dispatchKernel(hat.NDRange.of1D(length), () -> addValue(data, value));
+        }
+    }
+
     public static void notReflected(F32Array data) {
         data.array(GIX(), 0f);
     }
@@ -141,6 +155,10 @@ public class HatTasksChecks {
     }
 
     public static void main(String[] args) {
+        // Few plans kept, so that the checks below also run with plans being closed under them.
+        if (System.getProperty("tornado.hat.plans") == null) {
+            System.setProperty("tornado.hat.plans", "3");
+        }
         var accelerator = new Accelerator(MethodHandles.lookup(), Backend.FIRST);
         String[] d = System.getProperty("hat.t.device", "0:0").split(":");
         TornadoDevice device = TornadoExecutionPlan.getDevice(Integer.parseInt(d[0]), Integer.parseInt(d[1]));
@@ -275,6 +293,31 @@ public class HatTasksChecks {
                 for (int i = 0; i < nm[1]; i++) {
                     expect(pair.b(i) == (i < length ? i + 1 : -1), "b[" + i + "] = " + pair.b(i) + " of a pair of " + nm[0] + ", " + nm[1]);
                 }
+            }
+        });
+
+        check("a scalar that changes every dispatch", () -> {
+            // More plans than are kept: the data moves on from each plan's device memory to the next.
+            int steps = 12;
+            var data = F32Array.create(accelerator, n);
+            for (int i = 0; i < n; i++) {
+                data.array(i, i);
+            }
+            accelerator.compute((Accelerator.@Reflect Compute) cc -> addValues(cc, data, n, steps));
+            accelerator.compute((Accelerator.@Reflect Compute) cc -> addValues(cc, data, n, steps));
+            float added = steps * (steps - 1);
+            for (int i = 0; i < n; i++) {
+                expect(data.array(i) == i + added, "data[" + i + "] = " + data.array(i) + ", not " + (i + added));
+            }
+            if (accelerator.backend instanceof AutoCloseable closeable) {
+                try {
+                    closeable.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                int two = 2; // HAT passes captured values only, not literals
+                accelerator.compute((Accelerator.@Reflect Compute) cc -> addValues(cc, data, n, two));
+                expect(data.array(5) == 5 + added + 1, "after close: data[5] = " + data.array(5));
             }
         });
 

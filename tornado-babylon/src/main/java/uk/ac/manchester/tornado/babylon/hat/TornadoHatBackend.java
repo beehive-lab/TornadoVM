@@ -61,7 +61,7 @@ import uk.ac.manchester.tornado.babylon.tc.HatLayouts;
  * stay on the device across compute calls. {@code -Dtornado.hat.resident=false} copies every buffer
  * in and out of every dispatch instead.
  */
-public class TornadoHatBackend extends Backend implements optkl.ifacemapper.BufferTracker {
+public class TornadoHatBackend extends Backend implements optkl.ifacemapper.BufferTracker, AutoCloseable {
 
     /** {@code -Dtornado.hat.strictFP=true}: IEEE division/sqrt and no contraction (plan.withStrictFloatingPoint()). */
     private static final boolean STRICT_FP = Boolean.getBoolean("tornado.hat.strictFP");
@@ -81,9 +81,9 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
 
     /**
      * {@code -Dhat.t.device=cuda:0} (or {@code opencl:1}, ...): a device by its backend's name. Unless
-     * {@code -Dtornado.enabled.backends} says otherwise, TornadoVM then initialises only that backend (on
-     * a CUDA run, OpenCL's platform and context set-up cost the first dispatch about 0.2 s here), and
-     * the property is rewritten to the {@code <backend>:<device>} indices TornadoVM reads.
+     * {@code -Dtornado.enabled.backends} says otherwise, that backend becomes the only one enabled, and
+     * the property is rewritten to the {@code <backend>:<device>} indices TornadoVM reads. TornadoVM
+     * creates a backend the first time it is used, so naming it costs nothing over its index.
      */
     private static hat.Config selectDevice(hat.Config config) {
         String device = System.getProperty("hat.t.device");
@@ -93,7 +93,15 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         }
         String backend = named.group(1);
         if (System.getProperty("tornado.enabled.backends") == null) {
-            System.setProperty("tornado.enabled.backends", backend);
+            var known = Arrays.stream(uk.ac.manchester.tornado.api.enums.TornadoVMBackendType.values()).map(Enum::name).toList();
+            if (known.stream().noneMatch(backend::equalsIgnoreCase)) {
+                throw new IllegalArgumentException("-Dhat.t.device=" + device + ": TornadoVM has no " + backend + " backend (" + known + ")");
+            }
+            // The only backend enabled is backend 0. Nothing is created here: the warm-up creates
+            // it in the background (asking TornadoVM for its backends would create them now).
+            System.setProperty("tornado.enabled.backends", backend.toLowerCase(java.util.Locale.ROOT));
+            System.setProperty("hat.t.device", "0:" + named.group(2));
+            return config;
         }
         var backends = TornadoExecutionPlan.getTornadoDeviceMap().getAllBackends();
         for (int i = 0; i < backends.size(); i++) {
@@ -117,25 +125,33 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
     private static final boolean WARM_UP = !"false".equals(System.getProperty("tornado.hat.warmUp"));
 
     /**
-     * Initialises TornadoVM's runtime and the dispatch device (its context, queues and memory), and
-     * loads the compiler's classes, on a background thread from the moment HAT creates this backend:
-     * the work overlaps the program's own set-up (allocating and filling buffers) instead of
-     * landing on the first dispatch. HAT's own CUDA backend creates its context when it is
-     * constructed too. Device initialisation is synchronised, so a dispatch that comes first simply
-     * waits for it.
+     * Initialises TornadoVM's runtime and the dispatch device (its context, queues and memory) with
+     * {@code TornadoExecutionPlan.initializeDeviceAsync}, and loads the compiler's classes on a
+     * background thread, from the moment HAT creates this backend: the work overlaps the program's
+     * own set-up (allocating and filling buffers) instead of landing on the first dispatch. HAT's own
+     * CUDA backend creates its context when it is constructed too. A dispatch that comes first
+     * simply waits for the device.
      */
     private static void warmUp() {
+        try {
+            String device = System.getProperty("hat.t.device");
+            if (device != null && device.matches("\\d+:\\d+")) {
+                String[] d = device.split(":");
+                TornadoExecutionPlan.initializeDeviceAsync(Integer.parseInt(d[0]), Integer.parseInt(d[1]));
+            } else {
+                TornadoExecutionPlan.initializeDeviceAsync();
+            }
+        } catch (RuntimeException e) {
+            // The first dispatch initialises the device and reports any failure.
+        }
         var thread = new Thread(() -> {
             try {
-                String device = System.getProperty("hat.t.device");
-                var d = device != null && device.matches("\\d+:\\d+") ? device.split(":") : new String[] { "0", "0" };
-                TornadoExecutionPlan.getDevice(Integer.parseInt(d[0]), Integer.parseInt(d[1])).ensureLoaded(0);
                 for (var name : new String[] { "uk.ac.manchester.tornado.babylon.tc.BabylonTranslator", "uk.ac.manchester.tornado.tc.runtime.TcCompiler",
                         "uk.ac.manchester.tornado.tc.codegen.CEmitter", "uk.ac.manchester.tornado.tc.opt.PassManager" }) {
                     Class.forName(name, true, TornadoHatBackend.class.getClassLoader());
                 }
             } catch (Throwable e) {
-                // The first dispatch initialises what is left and reports any failure.
+                // The first dispatch loads what is left and reports any failure.
             }
         }, "tornado-hat-warmup");
         thread.setDaemon(true);
@@ -280,10 +296,26 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         var key = key(kernel, ndRange, args);
         key.add(tile);
         boolean[] built = new boolean[1];
-        var dispatch = plans.computeIfAbsent(key, k -> {
+        Dispatch dispatch;
+        synchronized (plans) {
+            dispatch = plans.get(key);
+        }
+        if (dispatch == null) {
             built[0] = true;
-            return prepare(kernel, ndRange, args, tile, RESIDENT);
-        });
+            dispatch = prepare(kernel, ndRange, args, tile, RESIDENT);
+            Dispatch eldest = null;
+            synchronized (plans) {
+                plans.put(key, dispatch);
+                if (plans.size() > MAX_PLANS) {
+                    var first = plans.entrySet().iterator();
+                    eldest = first.next().getValue();
+                    first.remove();
+                }
+            }
+            if (eldest != null) {
+                release(eldest);
+            }
+        }
         if (dispatch.resident() && dispatch.reuse()[0] >= ADAPT_AFTER && dispatch.reuse()[1] == dispatch.reuse()[0] - 1) {
             dispatch = unresident(key, kernel, ndRange, args, tile, dispatch);
             built[0] = true;
@@ -416,7 +448,46 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
      */
     private static final int ADAPT_AFTER = 4;
 
-    private final java.util.Map<List<Object>, Dispatch> plans = new java.util.concurrent.ConcurrentHashMap<>();
+    /**
+     * {@code -Dtornado.hat.plans=<n>}: the most plans kept (64). A plan is for one kernel, range, set of
+     * buffers and scalar values, so a kernel dispatched with a value that changes every time (a step
+     * count) makes a new one each time: the least recently used one is then closed, and its device
+     * memory released. The compiled kernel is TC's to keep and is reused.
+     */
+    private static final int MAX_PLANS = Math.max(1, Integer.getInteger("tornado.hat.plans", 64));
+
+    /** By last use (guarded by itself). */
+    private final java.util.LinkedHashMap<List<Object>, Dispatch> plans = new java.util.LinkedHashMap<>(16, 0.75f, true);
+
+    private static final java.util.concurrent.atomic.AtomicLong GRAPHS = new java.util.concurrent.atomic.AtomicLong();
+
+    /** Brings home what only {@code old}'s device memory holds, then closes its plan. */
+    private synchronized void release(Dispatch old) {
+        residences.forEach((buffer, r) -> {
+            if (r.device == old) {
+                toHost(r);
+                r.device = null;
+                r.result = null;
+                r.object = null;
+            }
+        });
+        try {
+            old.plan().close();
+        } catch (Exception e) {
+            // its device memory is released when the plan is collected
+        }
+    }
+
+    /** Copies back what is only on the device and closes every plan. The backend can be used again: plans are rebuilt. */
+    @Override
+    public void close() {
+        List<Dispatch> all;
+        synchronized (plans) {
+            all = new ArrayList<>(plans.values());
+            plans.clear();
+        }
+        all.forEach(this::release);
+    }
 
     private static List<Object> key(Method kernel, NDRange range, Object[] args) {
         var key = new ArrayList<Object>();
@@ -436,21 +507,13 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
     /** Replaces a resident plan that gains nothing from residency by an ordinary one (see ADAPT_AFTER). */
     private synchronized Dispatch unresident(List<Object> key, Method kernel, NDRange range, Object[] args, boolean tile, Dispatch old) {
         // Its buffers' current contents to the host first: the new plan starts from host memory.
-        residences.forEach((buffer, r) -> {
-            if (r.device == old) {
-                toHost(r);
-                r.device = null;
-            }
-        });
+        release(old);
         var replacement = prepare(kernel, range, args, tile, false);
-        plans.put(key, replacement);
+        synchronized (plans) {
+            plans.put(key, replacement);
+        }
         if (TRACE) {
             System.err.println("[hat residency] ordinary plan for " + kernel.getName() + " from now on: its launches upload every buffer");
-        }
-        try {
-            old.plan().close();
-        } catch (Exception e) {
-            // its device memory is released when the plan is collected
         }
         return replacement;
     }
@@ -478,7 +541,9 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
         // Resident buffers (all in place): uploaded by the first execution, then only when the host or
         // another plan has newer contents; copied back on demand (launchResident, the tracking hooks).
         boolean resident = allowResident && segments.stream().allMatch(java.util.Objects::isNull);
-        var graph = new TaskGraph("hat");
+        // A graph of its own name per plan: TornadoVM's profiler, logs and per-graph options tell kernels apart.
+        String graphName = "hat" + GRAPHS.incrementAndGet() + "_" + kernel.getName().replaceAll("[^A-Za-z0-9_]", "_");
+        var graph = new TaskGraph(graphName);
         if (!buffers.isEmpty()) {
             graph.transferToDevice(resident ? DataTransferMode.FIRST_EXECUTION : DataTransferMode.EVERY_EXECUTION, buffers.toArray());
         }
@@ -493,7 +558,7 @@ public class TornadoHatBackend extends Backend implements optkl.ifacemapper.Buff
             String[] d = device.split(":");
             plan.withDevice(TornadoExecutionPlan.getDevice(Integer.parseInt(d[0]), Integer.parseInt(d[1])));
         }
-        plan.withGridScheduler(new GridScheduler("hat.t", tile ? tileGrid(range) : workerGrid(range)));
+        plan.withGridScheduler(new GridScheduler(graphName + ".t", tile ? tileGrid(range) : workerGrid(range)));
         if (STRICT_FP) {
             plan.withStrictFloatingPoint();
         }
