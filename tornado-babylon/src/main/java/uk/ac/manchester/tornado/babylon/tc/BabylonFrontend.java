@@ -129,7 +129,23 @@ public final class BabylonFrontend implements ModelFrontend {
         return MethodType.methodType(m.getReturnType(), m.getParameterTypes()).toMethodDescriptorString();
     }
 
+    /**
+     * Lowered SSA models by method. A plan asks for a kernel's module up to three times (which
+     * parameters it writes, whether it stores a loop index, the compilation), and the model does not
+     * depend on the task: it is lowered once.
+     */
+    private static final java.util.Map<Method, CoreOp.FuncOp> LOWERED = new java.util.concurrent.ConcurrentHashMap<>();
+
     private static CoreOp.FuncOp lowered(Frontend.BytecodeSource source, Method m) {
+        var known = LOWERED.get(m);
+        if (known == null) {
+            known = lower(source, m);
+            LOWERED.put(m, known);
+        }
+        return known;
+    }
+
+    private static CoreOp.FuncOp lower(Frontend.BytecodeSource source, Method m) {
         var model = Op.ofMethod(m).orElseThrow(() -> new BabylonTranslator.Unsupported("TC-E1007", m + " has no code model"));
         var lowered = inlineTileHelpers(m, model.transform(CodeTransformer.LOWERING_TRANSFORMER), 0);
         var parallel = parallelLocals(source, m);
