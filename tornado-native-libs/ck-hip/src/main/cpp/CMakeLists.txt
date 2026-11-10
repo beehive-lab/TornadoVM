@@ -7,10 +7,14 @@ project (TornadoCK LANGUAGES CXX)
 # FP16 attention kernels (CK tile FMHA) behind the cuDNN SDPA functions and the GEMM kernels (CK
 # device operations) behind the CUTLASS functions.
 #
-# Without ROCm, without the Composable Kernel sources (fetched at configure time, or given with
-# TORNADO_CK_SOURCE_DIR), or on a generator without HIP language support (Visual Studio), the build
-# skips this library with a warning; those functions then report the task as unsupported on HIP
-# devices. With TORNADO_CK_REQUIRED set, a skipped build fails instead.
+# Without ROCm or without the Composable Kernel sources (fetched at configure time, or given with
+# TORNADO_CK_SOURCE_DIR), the build skips this library with a warning; those functions then report
+# the task as unsupported on HIP devices. With TORNADO_CK_REQUIRED set, a skipped build fails instead.
+#
+# The Visual Studio generator cannot compile HIP sources, so on Windows this project builds the
+# library in a nested Ninja build of itself, with ROCm's clang-cl as the C++ and HIP compiler, for
+# the GPUs named in TORNADO_CK_GPU_TARGETS, and puts tornado-ck.dll where a Visual Studio build
+# puts its output. That needs Ninja on PATH and CMake 4.0 or newer.
 macro(tornado_ck_skip reason)
     if(NOT "$ENV{TORNADO_CK_REQUIRED}" STREQUAL "" AND NOT "$ENV{TORNADO_CK_REQUIRED}" STREQUAL "0")
         message(FATAL_ERROR "TornadoVM CK: ${reason} (TORNADO_CK_REQUIRED is set, so this fails the build.)")
@@ -18,10 +22,6 @@ macro(tornado_ck_skip reason)
     message(WARNING "TornadoVM CK: ${reason} Skipping libtornado-ck (the fused SDPA path on HIP devices will report it at runtime).")
     return()
 endmacro()
-
-if(CMAKE_GENERATOR MATCHES "Visual Studio")
-    tornado_ck_skip("the ${CMAKE_GENERATOR} generator cannot compile HIP sources.")
-endif()
 
 set(ROCM_ROOT "")
 foreach(variable ROCM_PATH HIP_PATH ROCM_HOME)
@@ -37,6 +37,50 @@ if(NOT ROCM_ROOT)
 endif()
 file(TO_CMAKE_PATH "${ROCM_ROOT}" ROCM_ROOT)
 list(APPEND CMAKE_PREFIX_PATH "${ROCM_ROOT}")
+
+if(CMAKE_GENERATOR MATCHES "Visual Studio")
+    if(CMAKE_VERSION VERSION_LESS 4.0)
+        tornado_ck_skip("HIP sources need clang-cl as the HIP compiler on Windows, which needs CMake 4.0 or newer (this is CMake ${CMAKE_VERSION}).")
+    endif()
+    find_program(TORNADO_CK_NINJA ninja)
+    if(NOT TORNADO_CK_NINJA)
+        tornado_ck_skip("the ${CMAKE_GENERATOR} generator cannot compile HIP sources, and Ninja, which builds them instead, is not on PATH.")
+    endif()
+    find_program(TORNADO_CK_CLANG_CL clang-cl HINTS "${ROCM_ROOT}/lib/llvm/bin" "${ROCM_ROOT}/llvm/bin" NO_DEFAULT_PATH)
+    if(NOT TORNADO_CK_CLANG_CL)
+        tornado_ck_skip("no ROCm clang-cl under ${ROCM_ROOT}.")
+    endif()
+    if("$ENV{TORNADO_CK_GPU_TARGETS}" STREQUAL "")
+        tornado_ck_skip("on Windows the kernels are built only for the GPUs named in TORNADO_CK_GPU_TARGETS (for example gfx1151), which is not set.")
+    endif()
+    set(_ck_nested_args
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_MAKE_PROGRAM=${TORNADO_CK_NINJA}
+        -DCMAKE_CXX_COMPILER=${TORNADO_CK_CLANG_CL}
+        -DCMAKE_HIP_COMPILER=${TORNADO_CK_CLANG_CL})
+    if(TORNADO_CK_SOURCE_DIR)
+        list(APPEND _ck_nested_args -DTORNADO_CK_SOURCE_DIR=${TORNADO_CK_SOURCE_DIR})
+    endif()
+    # The nested build reads ROCM_PATH, TORNADO_CK_GPU_TARGETS, TORNADO_CK_SOURCE_DIR and
+    # TORNADO_CK_REQUIRED from the environment, which it inherits from this build.
+    include(ExternalProject)
+    ExternalProject_Add(tornado-ck-ninja
+        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+        BINARY_DIR "${CMAKE_BINARY_DIR}/ninja"
+        CMAKE_GENERATOR Ninja
+        CMAKE_ARGS ${_ck_nested_args}
+        INSTALL_COMMAND ""
+        BUILD_ALWAYS ON)
+    # A nested build that skipped the library leaves no DLL, and the module has none, as elsewhere.
+    file(WRITE "${CMAKE_BINARY_DIR}/tornado-ck-copy.cmake"
+        "if(EXISTS \"\${FROM}\")\n  file(COPY \"\${FROM}\" DESTINATION \"\${TO}\")\nendif()\n")
+    add_custom_target(tornado-ck ALL
+        COMMAND ${CMAKE_COMMAND} "-DFROM=${CMAKE_BINARY_DIR}/ninja/tornado-ck.dll" "-DTO=${CMAKE_BINARY_DIR}/$<CONFIG>"
+            -P "${CMAKE_BINARY_DIR}/tornado-ck-copy.cmake"
+        DEPENDS tornado-ck-ninja
+        VERBATIM)
+    return()
+endif()
 
 if(NOT CMAKE_HIP_COMPILER)
     find_program(TORNADO_HIP_CLANG clang++ HINTS "${ROCM_ROOT}/llvm/bin" "${ROCM_ROOT}/lib/llvm/bin" NO_DEFAULT_PATH)
@@ -57,6 +101,11 @@ endif()
 set(CMAKE_HIP_ARCHITECTURES ${TORNADO_CK_GPU_TARGETS})
 enable_language(HIP)
 find_package(hip REQUIRED CONFIG)
+if(CMAKE_HIP_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    # With /Fo, clang-cl hands the object path to clang-offload-bundler as both its input and its
+    # output, which Windows refuses, and the object loses its device code; -o avoids that.
+    string(REPLACE "/Fo<OBJECT>" "-o <OBJECT>" CMAKE_HIP_COMPILE_OBJECT "${CMAKE_HIP_COMPILE_OBJECT}")
+endif()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
@@ -161,21 +210,32 @@ endforeach()
 string(REPLACE ";" "," CK_COMPILED_TARGETS "${CK_COMPILED_TARGETS}")
 set_source_files_properties("source/tornado-ck-sdpa.cpp" "source/tornado-ck-gemm.cpp" PROPERTIES COMPILE_DEFINITIONS
     "TORNADO_CK_COMPILED_TARGETS=\"${CK_COMPILED_TARGETS}\"")
+if(WIN32)
+    # The DLL exports the C entry points that tornado-cudnn and tornado-cutlass look up.
+    file(WRITE "${CMAKE_BINARY_DIR}/tornado-ck.def"
+        "EXPORTS\n  tornado_ck_sdpa_forward\n  tornado_ck_gemm\n  tornado_ck_gemm_bias_act\n  tornado_ck_hgemm_batched\n")
+    list(APPEND SOURCE_FILES "${CMAKE_BINARY_DIR}/tornado-ck.def")
+endif()
 add_library(tornado-ck SHARED ${SOURCE_FILES})
 
 set_target_properties(tornado-ck PROPERTIES HIP_STANDARD 20 HIP_STANDARD_REQUIRED ON)
 target_include_directories(tornado-ck PRIVATE source "${CMAKE_BINARY_DIR}/ck-config" "${CK_SOURCE_DIR}/include" "${CK_FMHA_DIR}")
+# clang-cl (Windows) takes the GNU-style options below only behind /clang:.
+set(CK_GNU "")
+if(CMAKE_HIP_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    set(CK_GNU "/clang:")
+endif()
 # The compile options of CK's own builds; the attention sources also take those of its FMHA example
 # (flushing denormals is confined to them).
 target_compile_options(tornado-ck PRIVATE
-    -O3
+    ${CK_GNU}-O3
     -Wno-undefined-func-template
     -Wno-float-equal
     "SHELL:-mllvm -enable-post-misched=0"
     "SHELL:-mllvm -amdgpu-early-inline-all=true"
     "SHELL:-mllvm -amdgpu-function-calls=false")
 set_source_files_properties("source/tornado-ck-sdpa.cpp" ${CK_FMHA_SOURCES} PROPERTIES COMPILE_OPTIONS
-    "-DCK_TILE_FMHA_FWD_FAST_EXP2=1;-fgpu-flush-denormals-to-zero;-DCK_TILE_FMHA_FWD_SPLITKV_API=0;-DCK_TILE_FMHA_FWD_APPENDKV_API=0;-DCK_TILE_FMHA_FWD_PAGEDKV_API=0;-DCK_TILE_USE_OCP_FP8")
+    "-DCK_TILE_FMHA_FWD_FAST_EXP2=1;${CK_GNU}-fgpu-flush-denormals-to-zero;-DCK_TILE_FMHA_FWD_SPLITKV_API=0;-DCK_TILE_FMHA_FWD_APPENDKV_API=0;-DCK_TILE_FMHA_FWD_PAGEDKV_API=0;-DCK_TILE_USE_OCP_FP8")
 target_link_libraries(tornado-ck PRIVATE hip::host)
 
 # CK's newer unified tile framework needs the host pass to know the GPU target, which CK takes as
