@@ -90,9 +90,10 @@ public class TileExamples {
     // ---- row sums: s[i] = sum_j a[i][j], one block of tm whole rows each
     @Reflect
     public static void rowSum(Tensor2DF32 a, Tensor2DF32 s, int tm, int n) {
+        int first = TileContext.BIDZ(); // 0 in these launches; HAT's tile checker refuses a constant in index()
         int i = TileContext.BIDX();
-        var t = TileContext.load(a, TileContext.index(i, 0), TileContext.shape(tm, n));
-        TileContext.store(s, TileContext.index(i, 0), Tile.sum(t, 1));
+        var t = TileContext.load(a, TileContext.index(i, first), TileContext.shape(tm, n));
+        TileContext.store(s, TileContext.index(i, first), Tile.sum(t, 1));
     }
 
     @Reflect
@@ -103,9 +104,10 @@ public class TileExamples {
     // ---- column sums: m[j] = sum_i a[i][j], one block of tn whole columns each
     @Reflect
     public static void colSum(Tensor2DF32 a, Tensor2DF32 mx, int m, int tn) {
+        int first = TileContext.BIDZ(); // 0 in these launches; HAT's tile checker refuses a constant in index()
         int j = TileContext.BIDX();
-        var t = TileContext.load(a, TileContext.index(0, j), TileContext.shape(m, tn));
-        TileContext.store(mx, TileContext.index(0, j), Tile.sum(t, 0));
+        var t = TileContext.load(a, TileContext.index(first, j), TileContext.shape(m, tn));
+        TileContext.store(mx, TileContext.index(first, j), Tile.sum(t, 0));
     }
 
     @Reflect
@@ -116,9 +118,10 @@ public class TileExamples {
     // ---- broadcasting: each row minus its sum (a (tm, n) tile and a (tm, 1) tile)
     @Reflect
     public static void centerRows(Tensor2DF32 a, Tensor2DF32 out, int tm, int n) {
+        int first = TileContext.BIDZ(); // 0 in these launches; HAT's tile checker refuses a constant in index()
         int i = TileContext.BIDX();
-        var t = TileContext.load(a, TileContext.index(i, 0), TileContext.shape(tm, n));
-        TileContext.store(out, TileContext.index(i, 0), Tile.sub(t, Tile.sum(t, 1)));
+        var t = TileContext.load(a, TileContext.index(i, first), TileContext.shape(tm, n));
+        TileContext.store(out, TileContext.index(i, first), Tile.sub(t, Tile.sum(t, 1)));
     }
 
     @Reflect
@@ -129,16 +132,17 @@ public class TileExamples {
     // ---- matrix multiply with a bias row added to every row: c = a b + bias
     @Reflect
     public static void matmulBias(Tensor2DF32 a, Tensor2DF32 b, Tensor2DF32 bias, Tensor2DF32 c, int tm, int tn, int tk) {
+        int first = TileContext.BIDZ(); // 0 in these launches; HAT's tile checker refuses a constant in index()
         int i = TileContext.BIDX();
         int j = TileContext.BIDY();
-        var acc = Tile.zeros(tm, tn);
+        var acc = Tile.zeros(TileContext.shape(tm, tn));
         int kTiles = Tile.numTiles(a, 1, TileContext.shape(tm, tk));
-        for (int k : TileContext.irange(kTiles)) {
+        for (int k = 0; k < kTiles; k++) {
             var ta = TileContext.load(a, TileContext.index(i, k), TileContext.shape(tm, tk));
             var tb = TileContext.load(b, TileContext.index(k, j), TileContext.shape(tk, tn));
             acc = Tile.mma(ta, tb, acc);
         }
-        var row = TileContext.load(bias, TileContext.index(0, j), TileContext.shape(1, tn));
+        var row = TileContext.load(bias, TileContext.index(first, j), TileContext.shape(1, tn));
         TileContext.store(c, TileContext.index(i, j), Tile.add(acc, row));
     }
 
@@ -168,9 +172,10 @@ public class TileExamples {
     // ---- reshape: a flat block of tm * tn values seen as tm rows of tn, summed per row
     @Reflect
     public static void blockRowSums(TensorF32 flat, Tensor2DF32 sums, int tm, int tn) {
+        int first = TileContext.BIDZ(); // 0 in these launches; HAT's tile checker refuses a constant in index()
         int pid = TileContext.BIDX();
         var block = Tile.reshape(TileContext.load(flat, pid, tm * tn), TileContext.shape(tm, tn));
-        TileContext.store(sums, TileContext.index(pid, 0), Tile.sum(block, 1));
+        TileContext.store(sums, TileContext.index(pid, first), Tile.sum(block, 1));
     }
 
     @Reflect
@@ -184,7 +189,7 @@ public class TileExamples {
         int i = TileContext.BIDX();
         int j = TileContext.BIDY();
         var t = TileContext.load(a, TileContext.index(i, j), TileContext.shape(tm, tn));
-        TileContext.store(b, TileContext.index(j, i), Tile.permute(t, TileContext.shape(1, 0)));
+        TileContext.store(b, TileContext.index(j, i), Tile.permute(t, TileContext.dimMap(1, 0)));
     }
 
     @Reflect

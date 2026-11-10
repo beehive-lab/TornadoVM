@@ -114,7 +114,8 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 1. **Done: HAT buffers stay on the device between dispatches.**
    - **How it works:**
      - The backend injects buffer tracking into compute methods (`ComputeTracking`).
-     - A buffer is uploaded only when the host has written it, or when another kernel's plan holds the current copy.
+     - A buffer is uploaded only when the host has written it.
+     - Kernels that hand buffers to each other share their device memory: when a launch would take a buffer from where another kernel left it, both kernels move to one shared plan, in which a graph per buffer owns its device memory and each kernel's graph consumes it from there. `HandOff` (two kernels over two 16 MB buffers, 50 steps per compute call): 0.24 ms per step, against 3.85 ms when the buffer went through the host (`-Dtornado.hat.shared=false`). A kernel that only meets its own buffers (matmul, Life) keeps a plan of its own.
      - It comes back when the host reads it.
      - When the compute method returns, results are copied back (with `HAT=MC`, only when the program asks: `accelerator.preAccess(buffer)` or `cc.copyOutOnExit(...)`).
    - **TornadoVM fixes this needed** (#1308): copies back on demand came from the graph's device instead of the task's, and a partial copy back made every later copy of the object partial.
@@ -134,7 +135,8 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
      | HAT's CUDA backend, `HAT=MC` | 4841 |
 
    - **What remains:** a generation costs about 50 µs against a 7 µs kernel. Most of it is the synchronisation of each blocking execution, since the host updates the control struct between generations. Going further needs asynchronous executions in TornadoVM.
-   - **Options:** `-Dtornado.hat.resident=false`, `-Dtornado.hat.memberCopies=false`, `-Dtornado.hat.traceResidency=true`, `-Dtornado.hat.cudaGraph=true`.
+   - **Where a dispatch's time goes** (Nsight Systems and JFR, Life): about 35 µs in this backend's dispatch, of which 21 µs are CUDA calls (launch 4, stream synchronisation 5, the control struct's upload 5, events 3, copies back 3), and about 20 µs in HAT's own dispatcher and the compute method.
+   - **Options:** `-Dtornado.hat.resident=false`, `-Dtornado.hat.shared=false`, `-Dtornado.hat.plans=<n>`, `-Dtornado.hat.memberCopies=false`, `-Dtornado.hat.traceResidency=true`, `-Dtornado.hat.cudaGraph=true`.
 
 3. **Done: Game of Life with its window.**
    - `lifebench.LifeWindow` runs HAT's `life` demo as `life.Main` does: the real Swing `Viewer`, the demo's pattern (a 10018 x 6798 grid) and its compute loop. The loop refreshes the window at its frame rate (5 frames per second) and runs generations in between. The harness skips the start button and reports generations per second over 10 s.
@@ -195,13 +197,14 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 
 - **CUDA only:** CUDA Tile (`dispatchTile`) and tensor-core (`Tensor`) kernels run on CUDA devices only. Elsewhere TC refuses them with TC-E4010 or TC-E4002.
 - **Power-of-two tile extents (TC-E3401).** This is a CUDA Tile rule. To reduce a whole row or column of any length, load it as the next power of two; the edge is zero-padded (`examples/src/tiles/TileExamples.java`, `rowSum`).
-- **`Tile.permute`:** only the identity and the 2D transpose (1, 0).
 - **`Tile.arange`:** yields F32 values.
 - **HAT's 2DREGISTERTILING_V is 1.5x slower** than with HAT's CUDA backend (121 vs 80 µs). The cause is not the `Float4` loads (now one 128-bit access, below): NVRTC unrolls TC's 16-iteration loop over the shared-memory tiles 4 times, and HAT's C fully (8 against 32 `LDS.128`; ncu: 8.4M shared-load bank conflicts against 0). The loop is too large for TC's own unroller before lowering; `#pragma unroll` on it gives HAT's code. An automatic hint is not done yet.
 - **HAT tensors:** an operand is loaded where `mma` uses it, not where `loadF16` is called.
 - **Double precision:** kernels that use it are refused on devices without FP64 (TC-E4012), for example `Math.exp` on doubles on an Intel UHD 770.
-- **First dispatch:** 0.5-0.6 s for the plan, TC and NVRTC (or nvcc for CUDA Tile); HAT's own CUDA backend takes 0.16-0.23 s. Later dispatches reuse the plan. While a plan is built, a kernel's code model is translated up to three times (access analysis, loop-index check, compilation), about 2 ms each once warm.
-- **`HatTasks`:** buffers must come from an `Accelerator` on `TornadoHatBackend`. A kernel is a method reference to a static `@Reflect` method; a lambda is refused with a clear message.
+- **First dispatch:** about 0.15 s for the plan, TC and NVRTC (longer with nvcc for CUDA Tile). Later dispatches reuse the plan. While a plan is built, a kernel's code model is translated up to three times (access analysis, loop-index check, compilation); the model is lowered once, and the second and third translations take about 1.2 ms each.
+- **Plans kept:** at most 64 (`-Dtornado.hat.plans`), by last use. A kernel dispatched with a scalar value or range that changes every time gets a plan per value; the compiled kernel is shared (TC compiles such scalars as runtime values), the plan is not.
+- **CUDA graphs** (`-Dtornado.hat.cudaGraph=true`) use a plan per kernel, not the shared plan.
+- **`HatTasks`:** buffers must come from an `Accelerator` on `TornadoHatBackend`. A kernel is a method reference to a static `@Reflect` method of up to 12 parameters; a lambda is refused with a clear message.
 - **`@Parallel` loops** in TornadoVM kernels compiled from their code models need class files compiled with `-g`.
 
 - **Buffer residency:**
@@ -213,6 +216,7 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 
 - A literal written in a `compute` lambda arrives as `null`; only captured values are passed. Use variables: `int tile = 256; accelerator.compute(cc -> k(cc, a, tile))`.
 - Tile kernels cannot take `float` parameters (`Illegal parameter type float`).
+- `TileContext.index` refuses a constant (`index(i, 0)`: "must have primitive values"). The examples pass an unused block index, which is 0 (`TileContext.BIDZ()`).
 - HAT's tile type checker refuses:
   - a tile times a scalar (`Tile.mul(tile, 0.5f)`);
   - `Tile.truediv` of two tiles;
@@ -221,14 +225,14 @@ dynamic parallelism (`KernelContext.launch` with a `static final DeviceKernel`).
 
   Tile-by-tile `add`/`sub`/`mul`, `sum` over each axis, `mma`, `transpose`, `reshape` and `permute` pass the checker.
 - `TestNbody` updates body positions inside the kernel that also reads them (a race). Its expected-precision result is the same on HAT's own backends.
-- Babylon is an OpenJDK project branch, not a JDK release, and HAT's API is still changing. This module is tested with `code-reflection` at `87aaaa4b0`.
+- Babylon is an OpenJDK project branch, not a JDK release, and HAT's API is still changing. This module is tested with `code-reflection` at `c61f25555` (2026-11; before that `87aaaa4b0`).
 
 ## Build and run
 
 Tested on Linux x86-64 with an RTX 4090 (CUDA 12.6 toolkit, driver for CUDA 13) and an Intel UHD 770.
 
 **1. A Babylon JDK** ([openjdk/babylon](https://github.com/openjdk/babylon), branch `code-reflection`;
-tested at `87aaaa4b0`). Its boot JDK is JDK 26:
+tested at `c61f25555`). Its boot JDK is JDK 26:
 
 ```bash
 git clone -b code-reflection https://github.com/openjdk/babylon.git ~/src/babylon
@@ -249,7 +253,7 @@ JAVA_HOME=~/src/babylon/build/linux-x86_64-server-release/images/jdk mvn clean p
 ```bash
 cd TornadoVM                                  # this branch
 export JAVA_HOME=~/.sdkman/candidates/java/25.0.2-open
-make jdk22plus BACKEND=opencl,cuda            # or BACKEND=opencl / BACKEND=cuda
+make BACKEND=opencl,cuda                      # or BACKEND=opencl / BACKEND=cuda
 source setvars.sh
 ```
 
@@ -266,6 +270,9 @@ tornado --devices                             # driver:device numbers; here CUDA
 H=$BABYLON/hat/build
 ./run.sh -d 1:0 $H/hat-example-matmul-1.0.jar:$H/hat-example-shared-1.0.jar matmul.Main --kernel=2DTILING --check --size=256
 
+# Everything at once: build, checkstyle, the examples on every device, HAT's unit tests on one:
+./check.sh -d 1:0
+
 # HAT's own unit tests on TornadoVM (all of them, or some classes):
 ./hat-tests.sh -d 1:0
 ./hat-tests.sh -d 0:0 TestMatMul TestFlashAttention
@@ -279,7 +286,7 @@ java @build/tornado.args --enable-preview --add-modules=jdk.incubator.code -Dtor
 Options:
 - `-Dtornado.tc.frontend=auto` (default: code models for HAT kernels; HAT kernels have no other way
   in), `babylon` (every method with a code model) or `bytecode` (off).
-- `-Dhat.t.device=<backend>:<device>` picks the HAT backend's device, by the backend's name (`cuda:0`, `opencl:1`) or index (`1:0`). With a name, only that backend is initialised, which takes about 0.2 s off the first dispatch of a CUDA run (no OpenCL set-up).
+- `-Dhat.t.device=<backend>:<device>` picks the HAT backend's device, by the backend's name (`cuda:0`, `opencl:1`) or index (`1:0`). With a name, that backend is the only one enabled. TornadoVM creates a backend the first time it is used, so both start equally fast.
 - `-Dtornado.hat.zeroCopy=false` copies HAT buffers around each dispatch instead of wrapping them in
   place.
 - `-Dtornado.hat.strictFP=true` gives the plans strict floating point.
@@ -295,12 +302,13 @@ Options:
 | `src/main/java/.../babylon/tc/` | The TC frontend: `BabylonFrontend` (the `ModelFrontend` service), `BabylonTranslator` (code model to TC IR), `HatLayouts` / `DeviceLayouts` (HAT schemas as memory layouts), `HatWrites` (members each kernel writes), `Markers` |
 | `src/main/java/.../babylon/hat/` | The HAT backend: `TornadoHatBackend`, `HeaderArena`, `ComputeTracking`, `HatTasks`, `HatObjectAdapter` (+ its thin `HatObjectAdapterService`), `TornadoBuffers` |
 | `src/main/java/.../babylon/Events.java` | JFR events: `tornado.hat.Dispatch`, `tornado.babylon.Translate` |
-| `examples/src/` | Self-checking examples: `@Reflect` TornadoVM kernels, `HatTasks`, tiles, Game of Life (headless and windowed), interface-mapped particles |
+| `examples/src/` | Self-checking examples: `@Reflect` TornadoVM kernels, `HatTasks`, tiles, Game of Life (headless and windowed), interface-mapped particles, `HandOff` (two kernels sharing buffers) |
 | `docs/architecture.svg` | The diagram above |
 | `build.sh`, `env.sh` | Build the module and its examples with the Babylon JDK; the environment they use |
 | `run.sh` | Run a HAT or TornadoVM program through this module (`-d cuda:0`) |
 | `hat-tests.sh`, `hat-sweep.sh` | HAT's unit tests and HAT's examples on TornadoVM devices |
 | `examples-tests.sh` | This module's examples on every device |
+| `check.sh` | Build, checkstyle, the examples and HAT's unit tests, with one exit status |
 | `reflect-all-sdk.sh`, `annotate-static-methods.py` | The TornadoVM unit-test suite compiled from code models: an SDK copy whose test kernels are `@Reflect` |
 | `perf.sh`, `perf-nsys.sh` | End-to-end and kernel-only times against HAT's own backends |
 | `profile.sh`, `tools/` | JFR, Nsight Systems and Nsight Compute runs, with their summaries (`jfr-summary.py`, `ncu-summary.py`, `profile.jfc`) |
@@ -313,14 +321,14 @@ Options:
 | `./hat-tests.sh [-d dev] [Class[#method] ...]` | HAT's own unit tests (`hat/tests`, through HAT's test engine) on TornadoVM; a class whose JVM dies is rerun one method per JVM |
 | `./hat-sweep.sh [dev ...]` | HAT's example programs, validated by their `--check` or against HAT's own CUDA output |
 | `./reflect-all-sdk.sh` | a copy of the SDK whose unit tests are compiled by Babylon's javac with every static method `@Reflect`, to run the whole TornadoVM unit-test suite with kernels from their code models |
-| `./examples-tests.sh [dev ...]` | the self-checking examples on every device: `ReflectKernels` (with and without a CUDA graph), `HatTasksChecks` (10 checks of HAT kernels in task graphs: next to plain TornadoVM tasks, shared buffers, 2D, CUDA graphs, misuse), `NBodyTaskGraph`, and `TileExamples` (10 tile kernels at 256 and at a ragged 1000, CUDA only) |
+| `./examples-tests.sh [dev ...]` | the self-checking examples on every device: `ReflectKernels` (with and without a CUDA graph), `HatTasksChecks` (16 checks of HAT kernels in task graphs: next to plain TornadoVM tasks, shared buffers, one kernel over several buffer shapes, 2D, CUDA graphs, plans closed under use, misuse), `HandOff` (shared plan and a plan per kernel), `NBodyTaskGraph`, and `TileExamples` (10 tile kernels at 256 and at a ragged 1000, CUDA only) |
 
-### HAT's unit tests (156 tests in 30 classes)
+### HAT's unit tests (157 tests in 30 classes, at `c61f25555`)
 
-| Device | TornadoVM (TC) | HAT's own backend |
+| Device | TornadoVM (TC) | HAT's own backend (of 156, at `87aaaa4b0`) |
 |---|---|---|
-| RTX 4090, CUDA | **154** pass, 2 expected-precision (the values HAT's own backends give) | 130 pass, 6 fail, 4 expected-precision, some classes not launched |
-| RTX 4090, OpenCL | **135** pass, 2 expected-precision; 15 tile and 4 tensor tests refused (CUDA only) | 133 pass, 21 fail, 2 expected-precision |
+| RTX 4090, CUDA | **155** pass, 2 expected-precision (the values HAT's own backends give) | 130 pass, 6 fail, 4 expected-precision, some classes not launched |
+| RTX 4090, OpenCL | **135** pass, 2 expected-precision; 16 tile and 4 tensor tests refused (CUDA only) | 133 pass, 21 fail, 2 expected-precision |
 | Intel UHD 770, OpenCL | **132** pass; the rest are tiles and tensors (CUDA only) and 4 kernels using `Math.exp` in double precision on a device without FP64 (TC-E4012) | not run |
 
 The expected-precision tests (`test_bfloat16_14`, `testNbody`) give exactly the values HAT's own
@@ -391,9 +399,8 @@ the same HAT kernels compiled by TC on TornadoVM, and by HAT's own CUDA and Open
   while HAT's C lets nvcc fuse them (`HFMA2`), and HAT's result fails the example's check. (It was 3.4x slower, 202 µs,
   while HAT's half arrays were stored as 64-bit words: nvcc packed and unpacked every half, 912 SASS instructions against
   392 now that they are `short[]`.)
-- First dispatch of 2DTILING (1024), `-d cuda:0`, median of 5 runs: **270 ms** on TornadoVM against **168 ms** with HAT's
-  CUDA backend; the whole program, launch to exit, **590 ms** against **470 ms**. HAT's backend creates its CUDA context
-  when the `Accelerator` is built, before its first dispatch; `TornadoHatBackend` now initialises TornadoVM and the device on a
-  background thread from that moment too (`-Dtornado.hat.warmUp=false` turns it off: 354 ms and 677 ms). The CUDA module
-  cache saves only 27 ms here (381 ms with it cleared). With every backend enabled (`-d 1:0`), OpenCL's set-up adds
-  about 0.2 s; `cuda:0` initialises only CUDA. Translating the code model is 20 ms. Later dispatches reuse the plan.
+- First dispatch of 2DTILING (1024), `-d cuda:0`, median of 5 runs: **147 ms** on TornadoVM (270 ms before TornadoVM created
+  its backends on first use; HAT's CUDA backend took 168 ms when last measured); the whole program, launch to exit, **511 ms**
+  (590 ms before). `TornadoHatBackend` initialises TornadoVM and the device on a background thread from the moment the
+  `Accelerator` is built (`TornadoExecutionPlan.initializeDeviceAsync`; `-Dtornado.hat.warmUp=false` turns it off).
+  Translating the code model is 19 ms, 16 of them the first, cold translation. Later dispatches reuse the plan.

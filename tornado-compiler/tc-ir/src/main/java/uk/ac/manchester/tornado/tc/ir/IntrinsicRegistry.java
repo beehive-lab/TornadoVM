@@ -120,6 +120,7 @@ public final class IntrinsicRegistry {
         pure("tile.view", "a tensor view of an array");
         pure("tile.view_strided", "a strided two-dimensional tensor view of an array");
         pure("tile.extract", "a sub-tile", "rank");
+        pure("tile.permute", "a tile with its axes reordered: axis i of the result is axis order[i] of the operand", "order");
         // CUDA Tile (TileContext): values and views are pure; memory accesses are not.
         add("tile.load", EnumSet.of(Effect.READS), "tile load through a partition view");
         add("tile.load_masked", EnumSet.of(Effect.READS), "masked tile load");

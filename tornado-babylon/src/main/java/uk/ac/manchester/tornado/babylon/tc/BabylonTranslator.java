@@ -1472,7 +1472,7 @@ final class BabylonTranslator {
             return false;
         }
         var owner = invoke.invokeReference().refType().toString();
-        return owner.equals("hat.TileContext") && java.util.Set.of("irange", "index", "shape").contains(invoke.invokeReference().name()) || owner.equals("hat.types.Tensor");
+        return owner.equals("hat.TileContext") && java.util.Set.of("irange", "index", "shape", "dimMap").contains(invoke.invokeReference().name()) || owner.equals("hat.types.Tensor");
     }
 
     private void findVirtualParams(jdk.incubator.code.Body body) {
@@ -1612,7 +1612,7 @@ final class BabylonTranslator {
             case "BIDX", "BIDY", "BIDZ" -> {
                 return b.intrinsic("tile.bid", Immediates.of("dim", "XYZ".indexOf(name.charAt(3))), Type.I32, List.of());
             }
-            case "index", "shape" -> {
+            case "index", "shape", "dimMap" -> {
                 tileTuples.put(op.result(), args(operands));
                 return null;
             }
@@ -1664,7 +1664,8 @@ final class BabylonTranslator {
                 return null;
             }
             case "zeros" -> {
-                var dims = args(operands);
+                // zeros(shape(m, n)); earlier HAT: zeros(m, n)
+                var dims = operands.size() == 1 && tileTuples.containsKey(resolve(operands.get(0))) ? tuple(b, operands.get(0)) : args(operands);
                 var ops = new ArrayList<uk.ac.manchester.tornado.tc.ir.Value>(List.of(b.constInt(Type.I32, dtype("F32"))));
                 ops.addAll(rank2(b, dims, false));
                 return tile(b, "tile.zeros", ops, dims);
@@ -1717,7 +1718,13 @@ final class BabylonTranslator {
                 if (order.equals(java.util.stream.LongStream.range(0, d.size()).boxed().toList())) {
                     return t;
                 }
-                throw new Unsupported("TC-E1003", "Tile.permute supports the identity and the 2D transpose (1, 0); got " + order);
+                if (order.contains(-1L) || order.size() != d.size() || order.stream().distinct().count() != d.size() || order.stream().anyMatch(x -> x >= d.size())) {
+                    throw new Unsupported("TC-E1003", "Tile.permute needs each axis of the tile once, as constants; got " + order);
+                }
+                var permuted = b.intrinsic("tile.permute", Immediates.of("order", String.join(",", order.stream().map(String::valueOf).toList())),
+                        uk.ac.manchester.tornado.tc.ir.ApiTypes.TILE, List.of(t));
+                tileDims.put(permuted, order.stream().map(x -> d.get(x.intValue())).toList());
+                return permuted;
             }
             case "sum", "min", "max" -> {
                 if (name.equals("min") && operands.stream().allMatch(x -> descriptor(x.type()).equals("I"))) {
