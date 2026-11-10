@@ -499,6 +499,10 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
             String combined = (existing == null || existing.isBlank()) ? "--fmad=false" : existing + " --fmad=false";
             executionContext.meta().setCompilerFlags(TornadoVMBackendType.CUDA, combined);
         }
+        String hip = executionContext.meta().getCompilerFlags(TornadoVMBackendType.HIP);
+        if (hip == null || !hip.contains("-ffp-contract")) {
+            executionContext.meta().setCompilerFlags(TornadoVMBackendType.HIP, (hip == null || hip.isBlank()) ? "-ffp-contract=off" : hip + " -ffp-contract=off");
+        }
         // OpenCL: the default options relax IEEE semantics (-cl-fast-relaxed-math lets the compiler
         // reassociate, so (2^52 + x) - 2^52 folds to x) and fuse (-cl-mad-enable). Strict drops both and
         // asks for correctly rounded float division and sqrt (OpenCL allows 2.5 and 3 ulp: x / x is then
@@ -541,6 +545,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
         return switch (backendType) {
             case OPENCL -> TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS;
             case CUDA -> TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS;
+            case HIP -> TornadoOptions.DEFAULT_HIP_COMPILER_FLAGS;
             case METAL -> TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS;
             default -> "";
         };

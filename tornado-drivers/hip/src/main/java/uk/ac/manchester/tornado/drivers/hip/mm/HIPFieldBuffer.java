@@ -1,0 +1,479 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2020,2024 APT Group, Department of Computer Science,
+ * School of Engineering, The University of Manchester. All rights reserved.
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.mm;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.shouldNotReachHere;
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.unimplemented;
+import static uk.ac.manchester.tornado.runtime.TornadoCoreRuntime.getVMConfig;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEBUG;
+
+import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoOutOfMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.types.arrays.BFloat16Array;
+import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
+import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;
+import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
+import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.LongArray;
+import uk.ac.manchester.tornado.api.types.arrays.ShortArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
+import uk.ac.manchester.tornado.drivers.hip.HIPDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.FieldLayout;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.utils.TornadoUtils;
+
+public class HIPFieldBuffer implements XPUBuffer {
+
+    private final Field[] fields;
+    private final FieldBuffer[] wrappedFields;
+    private final Class<?> objectType;
+    private final int hubOffset;
+    private final int fieldsOffset;
+    private final HIPDeviceContext deviceContext;
+    private long bufferId;
+    private long bufferOffset;
+    private ByteBuffer buffer;
+    private long setSubRegionSize;
+    private final TornadoLogger logger;
+    private final Access access;
+
+    private HIPFieldBuffer(final HIPDeviceContext device, Object object, Access access, boolean includeSuperClasses) {
+        this.objectType = object.getClass();
+        this.deviceContext = device;
+        this.logger = new TornadoLogger(this.getClass());
+        this.access = access;
+
+
+        hubOffset = getVMConfig().hubOffset;
+        fieldsOffset = getVMConfig().instanceKlassFieldsOffset();
+
+        fields = gatherInstanceFields(objectType, includeSuperClasses);
+        sortFieldsByOffset();
+
+        wrappedFields = new FieldBuffer[fields.length];
+
+        for (int index = 0; index < fields.length; index++) {
+            final Field reflectedField = fields[index];
+            final Class<?> type = reflectedField.getType();
+
+            if (DEBUG) {
+                logger.trace("field: name=%s, kind=%s, offset=%d", reflectedField.getName(), type.getName(), offsetOf(reflectedField));
+            }
+
+            XPUBuffer wrappedField = null;
+            if (type.isArray()) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                if (type == int[].class) {
+                    wrappedField = new HIPIntArrayWrapper((int[]) objectFromField, device, 0, access);
+                } else if (type == float[].class) {
+                    wrappedField = new HIPFloatArrayWrapper((float[]) objectFromField, device, 0, access);
+                } else if (type == double[].class) {
+                    wrappedField = new HIPDoubleArrayWrapper((double[]) objectFromField, device, 0, access);
+                } else if (type == long[].class) {
+                    wrappedField = new HIPLongArrayWrapper((long[]) objectFromField, device, 0, access);
+                } else if (type == short[].class) {
+                    wrappedField = new HIPShortArrayWrapper((short[]) objectFromField, device, 0, access);
+                } else if (type == char[].class) {
+                    wrappedField = new HIPCharArrayWrapper((char[]) objectFromField, device, 0, access);
+                } else if (type == byte[].class) {
+                    wrappedField = new HIPByteArrayWrapper((byte[]) objectFromField, device, 0, access);
+                } else {
+                    logger.warn("cannot wrap field: array type=%s", type.getName());
+                }
+            } else if (type == FloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((FloatArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Float.BYTES);
+            } else if (type == ByteArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((ByteArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Byte.BYTES);
+            } else if (type == DoubleArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((DoubleArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Double.BYTES);
+            } else if (type == IntArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((IntArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Integer.BYTES);
+            } else if (type == ShortArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((ShortArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
+            } else if (type == LongArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((LongArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Long.BYTES);
+            } else if (type == HalfFloatArray.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((HalfFloatArray) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
+            } else if (type == BFloat16Array.class) {
+                Object objectFromField = TornadoUtils.getObjectFromField(reflectedField, object);
+                long size = ((BFloat16Array) objectFromField).getSegmentWithHeader().byteSize();
+                wrappedField = new HIPMemorySegmentWrapper(size, device, 0, access, Short.BYTES);
+            } else if (object.getClass().getAnnotation(Vector.class) != null) {
+                wrappedField = new HIPVectorWrapper(device, object, 0, access);
+            } else if (!type.isPrimitive()) {
+                // We capture the field by the scope definition of the input
+                // lambda expression
+                wrappedField = new HIPFieldBuffer(device, TornadoUtils.getObjectFromField(reflectedField, object), access, includeSuperClasses);
+            }
+
+            if (wrappedField != null) {
+                wrappedFields[index] = new FieldBuffer(reflectedField, wrappedField);
+            }
+        }
+
+        if (buffer == null) {
+            buffer = ByteBuffer.allocate((int) getObjectSize());
+            buffer.order(deviceContext.getByteOrder());
+        }
+    }
+
+    public HIPFieldBuffer(final HIPDeviceContext device, Object object, Access access) {
+        this(device, object, access, !isChildOfTornadoNativeArray(object));
+    }
+
+    private static boolean isChildOfTornadoNativeArray(Object object){
+        Class<?> objectType = object.getClass();
+        while(objectType!=null){
+            if(objectType.getName().equals(TornadoNativeArray.class.getName())){
+                return true;
+            }
+            objectType = objectType.getSuperclass();
+        }
+        return false;
+    }
+
+    @Override
+    public void allocate(Object reference, long batchSize, Access access) throws TornadoOutOfMemoryException, TornadoMemoryException {
+        if (DEBUG) {
+            logger.debug("object: object=0x%x, class=%s", reference.hashCode(), reference.getClass().getName());
+        }
+
+        this.bufferId = deviceContext.getBufferProvider().getOrAllocateBufferWithSize(size(), access);
+        this.bufferOffset = 0;
+        setBuffer(new XPUBufferWrapper(bufferId, bufferOffset));
+
+        if (DEBUG) {
+            logger.debug("object: object=0x%x @ bufferId 0x%x", reference.hashCode(), bufferId);
+        }
+    }
+
+    @Override
+    public void markAsFreeBuffer() throws TornadoMemoryException {
+        deviceContext.getBufferProvider().markBufferReleased(this.bufferId, this.access);
+        bufferId = -1;
+    }
+
+
+
+    private static int offsetOf(Field field) {
+        return FieldLayout.of(field.getDeclaringClass()).offset(field);
+    }
+
+    private static Field[] gatherInstanceFields(Class<?> clazz, boolean includeSuperClasses) {
+        return FieldLayout.of(clazz).fields(includeSuperClasses);
+    }
+
+    private void writeFieldToBuffer(int index, Field field, Object obj) {
+        Class<?> fieldType = field.getType();
+        if (fieldType.isPrimitive()) {
+            try {
+                PrimitiveSerialiser.put(buffer, FieldLayout.get(field, obj));
+            } catch (IllegalArgumentException e) {
+                shouldNotReachHere("unable to write primitive to buffer: ", e.getMessage());
+            }
+        } else if (wrappedFields[index] != null) {
+            // A compressed reference: the field's copy relative to this object's, scaled (see FieldLayout).
+            long relativeOffset = wrappedFields[index].getBufferOffset() - this.bufferOffset;
+            buffer.putInt((int) (relativeOffset / FieldLayout.REFERENCE_SCALE));
+        } else {
+            unimplemented("field type %s", fieldType.getName());
+        }
+    }
+
+    private void readFieldFromBuffer(int index, Field field, Object obj) {
+        Class<?> fieldType = field.getType();
+        if (fieldType.isPrimitive()) {
+            Object value;
+            if (fieldType == int.class) {
+                value = buffer.getInt();
+            } else if (fieldType == long.class) {
+                value = buffer.getLong();
+            } else if (fieldType == short.class) {
+                value = buffer.getShort();
+            } else if (fieldType == byte.class) {
+                value = buffer.get();
+            } else if (fieldType == float.class) {
+                value = buffer.getFloat();
+            } else if (fieldType == double.class) {
+                value = buffer.getDouble();
+            } else if (fieldType == char.class) {
+                value = buffer.getChar();
+            } else {
+                value = buffer.get() != 0;
+            }
+            FieldLayout.set(field, obj, value);
+        } else if (wrappedFields[index] != null) {
+            buffer.getInt();
+        } else {
+            unimplemented("field type %s", fieldType.getName());
+        }
+    }
+
+    private void sortFieldsByOffset() {
+        Arrays.sort(fields, (a, b) -> Integer.compare(offsetOf(a), offsetOf(b)));
+    }
+
+    private void serialise(Object object) {
+        buffer.rewind();
+        buffer.position(hubOffset);
+        buffer.putLong(0);
+
+        if (fields.length > 0) {
+            buffer.position(offsetOf(fields[0]));
+            for (int i = 0; i < fields.length; i++) {
+                Field f = fields[i];
+                if (DEBUG) {
+                    logger.trace("writing field: name=%s, offset=%d", f.getName(), offsetOf(f));
+                }
+
+                buffer.position(offsetOf(f));
+                writeFieldToBuffer(i, f, object);
+            }
+        }
+    }
+
+    private void deserialise(Object object) {
+        buffer.rewind();
+
+        if (fields.length > 0) {
+            buffer.position(offsetOf(fields[0]));
+
+            for (int i = 0; i < fields.length; i++) {
+                Field f = fields[i];
+                if (DEBUG) {
+                    logger.trace("reading field: name=%s, offset=%d", f.getName(), offsetOf(f));
+                }
+                buffer.position(offsetOf(f));
+                readFieldFromBuffer(i, f, object);
+            }
+        }
+    }
+
+    @Override
+    public void write(long executionPlanId, Object object) {
+        serialise(object);
+        // XXX: Offset 0
+        deviceContext.writeBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), 0, null);
+        for (int i = 0; i < fields.length; i++) {
+            if (wrappedFields[i] != null) {
+                wrappedFields[i].write(executionPlanId, object);
+            }
+        }
+    }
+
+    @Override
+    public long toBuffer() {
+        return bufferId;
+    }
+
+    @Override
+    public void setBuffer(XPUBufferWrapper bufferWrapper) {
+        this.bufferId = bufferWrapper.buffer;
+        this.bufferOffset = bufferWrapper.bufferOffset;
+
+        bufferWrapper.bufferOffset += getObjectSize();
+
+        for (int i = 0; i < fields.length; i++) {
+            FieldBuffer fieldBuffer = wrappedFields[i];
+            if (fieldBuffer == null) {
+                continue;
+            }
+
+            fieldBuffer.setBuffer(bufferWrapper);
+        }
+    }
+
+    @Override
+    public long getBufferOffset() {
+        return bufferOffset;
+    }
+
+    @Override
+    public void read(long executionPlanId, Object object) {
+        // XXX: offset 0
+        read(executionPlanId, object, 0, 0, null, false);
+    }
+
+    @Override
+    public int read(long executionPlanId, Object object, long hostOffset, long partialReadSize, int[] events, boolean useDeps) {
+        buffer.position(buffer.capacity());
+        int event = deviceContext.readBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        for (int i = 0; i < fields.length; i++) {
+            if (wrappedFields[i] != null) {
+                wrappedFields[i].read(executionPlanId, object);
+            }
+        }
+        deserialise(object);
+        return event;
+    }
+
+    public void clear() {
+        buffer.rewind();
+        while (buffer.hasRemaining()) {
+            buffer.put((byte) 0);
+        }
+        buffer.rewind();
+    }
+
+    public void dump() {
+        dump(8);
+    }
+
+    protected void dump(int width) {
+        System.out.printf("Buffer  : capacity = %s, in use = %s, device = %s \n", RuntimeUtilities.humanReadableByteCount(getObjectSize(), true), RuntimeUtilities.humanReadableByteCount(buffer
+                .position(), true), deviceContext.getDevice().getDeviceName());
+        for (int i = 0; i < buffer.position(); i += width) {
+            System.out.printf("[0x%04x]: ", i);
+            for (int j = 0; j < Math.min(buffer.capacity() - i, width); j++) {
+                if (j % 2 == 0) {
+                    System.out.printf(" ");
+                }
+                if (j < buffer.position() - i) {
+                    System.out.printf("%02x", buffer.get(i + j));
+                } else {
+                    System.out.printf("..");
+                }
+            }
+            System.out.println();
+        }
+    }
+
+    @Override
+    public int enqueueRead(long executionPlanId, Object reference, long hostOffset, int[] events, boolean useDeps) {
+        final int returnEvent;
+        int index = 0;
+        int[] internalEvents = new int[fields.length];
+        Arrays.fill(internalEvents, -1);
+
+        for (FieldBuffer fb : wrappedFields) {
+            if (fb != null) {
+                internalEvents[index] = fb.enqueueRead(executionPlanId, reference, (useDeps) ? events : null, useDeps);
+                index++;
+            }
+        }
+
+        internalEvents[index] = deviceContext.enqueueReadBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null);
+        index++;
+
+        deserialise(reference);
+
+        if (index == 1) {
+            returnEvent = internalEvents[0];
+        } else {
+            returnEvent = deviceContext.enqueueMarker(executionPlanId, internalEvents);
+        }
+        return useDeps ? returnEvent : -1;
+    }
+
+    @Override
+    public List<Integer> enqueueWrite(long executionPlanId, Object ref, long batchSize, long hostOffset, int[] events, boolean useDeps) {
+        ArrayList<Integer> eventList = new ArrayList<>();
+
+        serialise(ref);
+        eventList.add(deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), bufferOffset, getObjectSize(), buffer.array(), hostOffset, (useDeps) ? events : null));
+        for (final FieldBuffer field : wrappedFields) {
+            if (field != null) {
+                eventList.addAll(field.enqueueWrite(executionPlanId, ref, (useDeps) ? events : null, useDeps));
+            }
+        }
+        return eventList;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("object wrapper: type=%s, fields=%d\n", objectType.getName(), wrappedFields.length);
+    }
+
+    private long getObjectSize() {
+        long size = fieldsOffset;
+        if (fields.length > 0) {
+            Field field = fields[fields.length - 1];
+            size = offsetOf(field) + FieldLayout.sizeOf(field);
+        }
+        // Objects are 8-byte aligned.
+        return (size + 7) & ~7L;
+    }
+
+    @Override
+    public long size() {
+        long size = getObjectSize();
+        for (FieldBuffer wrappedField : wrappedFields) {
+            if (wrappedField != null) {
+                size += wrappedField.size();
+            }
+        }
+        return size;
+    }
+
+    @Override
+    public void setSizeSubRegion(long batchSize) {
+        this.setSubRegionSize = batchSize;
+    }
+
+    @Override
+    public long getSizeSubRegionSize() {
+        return setSubRegionSize;
+    }
+
+    @Override
+    public long deallocate() {
+        return deviceContext.getBufferProvider().deallocate(access);
+    }
+
+    @Override
+    public void mapOnDeviceMemoryRegion(long executionPlanId, XPUBuffer srcPointer, long offset) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int getSizeOfType() {
+        throw new TornadoRuntimeException("[ERROR] not implemented");
+    }
+}

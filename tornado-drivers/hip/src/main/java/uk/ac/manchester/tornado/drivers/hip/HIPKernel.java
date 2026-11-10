@@ -1,0 +1,223 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip;
+
+import static uk.ac.manchester.tornado.api.exceptions.TornadoInternalError.guarantee;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
+import uk.ac.manchester.tornado.drivers.hip.enums.HIPKernelInfo;
+import uk.ac.manchester.tornado.drivers.hip.exceptions.HIPException;
+import uk.ac.manchester.tornado.drivers.hip.ffm.HIPDriverAPI;
+import uk.ac.manchester.tornado.drivers.hip.ffm.HIPHandles;
+import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+
+public class HIPKernel {
+
+    private final long oclKernelID;
+    private final HIPDeviceContext deviceContext;
+    private final ByteBuffer buffer;
+    private String kernelName;
+    private final TornadoLogger logger;
+
+    public HIPKernel(long id, HIPDeviceContext deviceContext) {
+        this.oclKernelID = id;
+        this.deviceContext = deviceContext;
+        this.buffer = ByteBuffer.allocate(1024);
+        this.buffer.order(HIPDriver.BYTE_ORDER);
+        this.kernelName = "unknown";
+        this.logger = new TornadoLogger(this.getClass());
+        queryName();
+
+    }
+
+    /** OpenCL {@code cl_kernel_info} value queried by the Java layer (see HIPKernelInfo). */
+    private static final int CL_KERNEL_FUNCTION_NAME = 0x1190;
+
+    static void clReleaseKernel(long kernelId) throws HIPException {
+        // The hipFunction_t is owned by the module, so dropping the handle is all there is to do.
+        HIPHandles.release(kernelId);
+    }
+
+    /**
+     * Stages the argument bytes so that index {@code index} maps to slot {@code index};
+     * {@code hipModuleLaunchKernel} consumes them as its kernelParams vector. A null {@code buffer}
+     * denotes a {@code __shared__} argument of the given size: HIP expresses dynamic shared memory
+     * through hipModuleLaunchKernel's sharedMemBytes rather than per argument, so the slot is recorded as
+     * that many zero bytes.
+     */
+    static void clSetKernelArg(long kernelId, int index, long size, byte[] buffer) throws HIPException {
+        HIPHandles.Kernel kernel = HIPHandles.resolve(kernelId, HIPHandles.Kernel.class);
+        if (kernel == null) {
+            return;
+        }
+        kernel.setArgument(index, buffer == null ? new byte[(int) size] : buffer.clone());
+    }
+
+    /** Stages a device pointer argument by value. */
+    static void clSetKernelArgRef(long kernelId, int index, long buffer) throws HIPException {
+        HIPHandles.Kernel kernel = HIPHandles.resolve(kernelId, HIPHandles.Kernel.class);
+        if (kernel == null) {
+            return;
+        }
+        byte[] value = new byte[Long.BYTES];
+        ByteBuffer.wrap(value).order(HIPDriver.BYTE_ORDER).putLong(buffer);
+        kernel.setArgument(index, value);
+    }
+
+    static void clGetKernelInfo(long kernelId, int info, byte[] buffer) throws HIPException {
+        Arrays.fill(buffer, (byte) 0);
+        HIPHandles.Kernel kernel = HIPHandles.resolve(kernelId, HIPHandles.Kernel.class);
+        if (kernel == null || info != CL_KERNEL_FUNCTION_NAME) {
+            return;
+        }
+        byte[] name = kernel.name.getBytes(StandardCharsets.UTF_8);
+        int length = Math.min(name.length, buffer.length - 1);
+        System.arraycopy(name, 0, buffer, 0, length);
+        buffer[length] = 0;
+    }
+
+    /**
+     * The block size (threads per block) that maximises occupancy for this kernel, accounting for
+     * its register and shared-memory usage. The scheduler uses it to pick a launchable block for
+     * register-heavy kernels. Zero on failure.
+     */
+    static int hipModuleOccupancyMaxPotentialBlockSize(long kernelId) throws HIPException {
+        HIPHandles.Kernel kernel = HIPHandles.resolve(kernelId, HIPHandles.Kernel.class);
+        if (kernel == null) {
+            return 0;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment minGridSize = FFMSupport.allocateInt(arena);
+            MemorySegment blockSize = FFMSupport.allocateInt(arena);
+            int result = HIPDriverAPI.hipModuleOccupancyMaxPotentialBlockSize(minGridSize, blockSize, kernel.function, 0, 0);
+            if (result != HIPDriverAPI.HIP_SUCCESS) {
+                return 0;
+            }
+            return blockSize.get(FFMSupport.C_INT, 0);
+        }
+    }
+
+    private int maxPotentialBlockSize = -1;
+
+    /**
+     * HIP occupancy-suggested maximum threads per block for this kernel, accounting for its
+     * register and shared-memory usage (via {@code hipModuleOccupancyMaxPotentialBlockSize}). Cached.
+     * Returns 0 if the query fails, in which case callers should fall back to their heuristic.
+     */
+    public int getMaxPotentialBlockSize() {
+        if (maxPotentialBlockSize < 0) {
+            try {
+                maxPotentialBlockSize = hipModuleOccupancyMaxPotentialBlockSize(oclKernelID);
+            } catch (HIPException e) {
+                logger.error(e.getMessage());
+                maxPotentialBlockSize = 0;
+            }
+        }
+        return maxPotentialBlockSize;
+    }
+
+    public void setArg(int index, ByteBuffer buffer) {
+        try {
+            clSetKernelArg(oclKernelID, index, buffer.position(), buffer.array());
+        } catch (HIPException e) {
+            logger.error(e.getMessage());
+        }
+    }
+
+    public void setArgRef(int index, long devicePtr) {
+        System.out.println("Calling the new function");
+        try {
+            clSetKernelArgRef(oclKernelID, index, devicePtr);
+        } catch (HIPException e) {
+            logger.error(e.getMessage());
+        }
+    }
+
+    public void setArgUnused(int index) {
+        try {
+            clSetKernelArg(oclKernelID, index, 8, null);
+        } catch (HIPException e) {
+            logger.error(e.getMessage());
+        }
+    }
+
+    public void setConstantRegion(int index, ByteBuffer buffer) {
+        long maxSize = deviceContext.getDevice().getDeviceMaxConstantBufferSize();
+        guarantee(buffer.position() <= maxSize, "constant buffer is too large for device");
+        setArg(index, buffer);
+    }
+
+    public void setLocalRegion(int index, long size) {
+        long maxSize = deviceContext.getDevice().getDeviceLocalMemorySize();
+        guarantee(size <= maxSize, "local allocation is too large for device");
+        try {
+            clSetKernelArg(oclKernelID, index, size, null);
+        } catch (HIPException e) {
+            logger.error(e.getMessage());
+        }
+    }
+
+    public void cleanup() {
+        try {
+            clReleaseKernel(oclKernelID);
+        } catch (HIPException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getName() {
+        return kernelName;
+    }
+
+    private void queryName() {
+        Arrays.fill(buffer.array(), (byte) 0);
+        buffer.clear();
+        try {
+            clGetKernelInfo(oclKernelID, HIPKernelInfo.CL_KERNEL_FUNCTION_NAME.getValue(), buffer.array());
+            kernelName = new String(buffer.array(), StandardCharsets.US_ASCII);
+        } catch (HIPException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public long getOclKernelID() {
+        return oclKernelID;
+    }
+
+    /** The largest block this kernel can launch with (its register use allows), or {@code Integer.MAX_VALUE} if unknown. */
+    public int maxThreadsPerBlock() {
+        HIPHandles.Kernel kernel = HIPHandles.resolve(oclKernelID, HIPHandles.Kernel.class);
+        if (kernel == null) {
+            return Integer.MAX_VALUE;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment value = arena.allocate(java.lang.foreign.ValueLayout.JAVA_INT);
+            int result = HIPDriverAPI.hipFuncGetAttribute(value, HIPDriverAPI.HIP_FUNC_ATTRIBUTE_MAX_THREADS_PER_BLOCK, kernel.function);
+            return result == HIPDriverAPI.HIP_SUCCESS ? value.get(java.lang.foreign.ValueLayout.JAVA_INT, 0) : Integer.MAX_VALUE;
+        }
+    }
+}

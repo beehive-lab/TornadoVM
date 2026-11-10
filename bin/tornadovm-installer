@@ -95,7 +95,7 @@ def _build_supported_jdks() -> Tuple[List[str], List[str]]:
     return keys, descriptions
 
 __SUPPORTED_JDKS__, __SUPPORTED_JDK_DESCRIPTIONS__ = _build_supported_jdks()
-__SUPPORTED_BACKENDS__ = ["opencl", "metal", "cuda"]
+__SUPPORTED_BACKENDS__ = ["opencl", "metal", "cuda", "hip"]
 
 # Custom Exceptions
 class TornadoInstallerError(Exception):
@@ -646,7 +646,7 @@ def parseArguments():
                             "Specify a JDK to install by its keyword (e.g., 'jdk21', 'temurin-jdk-25'). "
                             "Run with --listJDKs to view all available JDK keywords."
                         ))
-    parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, cuda, metal }")
+    parser.add_argument("--backend", action="store", dest="backend", default=None, help="Select the backend to install: { opencl, cuda, metal, hip }")
     parser.add_argument("--version", action="store_true", dest="version", default=False, help="Print version")
     parser.add_argument("--listJDKs", action="store_true", dest="listJDKs", default=False, help="List supported JDKs")
     parser.add_argument("--mvn_single_threaded", action="store_true", dest="mavenSingleThreaded", default=None,

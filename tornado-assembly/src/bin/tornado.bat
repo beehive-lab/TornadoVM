@@ -186,6 +186,17 @@ if exist "%TORNADOVM_HOME%\etc\tornado.backend" (
         )
     )
 
+    findstr "hip-backend" "%TORNADOVM_HOME%\etc\tornado.backend" >nul 2>nul
+    if !errorlevel! equ 0 (
+        REM The HIP backend loads the HIP runtime and hipRTC from the HIP SDK
+        if not defined HIP_PATH if not defined ROCM_PATH (
+            echo [WARNING] HIP backend is configured but neither HIP_PATH nor ROCM_PATH is set
+            echo.
+            echo Install the AMD HIP SDK from: https://www.amd.com/en/developer/resources/rocm-hub/hip-sdk.html
+            echo.
+        )
+    )
+
 )
 
 REM Execute the Python launcher

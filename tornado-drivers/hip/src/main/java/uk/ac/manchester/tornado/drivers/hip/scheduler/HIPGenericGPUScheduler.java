@@ -1,0 +1,136 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, 2024, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.scheduler;
+
+import uk.ac.manchester.tornado.drivers.hip.HIPDeviceContext;
+import uk.ac.manchester.tornado.drivers.hip.HIPTargetDevice;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+
+public class HIPGenericGPUScheduler extends HIPKernelScheduler {
+
+    private static final int WARP_SIZE = 32;
+    private boolean ADJUST_IRREGULAR = false;
+
+    private final long[] maxWorkItemSizes;
+
+    public HIPGenericGPUScheduler(final HIPDeviceContext context) {
+        super(context);
+        HIPTargetDevice device = context.getDevice();
+        maxWorkItemSizes = device.getDeviceMaxWorkItemSizes();
+    }
+
+    @Override
+    public void calculateGlobalWork(final TaskDataContext meta, long batchThreads) {
+        final long[] globalWork = meta.getGlobalWork();
+
+        for (int i = 0; i < meta.getDims(); i++) {
+            long value = (batchThreads <= 0) ? (long) (meta.getDomain().get(i).cardinality()) : batchThreads;
+            if (ADJUST_IRREGULAR && (value % WARP_SIZE != 0)) {
+                value = ((value / WARP_SIZE) + 1) * WARP_SIZE;
+            }
+            globalWork[i] = value;
+        }
+    }
+
+    @Override
+    public void calculateLocalWork(final TaskDataContext meta) {
+        final long[] localWork = meta.initLocalWork();
+
+        switch (meta.getDims()) {
+            case 3:
+                localWork[2] = 1;
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                break;
+            case 2:
+                localWork[1] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[1], meta.getGlobalWork()[1]);
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                break;
+            case 1:
+                localWork[0] = calculateGroupSize(calculateEffectiveMaxWorkItemSizes(meta)[0], meta.getGlobalWork()[0]);
+                padIrregularGrid(meta.getGlobalWork(), localWork);
+                break;
+            default:
+                break;
+        }
+    }
+
+    @Override
+    public void checkAndAdaptLocalWork(TaskDataContext meta) {
+    }
+
+    private int calculateGroupSize(long maxBlockSize, long globalWorkSize) {
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
+
+        int value = (int) Math.min(maxBlockSize, globalWorkSize);
+        if (value == 0) {
+            return 1;
+        }
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        return value;
+    }
+
+    private long[] calculateEffectiveMaxWorkItemSizes(TaskDataContext metaData) {
+        long[] intermediates = new long[] { 1, 1, 1 };
+
+        switch (metaData.getDims()) {
+            case 3:
+                intermediates[2] = (long) Math.sqrt(maxWorkItemSizes[2]);
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                break;
+            case 2:
+                intermediates[1] = (long) Math.sqrt(maxWorkItemSizes[1]);
+                intermediates[0] = (long) Math.sqrt(maxWorkItemSizes[0]);
+                break;
+            case 1:
+                intermediates[0] = maxWorkItemSizes[0];
+                break;
+            default:
+                break;
+
+        }
+        return intermediates;
+    }
+
+    /** Threads per block when the loop bound has no usable divisor; also the reductions' group size. */
+    private static final int IRREGULAR_BLOCK_SIZE = 256;
+
+    /**
+     * The block size above divides the global size exactly. A bound with no divisor of at least a
+     * warp -- a prime row count, say -- would get blocks of a few threads or one, leaving most
+     * lanes of every warp idle (a 1-D kernel over 7,987,813 elements ran 28x slower than over
+     * 8,000,256). Such a launch uses full blocks instead and rounds the grid up: every
+     * {@code @Parallel} loop keeps its own bound check, so the extra threads do nothing, and the
+     * reductions' partial results are sized for groups of this size already.
+     */
+    private static void padIrregularGrid(long[] globalWork, long[] localWork) {
+        if (localWork[0] < WARP_SIZE && globalWork[0] > IRREGULAR_BLOCK_SIZE) {
+            localWork[0] = IRREGULAR_BLOCK_SIZE;
+            globalWork[0] = (globalWork[0] + IRREGULAR_BLOCK_SIZE - 1) / IRREGULAR_BLOCK_SIZE * IRREGULAR_BLOCK_SIZE;
+        }
+    }
+
+}

@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoBailoutRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceDynamicParallelismNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceMMANotSupported;
 import uk.ac.manchester.tornado.runtime.domain.DomainTree;
 import uk.ac.manchester.tornado.runtime.domain.IntDomain;
@@ -537,7 +538,7 @@ public final class TcHook {
         }
         if (!c.succeeded()) {
             var d = c.diagnostics().isEmpty() ? new Diagnostic("TC-E9003", "compilation failed without a diagnostic", "", Loc.UNKNOWN) : c.diagnostics().get(0);
-            return reject(name, d);
+            return reject(name, d, target);
         }
         COMPILED.incrementAndGet();
         if (VERBOSE) {
@@ -585,9 +586,14 @@ public final class TcHook {
 
     /** TC cannot compile {@code name}: the diagnostic becomes the TornadoVM exception for its category (ErrorCodes). */
     private static <T> Optional<T> reject(String name, Diagnostic d) {
+        return reject(name, d, null);
+    }
+
+    /** As {@link #reject(String, Diagnostic)}, for a compilation for {@code target} (null when unknown). */
+    private static <T> Optional<T> reject(String name, Diagnostic d, TargetCaps target) {
         REFUSED.computeIfAbsent(d.code(), k -> new AtomicInteger()).incrementAndGet();
         var category = ErrorCodes.category(d.code());
-        var e = exception(name, d, category);
+        var e = exception(name, d, category, target);
         if (e instanceof Error error) {
             throw error;
         }
@@ -595,7 +601,7 @@ public final class TcHook {
     }
 
     /** The TornadoVM exception for a diagnostic, the one TornadoVM has always thrown for that kind of kernel. */
-    static Throwable exception(String name, Diagnostic d, ErrorCodes.Category category) {
+    static Throwable exception(String name, Diagnostic d, ErrorCodes.Category category, TargetCaps target) {
         var text = message(name, d);
         if (d.code().equals("TC-E4012")) {
             // A device without fp64 (Metal; OpenCL without cl_khr_fp64).
@@ -604,6 +610,10 @@ public final class TcHook {
         if (d.code().equals("TC-E4017") || d.code().equals("TC-E4018")) {
             // Tensor cores the device (or its NVRTC) lacks: what KernelContext.mma* document.
             return new TornadoDeviceMMANotSupported(text);
+        }
+        if (d.code().equals("TC-E4016") && target != null && target.dialect() == TargetCaps.Dialect.HIP) {
+            // KernelContext.launch on a HIP device: HIP kernels cannot launch kernels. Other targets keep the bailout.
+            return new TornadoDeviceDynamicParallelismNotSupported(text);
         }
         return switch (category) {
             // TornadoInternalError formats its message: pass the text as an argument, not as the format.

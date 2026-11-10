@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tc: TornadoVM's kernel compiler, headless. Compiles kernel methods from class files and prints the
 # CUDA C++, OpenCL C or MSL it generates; no GPU and no TornadoVM runtime are needed.
-#   tc emit [--target cuda|opencl|metal] [--cc N] [--arg name=value]... [--cp PATH] (Class method | --all)
+#   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--arg name=value]... [--cp PATH] (Class method | --all)
 #   tc --version
 # Runs the native image when `build-tc-native` has built one, the JVM otherwise. TORNADOVM_HOME
 # defaults to the SDK this script is in.

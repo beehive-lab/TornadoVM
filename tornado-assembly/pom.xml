@@ -171,6 +171,20 @@
             </dependencies>
         </profile>
 
+        <profile>
+            <id>hip-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tornado-drivers-hip</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
     </profiles>
 
     <build>

@@ -60,10 +60,12 @@ __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
+__HIP_EXPORTS__ = "/etc/exportLists/hip-exports"
 __TORNADOVM_ADD_MODULES__ = "--add-modules jdk.unsupported,java.management,java.logging,jdk.jfr,java.naming,jdk.management,tornado.runtime,tornado.drivers.common"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
 __CUDA_MODULE__ = "tornado.drivers.cuda"
+__HIP_MODULE__ = "tornado.drivers.hip"
 __ENABLE_NATIVE_ACCESS__ = "--enable-native-access="
 __FFM_MODULE__ = "tornado.runtime"
 __CUBLAS_MODULE__ = "tornado.cublas"
@@ -314,6 +316,48 @@ def add_cuda_toolkit_to_path():
     if new_dirs:
         os.environ['PATH'] = os.pathsep.join(new_dirs) + os.pathsep + current_path
 
+def get_hip_bin_dirs():
+    """Return the ROCm bin directories (%HIP_PATH%\\bin, %ROCM_PATH%\\bin) that exist."""
+    candidates = []
+    for variable in ('HIP_PATH', 'ROCM_PATH'):
+        root = os.environ.get(variable)
+        if root:
+            candidates.append(os.path.join(root, 'bin'))
+    return [d for d in candidates if os.path.isdir(d)]
+
+def add_hip_sdk_to_path():
+    """Prepend the ROCm bin directories to PATH on Windows.
+
+    The HIP backend loads amdhip64 and hipRTC by absolute path from %HIP_PATH%\\bin, but the DLLs
+    they depend on (amd_comgr, the hipRTC builtins) are resolved by Windows' search order. Putting
+    the SDK first keeps them from the same install as the libraries that load them.
+    """
+    if os.name != 'nt':
+        return
+    current_path = os.environ.get('PATH', '')
+    existing = [p.lower() for p in current_path.split(os.pathsep)]
+    new_dirs = [d for d in get_hip_bin_dirs() if d.lower() not in existing]
+    if new_dirs:
+        os.environ['PATH'] = os.pathsep.join(new_dirs) + os.pathsep + current_path
+
+def validate_hip_backend(sdk_path):
+    """Validate HIP backend dependencies on Windows: the HIP runtime and hipRTC from a ROCm/HIP SDK."""
+    hip_bin_dirs = get_hip_bin_dirs()
+    if any(glob.glob(os.path.join(d, 'amdhip64*.dll')) for d in hip_bin_dirs) and any(glob.glob(os.path.join(d, 'hiprtc*.dll')) for d in hip_bin_dirs):
+        return
+    print("[ERROR] Cannot find the HIP runtime (amdhip64_*.dll) and hipRTC (hiprtc*.dll) the HIP backend needs")
+    print()
+    if hip_bin_dirs:
+        print("[CAUSE] They are not in: " + ", ".join(hip_bin_dirs))
+    else:
+        print("[CAUSE] Neither HIP_PATH nor ROCM_PATH names a ROCm installation with a bin directory.")
+    print()
+    print("[FIX] Install the AMD HIP SDK (or a ROCm SDK) and set HIP_PATH to its root")
+    print("      Download from: https://www.amd.com/en/developer/resources/rocm-hub/hip-sdk.html")
+    print()
+    print("[NOTE] HIP backend is AMD-specific")
+    sys.exit(1)
+
 def validate_windows_dependencies(sdk_path):
     """Run all Windows-specific dependency checks."""
     if os.name != 'nt':
@@ -323,6 +367,7 @@ def validate_windows_dependencies(sdk_path):
     # check or java launch below, regardless of whether this shell sourced the
     # CUDA installer's PATH changes.
     add_cuda_toolkit_to_path()
+    add_hip_sdk_to_path()
 
     # Validate TORNADOVM_HOME path format
     validate_tornadovm_home_path(sdk_path)
@@ -340,6 +385,9 @@ def validate_windows_dependencies(sdk_path):
 
                 if 'cuda-backend' in content:
                     validate_cuda_backend(sdk_path)
+
+                if 'hip-backend' in content:
+                    validate_hip_backend(sdk_path)
 
 
         except (OSError, PermissionError, IOError):
@@ -1211,6 +1259,7 @@ class TornadoVMRunnerTool():
         opencl = self.sdk + __OPENCL_EXPORTS__
         metal = self.sdk + __METAL_EXPORTS__
         cuda = self.sdk + __CUDA_EXPORTS__
+        hip = self.sdk + __HIP_EXPORTS__
 
         javaFlags = javaFlags + " @" + common + " "
         # The backends and the library-task providers reach their native libraries through
@@ -1227,6 +1276,9 @@ class TornadoVMRunnerTool():
         if ("cuda-backend" in self.listOfBackends):
             javaFlags = javaFlags + "@" + cuda + " "
             tornadoAddModules = tornadoAddModules + "," + __CUDA_MODULE__ + "," + __CUBLAS_MODULE__ + "," + __CURAND_MODULE__ + "," + __CUFFT_MODULE__ + "," + __CUDNN_MODULE__ + "," + __CUSPARSE_MODULE__ + "," + __CUTLASS_MODULE__ + "," + __CUDF_MODULE__ + "," + __CUVS_MODULE__ + "," + __NCCL_MODULE__
+        if ("hip-backend" in self.listOfBackends):
+            javaFlags = javaFlags + "@" + hip + " "
+            tornadoAddModules = tornadoAddModules + "," + __HIP_MODULE__
 
         javaFlags = javaFlags + tornadoAddModules + " "
 
@@ -1371,7 +1423,7 @@ def parseArguments():
     parser.add_argument('--threadInfo', action="store_true", dest="threadInfo", default=False,
                         help="Print thread deploy information per task on the accelerator")
     parser.add_argument('--printKernel', '-pk', action="store_true", dest="printKernel", default=False,
-                        help="Print generated kernel (OpenCL, CUDA or Metal)")
+                        help="Print generated kernel (OpenCL, CUDA, HIP or Metal)")
     parser.add_argument('--printBytecodes', '-pbc', action="store_true", dest="printBytecodes", default=False,
                         help="Print the generated TornadoVM bytecodes from the Task-Graphs")
     parser.add_argument('--enableProfiler', action="store", dest="enable_profiler", default=None,

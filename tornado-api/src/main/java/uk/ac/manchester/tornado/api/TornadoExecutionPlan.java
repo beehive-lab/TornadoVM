@@ -76,7 +76,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     private static final AtomicLong globalExecutionPlanCounter = new AtomicLong(0);
 
     /** The backends whose kernels are built by a compiler that takes flags. */
-    private static final TornadoVMBackendType[] COMPILED_BACKENDS = { TornadoVMBackendType.OPENCL, TornadoVMBackendType.CUDA, TornadoVMBackendType.METAL };
+    private static final TornadoVMBackendType[] COMPILED_BACKENDS = { TornadoVMBackendType.OPENCL, TornadoVMBackendType.CUDA, TornadoVMBackendType.METAL, TornadoVMBackendType.HIP };
 
     /**
      * The TornadoVM executor is a list of chain of actions to be performed.
@@ -648,7 +648,9 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * the {@code --fmad=false} implied by {@code -Dtornado.enable.fma=false} or
      * {@link #withStrictFloatingPoint()}; for {@link TornadoVMBackendType#OPENCL},
      * {@code -Dtornado.opencl.compiler.flags} ({@code -cl-mad-enable -cl-fast-relaxed-math -w}
-     * unless set). To build OpenCL kernels without one of those defaults, change
+     * unless set); for {@link TornadoVMBackendType#HIP}, the {@code -Dtornado.hip.compile.profile}
+     * options, {@code -Dtornado.hip.compiler.flags}, and the {@code -ffp-contract=off} implied by
+     * {@code -Dtornado.enable.fma=false} or {@link #withStrictFloatingPoint()}. To build OpenCL kernels without one of those defaults, change
      * {@code -Dtornado.opencl.compiler.flags}. {@link TornadoVMBackendType#METAL} compiles through
      * {@code MTLCompileOptions}, which takes no option string, so its flags are kept but not used.
      * </p>

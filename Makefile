@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, cuda, metal }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, cuda, metal, hip }. The default one is `opencl`.
 # make BACKEND=<comma_separated_backend_list>
 BACKEND ?= opencl
 
@@ -10,7 +10,7 @@ BACKEND ?= opencl
 COMMA := ,
 EMPTY :=
 SPACE := $(EMPTY) $(EMPTY)
-SUPPORTED_BACKENDS := opencl cuda metal
+SUPPORTED_BACKENDS := opencl cuda metal hip
 BACKEND_LIST := $(strip $(subst $(COMMA),$(SPACE),$(BACKEND)))
 UNSUPPORTED_BACKENDS := $(filter-out $(SUPPORTED_BACKENDS),$(BACKEND_LIST))
 
@@ -71,6 +71,9 @@ metal:
 cuda:
 	bin/compile --jdk $(JDK_PROFILE) --backend cuda
 
+hip:
+	bin/compile --jdk $(JDK_PROFILE) --backend hip
+
 sdk:
 	bin/compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)
 
@@ -96,7 +99,7 @@ test-nogpu:
 test-reflection: test-nogpu
 
 clean:
-	./mvnw -Popencl-backend,cuda-backend,metal-backend clean
+	./mvnw -Popencl-backend,cuda-backend,metal-backend,hip-backend clean
 
 example:
 	tornado --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"

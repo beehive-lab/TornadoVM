@@ -175,10 +175,10 @@ def verify_jdk_matches_java_home(jdk):
 
 def maven_cleanup():
     mvn_cmd = get_mvn_command()
-    print("mvnw -Popencl-backend,cuda-backend clean")
+    print("mvnw -Popencl-backend,cuda-backend,hip-backend clean")
 
     subprocess.run(
-        [mvn_cmd, "-Popencl-backend,cuda-backend", "clean"],
+        [mvn_cmd, "-Popencl-backend,cuda-backend,hip-backend", "clean"],
         stdout=subprocess.PIPE, shell=is_win_or_bat()
     )
 
@@ -428,7 +428,7 @@ def parse_args():
     parser.add_argument(
         "--jdk", help="JDK profile (jdk21, jdk22plus)"
     )
-    parser.add_argument("--backend", help="e.g., opencl,cuda,metal")
+    parser.add_argument("--backend", help="e.g., opencl,cuda,metal,hip")
     parser.add_argument(
         "--mvn_single_threaded",
         action="store_true",

@@ -45,7 +45,7 @@ public class InterpreterUtilities {
         TornadoVMBackendType tornadoVMBackend = device.getTornadoVMBackend();
         if (tornadoVMBackend == TornadoVMBackendType.OPENCL) {
             return ColoursTerminal.CYAN + " " + device + " " + ColoursTerminal.RESET;
-        } else if (tornadoVMBackend == TornadoVMBackendType.CUDA) {
+        } else if (tornadoVMBackend == TornadoVMBackendType.CUDA || tornadoVMBackend == TornadoVMBackendType.HIP) {
             return ColoursTerminal.GREEN + " " + device + " " + ColoursTerminal.RESET;
         }
         return ColoursTerminal.YELLOW + " " + device + " " + ColoursTerminal.RESET;

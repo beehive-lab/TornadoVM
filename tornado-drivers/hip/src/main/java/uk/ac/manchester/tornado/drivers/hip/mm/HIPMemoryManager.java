@@ -1,0 +1,115 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.mm;
+
+import static uk.ac.manchester.tornado.drivers.hip.mm.HIPKernelStackFrame.RESERVED_SLOTS;
+import static uk.ac.manchester.tornado.runtime.common.TornadoOptions.DEVICE_AVAILABLE_MEMORY;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.drivers.hip.HIPContext;
+import uk.ac.manchester.tornado.drivers.hip.HIPDeviceContext;
+import uk.ac.manchester.tornado.drivers.hip.enums.HIPMemFlags;
+
+public class HIPMemoryManager implements TornadoMemoryProvider {
+
+    private static final int MAX_NUMBER_OF_ATOMICS_PER_KERNEL = 32;
+    private static final int INTEGER_BYTES_SIZE = 4;
+    private final HIPDeviceContext deviceContext;
+    private Map<Long, HIPKernelStackFrame> oclKernelStackFrame = new ConcurrentHashMap<>();
+    private long constantMemoryPointer;
+    private long NON_EXISTING_ADDRESS = -1;
+    private long atomicsRegionPointer = -1;
+
+    public HIPMemoryManager(final HIPDeviceContext deviceContext) {
+        this.deviceContext = deviceContext;
+    }
+
+    @Override
+    public long getHeapSize() {
+        return DEVICE_AVAILABLE_MEMORY;
+    }
+
+    public HIPKernelStackFrame createKernelStackFrame(long executionPlanId, final int numberOfArguments) {
+        if (!oclKernelStackFrame.containsKey(executionPlanId)) {
+            // Create one stack frame per execution plan ID 
+            long kernelStackFramePtr = createBuffer(RESERVED_SLOTS * Long.BYTES, HIPMemFlags.CL_MEM_READ_ONLY).getBuffer();
+            oclKernelStackFrame.put(executionPlanId, new HIPKernelStackFrame(kernelStackFramePtr, numberOfArguments, deviceContext));
+        }
+        return oclKernelStackFrame.get(executionPlanId);
+    }
+
+    public void releaseKernelStackFrame(long executionPlanId) {
+        HIPKernelStackFrame stackFrame = oclKernelStackFrame.remove(executionPlanId);
+        if (stackFrame != null) {
+            stackFrame.invalidate();
+        }
+    }
+
+    public XPUBuffer createAtomicsBuffer(final int[] array, Access access) {
+        return new HIPAtomicsBuffer(array, deviceContext, access);
+    }
+
+    /**
+     * Allocate regions on the device.
+     */
+    public void allocateDeviceMemoryRegions() {
+        this.constantMemoryPointer = createBuffer(4, HIPMemFlags.CL_MEM_READ_ONLY | HIPMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
+        allocateAtomicRegion();
+    }
+
+    public HIPContext.HIPBufferResult createBuffer(long size, long flags) {
+        return deviceContext.getPlatformContext().createBuffer(deviceContext.getDeviceIndex(), flags, size);
+    }
+
+    public void releaseBuffer(long bufferId) {
+        deviceContext.getPlatformContext().releaseBuffer(deviceContext.getDeviceIndex(), bufferId);
+    }
+
+    long toConstantAddress() {
+        return constantMemoryPointer;
+    }
+
+    long toAtomicAddress() {
+        return atomicsRegionPointer;
+    }
+
+    void allocateAtomicRegion() {
+        if (this.atomicsRegionPointer == NON_EXISTING_ADDRESS) {
+            this.atomicsRegionPointer = createBuffer(atomicRegionSize(), HIPMemFlags.CL_MEM_READ_WRITE | HIPMemFlags.CL_MEM_ALLOC_HOST_PTR).getBuffer();
+        }
+    }
+
+    void deallocateAtomicRegion() {
+        if (this.atomicsRegionPointer != NON_EXISTING_ADDRESS) {
+            releaseBuffer(this.atomicsRegionPointer);
+            this.atomicsRegionPointer = NON_EXISTING_ADDRESS;
+        }
+    }
+
+    public static long atomicRegionSize() {
+        return INTEGER_BYTES_SIZE * MAX_NUMBER_OF_ATOMICS_PER_KERNEL;
+    }
+}
