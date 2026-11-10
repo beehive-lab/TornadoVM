@@ -350,6 +350,28 @@ public final class BabylonFrontend implements ModelFrontend {
             public Method method() {
                 return function;
             }
+
+            @Override
+            public String parameterName(int index) {
+                boolean instance = !java.lang.reflect.Modifier.isStatic(function.getModifiers());
+                if (instance && index == 0) {
+                    return null;
+                }
+                var types = function.getParameterTypes();
+                int parameter = instance ? index - 1 : index;
+                if (parameter >= types.length) {
+                    return null;
+                }
+                int slot = instance ? 1 : 0;
+                for (int i = 0; i < parameter; i++) {
+                    slot += types[i] == long.class || types[i] == double.class ? 2 : 1;
+                }
+                int parameterSlot = slot;
+                var owner = function.getDeclaringClass().getName().replace('.', '/');
+                return source.classFile(owner).flatMap(c -> c.method(function.getName(), descriptor(function))).flatMap(ClassFile.Method::code)
+                        .flatMap(code -> code.locals().stream().filter(l -> l.slot() == parameterSlot && l.startBci() == 0).map(ClassFile.LocalVariable::name).findFirst())
+                        .orElse(null);
+            }
         };
     }
 

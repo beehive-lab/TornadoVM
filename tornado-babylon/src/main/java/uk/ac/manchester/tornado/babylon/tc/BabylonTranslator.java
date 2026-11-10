@@ -92,6 +92,11 @@ final class BabylonTranslator {
         /** The kernel a {@code static final DeviceKernel} field names (for {@code KernelContext.launch}). */
         java.util.Optional<Frontend.MethodRef> deviceKernel(String ownerInternalName, String field);
 
+        /** The source name of the function's parameter {@code index} (the receiver is 0 in an instance method), or null. */
+        default String parameterName(int index) {
+            return null;
+        }
+
         /** The method being translated, if known (for HatWrites). */
         default Method method() {
             return null;
@@ -177,7 +182,9 @@ final class BabylonTranslator {
         int index = 0;
         for (var p : entry.parameters()) {
             var tcType = parameterType(p.type());
-            var arg = blocks.get(entry).addArg(tcType, "arg" + index); // named as the bytecode frontend names them
+            // Named as the bytecode frontend names them: from the class file's local names, else argN.
+            var parameterName = context.parameterName(index);
+            var arg = blocks.get(entry).addArg(tcType, parameterName != null ? parameterName : "arg" + index);
             values.put(p, arg);
             if (isHatBuffer(p.type())) {
                 bufferParams.put(arg, index);

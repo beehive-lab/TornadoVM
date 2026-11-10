@@ -336,9 +336,12 @@ backends give.
 
 ### The TornadoVM unit-test suite from code models
 
-`reflect-all-sdk.sh` + `tc-diff` with `-Dtornado.tc.frontend=babylon`, RTX 4090 CUDA: **1627 of 1627
-passing tests pass**, the same as the bytecode frontend on the same SDK, JDK and devices. Output and
-launch configurations are compared test by test.
+`reflect-all-sdk.sh` + `tc-diff` with `-Dtornado.tc.frontend=babylon`, RTX 4090 CUDA, on develop at 8.1.1-dev
+(2210 tests): **1670 of the 1671 tests that pass from bytecode pass from code models**, on the same SDK, JDK and
+devices. Output and launch configurations are compared test by test. The one that does not,
+`TestVirtualDeviceKernel`, compares the kernel's source text with a file generated from bytecode: from the code
+model the kernel is the same but for the name of a loop variable (`v5` for `i`), which code models in SSA form
+do not keep. (Parameters keep their source names, from the class file.) It was 1627 of 1627 before that test existed.
 
 ### HAT's examples (`hat-sweep.sh`, RTX 4090 CUDA)
 
