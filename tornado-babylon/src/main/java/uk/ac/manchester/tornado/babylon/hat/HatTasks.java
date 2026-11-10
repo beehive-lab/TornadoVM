@@ -27,12 +27,18 @@ import hat.Accelerator;
 import optkl.ifacemapper.Buffer;
 import optkl.ifacemapper.MappableIface;
 import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task10;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task11;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task12;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task1;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task2;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task3;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task4;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task5;
 import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task6;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task7;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task8;
+import uk.ac.manchester.tornado.api.common.TornadoFunctions.Task9;
 import uk.ac.manchester.tornado.api.types.arrays.ByteArray;
 import uk.ac.manchester.tornado.babylon.tc.HatLayouts;
 
@@ -101,6 +107,32 @@ public final class HatTasks {
 
     public <A, B, C, D, E, F> TaskGraph task(TaskGraph graph, String id, Task6<A, B, C, D, E, F> kernel, A a, B b, C c, D d, E e, F f) {
         return add(graph, id, kernel, a, b, c, d, e, f);
+    }
+
+    public <A, B, C, D, E, F, G> TaskGraph task(TaskGraph graph, String id, Task7<A, B, C, D, E, F, G> kernel, A a, B b, C c, D d, E e, F f, G g) {
+        return add(graph, id, kernel, a, b, c, d, e, f, g);
+    }
+
+    public <A, B, C, D, E, F, G, H> TaskGraph task(TaskGraph graph, String id, Task8<A, B, C, D, E, F, G, H> kernel, A a, B b, C c, D d, E e, F f, G g, H h) {
+        return add(graph, id, kernel, a, b, c, d, e, f, g, h);
+    }
+
+    public <A, B, C, D, E, F, G, H, I> TaskGraph task(TaskGraph graph, String id, Task9<A, B, C, D, E, F, G, H, I> kernel, A a, B b, C c, D d, E e, F f, G g, H h, I i) {
+        return add(graph, id, kernel, a, b, c, d, e, f, g, h, i);
+    }
+
+    public <A, B, C, D, E, F, G, H, I, J> TaskGraph task(TaskGraph graph, String id, Task10<A, B, C, D, E, F, G, H, I, J> kernel, A a, B b, C c, D d, E e, F f, G g, H h, I i, J j) {
+        return add(graph, id, kernel, a, b, c, d, e, f, g, h, i, j);
+    }
+
+    public <A, B, C, D, E, F, G, H, I, J, K> TaskGraph task(TaskGraph graph, String id, Task11<A, B, C, D, E, F, G, H, I, J, K> kernel, A a, B b, C c, D d, E e, F f,
+            G g, H h, I i, J j, K k) {
+        return add(graph, id, kernel, a, b, c, d, e, f, g, h, i, j, k);
+    }
+
+    public <A, B, C, D, E, F, G, H, I, J, K, L> TaskGraph task(TaskGraph graph, String id, Task12<A, B, C, D, E, F, G, H, I, J, K, L> kernel, A a, B b, C c, D d, E e, F f,
+            G g, H h, I i, J j, K k, L l) {
+        return add(graph, id, kernel, a, b, c, d, e, f, g, h, i, j, k, l);
     }
 
     private TaskGraph add(TaskGraph graph, String id, Serializable kernel, Object... args) {

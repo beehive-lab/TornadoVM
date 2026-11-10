@@ -132,6 +132,11 @@ public class HatTasksChecks {
         }
     }
 
+    @Reflect
+    public static void weighted(F32Array out, F32Array in, float a, float b, float c, float d, float e, float f) {
+        out.array(GIX(), in.array(GIX()) * a + b + c + d + e + f);
+    }
+
     public static void notReflected(F32Array data) {
         data.array(GIX(), 0f);
     }
@@ -293,6 +298,25 @@ public class HatTasksChecks {
                 for (int i = 0; i < nm[1]; i++) {
                     expect(pair.b(i) == (i < length ? i + 1 : -1), "b[" + i + "] = " + pair.b(i) + " of a pair of " + nm[0] + ", " + nm[1]);
                 }
+            }
+        });
+
+        check("a kernel of eight parameters", () -> {
+            var in = F32Array.create(accelerator, n);
+            var out = F32Array.create(accelerator, n);
+            for (int i = 0; i < n; i++) {
+                in.array(i, i);
+            }
+            var graph = new TaskGraph("eight").transferToDevice(DataTransferMode.FIRST_EXECUTION, hat.of(in));
+            hat.task(graph, "weighted", HatTasksChecks::weighted, out, in, 2f, 1f, 2f, 3f, 4f, 5f);
+            graph.transferToHost(DataTransferMode.EVERY_EXECUTION, hat.of(out));
+            try (var plan = new TornadoExecutionPlan(graph.snapshot())) {
+                plan.withDevice(device).withGridScheduler(new GridScheduler("eight.weighted", new WorkerGrid1D(n))).execute();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            for (int i = 0; i < n; i++) {
+                expect(out.array(i) == i * 2f + 15f, "out[" + i + "] = " + out.array(i));
             }
         });
 

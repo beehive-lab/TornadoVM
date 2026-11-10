@@ -93,4 +93,27 @@ public class ModelFrontendApiTest {
         assertEquals("tornado.local_array", intrinsic(pending));
         assertEquals(n, Frontend.localArrayLength(b, pending), "a pending array's length is its operand");
     }
+
+    @Test
+    public void taskArgumentsAreVisibleOnlyWhileThatTaskIsCompiled() {
+        assertEquals(null, Frontend.taskArguments(), "no task: the runtime's questions about a kernel");
+        Object[] outer = { "a", 1 };
+        Object[] inner = { "b" };
+        var seen = Frontend.withTaskArguments(outer, () -> {
+            assertTrue(Frontend.taskArguments() == outer);
+            // A kernel launched from device code is compiled inside its parent's compilation.
+            assertTrue(Frontend.withTaskArguments(inner, Frontend::taskArguments) == inner);
+            return Frontend.taskArguments();
+        });
+        assertTrue(seen == outer, "the outer task's arguments are back after the nested compilation");
+        assertEquals(null, Frontend.taskArguments());
+    }
+
+    @Test
+    public void aModelFrontendHasNoTaskKeyUnlessItSaysSo() throws NoSuchMethodException {
+        ModelFrontend none = (source, className, methodName, descriptor) -> java.util.Optional.empty();
+        var method = ModelFrontendApiTest.class.getMethod("aModelFrontendHasNoTaskKeyUnlessItSaysSo");
+        assertEquals(null, none.taskKey(method, new Object[0]));
+        assertEquals(List.of(), Frontend.taskKeys(method, new Object[0]), "no model frontend installed in this module's tests");
+    }
 }
