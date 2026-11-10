@@ -317,9 +317,9 @@ def add_cuda_toolkit_to_path():
         os.environ['PATH'] = os.pathsep.join(new_dirs) + os.pathsep + current_path
 
 def get_hip_bin_dirs():
-    """Return the ROCm bin directories (%HIP_PATH%\\bin, %ROCM_PATH%\\bin) that exist."""
+    """Return the ROCm bin directories (%ROCM_PATH%\\bin, then %HIP_PATH%\\bin) that exist."""
     candidates = []
-    for variable in ('HIP_PATH', 'ROCM_PATH'):
+    for variable in ('ROCM_PATH', 'HIP_PATH'):
         root = os.environ.get(variable)
         if root:
             candidates.append(os.path.join(root, 'bin'))
@@ -328,9 +328,10 @@ def get_hip_bin_dirs():
 def add_hip_sdk_to_path():
     """Prepend the ROCm bin directories to PATH on Windows.
 
-    The HIP backend loads amdhip64 and hipRTC by absolute path from %HIP_PATH%\\bin, but the DLLs
-    they depend on (amd_comgr, the hipRTC builtins) are resolved by Windows' search order. Putting
-    the SDK first keeps them from the same install as the libraries that load them.
+    The HIP backend loads amdhip64 and hipRTC by absolute path from %ROCM_PATH%\\bin (falling back
+    to %HIP_PATH%\\bin), but the DLLs they depend on (amd_comgr, the hipRTC builtins) are resolved by
+    Windows' search order. Prepending the same directories in the same order keeps them from the
+    same install as the libraries that load them.
     """
     if os.name != 'nt':
         return
@@ -341,7 +342,7 @@ def add_hip_sdk_to_path():
         os.environ['PATH'] = os.pathsep.join(new_dirs) + os.pathsep + current_path
 
 def validate_hip_backend(sdk_path):
-    """Validate HIP backend dependencies on Windows: the HIP runtime and hipRTC from a ROCm/HIP SDK."""
+    """Validate HIP backend dependencies on Windows: the HIP runtime and hipRTC from a ROCm installation."""
     hip_bin_dirs = get_hip_bin_dirs()
     if any(glob.glob(os.path.join(d, 'amdhip64*.dll')) for d in hip_bin_dirs) and any(glob.glob(os.path.join(d, 'hiprtc*.dll')) for d in hip_bin_dirs):
         return
@@ -350,10 +351,10 @@ def validate_hip_backend(sdk_path):
     if hip_bin_dirs:
         print("[CAUSE] They are not in: " + ", ".join(hip_bin_dirs))
     else:
-        print("[CAUSE] Neither HIP_PATH nor ROCM_PATH names a ROCm installation with a bin directory.")
+        print("[CAUSE] Neither ROCM_PATH nor HIP_PATH names a ROCm installation with a bin directory.")
     print()
-    print("[FIX] Install the AMD HIP SDK (or a ROCm SDK) and set HIP_PATH to its root")
-    print("      Download from: https://www.amd.com/en/developer/resources/rocm-hub/hip-sdk.html")
+    print("[FIX] Install ROCm 10.1 or newer from TheRock's Python packages and set ROCM_PATH")
+    print("      to its root, which 'rocm-sdk path --root' prints. See: https://github.com/ROCm/TheRock")
     print()
     print("[NOTE] HIP backend is AMD-specific")
     sys.exit(1)
