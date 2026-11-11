@@ -42,6 +42,7 @@ import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
@@ -61,6 +62,7 @@ import uk.ac.manchester.tornado.drivers.cuda.CUDADeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.cuda.CUDATargetDevice;
 import uk.ac.manchester.tornado.drivers.cuda.enums.CUDADeviceType;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAAtomicsBuffer;
+import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAExternalDeviceBuffer;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDAByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDACharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.cuda.mm.CUDADoubleArrayWrapper;
@@ -131,6 +133,15 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
     public String getDescription() {
         final String availability = (device.isDeviceAvailable()) ? "available" : "not available";
         return String.format("%s %s (%s)", device.getDeviceName(), device.getDeviceType(), availability);
+    }
+
+    @Override
+    public boolean isUnifiedMemorySupported() {
+        // Not implemented yet. CUDA support needs hardware where the GPU shares memory with the
+        // host (an integrated GPU or coherent CPU-GPU memory), not driver-managed page migration.
+        // An implementation also overrides checkOnUnifiedMemory, and must refuse storage that can
+        // be freed while bound, as Metal does by accepting only Arena.ofAuto() memory.
+        return false;
     }
 
     @Override
@@ -406,6 +417,11 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
                 }
             }
         } else if (!type.isPrimitive()) {
+            // A device view stands for memory another library owns: borrow its address instead of
+            // allocating, transferring or freeing anything (see CUDAExternalDeviceBuffer).
+            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isCUDADeviceView()) {
+                return new CUDAExternalDeviceBuffer(deviceContext, nativeArray, access);
+            }
             if (object instanceof AtomicInteger) {
                 result = new CUDAAtomicsBuffer(new int[] {}, deviceContext, access);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
@@ -498,6 +514,15 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         return buffer;
     }
 
+    /**
+     * Registers the caller's storage as the device buffer of a consumeFromUnifiedMemory input.
+     * Unreachable while {@link #isUnifiedMemorySupported()} is false: the runtime rejects the graph
+     * before allocation.
+     */
+    private XPUBuffer newUnifiedMemoryBufferRegistration(Object object, DeviceBufferState deviceObjectState, Access access) {
+        throw new TornadoRuntimeException("consumeFromUnifiedMemory is not implemented for the CUDA backend");
+    }
+
     @Override
     public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
@@ -506,6 +531,14 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
             }
+            if (buffer instanceof CUDAExternalDeviceBuffer external) {
+                // Reusing a locked buffer skips allocate(), which is where a borrowed view's access
+                // contract was checked. The binding can have changed since; check it again here, so
+                // that every execution is validated rather than only the first.
+                external.validateForAccess(access);
+            }
+        } else if (state.isUnifiedMemory()) {
+            buffer = newUnifiedMemoryBufferRegistration(object, state, access);
         } else {
             buffer = newDeviceBufferAllocation(object, batchSize, state, access);
         }
@@ -513,7 +546,7 @@ public class CUDATornadoDevice implements TornadoXPUDevice, TornadoNativeStreamS
         if (buffer.getClass() == CUDAAtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-        return state.getXPUBuffer().size();
+        return state.getXPUBuffer().getAllocatedSize();
     }
 
     @Override

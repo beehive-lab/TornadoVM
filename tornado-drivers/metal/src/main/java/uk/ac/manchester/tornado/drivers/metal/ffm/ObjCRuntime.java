@@ -266,6 +266,18 @@ public final class ObjCRuntime {
         }
     }
 
+    /** Sends a selector taking four {@code id}- or integer-sized arguments. */
+    public static long send(long receiver, String selector, long first, long second, long third, long fourth) {
+        if (receiver == 0) {
+            return 0;
+        }
+        try {
+            return (long) Sends.LONG_LONG_LONG_LONG_LONG_LONG_LONG.invokeExact(receiver, sel(selector), first, second, third, fourth);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
     /** Sends a selector returning {@code BOOL}, which is a signed char. */
     public static boolean sendBoolean(long receiver, String selector) {
         if (receiver == 0) {
@@ -404,6 +416,7 @@ public final class ObjCRuntime {
         static final MethodHandle LONG_LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG));
         static final MethodHandle LONG_LONG_LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
         static final MethodHandle LONG_LONG_LONG_LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
+        static final MethodHandle LONG_LONG_LONG_LONG_LONG_LONG_LONG = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG, C_LONG));
         static final MethodHandle LONG_LONG_LONG_POINTER = msgSend(FunctionDescriptor.of(C_LONG, C_LONG, C_LONG, C_POINTER));
         static final MethodHandle POINTER_LONG_LONG = msgSend(FunctionDescriptor.of(C_POINTER, C_LONG, C_LONG));
         static final MethodHandle VOID_LONG_LONG = msgSend(FunctionDescriptor.ofVoid(C_LONG, C_LONG));

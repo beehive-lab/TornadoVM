@@ -320,8 +320,11 @@ public final class BFloat16Array extends TornadoNativeArray {
      *         The raw bfloat16 bit pattern.
      */
     public void init(short bits) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, bits, baseIndex);
+        if (bits == 0) {
+            segment.fill(baseIndex, numberOfElements, BF16_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, bits, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, BF16_BYTES);
         }
     }
 

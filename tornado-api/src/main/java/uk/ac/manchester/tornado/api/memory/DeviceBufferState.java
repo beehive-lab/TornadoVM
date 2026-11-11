@@ -19,6 +19,10 @@ package uk.ac.manchester.tornado.api.memory;
 
 public interface DeviceBufferState {
 
+    default boolean isUnifiedMemory() {
+        return false;
+    }
+
     void setXPUBuffer(XPUBuffer value);
 
     boolean hasObjectBuffer();

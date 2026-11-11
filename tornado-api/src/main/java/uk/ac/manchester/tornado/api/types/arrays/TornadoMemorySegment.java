@@ -440,4 +440,39 @@ public class TornadoMemorySegment {
     public short getShortAtIndex(long index, int baseIndex) {
         return segment.getAtIndex(ValueLayout.JAVA_SHORT, (long) baseIndex + index);
     }
+
+    /**
+     * Sets every byte of {@code numElements} elements, starting at the element {@code baseIndex}, to {@code value} with a single bulk fill.
+     *
+     * @param baseIndex
+     *         the index of the first element, in elements of {@code elementBytes} bytes
+     * @param numElements
+     *         the number of elements to fill
+     * @param elementBytes
+     *         the size of one element in bytes
+     * @param value
+     *         the byte value to store
+     */
+    public void fill(int baseIndex, long numElements, int elementBytes, byte value) {
+        segment.asSlice((long) baseIndex * elementBytes, numElements * elementBytes).fill(value);
+    }
+
+    /**
+     * Copies the element at {@code baseIndex} into the following {@code numElements - 1} elements. The initialized prefix is doubled with
+     * {@link MemorySegment#copy} until the region is full, instead of storing one element at a time.
+     *
+     * @param baseIndex
+     *         the index of the first element, which must already hold the value, in elements of {@code elementBytes} bytes
+     * @param numElements
+     *         the number of elements in the region, including the first one
+     * @param elementBytes
+     *         the size of one element in bytes
+     */
+    public void replicateFirstElement(int baseIndex, long numElements, int elementBytes) {
+        MemorySegment data = segment.asSlice((long) baseIndex * elementBytes, numElements * elementBytes);
+        long byteSize = data.byteSize();
+        for (long filled = elementBytes; filled < byteSize; filled *= 2) {
+            MemorySegment.copy(data, 0, data, filled, Math.min(filled, byteSize - filled));
+        }
+    }
 }

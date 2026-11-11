@@ -48,6 +48,7 @@ import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceFP64NotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.exceptions.TornadoUnifiedMemoryNotSupported;
 import uk.ac.manchester.tornado.api.internal.annotations.Vector;
 import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
 import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
@@ -55,11 +56,13 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
 import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
 import uk.ac.manchester.tornado.drivers.metal.MetalBackendImpl;
+import uk.ac.manchester.tornado.drivers.metal.MetalDevice;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContext;
 import uk.ac.manchester.tornado.drivers.metal.MetalDeviceContextInterface;
 import uk.ac.manchester.tornado.drivers.metal.MetalTargetDevice;
 import uk.ac.manchester.tornado.drivers.metal.enums.MetalDeviceType;
 import uk.ac.manchester.tornado.drivers.metal.MetalInstalledCode;
+import uk.ac.manchester.tornado.drivers.metal.ffm.MetalObjects;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalCharArrayWrapper;
@@ -89,6 +92,8 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     private static MetalBackendImpl driver = null;
     private static final Pattern NAME_PATTERN = Pattern.compile("^Metal (\\d)\\.(\\d).*");
     private static final Access[] ACCESS_TYPES = Access.values();
+    /** Scope implementation of {@code Arena.ofAuto()} on supported JDKs; unknown scopes are refused. */
+    private static final String AUTOMATIC_SESSION = "jdk.internal.foreign.ImplicitSession";
 
     private final MetalTargetDevice device;
     /** Scratch for {@link #countObjectsPerAccess}, indexed by {@link Access#ordinal()}. */
@@ -131,6 +136,35 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     public String getDescription() {
         final String availability = (device.isDeviceAvailable()) ? "available" : "not available";
         return String.format("%s %s (%s)", device.getDeviceName(), device.getDeviceType(), availability);
+    }
+
+    @Override
+    public boolean isUnifiedMemorySupported() {
+        return device instanceof MetalDevice physical && physical.hasDeviceUnifiedMemory();
+    }
+
+    @Override
+    public void checkOnUnifiedMemory(Object object) {
+        if (!(device instanceof MetalDevice physical) || !physical.hasDeviceUnifiedMemory()) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory is not supported on " + getDeviceName() + ": the device does not share memory with the host");
+        }
+        if (!(object instanceof TornadoNativeArray array)) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory only supports TornadoNativeArray inputs");
+        }
+        MemorySegment segment = array.getSegmentWithHeader();
+        if (!segment.isNative()) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: the backing storage must be native memory");
+        }
+        if (!segment.scope().isAlive()) {
+            throw new TornadoUnifiedMemoryNotSupported("consumeFromUnifiedMemory: the backing storage has been closed");
+        }
+        // Only an automatic arena guarantees that the memory stays allocated while Metal maps it:
+        // the device buffer keeps the segment reachable, and nothing else can free it.
+        if (!AUTOMATIC_SESSION.equals(segment.scope().getClass().getName())) {
+            throw new TornadoUnifiedMemoryNotSupported(
+                    "consumeFromUnifiedMemory: the backing storage must be owned by Arena.ofAuto(); closeable arenas and foreign/global storage are unsupported");
+        }
+        MetalObjects.checkUnifiedMemory(physical.getDevicePointer(), segment);
     }
 
     @Override
@@ -499,6 +533,19 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
         return buffer;
     }
 
+    /**
+     * Registers the caller's storage as the device buffer of a consumeFromUnifiedMemory input:
+     * Metal maps it in place, so nothing is allocated or copied. The runtime has already checked
+     * the input, its accesses and the execution mode.
+     */
+    private XPUBuffer newUnifiedMemoryBufferRegistration(Object object, long batchSize, DeviceBufferState deviceObjectState, Access access) {
+        TornadoInternalError.guarantee(batchSize == 0 && access == Access.READ_ONLY, "consumeFromUnifiedMemory inputs are read-only and never chunked");
+        MetalMemorySegmentWrapper buffer = new MetalMemorySegmentWrapper((MetalDeviceContext) getDeviceContext(), 0, access, NativeArrayLayouts.elementSizeOf(object).orElseThrow());
+        buffer.registerUnifiedMemory((TornadoNativeArray) object);
+        deviceObjectState.setXPUBuffer(buffer);
+        return buffer;
+    }
+
     @Override
     public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
         final XPUBuffer buffer;
@@ -507,6 +554,8 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
             }
+        } else if (state.isUnifiedMemory()) {
+            buffer = newUnifiedMemoryBufferRegistration(object, batchSize, state, access);
         } else {
             buffer = newDeviceBufferAllocation(object, batchSize, state, access);
         }
@@ -514,7 +563,7 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
         if (buffer.getClass() == MetalAtomicsBuffer.class) {
             state.setAtomicRegion();
         }
-        return state.getXPUBuffer().size();
+        return state.getXPUBuffer().getAllocatedSize();
     }
 
     @Override

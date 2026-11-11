@@ -999,6 +999,42 @@ public class TaskGraph implements TaskGraphInterface {
     }
 
     /**
+     * Consumes existing native-array storage in place on a device that shares memory with the host,
+     * without allocating a device buffer or copying the contents. Unlike
+     * {@link #consumeFromDevice(Object...)}, no producing task graph is required. Use
+     * {@link TornadoDevice#isUnifiedMemorySupported()} to choose between this declaration and an
+     * ordinary transfer, and {@link TornadoDevice#isOnUnifiedMemory(Object)} to check a single array.
+     *
+     * <p>Storage requirements, checked when the plan compiles:
+     * <ul>
+     * <li>each object is a {@code TornadoNativeArray} that every task only reads;</li>
+     * <li>its memory is owned by {@code Arena.ofAuto()}, so it cannot be freed while a device uses it;
+     * closeable arenas and foreign or global segments are refused;</li>
+     * <li>on Metal, the memory is a mapped file, or it starts on a page boundary and contains whole
+     * pages.</li>
+     * </ul>
+     *
+     * <p>The storage, including the array header, must stay unchanged until every consuming plan is
+     * closed. CPU reads are allowed; the caller must prevent writes through other aliases. Plan
+     * closure releases the device binding, never the storage.
+     *
+     * <p>Within a plan, transfers, device writes and overlapping ordinary buffers conflict with this
+     * declaration. Memory chunking, reductions, execution-graph capture, intra-plan concurrency and
+     * per-task device selection are not supported. Every failure raises an error; TornadoVM never
+     * falls back to copying or to sequential Java. A device or storage that cannot be consumed raises
+     * {@code TornadoUnifiedMemoryNotSupported}, naming the requirement that is not met.
+     *
+     * @param objects
+     *     native arrays whose existing storage is consumed
+     * @return this task graph
+     */
+    @Override
+    public TaskGraph consumeFromUnifiedMemory(Object... objects) {
+        taskGraphImpl.consumeFromUnifiedMemory(objects);
+        return this;
+    }
+
+    /**
      * Tag a set of objects (Java objects) to be transferred from the device to the
      * host after the execution completes. There are two modes:
      *

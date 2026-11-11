@@ -138,6 +138,7 @@ __TEST_THE_WORLD__ = [
     ## TornadoVM standard test-suite
     TestEntry("uk.ac.manchester.tornado.unittests.TestHello"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrays"),
+    TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestArrayInit"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestNativeArrayVectorLoads"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestLongIndexArrays"),
     TestEntry("uk.ac.manchester.tornado.unittests.arrays.TestByteArrayWordAccess"),
@@ -195,6 +196,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.cudnn.TestCuDnn"),
     TestEntry("uk.ac.manchester.tornado.unittests.nvtx.TestNvtx"),
     TestEntry("uk.ac.manchester.tornado.unittests.cusparse.TestCusparse"),
+    TestEntry("uk.ac.manchester.tornado.unittests.deviceview.TestDeviceView"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudf.TestCudf"),
     TestEntry("uk.ac.manchester.tornado.unittests.cudf.TestCudfColumns"),
     TestEntry("uk.ac.manchester.tornado.unittests.cutlass.TestCutlass"),
@@ -389,6 +391,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.pointers.TestCopyDevicePointers"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.MemoryConsumptionTest"),
     TestEntry("uk.ac.manchester.tornado.unittests.memory.TestDroppedPlans"),
+    TestEntry("uk.ac.manchester.tornado.unittests.memory.TestConsumeFromUnifiedMemory"),
     TestEntry("uk.ac.manchester.tornado.unittests.api.TestByteArrayTypedAccess"),
     TestEntry("uk.ac.manchester.tornado.unittests.streams.TestCUDAStreams"),
 
@@ -576,7 +579,12 @@ __THREAD_INFO__ = "-Dtornado.threadInfo=True "
 __UNCOMPRESSED_POINTERS__ = "-XX:-UseCompressedOops -XX:-UseCompressedClassPointers "
 __PRINT_EXECUTION_TIMER__ = "-Dtornado.debug.executionTime=True "
 __GC__ = "-Xmx6g "
-__BASE_OPTIONS__ = "-Dtornado.recover.bailout=False "
+# --enable-native-access for the test module, because some tests reach libcuda directly through
+# the FFM API to stand in for a library that owns its own device memory. Without it the lookup
+# throws IllegalCallerException, the tests guard on that with assumeTrue, and a skipped test is
+# reported by this runner exactly like a passing one -- so a whole suite can report green while
+# never executing. Granting it here makes those tests run, or fail loudly if they cannot.
+__BASE_OPTIONS__ = "-Dtornado.recover.bailout=False --enable-native-access=tornado.unittests "
 __VERBOSE_OPTION__ = "-Dtornado.unittests.verbose="
 __TORNADOVM_PRINT_BC__ = "-Dtornado.print.bytecodes=True "
 __TORNADOVM_ENABLE_PROFILER_SILENT__ = " -Dtornado.profiler=True -Dtornado.log.profiler=True "
@@ -590,7 +598,7 @@ else:
 
 ENABLE_ASSERTIONS = "-ea "
 
-__VERSION__ = "8.0.1-dev"
+__VERSION__ = "8.1.1-dev"
 
 try:
     javaHome = os.environ["JAVA_HOME"]

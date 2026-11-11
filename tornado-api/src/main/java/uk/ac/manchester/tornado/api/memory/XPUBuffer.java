@@ -90,6 +90,11 @@ public interface XPUBuffer {
 
     long size();
 
+    /** Runtime-owned allocation bytes; excludes caller-owned imported storage. */
+    default long getAllocatedSize() {
+        return size();
+    }
+
     void setSizeSubRegion(long batchSize);
 
     long getSizeSubRegionSize();

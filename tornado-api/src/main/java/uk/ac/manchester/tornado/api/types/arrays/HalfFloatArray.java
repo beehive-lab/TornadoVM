@@ -364,8 +364,12 @@ public final class HalfFloatArray extends TornadoNativeArray {
      *         The {@link HalfFloat} value to initialize the {@link HalfFloatArray} instance with.
      */
     public void init(HalfFloat value) {
-        for (long i = 0; i < numberOfElements; i++) {
-            segment.setAtIndex(i, value.getHalfFloatValue(), baseIndex);
+        short bits = value.getHalfFloatValue();
+        if (bits == 0) {
+            segment.fill(baseIndex, numberOfElements, HALF_FLOAT_BYTES, (byte) 0);
+        } else if (numberOfElements > 0) {
+            segment.setAtIndex(0L, bits, baseIndex);
+            segment.replicateFirstElement(baseIndex, numberOfElements, HALF_FLOAT_BYTES);
         }
     }
 

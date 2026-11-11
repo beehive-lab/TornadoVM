@@ -148,6 +148,10 @@ public class TornadoGraphBuilder {
             } else if (op == TornadoGraphBitcodes.LOAD_REF.index()) {
                 final int variableIndex = buffer.getInt();
 
+                if (states.get(variableIndex).isUnifiedMemory() && Objects.requireNonNull(accesses)[argIndex] != Access.READ_ONLY) {
+                    throw new TornadoRuntimeException("consumeFromUnifiedMemory only supports read-only task arguments");
+                }
+
                 // An object this task has already written, passed again to the same task (aliased
                 // arguments): bind it to the node of its first appearance. Its latest access node is
                 // the task's own write, so using that would make the task depend on itself.
@@ -162,7 +166,9 @@ public class TornadoGraphBuilder {
                     final ObjectNode objectNode = (ObjectNode) arg;
                     final LocalObjectState state = states.get(objectNode.getIndex());
 
-                    if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
+                    if (state.isUnifiedMemory()) {
+                        createAllocateNode(context, graph, arg, args, argIndex, persist);
+                    } else if (Objects.requireNonNull(accesses)[argIndex] == Access.WRITE_ONLY) {
                         createAllocateNode(context, graph, arg, args, argIndex, persist);
                     }  else if (state.isOnDevice()) {
                         createOnDeviceNode(context, graph, arg, args, argIndex, persist);

@@ -644,6 +644,8 @@ public interface TaskGraphInterface {
 
     TaskGraph consumeFromDevice(Object... objects);
 
+    TaskGraph consumeFromUnifiedMemory(Object... objects);
+
     /**
      * Tag a set of objects (Java objects) to be transferred from the device to the
      * host after the execution completes. There are two modes:

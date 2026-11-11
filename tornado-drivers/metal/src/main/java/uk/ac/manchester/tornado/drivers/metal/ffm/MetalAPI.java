@@ -188,6 +188,15 @@ public final class MetalAPI {
     }
 
     /**
+     * {@code -[MTLDevice newBufferWithBytesNoCopy:length:options:deallocator:]} with no deallocator:
+     * the buffer is the caller's memory, which must be page-aligned, a whole number of pages long,
+     * and outlive the buffer. Owned by the caller; returns 0 when Metal refuses the memory.
+     */
+    public static long newBufferWithBytesNoCopy(long device, long pointer, long length, long options) {
+        return ObjCRuntime.send(device, "newBufferWithBytesNoCopy:length:options:deallocator:", pointer, length, options, 0L);
+    }
+
+    /**
      * {@code -[MTLDevice newBufferWithBytes:length:options:]}: Metal copies the bytes, so the
      * source segment does not have to outlive the call.
      */
