@@ -71,6 +71,13 @@ public final class Intrinsics {
         // a vector with one lane replaced (setX on a vector value).
         cuda("tornado.vector.lane", "$0.{lane|xyzw}");
         TABLE.put(new Key("tornado.vector.insert", Dialect.CUDA, ""), Spelling.withHelper("tc_with_{lane|xyzw}($0, $1)", "tc_with"));
+        // A vector at consecutive floats: one 64/128-bit access when the address is aligned for it,
+        // lane by lane otherwise (Java allows any element index).
+        for (int n : new int[] { 2, 4 }) {
+            String vec = new Type.VectorType(Type.F32, n).text();
+            TABLE.put(new Key("tornado.vector.load", Dialect.CUDA, vec), Spelling.withHelper("tc_vload_float" + n + "((const char *) ($0) + ($1))", "tc_vload_float" + n));
+            TABLE.put(new Key("tornado.vector.store", Dialect.CUDA, vec), Spelling.withHelper("tc_vstore_float" + n + "((char *) ($0) + ($1), $2)", "tc_vstore_float" + n));
+        }
         // AtomicInteger counters: slot $0 of the kernel's atomics region (AtomicSlots), operand $1.
         cuda("tornado.atomic_int.add_get", "atomicAdd(&_atomics[$0], $1) + $1");
         cuda("tornado.atomic_int.get_add", "atomicAdd(&_atomics[$0], $1)");
@@ -85,6 +92,9 @@ public final class Intrinsics {
         // With a byte offset: the tile base moves by that many bytes (a warp's sub-tile).
         TABLE.put(new Key("tornado.mma.load_a.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_a_global"));
         TABLE.put(new Key("tornado.mma.load_b.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_b_global"));
+        // Column-major sources (element (r, c) at [row + r + (col + c) * ld]), for model frontends (HAT's Tensor).
+        TABLE.put(new Key("tornado.mma.load_a.global_col", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a_global_col((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_a_global_col"));
+        TABLE.put(new Key("tornado.mma.load_b.global_col", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_global_col((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_b_global_col"));
         TABLE.put(new Key("tornado.mma.load_a.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) ((const char *) $0 + $2), $1, 2)", "tc_mma_load_a"));
         TABLE.put(new Key("tornado.mma.load_b.offset", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) ((const char *) $0 + $2), $1)", "tc_mma_load_b"));
         // Swizzled B tiles (fp16, stride-32 permutation: byte b -> b ^ (((b >> 7) & 7) << 4)).
@@ -104,6 +114,7 @@ public final class Intrinsics {
         TABLE.put(new Key("tornado.mma.m16n8k32_e5m2", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k32_e5m2($0, $1, $2)", "tc_mma_m16n8k32_e5m2"));
         TABLE.put(new Key("tornado.mma.m16n8k16", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_m16n8k16($0, $1, $2)", "tc_mma_m16n8k16"));
         TABLE.put(new Key("tornado.mma.store", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store($0, (float *) ($1), $2, $3, $4)", "tc_mma_store"));
+        TABLE.put(new Key("tornado.mma.store_col", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_store_col($0, (float *) ($1), $2, $3, $4)", "tc_mma_store_col"));
         // Atomics: $&0 is the address of the element ($0 is its pointer); typed by the value.
         for (var t : List.of("i32", "i64", "f32", "f64")) {
             cudaTyped("tornado.atomic.add", t, t.equals("i64") ? "atomicAdd((unsigned long long *) $&0, (unsigned long long) $1)" : "atomicAdd($&0, $1)");
@@ -175,6 +186,12 @@ public final class Intrinsics {
         opencl("tornado.global_size", "(int) get_global_size({dim})");
         // Vector lanes by number (.s0 to .sf works for every width; .x/.y/.z/.w only up to four).
         opencl("tornado.vector.lane", "$0.s{lane|0123456789abcdef}");
+        // vloadn/vstoren need only element alignment, and use wide accesses where they can.
+        for (int n : new int[] { 2, 4 }) {
+            String vec = new Type.VectorType(Type.F32, n).text();
+            openclTyped("tornado.vector.load", vec, "vload" + n + "(0, (__global const float *) ((__global const char *) ($0) + ($1)))");
+            openclTyped("tornado.vector.store", vec, "vstore" + n + "($2, 0, (__global float *) ((__global char *) ($0) + ($1)))");
+        }
         // AtomicInteger counters in the atomics region.
         opencl("tornado.atomic_int.add_get", "atomic_add(&_atomics[$0], $1) + $1");
         opencl("tornado.atomic_int.get_add", "atomic_add(&_atomics[$0], $1)");

@@ -83,6 +83,34 @@ final class Helpers {
                     }
                     """),
             // A vector value with one lane replaced (Java vector types are values here; setX makes a new one).
+            Map.entry("tc_vload_float4", """
+                    __device__ static inline float4 tc_vload_float4(const char *p) {
+                      if ((((unsigned long long) p) & 15ull) == 0ull) return *((const float4 *) p);
+                      const float *f = (const float *) p;
+                      return make_float4(f[0], f[1], f[2], f[3]);
+                    }
+                    """),
+            Map.entry("tc_vload_float2", """
+                    __device__ static inline float2 tc_vload_float2(const char *p) {
+                      if ((((unsigned long long) p) & 7ull) == 0ull) return *((const float2 *) p);
+                      const float *f = (const float *) p;
+                      return make_float2(f[0], f[1]);
+                    }
+                    """),
+            Map.entry("tc_vstore_float4", """
+                    __device__ static inline void tc_vstore_float4(char *p, float4 v) {
+                      if ((((unsigned long long) p) & 15ull) == 0ull) { *((float4 *) p) = v; return; }
+                      float *f = (float *) p;
+                      f[0] = v.x; f[1] = v.y; f[2] = v.z; f[3] = v.w;
+                    }
+                    """),
+            Map.entry("tc_vstore_float2", """
+                    __device__ static inline void tc_vstore_float2(char *p, float2 v) {
+                      if ((((unsigned long long) p) & 7ull) == 0ull) { *((float2 *) p) = v; return; }
+                      float *f = (float *) p;
+                      f[0] = v.x; f[1] = v.y;
+                    }
+                    """),
             Map.entry("tc_with", """
                     template <typename V, typename S> __device__ static inline V tc_with_x(V v, S s) { v.x = s; return v; }
                     template <typename V, typename S> __device__ static inline V tc_with_y(V v, S s) { v.y = s; return v; }
@@ -139,6 +167,32 @@ final class Helpers {
                       int2 r;
                       asm volatile("movmatrix.sync.aligned.m8n8.trans.b16 %0, %1;" : "=r"(r.x) : "r"(lo));
                       asm volatile("movmatrix.sync.aligned.m8n8.trans.b16 %0, %1;" : "=r"(r.y) : "r"(hi));
+                      return r;
+                    }
+                    """),
+            // A from a column-major matrix (element (r, c) at a[row + r + (col + c) * ld]): the register pairs
+            // run along k, which is strided here, so each half is a 16-bit load.
+            Map.entry("tc_mma_load_a_global_col", """
+                    __device__ static inline int4 tc_mma_load_a_global_col(const unsigned short *a, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      int r = row + (int) (lane >> 2), c = col + (int) ((lane & 3u) << 1);
+                      int v[4];
+                      for (int i = 0; i < 4; i++) {
+                        int rr = r + 8 * (i & 1), cc = c + 8 * (i >> 1);
+                        v[i] = (int) a[rr + (long long) cc * ld] | ((int) a[rr + (long long) (cc + 1) * ld] << 16);
+                      }
+                      return make_int4(v[0], v[1], v[2], v[3]);
+                    }
+                    """),
+            // B from a column-major matrix (element (k, n) at b[row + k + (col + n) * ld]): already the
+            // fragment's layout (k pairs contiguous for each column n), so one 32-bit load per register.
+            Map.entry("tc_mma_load_b_global_col", """
+                    __device__ static inline int2 tc_mma_load_b_global_col(const unsigned short *b, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      const unsigned short *p = b + (long long) (col + (int) (lane >> 2)) * ld + row + (int) ((lane & 3u) << 1);
+                      int2 r;
+                      r.x = *(const int *) p;
+                      r.y = *(const int *) (p + 8);
                       return r;
                     }
                     """),
@@ -243,6 +297,16 @@ final class Helpers {
                       c[r * ld + k + 1] = d.y;
                       c[(r + 8) * ld + k] = d.z;
                       c[(r + 8) * ld + k + 1] = d.w;
+                    }
+                    """),
+            Map.entry("tc_mma_store_col", """
+                    __device__ static inline void tc_mma_store_col(float4 d, float *c, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      int r = row + (int) (lane >> 2), k = col + (int) ((lane & 3u) << 1);
+                      c[r + (long long) k * ld] = d.x;
+                      c[r + (long long) (k + 1) * ld] = d.y;
+                      c[r + 8 + (long long) k * ld] = d.z;
+                      c[r + 8 + (long long) (k + 1) * ld] = d.w;
                     }
                     """),
             // cp.async (PTX ISA 7.0, sm_80): .ca caches the 4-byte copy in L1, .cg (16 bytes only) bypasses it.
