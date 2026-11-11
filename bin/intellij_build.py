@@ -217,7 +217,7 @@ def main():
     backends = [b.strip().lower() for b in backend_env.split(",")]
 
     # Validate backends
-    valid_backends = {"opencl", "cuda", "metal"}
+    valid_backends = {"opencl", "cuda", "metal", "hip"}
     for backend in backends:
         if backend not in valid_backends:
             print(f"[ERROR] Invalid backend: {backend}")

@@ -110,6 +110,183 @@ public class TcCompilerTest {
         assertEquals(List.of(), legality("tornado.mma.m16n8k32_e4m3", TargetCaps.CUDA_SM89));
     }
 
+    private static TargetCaps hip(String arch) {
+        return TargetCaps.hip(arch, true, true, 16, 1024, 64 * 1024, arch.startsWith("gfx9") ? 64 : 32);
+    }
+
+    /** HIP: MMA (FP8 included) on CDNA MFMA and on gfx11, gfx1200/gfx1201 and gfx1250 WMMA; TC-E4017 on any other GPU. */
+    @Test
+    public void legalityChecksHipMatrixCores() {
+        for (String arch : List.of("gfx908", "gfx90a", "gfx940", "gfx941", "gfx942", "gfx950")) {
+            assertEquals(TargetCaps.MatrixCores.MFMA, hip(arch).matrixCores(), arch);
+        }
+        for (String arch : List.of("gfx1100", "gfx1101", "gfx1102", "gfx1103", "gfx1150", "gfx1151")) {
+            assertEquals(TargetCaps.MatrixCores.WMMA_GFX11, hip(arch).matrixCores(), arch);
+        }
+        for (String arch : List.of("gfx1200", "gfx1201")) {
+            assertEquals(TargetCaps.MatrixCores.WMMA_GFX12, hip(arch).matrixCores(), arch);
+        }
+        assertEquals(TargetCaps.MatrixCores.WMMA_GFX1250, hip("gfx1250").matrixCores());
+        for (String arch : List.of("gfx908", "gfx942", "gfx950", "gfx1100", "gfx1151", "gfx1201", "gfx1250")) {
+            assertTrue(hip(arch).mma() && hip(arch).fp8Mma(), arch);
+            assertEquals(List.of(), legality("tornado.mma.m16n8k16", hip(arch)), arch);
+            assertEquals(List.of(), legality("tornado.mma.m16n8k32_e4m3", hip(arch)), arch);
+        }
+        for (String arch : List.of("gfx900", "gfx906", "gfx943", "gfx951", "gfx1030", "gfx1251", "gfx1210", "")) {
+            assertEquals(TargetCaps.MatrixCores.NONE, hip(arch).matrixCores(), arch);
+            assertFalse(hip(arch).mma() || hip(arch).fp8Mma(), arch);
+            assertEquals(List.of("TC-E4017"), legality("tornado.mma.m16n8k16", hip(arch)), arch);
+            assertEquals(List.of("TC-E4017"), legality("tornado.mma.m16n8k32_e5m2", hip(arch)), arch);
+        }
+        // copies staged for MMA run synchronously on any AMD GPU
+        assertEquals(List.of(), legality("tornado.async_copy.commit", hip("gfx906")));
+        assertEquals(TargetCaps.MatrixCores.NONE, TargetCaps.CUDA_SM89.matrixCores());
+    }
+
+    /**
+     * A wait on local memory: threads 32-63 of the group spin until thread 0 sets a flag. {@code WAIT}
+     * is the waiting loop's body, {@code SET} the write.
+     */
+    private static final String LOCAL_WAIT = """
+            kernel @wait(%out: array<i32>) -> void {
+            ^entry:
+              %flag = alloca.shared i32[1] : ptr<shared>
+              %lid = tornado.thread_id.local<dim = 0>() : i32
+              %zero = const 0 : i32
+              %one = const 1 : i32
+              %notFirst = icmp.ne %lid, %zero : i1
+              cond_br %notFirst, ^init, ^clear
+            ^clear:
+              store %flag, %zero
+              br ^init
+            ^init:
+              tornado.barrier.local()
+              %c32 = const 32 : i32
+              %low = icmp.slt %lid, %c32 : i1
+              cond_br %low, ^writer, ^spin
+            ^spin:
+            WAIT
+            ^again:
+              br ^spin
+            ^writer:
+              cond_br %notFirst, ^done, ^set
+            ^set:
+            SET
+              br ^done
+            ^done:
+              %gid = tornado.thread_id.global<dim = 0>() : i32
+              array.store %out[%gid], %lid
+              ret
+            }
+            """;
+
+    private static final String CAS_WAIT = """
+              %seen = tornado.atomic.cas(%flag, %one, %one) : i32
+              %set = icmp.eq %seen, %one : i1
+              cond_br %set, ^done, ^again""";
+
+    private static List<String> waitLegality(String wait, String set, TargetCaps target) {
+        var f = IrParser.parseFunction(LOCAL_WAIT.replace("WAIT", wait).replace("SET", set));
+        return uk.ac.manchester.tornado.tc.tornado.Legality.run(f, target).stream().map(d -> d.code()).toList();
+    }
+
+    /** TC-E4019: on a 64-lane HIP wavefront, a loop that only waits for another thread to write local memory. */
+    @Test
+    public void legalityRefusesLocalWaitsOnWave64Hip() {
+        var exchange = "  %old = tornado.atomic.exchange(%flag, %one) : i32";
+        assertEquals(List.of("TC-E4019"), waitLegality(CAS_WAIT, exchange, hip("gfx950")));
+        assertEquals(List.of("TC-E4019"), waitLegality(CAS_WAIT, exchange, hip("gfx90a")));
+        // a plain load, and a plain store as the write
+        var load = """
+                  %seen = load %flag : i32
+                  %set = icmp.ne %seen, %zero : i1
+                  cond_br %set, ^done, ^again""";
+        assertEquals(List.of("TC-E4019"), waitLegality(load, "  store %flag, %one", hip("gfx942")));
+        // warps that are wavefronts of their own, or progress independently
+        assertEquals(List.of(), waitLegality(CAS_WAIT, exchange, hip("gfx1100")));
+        assertEquals(List.of(), waitLegality(CAS_WAIT, exchange, TargetCaps.CUDA_SM89));
+        assertEquals(List.of(), waitLegality(CAS_WAIT, exchange, new TargetCaps(TargetCaps.Dialect.OPENCL, 0, true, true, 16, 1024, 64 * 1024, 64, false, 0)));
+        // not a wait: the loop synchronises, or updates the flag itself
+        var barrier = """
+                  tornado.barrier.local()
+                  %seen = load %flag : i32
+                  %set = icmp.ne %seen, %zero : i1
+                  cond_br %set, ^done, ^again""";
+        assertEquals(List.of(), waitLegality(barrier, exchange, hip("gfx950")));
+        var increment = """
+                  %seen = tornado.atomic.cas(%flag, %zero, %one) : i32
+                  %set = icmp.eq %seen, %zero : i1
+                  cond_br %set, ^done, ^again""";
+        assertEquals(List.of(), waitLegality(increment, exchange, hip("gfx950")));
+        // a wait on global memory: the writer may be another work-group
+        var global = """
+                  %g = array.load %out[%zero] : i32
+                  %set = icmp.ne %g, %zero : i1
+                  cond_br %set, ^done, ^again""";
+        assertEquals(List.of(), waitLegality(global, exchange, hip("gfx950")));
+        // a write the exits do not accept cannot end the wait; the remaining writer is thread 0
+        assertEquals(List.of("TC-E4019"), waitLegality(CAS_WAIT, exchange + "\n  store %flag, %zero", hip("gfx950")));
+        // KernelContext kernels: refused where a waiter certainly shares the only writer's wavefront
+        assertEquals(List.of("TC-E4019"), localWaitKernel("sameWavefront"));
+        assertEquals(List.of("TC-E4019"), localWaitKernel("sameSecondWavefront"));
+        assertEquals(List.of(), localWaitKernel("writtenBeforeBarrier"));
+        assertEquals(List.of(), localWaitKernel("ownWrite"));
+        assertEquals(List.of(), localWaitKernel("writtenBeforeWaiting"));
+        assertEquals(List.of(), localWaitKernel("otherWavefront"));
+        assertEquals(List.of(), localWaitKernel("writersInTwoWavefronts"));
+        assertEquals(List.of(), localWaitKernel("twoDimensional"));
+        // documented false positive: launched with rows of 56 threads, a writer in another row releases the
+        // waiters, but the check sees no work-group shape and refuses the kernel
+        assertEquals(List.of("TC-E4019"), localWaitKernel("rowsOfFiftySix"));
+    }
+
+    private static List<String> localWaitKernel(String method) {
+        var source = uk.ac.manchester.tornado.tc.frontend.Frontend.BytecodeSource.classpath("../tc-frontend/target/test-classes");
+        var c = TcCompiler.compileJava(source, "uk.ac.manchester.tornado.tc.frontend.kernels.LocalWaitKernels", method, hip("gfx950"), TcOptions.DEFAULTS, java.util.List.of());
+        return c.diagnostics().stream().map(d -> d.code()).toList();
+    }
+
+    /** A bounded search of local memory is not a wait: its exit also depends on the loop counter. */
+    @Test
+    public void legalityAcceptsLocalSearchOnWave64Hip() {
+        var f = IrParser.parseFunction("""
+                kernel @search(%out: array<i32>) -> void {
+                ^entry:
+                  %a = alloca.shared i32[64] : ptr<shared>
+                  %lid = tornado.thread_id.local<dim = 0>() : i32
+                  %wide = sext %lid : i64
+                  %four = const 4 : i64
+                  %offset = mul %wide, %four : i64
+                  %slot = ptr.offset %a, %offset : ptr<shared>
+                  store %slot, %lid
+                  tornado.barrier.local()
+                  %zero = const 0 : i32
+                  br ^head(%zero)
+                ^head(%i: i32):
+                  %n = const 64 : i32
+                  %end = icmp.sge %i, %n : i1
+                  cond_br %end, ^done, ^test
+                ^test:
+                  %wi = sext %i : i64
+                  %oi = mul %wi, %four : i64
+                  %p = ptr.offset %a, %oi : ptr<shared>
+                  %v = load %p : i32
+                  %key = const 40 : i32
+                  %found = icmp.eq %v, %key : i1
+                  cond_br %found, ^done, ^next
+                ^next:
+                  %one = const 1 : i32
+                  %j = add %i, %one : i32
+                  br ^head(%j)
+                ^done:
+                  %gid = tornado.thread_id.global<dim = 0>() : i32
+                  array.store %out[%gid], %i
+                  ret
+                }
+                """);
+        assertEquals(List.of(), uk.ac.manchester.tornado.tc.tornado.Legality.run(f, hip("gfx950")));
+    }
+
     @Test
     public void failureBecomesDiagnosticsNotExceptions() {
         var broken = KERNEL.replace("%y = fmul %x, %f : f32", "%y = fmul %x, %i : f32");

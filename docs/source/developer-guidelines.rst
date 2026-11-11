@@ -22,18 +22,19 @@ Pre-requisites
 
   * OpenCL: GPUs and CPUs >= 2.1
   * NVIDIA driver + CUDA Toolkit 10.0+ (12.0+ on Windows) for the **PTX** backend; CUDA Toolkit 13.0+ for the **CUDA** backend
+  * AMD ROCm 10.1+ from `TheRock <https://github.com/ROCm/TheRock>`_'s Python packages (Linux, or native Windows), with hipRTC, for the **HIP** backend; ``ROCM_PATH`` names its root, which ``rocm-sdk path --root`` prints (the AMD HIP SDK for Windows is not supported)
   * Intel compute-runtime and/or GPU drivers (OpenCL)
 
 Supported Platforms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. csv-table::
-   :header: "OS", "OpenCL Backend", "PTX Backend", "CUDA Backend", "Metal Backend"
-   :widths: 22, 28, 12, 12, 13
+   :header: "OS", "OpenCL Backend", "PTX Backend", "CUDA Backend", "Metal Backend", "HIP Backend"
+   :widths: 22, 28, 12, 12, 13, 13
 
-   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, "CUDA 10.0+", "CUDA 13.0+", "Not supported"
-   "Apple M1/M2/M3/M4/M5", "OpenCL for GPUs and CPUs >= 1.2", "Not supported", "Not supported", "macOS (Apple Silicon)"
-   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1", "CUDA 12.0+", "CUDA 13.0+", "Not supported"
+   "CentOS / Fedora / Ubuntu / Pop!_OS / Suse", "OpenCL for GPUs and CPUs >= 2.1, "CUDA 10.0+", "CUDA 13.0+", "Not supported", "TheRock ROCm 10.1+"
+   "Apple M1/M2/M3/M4/M5", "OpenCL for GPUs and CPUs >= 1.2", "Not supported", "Not supported", "macOS (Apple Silicon)", "Not supported"
+   "Windows 10/11 (native/WSL)", "OpenCL for GPUs and CPUs >= 2.1", "CUDA 12.0+", "CUDA 13.0+", "Not supported", "TheRock ROCm 10.1+ (native)"
 
 For Intel-based macOS users, OpenCL support can be confirmed `here <https://support.apple.com/en-gb/HT202823>`_.
 
@@ -47,7 +48,7 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
    ./bin/tornadovm-installer
-   # Select the backend(s) to install: 1. opencl  2. metal  3. cuda
+   # Select the backend(s) to install: 1. opencl  2. metal  3. cuda  4. hip
    # (you can select more than one, comma-separated, e.g. 1, 2, 3)
    source setvars.sh        # Linux / macOS
    # setvars.cmd             # Windows
@@ -59,7 +60,7 @@ The ``tornadovm-installer`` script downloads/builds ``OpenJDK``, ``CMake`` and `
 
      options:
        --jdk JDK             Specify a JDK to install (e.g., 'jdk21', 'graal-jdk-21'). Use --listJDKs to see all options.
-       --backend BACKEND     Select the backend(s) to install: { opencl, cuda, metal }
+       --backend BACKEND     Select the backend(s) to install: { opencl, cuda, metal, hip }
        --listJDKs            List supported JDKs
        --mvn_single_threaded  Run Maven in single-threaded mode
        --auto-deps           Automatically download any missing dependencies
@@ -81,7 +82,7 @@ If you already have a JDK, Maven and CMake on your ``PATH``, you can build direc
 
    git clone https://github.com/beehive-lab/TornadoVM.git
    cd TornadoVM
-   make BACKEND=opencl,cuda   # build only the backends you need { opencl, cuda, metal }
+   make BACKEND=opencl,cuda   # build only the backends you need { opencl, cuda, metal, hip }
    source setvars.sh
 
 To rebuild with a different backend selection later:
@@ -94,6 +95,8 @@ To rebuild with a different backend selection later:
 .. note::
 
    For NVIDIA GPUs, TornadoVM provides two backends: **PTX** (emits PTX assembly directly) and **CUDA** (generates CUDA C, compiled to PTX via NVRTC). Build the CUDA backend on its own with ``make BACKEND=cuda``. See :ref:`hybrid-api` for native library integration (cuBLAS, cuFFT, cuDNN) on top of the CUDA backend.
+
+   For AMD GPUs, the **HIP** backend generates HIP C++ and compiles it with hipRTC for the GPU's own architecture (``gfx90a``, ``gfx942``, ``gfx1100``, ...). Build it on its own with ``make BACKEND=hip``. Install ROCm 10.1 or newer from TheRock's Python packages, on Linux or Windows, and set ``ROCM_PATH`` to the directory ``rocm-sdk path --root`` prints; the AMD HIP SDK for Windows is not supported.
 
 Windows builds require the Visual Studio developer tools and a Python virtual environment:
 

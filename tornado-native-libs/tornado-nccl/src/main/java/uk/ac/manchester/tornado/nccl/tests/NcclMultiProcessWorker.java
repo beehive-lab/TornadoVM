@@ -45,11 +45,12 @@ import uk.ac.manchester.tornado.nccl.NcclUniqueId;
  * <p>
  * How to run? Start rank 0 with {@code new} instead of an id: it creates the unique id, prints it as
  * {@code NCCL-ID <id>} and must stay running while the other ranks join (NCCL's bootstrap lives in
- * the process that created the id). Then start every other rank with that id.
+ * the process that created the id). Then start every other rank with that id. A device is
+ * {@code <backend index>:<device index>}, or a device index of backend 0.
  * </p>
  * <code>
- * tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.NcclMultiProcessWorker new &lt;world size&gt; 0 &lt;device index&gt;
- * tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.NcclMultiProcessWorker &lt;id&gt; &lt;world size&gt; &lt;rank&gt; &lt;device index&gt;
+ * tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.NcclMultiProcessWorker new &lt;world size&gt; 0 &lt;device&gt;
+ * tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.NcclMultiProcessWorker &lt;id&gt; &lt;world size&gt; &lt;rank&gt; &lt;device&gt;
  * </code>
  */
 public class NcclMultiProcessWorker {
@@ -110,22 +111,32 @@ public class NcclMultiProcessWorker {
         }
     }
 
+    /** The device {@code <backend index>:<device index>}, or {@code <device index>} of backend 0. */
+    private static TornadoDevice device(String spec) {
+        int colon = spec.indexOf(':');
+        if (colon < 0) {
+            return TornadoExecutionPlan.getDevice(0, Integer.parseInt(spec));
+        }
+        return TornadoExecutionPlan.getDevice(Integer.parseInt(spec.substring(0, colon)), Integer.parseInt(spec.substring(colon + 1)));
+    }
+
     public static void main(String[] args) {
         if (args.length != 4) {
-            System.out.println("usage: NcclMultiProcessWorker <unique id in Base64 | new> <world size> <rank> <device index>");
+            System.out.println("usage: NcclMultiProcessWorker <unique id in Base64 | new> <world size> <rank> <[backend index:]device index>");
             System.exit(2);
         }
         int rank = Integer.parseInt(args[2]);
         try {
+            TornadoDevice device = device(args[3]);
             NcclUniqueId id;
             if (args[0].equals("new")) {
-                id = NcclUniqueId.create();
+                id = NcclUniqueId.create(device);
                 System.out.println("NCCL-ID " + id.toBase64());
                 System.out.flush();
             } else {
                 id = NcclUniqueId.fromBase64(args[0]);
             }
-            runRank(id, Integer.parseInt(args[1]), rank, TornadoExecutionPlan.getDevice(0, Integer.parseInt(args[3])));
+            runRank(id, Integer.parseInt(args[1]), rank, device);
             System.out.println("NCCL-WORKER rank " + rank + " OK");
             System.exit(0);
         } catch (Throwable t) {

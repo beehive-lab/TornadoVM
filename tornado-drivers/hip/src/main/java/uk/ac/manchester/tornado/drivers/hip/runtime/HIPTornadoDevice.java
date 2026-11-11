@@ -1,0 +1,804 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, 2023, 2024, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.runtime;
+
+import java.io.IOException;
+import java.lang.foreign.MemorySegment;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.OptionalInt;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import uk.ac.manchester.tornado.api.common.Access;
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.common.SchedulableTask;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.exceptions.TornadoInternalError;
+import uk.ac.manchester.tornado.api.internal.annotations.Vector;
+import uk.ac.manchester.tornado.api.memory.DeviceBufferState;
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
+import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.memory.NativeArrayLayouts;
+import uk.ac.manchester.tornado.drivers.common.TornadoBufferProvider;
+import uk.ac.manchester.tornado.drivers.hip.HIPBackendImpl;
+import uk.ac.manchester.tornado.drivers.common.tc.TcKernels;
+import uk.ac.manchester.tornado.drivers.common.tc.TcTargetDevice;
+import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
+import uk.ac.manchester.tornado.drivers.hip.HIPDevice;
+import uk.ac.manchester.tornado.drivers.hip.HIPProgram;
+import uk.ac.manchester.tornado.drivers.hip.HIPCommandQueue;
+import uk.ac.manchester.tornado.drivers.hip.HIPDeviceContext;
+import uk.ac.manchester.tornado.drivers.hip.HIPDeviceContextInterface;
+import uk.ac.manchester.tornado.drivers.hip.HIPTargetDevice;
+import uk.ac.manchester.tornado.drivers.hip.enums.HIPDeviceType;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPAtomicsBuffer;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPByteArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPCharArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPDoubleArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPFieldBuffer;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPFloatArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPIntArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPLongArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPMemorySegmentWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPMultiDimArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPShortArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPVectorWrapper;
+import uk.ac.manchester.tornado.runtime.TornadoCoreRuntime;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
+import uk.ac.manchester.tornado.runtime.common.RuntimeUtilities;
+import uk.ac.manchester.tornado.runtime.common.TornadoInstalledCode;
+import uk.ac.manchester.tornado.runtime.common.TornadoLogger;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.common.TornadoSchedulingStrategy;
+import uk.ac.manchester.tornado.runtime.common.TornadoXPUDevice;
+import uk.ac.manchester.tornado.runtime.common.XPUDeviceBufferState;
+import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
+import uk.ac.manchester.tornado.runtime.tasks.PrebuiltTask;
+
+public class HIPTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSupport, TcTargetDevice {
+
+    private static HIPBackendImpl driver = null;
+    private static final Access[] ACCESS_TYPES = Access.values();
+
+    private final HIPTargetDevice device;
+    /** Scratch for {@link #countObjectsPerAccess}, indexed by {@link Access#ordinal()}. */
+    private final int[] objectsPerAccess = new int[ACCESS_TYPES.length];
+    private final int deviceIndex;
+    private final int platformIndex;
+    private final String platformName;
+    private XPUBuffer atomicsBuffer;
+    private ConcurrentHashMap<Object, Integer> mappingAtomics;
+    private TornadoLogger logger = new TornadoLogger(this.getClass());
+
+    /**
+     * Constructor used also in SLAMBench/KFusion
+     *
+     * @param platformIndex
+     *     HIPDriver Platform index
+     * @param deviceIndex
+     *     HIPDriver Device Index
+     */
+    public HIPTornadoDevice(final int platformIndex, final int deviceIndex) {
+        this.platformIndex = platformIndex;
+        this.deviceIndex = deviceIndex;
+        driver = TornadoCoreRuntime.getTornadoRuntime().getBackend(HIPBackendImpl.class);
+
+        if (driver == null) {
+            throw new RuntimeException("TornadoVM HIPDriver Driver not found");
+        }
+
+        platformName = driver.getPlatformContext(platformIndex).getPlatform().getName();
+        device = driver.getPlatformContext(platformIndex).devices().get(deviceIndex);
+        mappingAtomics = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public void dumpEvents(long executionPlanId) {
+        getDeviceContext().dumpEvents();
+    }
+
+    @Override
+    public String getDescription() {
+        final String availability = (device.isDeviceAvailable()) ? "available" : "not available";
+        return String.format("%s %s (%s)", device.getDeviceName(), device.getDeviceType(), availability);
+    }
+
+    @Override
+    public String getPlatformName() {
+        return platformName;
+    }
+
+    @Override
+    public HIPTargetDevice getPhysicalDevice() {
+        return device;
+    }
+
+    public int getDeviceIndex() {
+        return deviceIndex;
+    }
+
+    @Override
+    public TornadoMemoryProvider getMemoryProvider() {
+        return getDeviceContext().getMemoryManager();
+    }
+
+    public int getPlatformIndex() {
+        return platformIndex;
+    }
+
+    @Override
+    public HIPDeviceContextInterface getDeviceContext() {
+        return driver.getDeviceBackend(platformIndex, deviceIndex).getDeviceContext();
+    }
+
+    private void disableProfilerOptions() {
+        TornadoOptions.TORNADO_PROFILER_LOG = false;
+        TornadoOptions.TORNADO_PROFILER = false;
+    }
+
+    @Override
+    public void clean() {
+        Set<Long> ids = new HashSet<>(device.getDeviceContext().getRegisteredPlanIds());
+        ids.forEach(id -> device.getDeviceContext().reset(id));
+        ids.clear();
+        // Every plan is now reset, so the device-wide staging ring has no user left: release its
+        // pinned host block here rather than in the per-plan reset above.
+        device.getDeviceContext().releaseStagedRing();
+        disableProfilerOptions();
+    }
+
+    @Override
+    public String toString() {
+        return String.format(" [" + getPlatformName() + "] -- " + device.getDeviceName());
+    }
+
+    @Override
+    public TornadoSchedulingStrategy getPreferredSchedule() {
+        switch (Objects.requireNonNull(device.getDeviceType())) {
+            case CL_DEVICE_TYPE_GPU, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_CUSTOM, CL_DEVICE_TYPE_ALL -> {
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
+            }
+            case CL_DEVICE_TYPE_CPU -> {
+                if (TornadoOptions.USE_BLOCK_SCHEDULER) {
+                    return TornadoSchedulingStrategy.PER_CPU_BLOCK;
+                } else {
+                    return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
+                }
+            }
+            default -> {
+                TornadoInternalError.shouldNotReachHere();
+                return TornadoSchedulingStrategy.PER_ACCELERATOR_ITERATION;
+            }
+        }
+    }
+
+    @Override
+    public void ensureLoaded(long executionPlanId) {
+        // Initialise the device (context, queues and memory).
+        driver.getDeviceBackend(platformIndex, deviceIndex).init();
+    }
+
+    @Override
+    public KernelStackFrame createKernelStackFrame(long executionPlanId, int numArgs, Access access) {
+        return getDeviceContext().getMemoryManager().createKernelStackFrame(executionPlanId, numArgs);
+    }
+
+    @Override
+    public XPUBuffer createOrReuseAtomicsBuffer(int[] array, Access access) {
+        if (atomicsBuffer == null) {
+            atomicsBuffer = getDeviceContext().getMemoryManager().createAtomicsBuffer(array, access);
+        }
+        atomicsBuffer.setIntBuffer(array);
+        return atomicsBuffer;
+    }
+
+    private TornadoInstalledCode compileTask(long executionPlanId, SchedulableTask task) {
+        final HIPDeviceContextInterface deviceContext = getDeviceContext();
+        final CompilableTask executable = (CompilableTask) task;
+        final String name = executable.getMethod().getName();
+        // Return the code from the cache
+        if (!task.shouldCompile() && deviceContext.isCached(executionPlanId, task.getId(), name)) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), name);
+        }
+        return TcKernels.compile(executable, tcTarget(), deviceContext, (entry, source) -> deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), entry, source));
+    }
+
+    /** What TC may use on this device, from the device's own queries (TC never queries devices itself). */
+    @Override
+    public TargetCaps tcTarget() {
+        if (!(getDeviceContext().getDevice() instanceof HIPDevice d)) {
+            return TargetCaps.HIP_GFX942.withArrayHeaderBytes((int) TornadoNativeArray.ARRAY_HEADER);
+        }
+        // fp64 and fp16 arithmetic on every AMD GPU HIP supports; the wavefront is 64 lanes on CDNA and
+        // 32 on RDNA; kernels cannot launch kernels.
+        return TargetCaps.hip(d.getArchitecture(), true, true, (int) TornadoNativeArray.ARRAY_HEADER, d.getMaxThreadsPerBlock(), (int) d.getDeviceLocalMemorySize(), d.getWarpSize());
+    }
+
+    private TornadoInstalledCode compilePreBuiltTask(long executionPlanId, SchedulableTask task) {
+        final HIPDeviceContextInterface deviceContext = getDeviceContext();
+        final PrebuiltTask executable = (PrebuiltTask) task;
+        if (deviceContext.isCached(executionPlanId, task.getId(), executable.getEntryPoint())) {
+            return deviceContext.getInstalledCode(executionPlanId, task.getId(), executable.getEntryPoint());
+        }
+
+        final Path path = Paths.get(executable.getFilename());
+        TornadoInternalError.guarantee(path.toFile().exists(), "file does not exist: %s", executable.getFilename());
+        try {
+            final byte[] source = Files.readAllBytes(path);
+            return deviceContext.installCode(executionPlanId, executable.meta(), task.getId(), executable.getEntryPoint(), source);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private TornadoInstalledCode compileJavaToAccelerator(long executionPlanId, SchedulableTask task) {
+        if (task instanceof CompilableTask) {
+            return compileTask(executionPlanId, task);
+        } else if (task instanceof PrebuiltTask) {
+            return compilePreBuiltTask(executionPlanId, task);
+        }
+        TornadoInternalError.shouldNotReachHere("task of unknown type: " + task.getClass().getSimpleName());
+        return null;
+    }
+
+    private String getTaskEntryName(SchedulableTask task) {
+        return task.getTaskName();
+    }
+
+    @Override
+    public boolean isFullJITMode(long executionPlanId, SchedulableTask task) {
+        return false;
+    }
+
+    @Override
+    public TornadoInstalledCode getCodeFromCache(long executionPlanId, SchedulableTask task) {
+        String entry = getTaskEntryName(task);
+        return getDeviceContext().getInstalledCode(executionPlanId, task.getId(), entry);
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task) {
+        if (TcKernels.ATOMICS.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
+            ArrayList<Integer> values = TcKernels.ATOMICS.get(task.meta().getCompiledResolvedJavaMethod());
+            int[] atomicsArray = new int[values.size()];
+            int j = 0;
+            for (Integer i : values) {
+                atomicsArray[j++] = i;
+            }
+            return atomicsArray;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public int[] checkAtomicsForTask(SchedulableTask task, int[] array, int paramIndex, Object value) {
+        if (value instanceof AtomicInteger ai) {
+            Object compiledResolvedJavaMethod = task.meta().getCompiledResolvedJavaMethod();
+            if (TcKernels.ATOMIC_PARAMETERS.containsKey(compiledResolvedJavaMethod)) {
+                HashMap<Integer, Integer> values = TcKernels.ATOMIC_PARAMETERS.get(compiledResolvedJavaMethod);
+                int index = values.get(paramIndex);
+                array[index] = ai.get();
+            }
+        }
+        return array;
+    }
+
+    @Override
+    public int[] updateAtomicRegionAndObjectState(SchedulableTask task, int[] array, int paramIndex, Object value, XPUDeviceBufferState atomicState) {
+        int[] atomicsArray = checkAtomicsForTask(task, array, paramIndex, value);
+        mappingAtomics.put(value, getAtomicsGlobalIndexForTask(task, paramIndex));
+        XPUBuffer xpuBufferForAtomic = atomicState.getXPUBuffer();
+        xpuBufferForAtomic.setIntBuffer(atomicsArray);
+        this.atomicsBuffer = xpuBufferForAtomic;
+        atomicState.setAtomicRegion(xpuBufferForAtomic);
+        return atomicsArray;
+    }
+
+    @Override
+    public int getAtomicsGlobalIndexForTask(SchedulableTask task, int paramIndex) {
+        if (TcKernels.ATOMIC_PARAMETERS.containsKey(task.meta().getCompiledResolvedJavaMethod())) {
+            HashMap<Integer, Integer> values = TcKernels.ATOMIC_PARAMETERS.get(task.meta().getCompiledResolvedJavaMethod());
+            return values.get(paramIndex);
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean checkAtomicsParametersForTask(SchedulableTask task) {
+        return TcKernels.ATOMIC_PARAMETERS.containsKey(task.meta().getCompiledResolvedJavaMethod());
+    }
+
+    @Override
+    public TornadoInstalledCode installCode(long executionPlanId, SchedulableTask task) {
+        return compileJavaToAccelerator(executionPlanId, task);
+    }
+
+    private XPUBuffer createArrayWrapper(Class<?> type, HIPDeviceContext device, long batchSize, Access access) {
+        XPUBuffer result = null;
+        if (type == float[].class) {
+            result = new HIPFloatArrayWrapper(device, batchSize, access);
+        } else if (type == int[].class) {
+            result = new HIPIntArrayWrapper(device, batchSize, access);
+        } else if (type == double[].class) {
+            result = new HIPDoubleArrayWrapper(device, batchSize, access);
+        } else if (type == short[].class) {
+            result = new HIPShortArrayWrapper(device, batchSize, access);
+        } else if (type == byte[].class) {
+            result = new HIPByteArrayWrapper(device, batchSize, access);
+        } else if (type == long[].class) {
+            result = new HIPLongArrayWrapper(device, batchSize, access);
+        } else if (type == char[].class) {
+            result = new HIPCharArrayWrapper(device, batchSize, access);
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
+    }
+
+    private XPUBuffer createMultiArrayWrapper(Class<?> componentType, Class<?> type, HIPDeviceContext device, long batchSize, Access access) {
+        XPUBuffer result = null;
+
+        if (componentType == int[].class) {
+            result = new HIPMultiDimArrayWrapper<>(device, (HIPDeviceContext context) -> new HIPIntArrayWrapper(context, batchSize, access), batchSize, access);
+        } else if (componentType == short[].class) {
+            result = new HIPMultiDimArrayWrapper<>(device, (HIPDeviceContext context) -> new HIPShortArrayWrapper(context, batchSize, access), batchSize, access);
+        } else if (componentType == char[].class) {
+            result = new HIPMultiDimArrayWrapper<>(device, (HIPDeviceContext context) -> new HIPCharArrayWrapper(context, batchSize, access), batchSize, access);
+        } else if (componentType == byte[].class) {
+            result = new HIPMultiDimArrayWrapper<>(device, (HIPDeviceContext context) -> new HIPByteArrayWrapper(context, batchSize, access), batchSize, access);
+        } else if (componentType == float[].class) {
+            result = new HIPMultiDimArrayWrapper<>(device, (HIPDeviceContext context) -> new HIPFloatArrayWrapper(context, batchSize, access), batchSize, access);
+        } else if (componentType == double[].class) {
+            result = new HIPMultiDimArrayWrapper<>(device, (HIPDeviceContext context) -> new HIPDoubleArrayWrapper(context, batchSize, access), batchSize, access);
+        } else if (componentType == long[].class) {
+            result = new HIPMultiDimArrayWrapper<>(device, (HIPDeviceContext context) -> new HIPLongArrayWrapper(context, batchSize, access), batchSize, access);
+        } else {
+            TornadoInternalError.unimplemented("array of type %s", type.getName());
+        }
+        return result;
+    }
+
+    private XPUBuffer createDeviceBuffer(Class<?> type, Object object, HIPDeviceContext deviceContext, long batchSize, Access access) {
+        XPUBuffer result = null;
+        if (type.isArray()) {
+            if (!type.getComponentType().isArray()) {
+                result = createArrayWrapper(type, deviceContext, batchSize, access);
+            } else {
+                final Class<?> componentType = type.getComponentType();
+                if (RuntimeUtilities.isPrimitiveArray(componentType)) {
+                    result = createMultiArrayWrapper(componentType, type, deviceContext, batchSize, access);
+                } else {
+                    TornadoInternalError.unimplemented("multi-dimensional array of type %s", type.getName());
+                }
+            }
+        } else if (!type.isPrimitive()) {
+            if (object instanceof AtomicInteger) {
+                result = new HIPAtomicsBuffer(new int[] {}, deviceContext, access);
+            } else if (object.getClass().getAnnotation(Vector.class) != null) {
+                result = new HIPVectorWrapper(deviceContext, object, batchSize, access);
+            } else if (object instanceof MemorySegment) {
+                result = new HIPMemorySegmentWrapper(deviceContext, batchSize, access, 0);
+            } else {
+                // Native array types share one layout table (NativeArrayLayouts); anything not in it
+                // is an ordinary object graph and goes to the field buffer.
+                OptionalInt elementSize = NativeArrayLayouts.elementSizeOf(object);
+                if (elementSize.isPresent()) {
+                    result = new HIPMemorySegmentWrapper(deviceContext, batchSize, access, elementSize.getAsInt());
+                } else {
+                    result = new HIPFieldBuffer(deviceContext, object, access);
+                }
+            }
+        }
+
+        TornadoInternalError.guarantee(result != null, "Unable to create buffer for object: " + type);
+        return result;
+    }
+
+    /**
+     * Counts the objects of each access type, indexed by {@link Access#ordinal()}. The array is a
+     * field reused on every call rather than a fresh map: this runs on every execution, and
+     * {@link #allocateObjects} (its only caller) is synchronized.
+     */
+    private int[] countObjectsPerAccess(Access[] accesses) {
+        Arrays.fill(objectsPerAccess, 0);
+        for (Access access : accesses) {
+            objectsPerAccess[access.ordinal()]++;
+        }
+        return objectsPerAccess;
+    }
+
+    @Override
+    public synchronized long allocateObjects(Object[] objects, long batchSize, DeviceBufferState[] states, Access[] accesses) {
+        TornadoBufferProvider bufferProvider = getDeviceContext().getBufferProvider();
+        int[] distinctAccesses = countObjectsPerAccess(accesses);
+        for (Access access : ACCESS_TYPES) {
+            int numOfObjectsForAccessType = distinctAccesses[access.ordinal()];
+            if (numOfObjectsForAccessType > 0 && !bufferProvider.isNumFreeBuffersAvailable(numOfObjectsForAccessType, access)) {
+                bufferProvider.resetBuffers(access);
+            }
+        }
+
+        long allocatedSpace = 0L;
+        for (int i = 0; i < objects.length; i++) {
+            if (!reuseBatchBuffer(batchSize, accesses[i], bufferProvider, distinctAccesses, states[i])) {
+                logger.debug("Allocate object %s with access: %s", objects[i], accesses[i]);
+                allocatedSpace += allocate(objects[i], batchSize, states[i], accesses[i]);
+            } else if (batchSize != 0 && states[i].hasObjectBuffer()) {
+                // Reusing the object's existing buffer skips allocate(), which is what normally
+                // refreshes the sub-region size. Without this the buffer keeps the sub-region of the
+                // LAST chunk it held (e.g. a smaller remainder chunk from a previous execution), and
+                // subsequent transfers silently copy too few bytes.
+                states[i].getXPUBuffer().setSizeSubRegion(batchSize);
+            }
+        }
+        return allocatedSpace;
+    }
+
+    private boolean reuseBatchBuffer(long batchSize, Access access, TornadoBufferProvider bufferProvider, int[] distinctAccesses, DeviceBufferState state) {
+        // A state with no buffer of its own has nothing to reuse: reuseBufferForBatchProcessing()
+        // answers the global question "is a buffer of this size and access already in use", which is
+        // true as soon as any other object of the same access type holds one. Treating that as "this
+        // object may reuse its buffer" leaves the object unallocated, and the LAUNCH that follows
+        // dereferences a null device buffer - which is what a batched graph with more than one
+        // output used to do on its second chunk.
+        if (batchSize != 0 && state.hasObjectBuffer()) {
+            int numberOfBuffersForAccessType = distinctAccesses[access.ordinal()];
+            // if there is a buffer available in the used-list with the same access type, reuse it
+            if (bufferProvider.reuseBufferForBatchProcessing(batchSize, access, numberOfBuffersForAccessType)) {
+                state.markBufferAsReused();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private XPUBuffer newDeviceBufferAllocation(Object object, long batchSize, DeviceBufferState deviceObjectState, Access access) {
+        final XPUBuffer buffer;
+        TornadoInternalError.guarantee(deviceObjectState.isAtomicRegionPresent() || !deviceObjectState.hasObjectBuffer() || batchSize != 0, "A device memory leak might be occurring.");
+        buffer = createDeviceBuffer(object.getClass(), object, (HIPDeviceContext) getDeviceContext(), batchSize, access);
+        deviceObjectState.setXPUBuffer(buffer);
+        if (buffer instanceof HIPMemorySegmentWrapper segmentWrapper && deviceObjectState instanceof XPUDeviceBufferState xpuState) {
+            segmentWrapper.setTransferredEveryExecution(xpuState.isTransferredEveryExecution());
+        }
+        buffer.allocate(object, batchSize, access);
+        return buffer;
+    }
+
+    @Override
+    public long allocate(Object object, long batchSize, DeviceBufferState state, Access access) {
+        final XPUBuffer buffer;
+        if (state.hasObjectBuffer() && state.isLockedBuffer()) {
+            buffer = state.getXPUBuffer();
+            if (batchSize != 0) {
+                buffer.setSizeSubRegion(batchSize);
+            }
+        } else {
+            buffer = newDeviceBufferAllocation(object, batchSize, state, access);
+        }
+
+        if (buffer.getClass() == HIPAtomicsBuffer.class) {
+            state.setAtomicRegion();
+        }
+        return state.getXPUBuffer().size();
+    }
+
+    @Override
+    public synchronized long deallocate(DeviceBufferState deviceBufferState) {
+        long deallocatedSpace = 0L;
+        if (deviceBufferState.isLockedBuffer()) {
+            return deallocatedSpace;
+        }
+        deviceBufferState.getXPUBuffer().markAsFreeBuffer();
+        if (TornadoOptions.isDeallocateBufferEnabled()) {
+            deallocatedSpace = deviceBufferState.getXPUBuffer().deallocate();
+        }
+        deviceBufferState.setContents(false);
+        deviceBufferState.setXPUBuffer(null);
+        return deallocatedSpace;
+    }
+
+    @Override
+    public List<Integer> ensurePresent(long executionPlanId, Object object, DeviceBufferState state, int[] events, long batchSize, long offset) {
+        if (!state.hasContent()) {
+            state.setContents(true);
+            return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events != null);
+        }
+        // return a NULL list
+        return null;
+    }
+
+    @Override
+    public List<Integer> streamIn(long executionPlanId, Object object, long batchSize, long offset, DeviceBufferState state, int[] events) {
+        state.setContents(true);
+        return state.getXPUBuffer().enqueueWrite(executionPlanId, object, batchSize, offset, events, events != null);
+    }
+
+    @Override
+    public int streamOut(long executionPlanId, Object object, long offset, DeviceBufferState state, int[] events) {
+        TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
+        final boolean returnEvent = returnCopyOutEvent(events);
+        int event = state.getXPUBuffer().enqueueRead(executionPlanId, object, offset, events, returnEvent);
+        return returnEvent ? event : -1;
+    }
+
+    /**
+     * A copy-out hands its event back when the caller tracks dependencies, and also when
+     * profiling: the interpreter can only record COPY_OUT_TIME for a read that returns an
+     * event to time. The wait list itself is still applied only when {@code events} is
+     * non-null, so the profiler does not change the ordering of the read.
+     */
+    private static boolean returnCopyOutEvent(int[] events) {
+        return events != null || TornadoOptions.isProfilerEnabled();
+    }
+
+    @Override
+    public int streamOutBlocking(long executionPlanId, Object object, long hostOffset, DeviceBufferState state, int[] events) {
+        long partialCopySize = state.getPartialCopySize();
+        if (state.isAtomicRegionPresent()) {
+            // Read for Atomics
+            int eventID = state.getXPUBuffer().enqueueRead(executionPlanId, null, 0, null, false);
+            if (object instanceof AtomicInteger) {
+                int[] arr = getAtomic().getIntBuffer();
+                int indexFromGlobalRegion = mappingAtomics.get(object);
+                ((AtomicInteger) object).set(arr[indexFromGlobalRegion]);
+            }
+            return eventID;
+        } else {
+            // Read for any other buffer that is not an atomic buffer
+            TornadoInternalError.guarantee(state.hasObjectBuffer(), "invalid variable");
+            return state.getXPUBuffer().read(executionPlanId, object, hostOffset, partialCopySize, events, returnCopyOutEvent(events));
+        }
+    }
+
+    @Override
+    public void flush(long executionPlanId) {
+        this.getDeviceContext().flush(executionPlanId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof HIPTornadoDevice other) {
+            return (other.deviceIndex == deviceIndex && other.platformIndex == platformIndex);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 89 * hash + this.deviceIndex;
+        hash = 89 * hash + this.platformIndex;
+        return hash;
+    }
+
+    @Override
+    public void sync(long executionPlanId) {
+        getDeviceContext().sync(executionPlanId);
+    }
+
+    @Override
+    public int enqueueBarrier(long executionPlanId) {
+        return getDeviceContext().enqueueBarrier(executionPlanId);
+    }
+
+    @Override
+    public int enqueueBarrier(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueBarrier(executionPlanId, events);
+    }
+
+    @Override
+    public int enqueueMarker(long executionPlanId) {
+        return getDeviceContext().enqueueMarker(executionPlanId);
+    }
+
+    @Override
+    public int enqueueMarker(long executionPlanId, int[] events) {
+        return getDeviceContext().enqueueMarker(executionPlanId, events);
+    }
+
+    @Override
+    public Event resolveEvent(long executionPlanId, int event) {
+        return getDeviceContext().resolveEvent(executionPlanId, event);
+    }
+
+    @Override
+    public void flushEvents(long executionPlanId) {
+        getDeviceContext().flushEvents(executionPlanId);
+    }
+
+    @Override
+    public String getDeviceName() {
+        return String.format("hip-%d-%d", platformIndex, deviceIndex);
+    }
+
+    @Override
+    public void setIntraPlanConcurrency(long executionPlanId, boolean enabled) {
+        getDeviceContext().setIntraPlanConcurrency(executionPlanId, enabled);
+    }
+
+    @Override
+    public void setStagedTransfers(boolean enabled) {
+        getDeviceContext().setStagedTransfers(enabled);
+    }
+
+    @Override
+    public void setDevicePendingLaunchCount(int count) {
+        getDeviceContext().setDevicePendingLaunchCount(count);
+    }
+
+    @Override
+    public boolean isIntraPlanConcurrencySupported() {
+        return true;
+    }
+
+    /* ---- HIP Graph (stream capture) support ---- */
+
+    @Override
+    public boolean supportsExecutionGraphs() {
+        return true;
+    }
+
+    @Override
+    public void beginExecutionGraphCapture(long executionPlanId) {
+        getDeviceContext().beginExecutionGraphCapture(executionPlanId);
+    }
+
+    @Override
+    public long endExecutionGraphCaptureAndInstantiate(long executionPlanId) {
+        return getDeviceContext().endExecutionGraphCaptureAndInstantiate(executionPlanId);
+    }
+
+    @Override
+    public int launchExecutionGraph(long executionPlanId, long executionGraphHandle) {
+        return getDeviceContext().launchExecutionGraph(executionPlanId, executionGraphHandle);
+    }
+
+    @Override
+    public void destroyExecutionGraph(long executionGraphHandle) {
+        getDeviceContext().destroyExecutionGraph(executionGraphHandle);
+    }
+
+    @Override
+    public void abortExecutionGraphCapture(long executionPlanId) {
+        getDeviceContext().abortExecutionGraphCapture(executionPlanId);
+    }
+
+    @Override
+    public long getNativeStream(long executionPlanId) {
+        return getDeviceContext().getNativeStream(executionPlanId);
+    }
+
+    @Override
+    public long getNativeContext(long executionPlanId) {
+        return getDeviceContext().getNativeContext(executionPlanId);
+    }
+
+    @Override
+    public void makeNativeContextCurrent() {
+        getDeviceContext().makeCurrent();
+    }
+
+    @Override
+    public void nvtxRangePush(String name) {
+        HIPCommandQueue.nvtxRangePush(name);
+    }
+
+    @Override
+    public void nvtxRangePop() {
+        HIPCommandQueue.nvtxRangePop();
+    }
+
+    @Override
+    public TornadoDeviceType getDeviceType() {
+        HIPDeviceType deviceType = device.getDeviceType();
+        return switch (deviceType) {
+            case CL_DEVICE_TYPE_CPU -> TornadoDeviceType.CPU;
+            case CL_DEVICE_TYPE_GPU -> TornadoDeviceType.GPU;
+            case CL_DEVICE_TYPE_ACCELERATOR -> TornadoDeviceType.ACCELERATOR;
+            case CL_DEVICE_TYPE_CUSTOM -> TornadoDeviceType.CUSTOM;
+            case CL_DEVICE_TYPE_ALL -> TornadoDeviceType.ALL;
+            case CL_DEVICE_TYPE_DEFAULT -> TornadoDeviceType.DEFAULT;
+            default -> throw new RuntimeException("Device not supported");
+        };
+    }
+
+    @Override
+    public long getMaxAllocMemory() {
+        return device.getDeviceMaxAllocationSize();
+    }
+
+    @Override
+    public long getMaxGlobalMemory() {
+        return device.getDeviceGlobalMemorySize();
+    }
+
+    @Override
+    public long getDeviceLocalMemorySize() {
+        return device.getDeviceLocalMemorySize();
+    }
+
+    @Override
+    public long[] getDeviceMaxWorkgroupDimensions() {
+        return device.getDeviceMaxWorkItemSizes();
+    }
+
+    @Override
+    public String getDeviceOpenCLCVersion() {
+        return device.getDeviceOpenCLCVersion();
+    }
+
+    @Override
+    public Object getDeviceInfo() {
+        return device.getDeviceInfo();
+    }
+
+    @Override
+    public int getBackendIndex() {
+        return TornadoCoreRuntime.getTornadoRuntime().getBackendIndex(HIPBackendImpl.class);
+    }
+
+    @Override
+    public XPUBuffer getAtomic() {
+        return atomicsBuffer;
+    }
+
+    @Override
+    public void setAtomicsMapping(ConcurrentHashMap<Object, Integer> mappingAtomics) {
+        this.mappingAtomics = mappingAtomics;
+    }
+
+    @Override
+    public void enableThreadSharing() {
+        // HIPDriver device context is shared by different threads, by default
+    }
+
+    @Override
+    public void setAtomicRegion(XPUBuffer bufferAtomics) {
+        atomicsBuffer = bufferAtomics;
+    }
+
+    @Override
+    public TornadoVMBackendType getTornadoVMBackend() {
+        return TornadoVMBackendType.HIP;
+    }
+
+    @Override
+    public void mapDeviceRegion(long executionPlanId, Object destArray, Object srcArray, DeviceBufferState deviceStateSrc, DeviceBufferState deviceStateDest, long offset) {
+        XPUBuffer devicePointer = deviceStateDest.getXPUBuffer();
+        XPUBuffer srcPointer = deviceStateSrc.getXPUBuffer();
+        devicePointer.mapOnDeviceMemoryRegion(executionPlanId, srcPointer, offset);
+    }
+
+}

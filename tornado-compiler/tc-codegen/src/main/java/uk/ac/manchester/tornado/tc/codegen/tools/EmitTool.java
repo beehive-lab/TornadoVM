@@ -31,7 +31,7 @@ import uk.ac.manchester.tornado.tc.lower.Structurizer;
 
 /**
  * The {@code tc-emit} tool: reads post-ABI TC-SSA, verifies it, structures it and prints target
- * source. {@code tc-emit [--target=cuda|opencl|metal] [--no-line-comments] [--no-contract] <file | ->}.
+ * source. {@code tc-emit [--target=cuda|opencl|metal|hip] [--no-line-comments] [--no-contract] <file | ->}.
  */
 public final class EmitTool {
 
@@ -60,6 +60,7 @@ public final class EmitTool {
                 case "--target=cuda" -> target = TargetCaps.CUDA_SM89;
                 case "--target=opencl" -> target = TargetCaps.OPENCL_GENERIC;
                 case "--target=metal" -> target = TargetCaps.METAL_APPLE;
+                case "--target=hip" -> target = TargetCaps.HIP_GFX942;
                 case "--no-line-comments" -> lineComments = false;
                 // A plan with withStrictFloatingPoint(): no a * b + c contraction.
                 case "--no-contract" -> contract = false;

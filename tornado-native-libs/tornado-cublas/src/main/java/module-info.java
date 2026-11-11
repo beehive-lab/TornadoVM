@@ -9,5 +9,7 @@ open module tornado.cublas {
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //
             uk.ac.manchester.tornado.cublas.provider.CuBlasLibraryProvider, //
-            uk.ac.manchester.tornado.cublas.provider.CuBlasLtLibraryProvider;
+            uk.ac.manchester.tornado.cublas.provider.CuBlasLtLibraryProvider, //
+            uk.ac.manchester.tornado.cublas.provider.HipBlasLibraryProvider, //
+            uk.ac.manchester.tornado.cublas.provider.HipBlasLtLibraryProvider;
 }

@@ -12,6 +12,13 @@ call (and vice-versa) with **no extra copies and no manual memory management**.
 > The NVIDIA providers require the **CUDA backend** (`make BACKEND=cuda`) and an NVIDIA GPU; the
 > Apple MLX provider requires the **Metal backend** (`make BACKEND=metal`) on Apple silicon. A library
 > task on a backend its provider does not support is reported as `UNSUPPORTED`.
+>
+> On AMD GPUs, with the **HIP backend** (`make BACKEND=hip`), the same factories run unchanged on the
+> ROCm counterparts: hipBLAS/hipBLASLt, hipFFT, hipRAND, hipSPARSE, RCCL, MIOpen (and Composable Kernel
+> attention for SDPA), Composable Kernel GEMMs for the CUTLASS functions, hipDF for cuDF and hipVS for
+> cuVS. The libraries come with ROCm, except hipDF and hipVS (see the tornado-cudf and tornado-cuvs
+> READMEs); the HIP build compiles the Composable Kernel kernels itself. HIP graphs take the place of
+> CUDA Graphs.
 
 ---
 
@@ -448,7 +455,7 @@ running until every rank has joined: NCCL's bootstrap listener lives in it.
 
 ```java
 // rank 0
-NcclUniqueId id = NcclUniqueId.create();
+NcclUniqueId id = NcclUniqueId.create(gpu);
 publish(id.toBase64());                                         // however the job reaches its processes
 NcclCommunicator comm = NcclCommunicator.create(id, worldSize, 0, gpu);
 // every other process

@@ -126,6 +126,7 @@ public abstract class AbstractRTContext implements TaskContextInterface {
         compilerOptionsPerBackend.put(TornadoVMBackendType.METAL, TornadoOptions.DEFAULT_METAL_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.OPENCL, TornadoOptions.DEFAULT_OPENCL_COMPILER_FLAGS);
         compilerOptionsPerBackend.put(TornadoVMBackendType.CUDA, TornadoOptions.DEFAULT_CUDA_COMPILER_FLAGS);
+        compilerOptionsPerBackend.put(TornadoVMBackendType.HIP, TornadoOptions.DEFAULT_HIP_COMPILER_FLAGS);
 
         // Thread Configurations
         openclGpuBlockX = parseInt(getDefault("opencl.gpu.block.x", id, "256"));

@@ -1,0 +1,192 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2022-2023 APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.mm;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import uk.ac.manchester.tornado.drivers.hip.HIPContext;
+import uk.ac.manchester.tornado.drivers.hip.HIPDeviceContext;
+import uk.ac.manchester.tornado.runtime.common.KernelStackFrame;
+
+/**
+ * Kernel stack frame backed by an OFF-HEAP pinned host buffer. The frame is written to
+ * the device on every kernel launch, so the copy sits on the critical launch path: the
+ * heap-{@code ByteBuffer} route would go through the Java-array JNI transfer, which must
+ * synchronise the stream after every copy (the pinned critical region cannot outlive the
+ * call) - one {@code hipStreamSynchronize} per launch, which also stalls host-side
+ * enqueueing and breaks multi-stream pipelining. Off-heap storage takes the host-pointer
+ * transfer path (async), and pinning the region makes the copy true DMA. The buffer is
+ * owned by this frame: registered after allocation, unregistered (with a context sync)
+ * and freed on {@link #invalidate()}.
+ */
+public class HIPKernelStackFrame extends HIPByteBuffer implements KernelStackFrame {
+
+    public static final int RETURN_VALUE_INDEX = 0;
+    /**
+     * Set (1) when --threadInfo is on, so that kernels launched from the device report their grids.
+     * Read on the device as {@code _kernel_context[DEVICE_LAUNCH_INFO_INDEX]}; a runtime flag rather
+     * than a compile-time one, so toggling thread info on a plan needs no recompilation.
+     */
+    public static final int DEVICE_LAUNCH_INFO_INDEX = 3;
+    public static final int RESERVED_SLOTS = 4;
+    private static final int FRAME_BYTES = RESERVED_SLOTS << 3;
+    private static final long HOST_BUFFER_ALIGNMENT = 64;
+
+    private final ArrayList<CallArgument> callArguments;
+
+    private boolean isValid;
+
+    /** Off-heap host buffer backing {@code buffer}, or 0 when allocation fell back to heap. */
+    private long hostPointer;
+
+    /**
+     * Snapshot of the frame slots as they currently sit in device memory, and the execution plan
+     * that put them there. The frame is re-uploaded on every launch even though its contents are
+     * identical across iterations for the common case (no {@code KernelContext}, so all slots are
+     * zero), which costs a {@code hipMemcpyHtoDAsync} plus an event pair per launch. Comparing the
+     * host slots against this snapshot lets an unchanged frame skip the transfer entirely.
+     */
+    private final long[] deviceSlots = new long[RESERVED_SLOTS];
+
+    private boolean deviceSlotsValid;
+
+    private long deviceSlotsPlanId;
+
+    HIPKernelStackFrame(long bufferId, int numArgs, HIPDeviceContext device) {
+        super(device, bufferId, 0, FRAME_BYTES);
+        this.callArguments = new ArrayList<>(numArgs);
+        HIPContext platformContext = device.getPlatformContext();
+        // pinned for asynchronous uploads; the buffer of a freed frame is reused (see acquirePinnedFrame)
+        this.hostPointer = platformContext.acquirePinnedFrame(FRAME_BYTES, HOST_BUFFER_ALIGNMENT);
+        if (hostPointer != 0) {
+            ByteBuffer direct = platformContext.asByteBuffer(hostPointer, FRAME_BYTES);
+            direct.order(device.getByteOrder());
+            buffer = direct;
+        }
+        buffer.clear();
+        this.isValid = true;
+    }
+
+    @Override
+    public void addCallArgument(Object value, boolean isReferenceType) {
+        callArguments.add(new CallArgument(value, isReferenceType));
+    }
+
+    @Override
+    public void reset() {
+        callArguments.clear();
+    }
+
+    @Override
+    public boolean isValid() {
+        return isValid;
+    }
+
+    @Override
+    public void invalidate() {
+        isValid = false;
+        deviceSlotsValid = false;
+        if (hostPointer != 0) {
+            // the pinned buffer goes back to the context for the next frame, still pinned
+            deviceContext.getPlatformContext().releasePinnedFrame(hostPointer, FRAME_BYTES, deviceContext.getDeviceIndex());
+            hostPointer = 0;
+        }
+        deviceContext.getPlatformContext().releaseBuffer(deviceContext.getDeviceIndex(), toBuffer());
+    }
+
+    /**
+     * Async device write from the off-heap (pinned) host frame: no per-launch stream sync.
+     * Returns {@code -1} when the device copy already holds these slots and the transfer was
+     * skipped; that value is the established "no event" marker in dependency lists.
+     */
+    @Override
+    public int enqueueWrite(long executionPlanId, final int[] events) {
+        if (hostPointer == 0) {
+            return super.enqueueWrite(executionPlanId, events);
+        }
+        if (deviceCopyIsUpToDate(executionPlanId)) {
+            return -1;
+        }
+        int event = deviceContext.enqueueWriteBuffer(executionPlanId, toBuffer(), getOffset(), FRAME_BYTES, hostPointer, 0, events);
+        snapshotDeviceCopy(executionPlanId);
+        return event;
+    }
+
+    /** Blocking device write from the off-heap host frame (used by the HIP-graph capture flush). */
+    @Override
+    public void write(long executionPlanId, final int[] events) {
+        if (hostPointer == 0) {
+            super.write(executionPlanId, events);
+            return;
+        }
+        deviceContext.writeBuffer(executionPlanId, toBuffer(), getOffset(), FRAME_BYTES, hostPointer, 0, events);
+        snapshotDeviceCopy(executionPlanId);
+    }
+
+    /**
+     * Whether the device copy already matches the host frame. Only claimed for a plan that issues
+     * on a single stream: under intra-plan concurrency the launch may run on a different queue from
+     * the one that carried the write, and skipping would drop the ordering the write event provides.
+     */
+    private boolean deviceCopyIsUpToDate(long executionPlanId) {
+        if (!deviceSlotsValid || deviceSlotsPlanId != executionPlanId || deviceContext.isMultiStreamEnabled(executionPlanId)) {
+            return false;
+        }
+        for (int i = 0; i < RESERVED_SLOTS; i++) {
+            if (buffer.getLong(i << 3) != deviceSlots[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void snapshotDeviceCopy(long executionPlanId) {
+        for (int i = 0; i < RESERVED_SLOTS; i++) {
+            deviceSlots[i] = buffer.getLong(i << 3);
+        }
+        deviceSlotsValid = true;
+        deviceSlotsPlanId = executionPlanId;
+    }
+
+    @Override
+    public List<CallArgument> getCallArguments() {
+        return callArguments;
+    }
+
+    public void setDeviceLaunchInfo(boolean enabled) {
+        buffer.putLong(DEVICE_LAUNCH_INFO_INDEX << 3, enabled ? 1L : 0L);
+    }
+
+    @Override
+    public void setKernelContext(HashMap<Integer, Integer> map) {
+        buffer.clear();
+        for (int i = 0; i < RESERVED_SLOTS; i++) {
+            if (map.containsKey(i)) {
+                buffer.putLong(map.get(i));
+            } else {
+                buffer.putLong(0);
+            }
+        }
+    }
+}

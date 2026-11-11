@@ -110,6 +110,7 @@ public class TestSimdgroupMatrixBranchMerge extends TornadoTestBase {
     private void runAndCheck(int m, int n, int k) throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.CUDA);
+        assertNotBackend(TornadoVMBackendType.HIP);
 
         FloatArray a = new FloatArray(m * k);
         FloatArray b = new FloatArray(k * n);

@@ -71,6 +71,7 @@ public class TestLaunchFailureReporting extends TornadoTestBase {
     public void testRejectedLaunchIsReported() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.HIP, "AMD GPUs limit the grid in threads (2^32 per dimension), not to 65535 blocks in Y, so this launch is valid there");
 
         FloatArray out = new FloatArray(SIZE);
         out.init(-1.0f);

@@ -88,6 +88,25 @@ public class TornadoOptions {
     }
 
     /**
+     * Named hipRTC option bundle for the HIP backend: default|fast|debug|repro.
+     */
+    public static final HipCompileProfile HIP_COMPILE_PROFILE = HipCompileProfile.parse(getProperty("tornado.hip.compile.profile", "default"));
+
+    /**
+     * Default HIP (hipRTC) compiler flags, passed to hipRTC when compiling the generated HIP C++ source.
+     * {@code tornado.enable.fma=false} adds {@code -ffp-contract=off}, as it adds {@code --fmad=false}
+     * for CUDA: clang contracts a multiply and an add by default. An option set in
+     * {@code tornado.hip.compiler.flags} replaces the profile's option of the same name.
+     */
+    public static final String DEFAULT_HIP_COMPILER_FLAGS = defaultHipCompilerFlags();
+
+    private static String defaultHipCompilerFlags() {
+        String stated = CompilerFlags.merge(HIP_COMPILE_PROFILE.getFlags(), getProperty("tornado.hip.compiler.flags", ""));
+        String contraction = ENABLE_FMA || stated.contains("-ffp-contract") ? "" : "-ffp-contract=off";
+        return (stated + " " + contraction).trim().replaceAll("\\s+", " ");
+    }
+
+    /**
      * Use internal timers for profiling in ns if enabled, in ms if disabled. Default is ns (enabled).
      */
     public static final boolean TIME_IN_NANOSECONDS = Boolean.parseBoolean(System.getProperty("tornado.ns.time", TRUE));
@@ -98,7 +117,7 @@ public class TornadoOptions {
     public static final int DEFAULT_BACKEND_INDEX = Integer.parseInt(Tornado.getProperty("tornado.backend", "0"));
 
     /**
-     * The backends to load, as a comma-separated list of {@code opencl}, {@code cuda} and {@code metal}.
+     * The backends to load, as a comma-separated list of {@code opencl}, {@code cuda}, {@code metal} and {@code hip}.
      * Empty (the default) loads every installed backend. A backend left out is not initialised at all,
      * which shortens start-up: an unused OpenCL backend costs about 170 ms on a machine with an NVIDIA GPU.
      * Backend indices ({@code tornado.backend}, {@code tornado.device}) count only the loaded backends.
@@ -130,6 +149,11 @@ public class TornadoOptions {
      * the rest of the backends.
      */
     public static final int CUDA_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.cuda.priority", "0"));
+    /**
+     * Priority of the HIP Backend. The higher the number, the more priority over
+     * the rest of the backends.
+     */
+    public static final int HIP_BACKEND_PRIORITY = Integer.parseInt(Tornado.getProperty("tornado.hip.priority", "0"));
     /**
      * Priority of the OpenCL Backend. The higher the number, the more priority over
      * the rest of the backends.

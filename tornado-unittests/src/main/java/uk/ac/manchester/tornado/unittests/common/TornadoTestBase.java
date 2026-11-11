@@ -97,6 +97,7 @@ public abstract class TornadoTestBase {
                 case OPENCL -> throw new TornadoVMOpenCLNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the OpenCL backend");
                 case METAL -> throw new TornadoVMMetalNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the Metal backend");
                 case CUDA -> throw new TornadoVMCUDANotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the CUDA backend");
+                case HIP -> throw new TornadoVMHIPNotSupported(customBackendAssertionMessage != null ? customBackendAssertionMessage : "Test not supported for the HIP backend");
                 default -> throw new IllegalStateException("Unexpected value for backend: " + backend);
             }
         }

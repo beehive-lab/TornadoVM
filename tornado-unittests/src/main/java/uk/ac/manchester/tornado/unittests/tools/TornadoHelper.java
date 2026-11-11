@@ -58,6 +58,7 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoNoOpenCLPlatformException;
 import uk.ac.manchester.tornado.unittests.common.TornadoNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMetalNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurationException;
@@ -68,7 +69,7 @@ public class TornadoHelper {
     // Exceptions that mean a test cannot run on the current configuration/device - it is NOT a failure.
     // Kept in sync with the per-method classification in the verbose runner below.
     private static final List<Class<? extends Throwable>> UNSUPPORTED_EXCEPTIONS = List.of(UnsupportedConfigurationException.class, TornadoNoOpenCLPlatformException.class,
-            TornadoVMMultiDeviceNotSupported.class, TornadoVMOpenCLNotSupported.class, TornadoVMMetalNotSupported.class, TornadoVMCUDANotSupported.class,
+            TornadoVMMultiDeviceNotSupported.class, TornadoVMOpenCLNotSupported.class, TornadoVMMetalNotSupported.class, TornadoVMCUDANotSupported.class, TornadoVMHIPNotSupported.class,
             TornadoDeviceFP64NotSupported.class, TornadoDeviceFP16NotSupported.class, TornadoDeviceMMANotSupported.class,
             TornadoDeviceDynamicParallelismNotSupported.class, TornadoDeviceViewNotSupported.class, TornadoLibraryTaskNotSupported.class);
 
@@ -308,6 +309,14 @@ public class TornadoHelper {
 
                 if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMCUDANotSupported))) {
                     message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [CUDA CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
+                    bufferConsole.append(message);
+                    bufferFile.append(message);
+                    notSupported++;
+                    continue;
+                }
+
+                if (result.getFailures().stream().anyMatch(e -> (e.getException() instanceof TornadoVMHIPNotSupported))) {
+                    message = String.format("%20s", " ................ " + ColorsTerminal.PURPLE + " [HIP CONFIGURATION UNSUPPORTED] " + ColorsTerminal.RESET + "\n");
                     bufferConsole.append(message);
                     bufferFile.append(message);
                     notSupported++;

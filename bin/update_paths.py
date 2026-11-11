@@ -146,6 +146,8 @@ def update_tornado_paths():
         backend_info = "CUDA"
     elif '-metal' in selected_sdk.lower():
         backend_info = "Metal"
+    elif '-hip' in selected_sdk.lower():
+        backend_info = "HIP"
 
     log_messages.append(
         "###########################################################################"

@@ -362,22 +362,30 @@ public final class TcCompiler {
                 return List.of();
             }, Verifier.Stage.POST_ABI),
             // Last: GVN would merge the copies again. Only where FMA is allowed (tornado.enable.fma, and
-            // not a strict-floating-point plan): on CUDA, whose compiler contracts a*b+c by default, and on
+            // not a strict-floating-point plan): on CUDA and HIP, whose compilers contract a*b+c by default, and on
             // OpenCL, built with -cl-mad-enable by default, where Intel's compiler fuses fewer than Graal's
             // explicit fma() did (juliaset on the UHD 770: 1.37x Graal's time without it).
-            new Step("fma-remat", c -> c.options.fuseMultiplyAdd() && (c.target.dialect() == TargetCaps.Dialect.CUDA || c.target.dialect() == TargetCaps.Dialect.OPENCL)
+            new Step("fma-remat", c -> c.options.fuseMultiplyAdd() && (cudaLike(c.target) || c.target.dialect() == TargetCaps.Dialect.OPENCL)
                     && FmaRematerialization.applies(c.function), c -> {
                 new FmaRematerialization().run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI),
-            // Half sums, differences and products in half on targets with half arithmetic (CUDA sm_53+,
+            // Half sums, differences and products in half on targets with half arithmetic (CUDA sm_53+, HIP,
             // OpenCL with cl_khr_fp16): the same bits as Java's widen-compute-round, without the
             // conversions. -Dtornado.tc.nativeHalf=false keeps the float path.
-            new Step("native-half", c -> NATIVE_HALF && c.target.fp16() && (c.target.dialect() == TargetCaps.Dialect.CUDA || c.target.dialect() == TargetCaps.Dialect.OPENCL)
+            new Step("native-half", c -> NATIVE_HALF && c.target.fp16() && (cudaLike(c.target) || c.target.dialect() == TargetCaps.Dialect.OPENCL)
                     && NativeHalfArithmetic.applies(c.function), c -> {
                 new NativeHalfArithmetic().run(c.function);
                 return List.of();
             }, Verifier.Stage.POST_ABI));
+
+    /**
+     * CUDA, or HIP: C++ compiled by a clang-like device compiler that contracts a * b + c by default
+     * and rounds float division and square root correctly.
+     */
+    private static boolean cudaLike(TargetCaps target) {
+        return target.dialect() == TargetCaps.Dialect.CUDA || target.dialect() == TargetCaps.Dialect.HIP;
+    }
 
     /** Folds what the argument values made constant (loop bounds such as n + 1), so later steps see constants. */
     private List<Diagnostic> specialise() {
@@ -412,7 +420,7 @@ public final class TcCompiler {
     private List<Diagnostic> optimize() {
         var passes = PassManager.standard(Verifier.Stage.PRE_ABI).verifyEach(options.verifyEach());
         // Float Math written in double, in float where that is exact for this target (see FloatNarrowing).
-        passes.add(new FloatNarrowing(target.dialect() == TargetCaps.Dialect.CUDA || !target.fp64())).add(new DeadCodeElimination());
+        passes.add(new FloatNarrowing(cudaLike(target) || !target.fp64())).add(new DeadCodeElimination());
         if (options.mathOptimizations()) {
             passes.add(new MathPeepholes()).add(new DeadCodeElimination());
         }
@@ -552,7 +560,7 @@ public final class TcCompiler {
         var extension = switch (kind) {
             case IR -> "tcir";
             case STRUCTURED -> "tcs";
-            case SOURCE -> target.dialect() == TargetCaps.Dialect.CUDA ? "cu" : "c";
+            case SOURCE -> target.dialect() == TargetCaps.Dialect.CUDA ? "cu" : target.dialect() == TargetCaps.Dialect.HIP ? "hip" : "c";
             case BYTECODE, NONE -> "txt";
         };
         try {

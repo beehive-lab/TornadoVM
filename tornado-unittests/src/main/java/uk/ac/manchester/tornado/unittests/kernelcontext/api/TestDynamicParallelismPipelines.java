@@ -219,6 +219,7 @@ public class TestDynamicParallelismPipelines extends TornadoTestBase {
     private void assumeDynamicParallelism() {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.HIP, "HIP kernels cannot launch kernels");
     }
 
     private static WorkerGrid worker(int size, int local) {

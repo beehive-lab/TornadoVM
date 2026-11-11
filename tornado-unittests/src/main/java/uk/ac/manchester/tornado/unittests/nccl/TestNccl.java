@@ -53,6 +53,7 @@ import uk.ac.manchester.tornado.nccl.NcclUniqueId;
 import uk.ac.manchester.tornado.nccl.provider.NcclLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMMultiDeviceNotSupported;
 
 /**
@@ -78,8 +79,14 @@ public class TestNccl extends TornadoTestBase {
     @BeforeEach
     public void ncclMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!NcclLibraryProvider.isAvailable(TornadoVMBackendType.HIP)) {
+                throw new TornadoVMHIPNotSupported("RCCL is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "NCCL library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "NCCL library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
@@ -232,7 +239,7 @@ public class TestNccl extends TornadoTestBase {
         TornadoDevice[] devices = cudaDevices();
         int n = devices.length;
         FloatArray[] buffers = new FloatArray[n];
-        try (NcclCommunicator communicator = NcclCommunicator.create(NcclUniqueId.create(), n, 0, devices)) {
+        try (NcclCommunicator communicator = NcclCommunicator.create(NcclUniqueId.create(devices), n, 0, devices)) {
             assertEquals(n, communicator.size());
             runRanks(devices, SIZE, 1, 1, (rank, name) -> {
                 buffers[rank] = new FloatArray(SIZE);

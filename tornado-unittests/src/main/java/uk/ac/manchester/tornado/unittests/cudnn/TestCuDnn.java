@@ -18,6 +18,7 @@
 package uk.ac.manchester.tornado.unittests.cudnn;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Random;
 
@@ -31,6 +32,7 @@ import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.types.HalfFloat;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.HalfFloatArray;
@@ -38,7 +40,9 @@ import uk.ac.manchester.tornado.cudnn.CuDnn;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cudnn.provider.CuDnnLibraryProvider;
+import uk.ac.manchester.tornado.cudnn.provider.MIOpenLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Unit tests for cuDNN library tasks (FP32, NCHW). Skipped ([UNSUPPORTED])
@@ -59,8 +63,14 @@ public class TestCuDnn extends TornadoTestBase {
     @BeforeEach
     public void cuDnnMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!MIOpenLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("MIOpen is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuDNN library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "cuDNN library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);
@@ -680,6 +690,70 @@ public class TestCuDnn extends TornadoTestBase {
     @Test
     public void testSdpaForwardCausal() throws TornadoExecutionPlanException {
         runSdpa(true);
+    }
+
+    /**
+     * An empty sequence on a HIP device is refused with an error. The attention kernel launcher
+     * throws a C++ exception for it, which used to cross the C entry point and end the process.
+     */
+    @Test
+    public void testSdpaForwardRejectsEmptySequenceOnHip() {
+        if (getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() != TornadoVMBackendType.HIP) {
+            throw new TornadoVMHIPNotSupported("checks the HIP attention kernels' argument handling");
+        }
+        final int b = 1;
+        final int h = 2;
+        final int d = 64;
+        HalfFloatArray q = randomHalfArray(h * d);
+        HalfFloatArray k = randomHalfArray(h * d);
+        HalfFloatArray v = randomHalfArray(h * d);
+        HalfFloatArray o = new HalfFloatArray(h * d);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, q, k, v) //
+                .libraryTask("sdpa", CuDnn::sdpaForward, q, k, v, o, b, h, 0, 1, d, 0.125f, false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, o);
+
+        assertThrows(RuntimeException.class, () -> {
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+        });
+    }
+
+    /**
+     * A head dimension that is not a multiple of 8 is refused with an error, as cuDNN refuses it,
+     * instead of producing a wrong result.
+     */
+    @Test
+    public void testSdpaForwardRejectsUnsupportedHeadDim() {
+        final int b = 1;
+        final int h = 2;
+        final int s = 16;
+        final int d = 36;
+        final float scale = (float) (1.0 / Math.sqrt(d));
+
+        HalfFloatArray q = randomHalfArray(b * h * s * d);
+        HalfFloatArray k = randomHalfArray(b * h * s * d);
+        HalfFloatArray v = randomHalfArray(b * h * s * d);
+        HalfFloatArray o = new HalfFloatArray(b * h * s * d);
+
+        TaskGraph taskGraph = new TaskGraph("g") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, q, k, v) //
+                .libraryTask("sdpa", CuDnn::sdpaForward, q, k, v, o, b, h, s, s, d, scale, false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, o);
+
+        RuntimeException error = assertThrows(RuntimeException.class, () -> {
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+        });
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if (cause instanceof TornadoLibraryTaskNotSupported unsupported) {
+                // fused SDPA is not available on this device at all
+                throw unsupported;
+            }
+        }
     }
 
     /**

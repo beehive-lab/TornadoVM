@@ -6,5 +6,6 @@ open module tornado.cusparse {
     exports uk.ac.manchester.tornado.cusparse.provider;
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //
-            uk.ac.manchester.tornado.cusparse.provider.CusparseLibraryProvider;
+            uk.ac.manchester.tornado.cusparse.provider.CusparseLibraryProvider, //
+            uk.ac.manchester.tornado.cusparse.provider.HipsparseLibraryProvider;
 }

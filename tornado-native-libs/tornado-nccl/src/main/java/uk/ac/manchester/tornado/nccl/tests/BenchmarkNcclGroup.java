@@ -119,7 +119,7 @@ public class BenchmarkNcclGroup {
         for (int i = 0; i < numDevices; i++) {
             devices[i] = TornadoExecutionPlan.getDevice(0, i);
         }
-        int version = NcclNativeLib.version();
+        int version = NcclNativeLib.forBackend(devices[0].getTornadoVMBackend()).version();
         System.out.printf("NCCL %d.%d.%d, %d rank(s), %d all-reduces per step, %d iterations (median)%n", version / 10000, (version / 100) % 100, version % 100, numDevices, buffers, iterations);
         System.out.printf("%12s %12s | %16s %16s %9s%n", "elements", "MiB/buffer", "separate tasks", "one group", "speedup");
         step(devices, buffers, sizes[0], iterations, true);
