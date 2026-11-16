@@ -53,7 +53,17 @@ public enum ParquetColumnType {
      * STRING (UTF-8), from the offsets, bytes and validity of a string read, gathered to the written
      * rows; only through {@code Cudf.writeParquetColumnsWithStrings}.
      */
-    STRING(7);
+    STRING(7),
+    /**
+     * TINYINT: INT32 annotated INT(8), from an {@code IntArray}; each int narrowed to a byte as Java's
+     * cast does.
+     */
+    INT8(8),
+    /**
+     * SMALLINT: INT32 annotated INT(16), from an {@code IntArray}; each int narrowed to a short as
+     * Java's cast does.
+     */
+    INT16(9);
 
     private final int code;
 
