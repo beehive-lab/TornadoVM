@@ -82,6 +82,9 @@ public final class Intrinsics {
         TABLE.put(new Key("tornado.mma.fragment", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_fragment($0)", "tc_mma_fragment"));
         TABLE.put(new Key("tornado.mma.load_a", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a((const int *) $0, $1, 2)", "tc_mma_load_a"));
         TABLE.put(new Key("tornado.mma.load_b", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b((const int *) $0, $1)", "tc_mma_load_b"));
+        // From registers: the fragment is the int4 / int2 mma.sync reads, built from its lanes.
+        TABLE.put(new Key("tornado.mma.fragment_a", Dialect.CUDA, ""), Spelling.of("make_int4($0, $1, $2, $3)"));
+        TABLE.put(new Key("tornado.mma.fragment_b", Dialect.CUDA, ""), Spelling.of("make_int2($0, $1)"));
         // With a byte offset: the tile base moves by that many bytes (a warp's sub-tile).
         TABLE.put(new Key("tornado.mma.load_a.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_a_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_a_global"));
         TABLE.put(new Key("tornado.mma.load_b.global", Dialect.CUDA, ""), Spelling.withHelper("tc_mma_load_b_global((const unsigned short *) ($0), $1, $2, $3)", "tc_mma_load_b_global"));

@@ -90,6 +90,8 @@ public final class IntrinsicRegistry {
         // Synchronisation, warp and tensor-core operations.
         add("tornado.barrier.", EnumSet.of(Effect.CONVERGENT, Effect.READS, Effect.WRITES), "work-group barrier");
         add("tornado.simd.", EnumSet.of(Effect.CONVERGENT), "warp (SIMD-group) operations");
+        pure("tornado.mma.fragment_a", "a tensor-core A fragment from four registers of packed halves");
+        pure("tornado.mma.fragment_b", "a tensor-core B fragment from two registers of packed halves");
         add("tornado.mma.store", EnumSet.of(Effect.CONVERGENT, Effect.WRITES), "stores a tensor-core result fragment");
         add("tornado.mma.", EnumSet.of(Effect.CONVERGENT, Effect.READS), "tensor-core fragments and multiply-accumulate (warp-collective)");
         add("tornado.simdgroup_matrix.store", EnumSet.of(Effect.CONVERGENT, Effect.WRITES), "stores an Apple simdgroup-matrix fragment");
