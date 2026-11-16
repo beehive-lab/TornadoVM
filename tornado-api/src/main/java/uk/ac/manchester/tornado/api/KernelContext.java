@@ -1048,6 +1048,45 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Builds the lane's m16n8k16 A fragment from four registers the kernel computed, each a
+     * pair of half values: bits 0-15 the lower column, bits 16-31 the next one. No memory is
+     * read, so a kernel can decode or convert its operand in registers and skip staging it
+     * through shared memory.
+     *
+     * <p>The layout is the one {@link #mmaLoadA(HalfFloatArray, int, int, int)} produces: for
+     * lane {@code L}, register {@code i} holds row {@code L / 4 + 8 * (i % 2)}, columns
+     * {@code (L % 4) * 2 + 8 * (i / 2)} and the next one. Example: lane 5's {@code a2} holds
+     * row 1, columns 10 and 11.
+     *
+     * PTX equivalent: none (the four .b32 registers mma.sync reads for A)
+     *
+     * @return the lane's A fragment, to pass to {@link #mma(HalfFloat[], HalfFloat[], float[], MMAShape)}
+     */
+    public HalfFloat[] mmaFragmentA(int a0, int a1, int a2, int a3) {
+        // CPU fallback: return an 8-element fragment.
+        return new HalfFloat[8];
+    }
+
+    /**
+     * Builds the lane's m16n8k16 B fragment from two registers the kernel computed, each a
+     * pair of half values: bits 0-15 the lower k, bits 16-31 the next one. No memory is read,
+     * so a kernel can decode quantized weights straight into the operand, without writing them
+     * to a shared-memory tile and reading them back with {@link #mmaLoadB(int[], int)}.
+     *
+     * <p>The layout is the one {@link #mmaLoadB(HalfFloatArray, int, int, int)} produces: for
+     * lane {@code L}, register {@code i} holds column {@code L / 4}, rows (k) {@code (L % 4) * 2
+     * + 8 * i} and the next one. Example: lane 9's {@code b1} holds column 2, k 10 and 11.
+     *
+     * PTX equivalent: none (the two .b32 registers mma.sync reads for B)
+     *
+     * @return the lane's B fragment, to pass to {@link #mma(HalfFloat[], HalfFloat[], float[], MMAShape)}
+     */
+    public HalfFloat[] mmaFragmentB(int b0, int b1) {
+        // CPU fallback: return a 4-element fragment.
+        return new HalfFloat[4];
+    }
+
+    /**
      * Loads the B fragment for mma.sync from a swizzled shared-memory tile
      * populated using {@link #swizzleStoreFp16Stride32(HalfFloat[], int, int, int, HalfFloat)}.
      *
