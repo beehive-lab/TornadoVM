@@ -269,6 +269,27 @@ public class KernelContext implements ExecutionContext {
     }
 
     /**
+     * Returns the value {@code val} holds in lane {@code srcLane} of the SIMD group. Every lane of
+     * the group must take part; each lane may read from any lane, lower or higher than its own.
+     * Example: {@code simdShuffle(word, (lane & ~3) | ((lane & 3) >> 1))} gives lanes 0 and 1 the
+     * word of lane 0, and lanes 2 and 3 the word of lane 1.
+     * <p>
+     * Metal equivalent: {@code simd_shuffle(val, srcLane)}<br>
+     * CUDA equivalent: {@code __shfl_sync(0xffffffff, val, srcLane)} ({@code shfl.sync.idx.b32})
+     */
+    public int simdShuffle(int val, int srcLane) {
+        return val;
+    }
+
+    /**
+     * {@link #simdShuffle(int, int)} for a {@code float}: the value {@code val} holds in lane
+     * {@code srcLane} of the SIMD group.
+     */
+    public float simdShuffle(float val, int srcLane) {
+        return val;
+    }
+
+    /**
      * Broadcasts the value from lane 0 to all active SIMD lanes.
      * <p>
      * Metal equivalent: {@code simd_broadcast_first(val)}<br>

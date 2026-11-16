@@ -63,6 +63,7 @@ public final class Intrinsics {
         // reduction, so every lane receives the sum.
         TABLE.put(new Key("tornado.simd.sum", Dialect.CUDA, ""), Spelling.withHelper("tc_warp_sum($0)", "tc_warp_sum"));
         cuda("tornado.simd.shuffle_down", "__shfl_down_sync(0xffffffffu, $0, $1)");
+        cuda("tornado.simd.shuffle", "__shfl_sync(0xffffffffu, $0, $1)");
         cuda("tornado.simd.broadcast_first", "__shfl_sync(0xffffffffu, $0, 0)");
         cuda("tornado.simd.any", "(__any_sync(0xffffffffu, $0) != 0)");
         cuda("tornado.simd.all", "(__all_sync(0xffffffffu, $0) != 0)");
@@ -178,6 +179,7 @@ public final class Intrinsics {
     private static void hip() {
         TABLE.put(new Key("tornado.simd.sum", Dialect.HIP, ""), Spelling.withHelper("tc_warp_sum($0)", "tc_warp_sum"));
         hipRow("tornado.simd.shuffle_down", "__shfl_down($0, $1, 32)");
+        hipRow("tornado.simd.shuffle", "__shfl($0, $1, 32)");
         hipRow("tornado.simd.broadcast_first", "__shfl($0, 0, 32)");
         TABLE.put(new Key("tornado.simd.any", Dialect.HIP, ""), Spelling.withHelper("(tc_warp_bits(__ballot($0)) != 0u)", "tc_warp_bits"));
         TABLE.put(new Key("tornado.simd.all", Dialect.HIP, ""), Spelling.withHelper("(tc_warp_bits(__ballot($0)) == tc_warp_bits(__ballot(1)))", "tc_warp_bits"));
@@ -298,6 +300,7 @@ public final class Intrinsics {
         // SIMD-group (warp) functions.
         metal("tornado.simd.sum", "simd_sum($0)");
         metal("tornado.simd.shuffle_down", "simd_shuffle_down($0, (ushort) $1)");
+        metal("tornado.simd.shuffle", "simd_shuffle($0, (ushort) $1)");
         metal("tornado.simd.broadcast_first", "simd_broadcast_first($0)");
         metal("tornado.simd.any", "(int) simd_any($0 != 0)");
         metal("tornado.simd.all", "(int) simd_all($0 != 0)");

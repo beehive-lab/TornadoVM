@@ -252,6 +252,7 @@ __TEST_THE_WORLD__ = [
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestHistogram"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestWorkEfficientScan"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestWarpShuffleScan"),
+    TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestWarpShuffleIndex"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestHistogramHalfFloat"),
     TestEntry("uk.ac.manchester.tornado.unittests.kernelcontext.reductions.TestReductionOptimizationLadder"),
     TestEntry("uk.ac.manchester.tornado.unittests.instances.TestInstances"),
