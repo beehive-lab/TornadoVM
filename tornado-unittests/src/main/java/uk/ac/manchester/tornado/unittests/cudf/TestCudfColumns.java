@@ -416,6 +416,95 @@ public class TestCudfColumns extends TornadoTestBase {
     }
 
     /**
+     * INT8 and INT16 columns -- INT32 in the file, annotated INT(8) and INT(16), as a TINYINT or
+     * SMALLINT column is -- written from IntArrays and read back into the INT32 and the INT64 buffer,
+     * which widen them exactly, the extremes and negatives included.
+     */
+    @Test
+    public void testWriteAndReadNarrowIntegers() throws TornadoExecutionPlanException, IOException {
+        int n = 1000;
+        Path out = Files.createTempFile("tornado-cudf-narrow", ".parquet");
+        out.toFile().deleteOnExit();
+        IntArray in = new IntArray(2 * n);
+        for (int i = 0; i < n; i++) {
+            in.set(i, (byte) (i * 37 - 128));
+            in.set(n + i, (short) (i * 9973 - 32768));
+        }
+        in.set(0, Byte.MIN_VALUE);
+        in.set(1, Byte.MAX_VALUE);
+        in.set(n, Short.MIN_VALUE);
+        in.set(n + 1, Short.MAX_VALUE);
+        IntArray backInts = new IntArray(2 * n);
+        LongArray backLongs = new LongArray(2 * n);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, in) //
+                .libraryTask("write", Cudf::writeParquetColumns, new StringBuilder(out.toString()), "tiny\nsmall", new int[] { 1, 2 },
+                        new ParquetColumnType[] { ParquetColumnType.INT8, ParquetColumnType.INT16 }, new boolean[] { false, false }, new long[] { n }, new IntArray(1), n, in,
+                        new LongArray(1), new DoubleArray(1), new ByteArray(1), 2, 0) //
+                .libraryTask("asInts", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0, 1 },
+                        new CudfType[] { CudfType.INT32, CudfType.INT32 }, new long[] { n }, n, backInts, new LongArray(1), new DoubleArray(1), new ByteArray(1), false) //
+                .libraryTask("asLongs", Cudf::readParquetColumns, new StringBuilder(out.toString()), 0, 0, new int[] { 0, 1 },
+                        new CudfType[] { CudfType.INT64, CudfType.INT64 }, new long[] { n }, n, new IntArray(1), backLongs, new DoubleArray(1), new ByteArray(1), false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, backInts, backLongs);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < 2 * n; i++) {
+            assertEquals(in.get(i), backInts.get(i), "INT32 read of row " + i);
+            assertEquals(in.get(i), backLongs.get(i), "INT64 read of row " + i);
+        }
+    }
+
+    /**
+     * Two files of one table whose schemas differ (an INT(8) column in one, the same column as plain
+     * INT32 in the other), read in one call: libcudf refuses to read them together, so each is read
+     * alone and the column widened to INT32, the second file's values beyond a byte kept.
+     */
+    @Test
+    public void testReadParquetColumnsFilesOfDifferentSchemas() throws TornadoExecutionPlanException, IOException {
+        int n = 500;
+        Path narrow = Files.createTempFile("tornado-cudf-schema-a", ".parquet");
+        Path wide = Files.createTempFile("tornado-cudf-schema-b", ".parquet");
+        narrow.toFile().deleteOnExit();
+        wide.toFile().deleteOnExit();
+        IntArray small = new IntArray(n);
+        IntArray large = new IntArray(n);
+        LongArray ids = new LongArray(n);
+        LongArray laterIds = new LongArray(n);
+        for (int i = 0; i < n; i++) {
+            small.set(i, i % 100 - 50);
+            large.set(i, 1000 * i - 7);
+            ids.set(i, i);
+            laterIds.set(i, n + i);
+        }
+        IntArray back = new IntArray(2 * n);
+        LongArray backIds = new LongArray(2 * n);
+        StringBuilder both = new StringBuilder(narrow + "\n" + wide);
+
+        TaskGraph graph = new TaskGraph("cudf") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, small, large, ids, laterIds) //
+                .libraryTask("writeNarrow", Cudf::writeParquetColumns, new StringBuilder(narrow.toString()), "id\nflag", new int[] { 1, 2 },
+                        new ParquetColumnType[] { ParquetColumnType.INT64, ParquetColumnType.INT8 }, new boolean[] { false, false }, new long[] { n }, new IntArray(1), n,
+                        small, ids, new DoubleArray(1), new ByteArray(1), 2, 0) //
+                .libraryTask("writeWide", Cudf::writeParquetColumns, new StringBuilder(wide.toString()), "id\nflag", new int[] { 1, 2 },
+                        new ParquetColumnType[] { ParquetColumnType.INT64, ParquetColumnType.INT32 }, new boolean[] { false, false }, new long[] { n }, new IntArray(1), n,
+                        large, laterIds, new DoubleArray(1), new ByteArray(1), 2, 0) //
+                .libraryTask("read", Cudf::readParquetColumns, both, 0, 0, new int[] { 0, 1 }, new CudfType[] { CudfType.INT64, CudfType.INT32 },
+                        new long[] { 2L * n }, 2 * n, back, backIds, new DoubleArray(1), new ByteArray(1), false) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, back, backIds);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.execute();
+        }
+        for (int i = 0; i < n; i++) {
+            assertEquals(small.get(i), back.get(i), "first file, row " + i);
+            assertEquals(large.get(i), back.get(n + i), "second file, row " + i);
+            assertEquals(i, backIds.get(i), "first file, id " + i);
+            assertEquals(n + i, backIds.get(n + i), "second file, id " + i);
+        }
+    }
+
+    /**
      * DECIMAL64 and FLOAT32 columns written from the device and read back: a required DECIMAL(7,2),
      * stored as INT32, a nullable DECIMAL(15,4), stored as INT64, and a FLOAT, with the decimal
      * extremes, negatives and nulls. The decimals come back unscaled and exact through both of cuDF's

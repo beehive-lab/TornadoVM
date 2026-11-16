@@ -42,6 +42,7 @@
 #include <cudf/io/types.hpp>
 #include <cudf/column/column.hpp>
 #include <cudf/column/column_view.hpp>
+#include <cudf/concatenate.hpp>
 #include <cudf/copying.hpp>
 #include <cudf/groupby.hpp>
 #include <cudf/filling.hpp>
@@ -57,6 +58,7 @@
 #include <cudf/strings/regex/regex_program.hpp>
 #include <cudf/strings/strings_column_view.hpp>
 #include <cudf/unary.hpp>
+#include <cudf/utilities/traits.hpp>
 #include <cudf/transform.hpp>
 
 #include <rmm/cuda_stream_view.hpp>
@@ -192,6 +194,73 @@ int fail(const char* what) {
 /** Copies a device column's payload into a buffer the caller already owns. */
 cudaError_t copy_out(void* dst, const void* src, size_t bytes, cudaStream_t stream) {
     return cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDeviceToDevice, stream);
+}
+
+/**
+ * The named columns of several Parquet files as one table, their rows concatenated in order.
+ *
+ * One read of every file is the fast path, and libcudf takes it only when the files' schemas are
+ * identical element for element -- the root's name and each column's converted type included. Files
+ * of one table written by different writers (parquet-mr and libcudf, say) differ there while their
+ * columns agree, and libcudf refuses them. They are then read one at a time, each column widened to
+ * the widest of the files' types for it, and concatenated: the same rows, from more reads.
+ */
+std::unique_ptr<cudf::table> read_sources(const cudf::io::parquet_reader_options& options, const std::vector<std::string>& paths,
+        const std::vector<std::string>& names, rmm::cuda_stream_view view) {
+    if (paths.size() < 2) {
+        return std::move(cudf::io::read_parquet(options, view).tbl);
+    }
+    try {
+        return std::move(cudf::io::read_parquet(options, view).tbl);
+    } catch (const std::exception& e) {
+        if (std::string(e.what()).find("same schema") == std::string::npos) {
+            throw;
+        }
+    }
+    std::vector<std::unique_ptr<cudf::table>> parts;
+    for (const auto& path : paths) {
+        auto one = cudf::io::parquet_reader_options::builder(cudf::io::source_info{path}).columns(names).build();
+        parts.push_back(std::move(cudf::io::read_parquet(one, view).tbl));
+    }
+    std::vector<std::unique_ptr<cudf::column>> columns;
+    const cudf::size_type width = parts.front()->num_columns();
+    for (const auto& part : parts) {
+        if (part->num_columns() != width) {
+            throw std::invalid_argument("readParquetColumns: the files do not have the requested columns alike");
+        }
+    }
+    for (cudf::size_type c = 0; c < width; c++) {
+        // The widest of the files' types, so that no file's values are narrowed: integers widen to
+        // integers and floats to floats, exactly. Any other difference is refused.
+        auto type = parts.front()->view().column(c).type();
+        for (const auto& part : parts) {
+            const auto other = part->view().column(c).type();
+            if (other == type) {
+                continue;
+            }
+            const bool integers = cudf::is_integral_not_bool(type) && cudf::is_integral_not_bool(other);
+            const bool floats = cudf::is_floating_point(type) && cudf::is_floating_point(other);
+            if (!integers && !floats) {
+                throw std::invalid_argument("readParquetColumns: column " + names[c] + " has types in the files that do not widen to one another");
+            }
+            if (cudf::size_of(other) > cudf::size_of(type)) {
+                type = other;
+            }
+        }
+        std::vector<std::unique_ptr<cudf::column>> cast;
+        std::vector<cudf::column_view> views;
+        for (const auto& part : parts) {
+            auto col = part->view().column(c);
+            if (col.type() != type) {
+                cast.push_back(cudf::cast(col, type, view));
+                views.push_back(cast.back()->view());
+            } else {
+                views.push_back(col);
+            }
+        }
+        columns.push_back(cudf::concatenate(views, view));
+    }
+    return std::make_unique<cudf::table>(std::move(columns));
 }
 
 }  // namespace
@@ -1036,7 +1105,7 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 }
                 options.set_row_groups({groups});
             }
-            read = std::move(cudf::io::read_parquet(options, view).tbl);
+            read = read_sources(options, paths, names, view);
             if (static_cast<int64_t>(read->num_rows()) != rows) {
                 g_last_error = "readParquetColumns: file gave " + std::to_string(read->num_rows()) + " rows where the caller asked for " + std::to_string(rows);
                 return 7;
@@ -1075,10 +1144,14 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
             const bool widen_float = kinds[c] == 3;
             const bool decimal = kinds[c] == 4;
             const int32_t kind = widen_float ? 2 : decimal ? 1 : kinds[c];
+            // INT8 and INT16 are INT32 columns in Parquet with an INT(8|16) annotation -- a TINYINT or
+            // SMALLINT column, or Paimon's _VALUE_KIND -- which cuDF reads at their declared width.
+            // They widen exactly, as INT32 does to INT64.
+            const bool narrow_int = !decimal && (id == cudf::type_id::INT8 || id == cudf::type_id::INT16);
             bool accepted = false;
             switch (kind) {
                 case 0:
-                    accepted = id == cudf::type_id::INT32 || id == cudf::type_id::TIMESTAMP_DAYS;
+                    accepted = id == cudf::type_id::INT32 || id == cudf::type_id::TIMESTAMP_DAYS || narrow_int;
                     break;
                 case 1:
                     if (decimal) {
@@ -1087,7 +1160,7 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                     }
                     accepted = id == cudf::type_id::INT64 || id == cudf::type_id::TIMESTAMP_SECONDS || id == cudf::type_id::TIMESTAMP_MILLISECONDS
                             || id == cudf::type_id::TIMESTAMP_MICROSECONDS || id == cudf::type_id::TIMESTAMP_NANOSECONDS
-                            || id == cudf::type_id::INT32;  // int promoted to long
+                            || id == cudf::type_id::INT32 || narrow_int;  // int promoted to long
                     break;
                 default:
                     // FLOAT32 is accepted for FP64 too: float promoted to double.
@@ -1114,8 +1187,11 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 if (widen_float || (kind == 2 && id == cudf::type_id::FLOAT32)) {
                     widened = cudf::cast(col, cudf::data_type{cudf::type_id::FLOAT64}, view);
                     source = widened->view();
-                } else if (kind == 1 && !decimal && id == cudf::type_id::INT32) {
+                } else if (kind == 1 && !decimal && (id == cudf::type_id::INT32 || narrow_int)) {
                     widened = cudf::cast(col, cudf::data_type{cudf::type_id::INT64}, view);
+                    source = widened->view();
+                } else if (kind == 0 && narrow_int) {
+                    widened = cudf::cast(col, cudf::data_type{cudf::type_id::INT32}, view);
                     source = widened->view();
                 } else if (decimal && id != cudf::type_id::DECIMAL64) {
                     // A DECIMAL32 widened at the same scale: the unscaled value itself, exactly.
@@ -1358,6 +1434,8 @@ int write_parquet_columns(void* stream, const char* path, int32_t column_count, 
                 case 3: kind = 0; id = cudf::type_id::TIMESTAMP_DAYS; break;
                 case 4: kind = 1; id = cudf::type_id::TIMESTAMP_MICROSECONDS; break;
                 case 5: kind = 2; id = cudf::type_id::FLOAT64; break;  // narrowed below
+                case 8: kind = 0; id = cudf::type_id::INT32; break;    // narrowed to INT8 below
+                case 9: kind = 0; id = cudf::type_id::INT32; break;    // narrowed to INT16 below
                 case 6:
                     kind = 1;
                     id = cudf::type_id::DECIMAL64;
@@ -1397,6 +1475,11 @@ int write_parquet_columns(void* stream, const char* path, int32_t column_count, 
                     static_cast<cudf::size_type>(rows), data, mask, nulls);
             if ((types[c] & 0xff) == 5) {
                 narrowed.push_back(cudf::cast(column, cudf::data_type{cudf::type_id::FLOAT32}, view));
+                views.push_back(narrowed.back()->view());
+            } else if ((types[c] & 0xff) == 8 || (types[c] & 0xff) == 9) {
+                // INT32 annotated INT(8) or INT(16) in the file, as a TINYINT or SMALLINT column is.
+                const auto narrow = (types[c] & 0xff) == 8 ? cudf::type_id::INT8 : cudf::type_id::INT16;
+                narrowed.push_back(cudf::cast(column, cudf::data_type{narrow}, view));
                 views.push_back(narrowed.back()->view());
             } else if (id == cudf::type_id::DECIMAL64 && precisions[c] <= 9) {
                 // Up to 9 digits a decimal is stored as INT32 (cuDF's DECIMAL32), as Spark and Iceberg store it.
@@ -1586,8 +1669,8 @@ int tornado_cudf_read_parquet_string_columns(void* stream, const char* path, int
         }
         auto options = cudf::io::parquet_reader_options::builder(cudf::io::source_info{paths}).columns(names).build();
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
-        auto result = cudf::io::read_parquet(options, view);
-        const auto table = result.tbl->view();
+        auto result = read_sources(options, paths, names, view);
+        const auto table = result->view();
         if (static_cast<int64_t>(table.num_rows()) != rows) {
             g_last_error = "readParquetStringColumns: files gave " + std::to_string(table.num_rows()) + " rows where the caller asked for " + std::to_string(rows);
             return 7;
