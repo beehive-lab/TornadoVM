@@ -140,4 +140,56 @@ public class TestCrossPlanConsume extends TornadoTestBase {
             }
         }
     }
+
+    /**
+     * A consumer that also copies the consumed array to the host is closed: the producer still owns
+     * the buffer, keeps running on it, and a new consumer reads its latest values.
+     */
+    @Test
+    public void testClosingConsumerThatTransfersConsumedObject() throws TornadoExecutionPlanException {
+        FloatArray a = new FloatArray(N);
+        FloatArray scale = new FloatArray(1);
+        FloatArray b = new FloatArray(N);
+        KernelContext context = new KernelContext();
+
+        ImmutableTaskGraph producer = new TaskGraph("ownerProducer") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, scale) //
+                .task("t0", TestCrossPlanConsume::produce, context, a, scale, N) //
+                .persistOnDevice(a) //
+                .snapshot();
+
+        try (TornadoExecutionPlan first = new TornadoExecutionPlan(producer)) {
+            first.withGridScheduler(grid("ownerProducer"));
+            scale.set(0, 2);
+            first.execute();
+
+            ImmutableTaskGraph consumer = new TaskGraph("copyingConsumer") //
+                    .consumeFromDevice(producer, a) //
+                    .task("t0", TestCrossPlanConsume::consume, context, a, b, N) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, a, b) //
+                    .snapshot();
+            try (TornadoExecutionPlan second = new TornadoExecutionPlan(consumer)) {
+                second.withGridScheduler(grid("copyingConsumer"));
+                second.execute();
+                for (int i = 0; i < N; i++) {
+                    assertEquals(i * 2.0f + 1.0f, b.get(i), 1e-3f);
+                }
+            }
+
+            scale.set(0, 7);
+            first.execute();
+            ImmutableTaskGraph reader = new TaskGraph("laterConsumer") //
+                    .consumeFromDevice(producer, a) //
+                    .task("t0", TestCrossPlanConsume::consume, context, a, b, N) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, b) //
+                    .snapshot();
+            try (TornadoExecutionPlan third = new TornadoExecutionPlan(reader)) {
+                third.withGridScheduler(grid("laterConsumer"));
+                third.execute();
+                for (int i = 0; i < N; i++) {
+                    assertEquals(i * 7.0f + 1.0f, b.get(i), 1e-3f);
+                }
+            }
+        }
+    }
 }
