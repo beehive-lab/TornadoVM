@@ -187,8 +187,10 @@ final class HipDialect implements CDialect {
                 "static __device__ __forceinline__ bool tc_isnan(double x) { return (__double_as_longlong(x) & 0x7fffffffffffffffLL) > 0x7ff0000000000000LL; }",
                 "static __device__ __forceinline__ int tc_f2i(float x) { return tc_isnan(x) ? 0 : x >= 2147483647.0f ? 2147483647 : x <= -2147483648.0f ? (-2147483647 - 1) : (int) x; }",
                 "static __device__ __forceinline__ int tc_f2i(double x) { return tc_isnan(x) ? 0 : x >= 2147483647.0 ? 2147483647 : x <= -2147483648.0 ? (-2147483647 - 1) : (int) x; }",
-                "static __device__ __forceinline__ long long tc_f2l(float x) { return tc_isnan(x) ? 0 : x >= 9223372036854775807.0f ? 9223372036854775807LL : x <= -9223372036854775808.0f ? (-9223372036854775807LL - 1) : (long long) x; }",
-                "static __device__ __forceinline__ long long tc_f2l(double x) { return tc_isnan(x) ? 0 : x >= 9223372036854775807.0 ? 9223372036854775807LL : x <= -9223372036854775808.0 ? (-9223372036854775807LL - 1) : (long long) x; }");
+                "static __device__ __forceinline__ long long tc_f2l(float x) { return tc_isnan(x) ? 0 : x >= 9223372036854775807.0f ? 9223372036854775807LL : "
+                        + "x <= -9223372036854775808.0f ? (-9223372036854775807LL - 1) : (long long) x; }",
+                "static __device__ __forceinline__ long long tc_f2l(double x) { return tc_isnan(x) ? 0 : x >= 9223372036854775807.0 ? 9223372036854775807LL : "
+                        + "x <= -9223372036854775808.0 ? (-9223372036854775807LL - 1) : (long long) x; }");
         if (half) {
             guarded(lines, "TC_F2I_HALF", "static __device__ __forceinline__ int tc_f2i(half x) { return tc_f2i(__half2float(x)); }",
                     "static __device__ __forceinline__ long long tc_f2l(half x) { return tc_f2l(__half2float(x)); }");
