@@ -186,7 +186,6 @@ public class TestCopyDevicePointers extends TornadoTestBase {
     @Test
     public void testCopyDevicePointersMatrixDouble() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
-        assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
         final int size = 32;
 

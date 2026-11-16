@@ -347,10 +347,14 @@ public class HIPMemorySegmentWrapper implements XPUBuffer {
         }
         final long sizeSource = oclMemorySegmentWrapper.bufferSize;
         final long sizeDest = bufferSize;
-        this.bufferId = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset, sizeOfType, sizeSource, sizeDest);
-        // The mapped region replaces this wrapper's allocation; keep release behaviour exactly as it was before the
-        // alignment padding was introduced, i.e. hand back whatever bufferId now points at.
-        this.bufferIdBase = this.bufferId;
+        long mapped = deviceContext.mapOnDeviceMemoryRegion(executionPlanId, this.bufferId, oclMemorySegmentWrapper.bufferId, offset, sizeOfType, sizeSource, sizeDest);
+        // With an offset the payload is copied into this wrapper's own allocation, which is returned unchanged and is
+        // still released through bufferIdBase. Without one this wrapper takes the source pointer instead, and hands
+        // that back on release, as it did before the alignment padding was introduced.
+        if (mapped != this.bufferId) {
+            this.bufferId = mapped;
+            this.bufferIdBase = mapped;
+        }
     }
 
     @Override
