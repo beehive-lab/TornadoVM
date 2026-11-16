@@ -1075,10 +1075,14 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
             const bool widen_float = kinds[c] == 3;
             const bool decimal = kinds[c] == 4;
             const int32_t kind = widen_float ? 2 : decimal ? 1 : kinds[c];
+            // INT8 and INT16 are INT32 columns in Parquet with an INT(8|16) annotation -- a TINYINT or
+            // SMALLINT column, or Paimon's _VALUE_KIND -- which cuDF reads at their declared width.
+            // They widen exactly, as INT32 does to INT64.
+            const bool narrow_int = !decimal && (id == cudf::type_id::INT8 || id == cudf::type_id::INT16);
             bool accepted = false;
             switch (kind) {
                 case 0:
-                    accepted = id == cudf::type_id::INT32 || id == cudf::type_id::TIMESTAMP_DAYS;
+                    accepted = id == cudf::type_id::INT32 || id == cudf::type_id::TIMESTAMP_DAYS || narrow_int;
                     break;
                 case 1:
                     if (decimal) {
@@ -1087,7 +1091,7 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                     }
                     accepted = id == cudf::type_id::INT64 || id == cudf::type_id::TIMESTAMP_SECONDS || id == cudf::type_id::TIMESTAMP_MILLISECONDS
                             || id == cudf::type_id::TIMESTAMP_MICROSECONDS || id == cudf::type_id::TIMESTAMP_NANOSECONDS
-                            || id == cudf::type_id::INT32;  // int promoted to long
+                            || id == cudf::type_id::INT32 || narrow_int;  // int promoted to long
                     break;
                 default:
                     // FLOAT32 is accepted for FP64 too: float promoted to double.
@@ -1114,8 +1118,11 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 if (widen_float || (kind == 2 && id == cudf::type_id::FLOAT32)) {
                     widened = cudf::cast(col, cudf::data_type{cudf::type_id::FLOAT64}, view);
                     source = widened->view();
-                } else if (kind == 1 && !decimal && id == cudf::type_id::INT32) {
+                } else if (kind == 1 && !decimal && (id == cudf::type_id::INT32 || narrow_int)) {
                     widened = cudf::cast(col, cudf::data_type{cudf::type_id::INT64}, view);
+                    source = widened->view();
+                } else if (kind == 0 && narrow_int) {
+                    widened = cudf::cast(col, cudf::data_type{cudf::type_id::INT32}, view);
                     source = widened->view();
                 } else if (decimal && id != cudf::type_id::DECIMAL64) {
                     // A DECIMAL32 widened at the same scale: the unscaled value itself, exactly.
