@@ -20,6 +20,7 @@
  */
 package uk.ac.manchester.tornado.drivers.hip.natives;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.drivers.hip.ffm.HIPDriverAPI;
 import uk.ac.manchester.tornado.drivers.hip.ffm.HIPHandles;
 
@@ -35,7 +36,12 @@ public class NativeCommandQueue {
 
     /**
      * Device-to-device copy of the payload, skipping the TornadoVM segment header. Returns the
-     * destination pointer on success, or the failing {@code hipError_t}.
+     * destination pointer; a failed HIP call throws.
+     *
+     * <p>{@code offset} counts elements of {@code sizeDataType} bytes, while {@code headerSize}
+     * counts {@code int}s: the caller passes {@code ARRAY_HEADER / Integer.BYTES}, because the header
+     * holds integers whatever the element type. The copy is clamped to what both buffers hold past
+     * their headers, as the OpenCL backend does.
      *
      * <p>{@code hipMemcpyDtoD} is asynchronous with respect to the host and runs on the legacy
      * default stream, which TornadoVM's streams -- created {@code hipStreamNonBlocking} -- are not
@@ -45,24 +51,28 @@ public class NativeCommandQueue {
      * graph can read the buffer as it was before the copy (seen on Windows with a Radeon 8060S).
      */
     public static long mapOnDeviceMemoryNDRegion(long commandQueuePtr, long destDevicePtr, long srcDevicePtr, long offset, int sizeDataType, long headerSize, long sizeSource, long sizeDest) {
+        if (offset < 0 || headerSize < 0 || sizeDataType <= 0) {
+            throw new TornadoRuntimeException("Invalid device region: offset " + offset + ", header " + headerSize + ", element size " + sizeDataType);
+        }
+        long headerBytes = Math.multiplyExact(headerSize, Integer.BYTES);
+        long sourceOffset = Math.addExact(Math.multiplyExact(offset, sizeDataType), headerBytes);
+        long payloadBytes = Math.min(sizeDest - headerBytes, sizeSource - sourceOffset);
+        if (payloadBytes <= 0) {
+            return destDevicePtr;
+        }
         HIPHandles.Queue queue = HIPHandles.resolve(commandQueuePtr, HIPHandles.Queue.class);
-        long headerBytes = headerSize * sizeDataType;
-        long payloadBytes = Math.max(sizeDest - headerBytes, 0);
         if (queue != null) {
-            HIPDriverAPI.hipCtxSetCurrent(queue.context());
+            check("hipCtxSetCurrent", HIPDriverAPI.hipCtxSetCurrent(queue.context()));
         }
-        int result = HIPDriverAPI.hipCtxSynchronize();
-        if (result != HIPDriverAPI.HIP_SUCCESS) {
-            return result;
-        }
-        result = HIPDriverAPI.hipMemcpyDtoD(destDevicePtr + headerBytes, srcDevicePtr + (offset * sizeDataType) + headerBytes, payloadBytes);
-        if (result != HIPDriverAPI.HIP_SUCCESS) {
-            return result;
-        }
-        result = HIPDriverAPI.hipCtxSynchronize();
-        if (result != HIPDriverAPI.HIP_SUCCESS) {
-            return result;
-        }
+        check("hipCtxSynchronize", HIPDriverAPI.hipCtxSynchronize());
+        check("hipMemcpyDtoD", HIPDriverAPI.hipMemcpyDtoD(destDevicePtr + headerBytes, srcDevicePtr + sourceOffset, payloadBytes));
+        check("hipCtxSynchronize", HIPDriverAPI.hipCtxSynchronize());
         return destDevicePtr;
+    }
+
+    private static void check(String call, int result) {
+        if (result != HIPDriverAPI.HIP_SUCCESS) {
+            throw new TornadoRuntimeException(HIPDriverAPI.describe(call, result));
+        }
     }
 }
