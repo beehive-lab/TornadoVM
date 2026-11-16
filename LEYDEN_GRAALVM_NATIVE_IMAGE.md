@@ -132,14 +132,17 @@ things on the default module path get in the way:
   cache refuses non-empty directories on them. `.` also makes the JVM treat any jar in the current
   directory as a module. If you run from a directory holding your application jar, that fails with
   `FindException: Unable to derive module descriptor`.
-- **The SDK's test and example modules.** `share/java/tornado` also holds `tornado-unittests` and
-  `tornado-examples`. `tornado.unittests` provides a `TornadoLibraryProvider`, so service binding
-  resolves it in every application, and with it the incubator module `jdk.incubator.vector` (the
-  `WARNING: Using incubator modules` line). With an incubator module in the boot layer, the JDK does
-  not store the module graph in an AOT cache: saxpy then starts in 558 ms from its cache instead
-  of 455 ms (JDK 25, CUDA).
+- **The SDK's test and example modules, in SDKs up to 8.1.0.** These SDKs keep
+  `tornado-unittests` and `tornado-examples` in `share/java/tornado`. `tornado.unittests` provides
+  a `TornadoLibraryProvider`, so service binding resolves it in every application, and with it the
+  incubator module `jdk.incubator.vector` (the `WARNING: Using incubator modules` line). With an
+  incubator module in the boot layer, the JDK does not store the module graph in an AOT cache:
+  saxpy then starts in 558 ms from its cache instead of 455 ms (JDK 25, CUDA). Later SDKs keep
+  both in `share/java/tornado-misc`, which `tornado` adds to the module path only for commands
+  that name them (`-m tornado.examples/...`, `-m tornado.unittests/...`, `tornado-test`).
 
-Point the argfile at a directory that holds every SDK module except those two:
+On an SDK up to 8.1.0, point the argfile at a directory that holds every SDK module except those
+two:
 
 ```bash
 mkdir -p ~/.tornado-app-modules

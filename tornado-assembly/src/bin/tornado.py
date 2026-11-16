@@ -60,6 +60,10 @@ __COMMON_EXPORTS__ = "/etc/exportLists/common-exports"
 __OPENCL_EXPORTS__ = "/etc/exportLists/opencl-exports"
 __METAL_EXPORTS__ = "/etc/exportLists/metal-exports"
 __CUDA_EXPORTS__ = "/etc/exportLists/cuda-exports"
+# Modules the SDK ships in share/java/tornado-misc instead of the runtime module path. Its directory joins
+# the module path only when the command names one of them (-m, --add-modules in --jvm).
+__MISC_DIR__ = "/share/java/tornado-misc"
+__MISC_MODULES_PATTERN__ = re.compile(r"(?<![\w.-])(tornado\.unittests|tornado\.examples|org\.junit\.platform\.console)(?=[/,\s\"']|$)")
 __TORNADOVM_ADD_MODULES__ = "--add-modules jdk.unsupported,java.management,java.logging,jdk.jfr,java.naming,jdk.management,tornado.runtime,tornado.drivers.common"
 __OPENCL_MODULE__ = "tornado.drivers.opencl"
 __METAL_MODULE__ = "tornado.drivers.metal"
@@ -959,6 +963,11 @@ class TornadoVMRunnerTool():
         self.printRelease()
         self.getInstalledBackends(True)
 
+    def usesMiscModules(self, args):
+        """Whether the command runs a test or example module, which are not on the runtime module path."""
+        named = " ".join(value for value in (args.module_application, args.jvm_options) if value)
+        return __MISC_MODULES_PATTERN__.search(named) is not None
+
     def buildTornadoVMOptions(self, args):
         tornadoFlags = ""
         if (args.debug):
@@ -1001,6 +1010,8 @@ class TornadoVMRunnerTool():
         else:
             # An AOT cache (--aotCache) accepts no non-empty directory on its paths, so "." is left out.
             tornadoFlags = tornadoFlags + " --module-path " + ("" if args.aot_cache != None else "." + os.pathsep) + self.sdk + "/share/java/tornado"
+            if self.usesMiscModules(args):
+                tornadoFlags = tornadoFlags + os.pathsep + self.sdk + __MISC_DIR__
             # The caller's --module-path EXTENDS the module path built above, and it may carry
             # further JVM options packed into the same argument (the TornadoVM-Ray-Tracer launcher
             # passes its whole JFLAGS this way), so nothing may be glued onto its tail.
