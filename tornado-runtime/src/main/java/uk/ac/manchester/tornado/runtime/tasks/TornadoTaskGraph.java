@@ -181,6 +181,12 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
      */
     private Set<Object> crossPlanObjects = Collections.newSetFromMap(Collections.synchronizedMap(new IdentityHashMap<>()));
     /**
+     * Objects whose device buffer this graph bound from a producer in another execution plan. The
+     * producer owns those buffers, so releasing this graph's resources detaches them instead of
+     * freeing them.
+     */
+    private final Set<Object> boundFromOtherPlans = Collections.newSetFromMap(Collections.synchronizedMap(new IdentityHashMap<>()));
+    /**
      * Held while the graph runs or frees its buffers, and by a graph of another plan while it
      * binds this graph's buffers, so it never sees a buffer half allocated or already released.
      */
@@ -855,6 +861,7 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
                     throw new TornadoRuntimeException("[ERROR] Task-graph " + taskGraphName + " consumes " + object + " from task-graph " + producer.taskGraphName
                             + " of another execution plan, which has no device buffer for it: the producer has to persist it, run at least once before, and stay open.");
                 }
+                boundFromOtherPlans.add(object);
             }
         }
         return !objects.isEmpty();
@@ -1769,6 +1776,13 @@ public class TornadoTaskGraph implements TornadoTaskGraphInterface {
 
     private void freeDeviceMemoryObject(Object object, Access access) {
         final LocalObjectState localState = executionContext.getLocalStateObject(object, access);
+        if (boundFromOtherPlans.contains(object)) {
+            // The producer's plan owns this buffer and may still use it: only drop the binding.
+            XPUDeviceBufferState deviceBufferState = localState.getDataObjectState().getDeviceBufferState(meta().getXPUDevice());
+            deviceBufferState.setLockBuffer(false);
+            deviceBufferState.setXPUBuffer(null);
+            return;
+        }
         releaseObjectFromDeviceMemory(localState, meta().getXPUDevice());
     }
 
