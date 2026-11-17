@@ -73,7 +73,7 @@ Every backend binds its native library through ``java.lang.foreign``, so these j
 
 - ``--enable-native-access=ALL-UNNAMED``, which silences the restricted-method warning.
 - ``--enable-preview``, for ``-jdk21`` artifacts only.
-- ``-Dtornado.enabled.backends=opencl`` (or ``metal``, ``cuda``), to pick a backend when several are on the classpath.
+- ``-Dtornado.enabled.backends=opencl`` (or ``metal``, ``cuda``, ``hip``), to pick a backend when several are on the classpath.
 
 Settings and code-cache dumps go to ``$TORNADOVM_HOME`` if it is set, otherwise to ``~/.tornadovm``. Override this with ``-Dtornado.home=<dir>``.
 

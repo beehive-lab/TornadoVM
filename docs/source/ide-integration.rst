@@ -195,7 +195,7 @@ To build TornadoVM for a different backend from IntelliJ, simply change the ``BA
 1. Go to **Run > Edit Configurations > Python > TornadoVM-Build**
 2. In the **Environment variables** section, modify the ``BACKEND`` value:
 
-   - Single backend: ``opencl`` or ``cuda``
+   - Single backend: ``opencl``, ``cuda``, ``metal`` or ``hip``
    - Two backends: ``opencl,cuda`` (comma-separated)
    - All backends (full): ``opencl,cuda, metal``
 

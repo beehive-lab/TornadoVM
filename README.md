@@ -5,7 +5,7 @@
 
 ## Write Java. Run on GPUs. Fast.
 
-TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, AMD, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
+TornadoVM is a GPU programming framework for Java that works with JDK 21+ (currently JDK 21-27). It JIT-compiles Java bytecode into **NVIDIA CUDA, AMD HIP, OpenCL C, and Apple Metal (MSL)** at runtime, so your existing Java code runs on **NVIDIA GPUs (via CUDA)**, **AMD GPUs (via HIP, experimental)**, Intel, and Apple Silicon GPUs, integrated GPUs, and multi-core CPUs. 
 
 On NVIDIA hardware it goes further: beyond generating CUDA, TornadoVM now calls straight into the **NVIDIA library ecosystem (cuBLAS, cuFFT, cuDNN, cuDF) and exposes Tensor Core `mma.sync` instructions from pure Java**. No CUDA C. No JNI bindings to maintain. No native toolchain in your application. In addition, it has support for Tile Programming [cuTile](https://developer.nvidia.com/cuda/tile) via its **TileContext API**.
 
@@ -283,7 +283,7 @@ Maven Central coordinates are per-JDK — pin the `-jdk21` / `-jdk22plus` versio
 
 - `--enable-native-access=ALL-UNNAMED`: silences the restricted-method warning.
 - `--enable-preview`: `-jdk21` artifacts only.
-- `-Dtornado.enabled.backends=opencl|metal|cuda`: picks a backend when several are on the classpath.
+- `-Dtornado.enabled.backends=opencl|metal|cuda|hip`: picks a backend when several are on the classpath.
 
 Settings and code-cache dumps go to `$TORNADOVM_HOME` if set, otherwise `~/.tornadovm` (override with `-Dtornado.home=...`).
 
