@@ -67,7 +67,7 @@ e.g. Python, R, Ruby, Javascript, Node.js, use TornadoVM <= 5.2.0).
 5. Is TornadoVM a Domain Specific Language (DSL)?
 --------------------------------------------------------------
 
-No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA CUDA C, and Apple Metal.
+No, TornadoVM is not a DSL. It compiles a subset of Java code to OpenCL C, NVIDIA CUDA C, AMD HIP C++, and Apple Metal.
 
 To express parallelism, TornadoVM offers three APIs: the :ref:`Loop Parallel API <loop-parallel-api>` (``@Parallel`` and ``@Reduce`` annotations), the lower-level :ref:`KernelContext API <kernel-context-api>` (``KernelContext``, for explicit control over thread IDs, local memory and barriers), and the :ref:`TileContext API <tile-context-api>` (``TileContext``, NVIDIA CUDA backend only, where a tile of a tensor rather than a thread is the unit of work). In addition, TornadoVM offers an API to:
 
@@ -90,7 +90,7 @@ With **Dynamic Reconfiguration** opted into (see :ref:`dynamic_reconfiguration`)
 ----------------------------------------------
 
 No. Currently, TornadoVM supports multiple compiler backends and therefore, it is able to generate OpenCL C, CUDA C
-(compiled to PTX via NVRTC), and Metal code depending on the hardware configuration.
+(compiled to PTX via NVRTC), HIP C++ (compiled with hipRTC), and Metal code depending on the hardware configuration.
 
 9. Why is it called a VM?
 --------------------------
@@ -106,7 +106,7 @@ You can find more information here: `https://dl.acm.org/doi/10.1145/3313808.3313
 --------------------------------------
 
 TornadoVM runs on a standard JDK as a set of Java modules and uses no JDK-internal interfaces.
-At run time its own compiler, TC, reads the bytecode of the task methods and generates OpenCL C, NVIDIA CUDA C and Apple Metal source, which the device driver compiles.
+At run time its own compiler, TC, reads the bytecode of the task methods and generates OpenCL C, NVIDIA CUDA C, AMD HIP C++ and Apple Metal source, which the device driver compiles.
 
 11.  How do I know which parts of my application are suitable for acceleration?
 -------------------------------------------------------------------------------

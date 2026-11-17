@@ -98,7 +98,7 @@ Performance & Scheduling
    ``-Ds0.t0.local.workgroup.size=X,Y,Z``                            Sets custom local workgroup size.
    ``-Dtornado.concurrent.devices=true``                             Enables concurrent execution across devices (default: false).
    ``-Dtornado.backend=N`` / ``-Dtornado.device=N``                  Sets the default backend/device index used when none is explicitly selected (default: 0 for both).
-   ``-Dtornado.{opencl,cuda,metal}.priority=X``                      Sets backend priority; higher wins when multiple backends can run a task (default: OpenCL=10, CUDA=0, Metal=0).
+   ``-Dtornado.{opencl,cuda,metal,hip}.priority=X``                  Sets backend priority; higher wins when multiple backends can run a task (default: OpenCL=10, CUDA=0, Metal=0, HIP=0).
    ``-Dtornado.opencl.compiler.flags=FLAGS``                         OpenCL build options for every kernel (default: ``-cl-mad-enable -cl-fast-relaxed-math -w``). A plan's ``withCompilerFlags(...)`` is added to these on every backend: an option given there replaces a default of the same name, every other default is kept. To build without one of the defaults, change this property.
    ``-Dtornado.reuse.device.buffers=false``                          Disables reusing device buffers across executions of the same task-graph (default: true).
    ``-Dtornado.deallocate.buffers=false``                            Disables freeing device resources when the execution plan closes (default: true).
@@ -147,6 +147,27 @@ TornadoVM's **CUDA C** backend targets NVIDIA GPUs: it emits CUDA C, compiled to
 .. note::
 
    The CUDA C backend's code cache is controlled by properties that still carry the ``opencl`` prefix — inherited unchanged from the OpenCL backend's code cache implementation, and not (yet) renamed for CUDA. They apply to **both** backends: ``-Dtornado.opencl.codecache.enable=true``, ``-Dtornado.opencl.codecache.dump=true``, ``-Dtornado.opencl.source.dump=true``, ``-Dtornado.opencl.codecache.dir=PATH`` (default: ``/var/opencl-codecache``), ``-Dtornado.opencl.source.dir=PATH`` (default: ``/var/opencl-compiler``), ``-Dtornado.opencl.log.dir=PATH`` (default: ``/var/opencl-logs``).
+
+HIP Specific
+------------
+
+The HIP backend is experimental. It runs on AMD GPUs through ROCm 10.1 or newer and is built with ``make BACKEND=hip``.
+
+**JVM Flags**
+
+.. table::
+   :align: left
+
+   ================================================================  ==================================================================================================================
+   Flag                                                              Description
+   ================================================================  ==================================================================================================================
+   ``-Dtornado.hip.compiler.flags=FLAGS``                            Passes additional whitespace-separated options to hipRTC for every kernel (default: none).
+   ``-Dtornado.hip.sched=MODE``                                      How a host thread waits for the device: ``yield``, ``spin``, ``blocking`` or ``auto`` (default: ``yield``). ``yield`` and ``spin`` keep a core busy while the device works; ``blocking`` sleeps until the device signals, which frees the host when many streams wait at once.
+   ``-Dtornado.hip.host.pinning=false``                              Disables pinning host memory for faster host↔device transfers (default: true). Only the buffers a task-graph transfers on every execution are pinned.
+   ``-Dtornado.hip.host.pinning.all=true``                           Pins the host memory of every device buffer, including one-shot uploads and buffers that are never transferred (default: false).
+   ``-Dtornado.hip.codecache.enable=false``                          Disables the on-disk cache of compiled kernels, so every run compiles each kernel with hipRTC again (default: true).
+   ``-Dtornado.hip.codecache.dir=PATH``                              Directory of the on-disk kernel cache (default: ``/var/hip-codecache``).
+   ================================================================  ==================================================================================================================
 
 Metal Specific
 --------------
