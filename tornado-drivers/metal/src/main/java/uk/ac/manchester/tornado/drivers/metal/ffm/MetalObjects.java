@@ -1052,6 +1052,32 @@ public final class MetalObjects {
 
     // ------------------------------------------------------------------ queue lifecycle
 
+    /**
+     * Commits the queue's open command buffer and returns the value its shared event reaches once
+     * everything encoded on the queue so far has finished, or 0 when nothing was encoded on it.
+     */
+    public static long markFence(long queue) {
+        QueueEvent queueEvent = QUEUE_EVENTS.get(queue);
+        if (queueEvent == null) {
+            return 0;
+        }
+        synchronized (queueEvent) {
+            commitOpenBatch(queueEvent);
+            return queueEvent.value;
+        }
+    }
+
+    /** Returns once the queue's shared event has reached a value from {@link #markFence}. */
+    public static void awaitFence(long queue, long value) {
+        if (value == 0) {
+            return;
+        }
+        QueueEvent queueEvent = QUEUE_EVENTS.get(queue);
+        if (queueEvent != null) {
+            waitForValue(queueEvent, value);
+        }
+    }
+
     /** Commits the queue's open command buffer without waiting for it. */
     public static void flush(long queue) {
         QueueEvent queueEvent = QUEUE_EVENTS.get(queue);

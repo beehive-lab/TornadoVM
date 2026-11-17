@@ -1074,6 +1074,48 @@ public class CUDACommandQueue extends CommandQueue {
         return enqueueMarker(null);
     }
 
+    /**
+     * Records an event after everything enqueued on this queue so far. The caller owns the handle
+     * and gives it back with {@link #releaseFenceEvent}; it is not registered in any event pool,
+     * so it stays valid for other queues to wait on.
+     */
+    long recordFenceEvent() {
+        try {
+            return clEnqueueMarkerWithWaitList(commandQueuePtr, null);
+        } catch (CUDAException e) {
+            throw new TornadoBailoutRuntimeException(e.getMessage());
+        }
+    }
+
+    /** Makes later work on this queue wait, on the device, for an event recorded on any queue. */
+    void waitForFenceEvent(long handle) {
+        try {
+            clEnqueueWaitForEvents(commandQueuePtr, new long[] { 1, handle });
+        } catch (CUDAException e) {
+            throw new TornadoBailoutRuntimeException(e.getMessage());
+        }
+    }
+
+    /** Blocks the calling thread until the event recorded by {@link #recordFenceEvent} has completed. */
+    static void awaitFenceEvent(long handle) {
+        CUDAHandles.Event event = CUDAHandles.resolve(handle, CUDAHandles.Event.class);
+        if (event == null) {
+            return;
+        }
+        int result = CUDADriverAPI.cuEventSynchronize(event.event());
+        if (result != CUDADriverAPI.CUDA_SUCCESS) {
+            throw new TornadoBailoutRuntimeException(CUDADriverAPI.describe("cuEventSynchronize", result));
+        }
+    }
+
+    /**
+     * Releases an event recorded by {@link #recordFenceEvent}. Waits already enqueued on it are not
+     * affected: the driver frees the event once it has completed.
+     */
+    static void releaseFenceEvent(long handle) {
+        discardEvent(handle);
+    }
+
     public void cleanup() {
         try {
             clReleaseCommandQueue(commandQueuePtr);

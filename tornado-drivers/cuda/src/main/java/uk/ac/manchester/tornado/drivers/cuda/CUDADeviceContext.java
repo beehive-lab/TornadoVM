@@ -227,6 +227,31 @@ public class CUDADeviceContext implements CUDADeviceContextInterface {
         return (commandQueue.getOpenclVersion() < 120) ? -1 : eventPool.registerEvent(oclEvent, EventDescriptor.DESC_SYNC_BARRIER, commandQueue);
     }
 
+    /**
+     * Records a fence after the work the calling thread has enqueued for the plan, including the
+     * work on its secondary queues, which are joined into the default queue first.
+     */
+    public long recordFence(long executionPlanId) {
+        CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);
+        joinRoleQueues(executionPlanId, commandQueue);
+        return commandQueue.recordFenceEvent();
+    }
+
+    /** Makes the plan's default queue wait, on the device, for a fence of any plan. */
+    public void waitFence(long executionPlanId, long fence) {
+        getCommandQueue(executionPlanId).waitForFenceEvent(fence);
+    }
+
+    /** Blocks the calling thread until a fence recorded by {@link #recordFence} has completed. */
+    public static void awaitFence(long fence) {
+        CUDACommandQueue.awaitFenceEvent(fence);
+    }
+
+    /** Releases a fence recorded by {@link #recordFence}. */
+    public static void releaseFence(long fence) {
+        CUDACommandQueue.releaseFenceEvent(fence);
+    }
+
     @Override
     public int enqueueMarker(long executionPlanId) {
         CUDACommandQueue commandQueue = getCommandQueue(executionPlanId);

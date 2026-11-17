@@ -671,6 +671,28 @@ public class MetalTornadoDevice implements TornadoXPUDevice, TornadoNativeStream
     }
 
     @Override
+    public Object recordFence(long executionPlanId) {
+        if (getDeviceContext() instanceof MetalDeviceContext context) {
+            return context.recordFence(executionPlanId);
+        }
+        return TornadoXPUDevice.super.recordFence(executionPlanId);
+    }
+
+    @Override
+    public void waitFence(long executionPlanId, Object fence) {
+        // Command buffers of two queues are not ordered, and this backend encodes no event waits:
+        // the host waits, as it already does for a buffer bound by work pending on another queue.
+        awaitFence(fence);
+    }
+
+    @Override
+    public void awaitFence(Object fence) {
+        if (fence instanceof MetalDeviceContext.Fence metalFence) {
+            MetalDeviceContext.awaitFence(metalFence);
+        }
+    }
+
+    @Override
     public int enqueueMarker(long executionPlanId) {
         return getDeviceContext().enqueueMarker(executionPlanId);
     }

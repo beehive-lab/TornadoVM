@@ -644,6 +644,8 @@ public interface TaskGraphInterface {
 
     TaskGraph consumeFromDevice(Object... objects);
 
+    TaskGraph consumeFromDevice(ImmutableTaskGraph producer, Object... objects);
+
     TaskGraph consumeFromUnifiedMemory(Object... objects);
 
     /**
