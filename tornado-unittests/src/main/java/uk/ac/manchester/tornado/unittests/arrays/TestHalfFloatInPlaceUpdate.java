@@ -123,8 +123,8 @@ public class TestHalfFloatInPlaceUpdate extends TornadoTestBase {
      */
     private void assumeCudaBackend() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "Writing an inline new HalfFloat(...) is implemented for the CUDA backend (default device is " + backendType + ")";
+        if (backendType != TornadoVMBackendType.CUDA && backendType != TornadoVMBackendType.HIP) {
+            String message = "Writing an inline new HalfFloat(...) is implemented for the CUDA and HIP backends (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

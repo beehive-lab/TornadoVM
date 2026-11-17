@@ -46,7 +46,9 @@ import uk.ac.manchester.tornado.cublas.CuBlasOptions;
 import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cublas.provider.CuBlasLibraryProvider;
+import uk.ac.manchester.tornado.cublas.provider.HipBlasLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Unit tests for cuBLAS library tasks (hybrid API). Skipped (JUnit assumption)
@@ -66,7 +68,7 @@ public class TestCuBlas extends TornadoTestBase {
     private static final Random random = new Random(42);
 
     /**
-     * cuBLAS library tasks require the CUDA backend and libtornado-cublas.
+     * cuBLAS library tasks require the CUDA backend and cuBLAS, or the HIP backend and hipBLAS.
      * Following the test-infra convention, unavailable configurations throw the
      * typed *NotSupported exceptions that the TornadoTestRunner counts as
      * [UNSUPPORTED] (a JUnit Assume would be silently reported as PASS).
@@ -74,8 +76,14 @@ public class TestCuBlas extends TornadoTestBase {
     @BeforeEach
     public void cuBlasMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!HipBlasLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("hipBLAS is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuBLAS library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "cuBLAS library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

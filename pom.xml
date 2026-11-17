@@ -133,6 +133,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/hip-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -402,6 +403,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/hip-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
@@ -470,6 +472,7 @@
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/opencl-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/metal-exports</arg>
                                 <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/cuda-exports</arg>
+                                <arg>@${user.dir}/tornado-assembly/src/etc/exportLists/hip-exports</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>

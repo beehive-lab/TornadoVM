@@ -1,0 +1,88 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.enums;
+
+import uk.ac.manchester.tornado.api.enums.TornadoExecutionStatus;
+
+public enum HIPCommandExecutionStatus {
+
+    // @formatter:off
+	 CL_UNKNOWN (0x4),
+	 CL_COMPLETE(0x0),
+	 CL_RUNNING (0x1),
+	 CL_SUBMITTED (0x2),
+	 CL_QUEUED (0x3),
+	 CL_ERROR (-1);
+    // @formatter:on
+
+    private final int value;
+
+    HIPCommandExecutionStatus(final int v) {
+        value = v;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public static HIPCommandExecutionStatus createHIPCommandExecutionStatus(final int v) {
+        HIPCommandExecutionStatus result;
+        switch (v) {
+            case 0:
+                result = HIPCommandExecutionStatus.CL_COMPLETE;
+                break;
+            case 1:
+                result = HIPCommandExecutionStatus.CL_RUNNING;
+                break;
+            case 2:
+                result = HIPCommandExecutionStatus.CL_SUBMITTED;
+                break;
+            case 3:
+                result = HIPCommandExecutionStatus.CL_QUEUED;
+                break;
+            default:
+                result = HIPCommandExecutionStatus.CL_ERROR;
+        }
+        return result;
+    }
+
+    public TornadoExecutionStatus toTornadoExecutionStatus() {
+        TornadoExecutionStatus result = TornadoExecutionStatus.UNKNOWN;
+        switch (this) {
+            case CL_COMPLETE:
+                result = TornadoExecutionStatus.COMPLETE;
+                break;
+            case CL_QUEUED:
+                result = TornadoExecutionStatus.QUEUED;
+                break;
+            case CL_RUNNING:
+                result = TornadoExecutionStatus.RUNNING;
+                break;
+            case CL_SUBMITTED:
+                result = TornadoExecutionStatus.SUBMITTED;
+                break;
+            default:
+                result = TornadoExecutionStatus.ERROR;
+                break;
+        }
+        return result;
+    }
+}

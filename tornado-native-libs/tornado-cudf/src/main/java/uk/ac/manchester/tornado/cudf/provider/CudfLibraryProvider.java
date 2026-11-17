@@ -28,7 +28,8 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
 
 /**
  * {@link TornadoLibraryProvider} for RAPIDS cuDF: sort, grouped aggregation, running sum and inner
- * join, each running on the task graph's own stream.
+ * join, each running on the task graph's own stream. On AMD GPUs the same shim is built against
+ * hipDF and runs on HIP devices.
  *
  * <p>
  * There is no handle to create and no workspace to size, which is the difference from cuSPARSE:
@@ -59,10 +60,17 @@ public final class CudfLibraryProvider implements TornadoLibraryProvider {
         return Cudf.LIBRARY_NAME;
     }
 
+    /** Whether the shim is the hipDF build, whose tasks run on HIP devices rather than CUDA ones. */
+    public static boolean isHipdf() {
+        return CudfNativeLib.isHipdf();
+    }
+
     @Override
     public boolean canHandle(TornadoXPUDevice device) {
-        // CUDA devices only: the Metal backend also implements TornadoNativeStreamSupport
-        return device.getTornadoVMBackend() == TornadoVMBackendType.CUDA && device instanceof TornadoNativeStreamSupport && CudfNativeLib.isAvailable();
+        // CUDA devices, or HIP devices with the hipDF build: the Metal backend also implements
+        // TornadoNativeStreamSupport
+        TornadoVMBackendType backend = CudfNativeLib.isHipdf() ? TornadoVMBackendType.HIP : TornadoVMBackendType.CUDA;
+        return device.getTornadoVMBackend() == backend && device instanceof TornadoNativeStreamSupport && CudfNativeLib.isAvailable();
     }
 
     @Override

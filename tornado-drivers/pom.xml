@@ -51,6 +51,16 @@
                 <module>cuda</module>
             </modules>
         </profile>
+
+        <profile>
+            <id>hip-backend</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <modules>
+                <module>hip</module>
+            </modules>
+        </profile>
     </profiles>
 
     <dependencies>

@@ -31,6 +31,7 @@ import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntimeProvider;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 
 /**
  * Example using the Prebuilt API of TornadoVM.
@@ -68,7 +69,10 @@ public class ArrayAddIntPrebuilt {
 
         TornadoDevice device = TornadoRuntimeProvider.getTornadoRuntime().getDefaultDevice();
         String filePath = tornadoSDK + "/examples/generated/";
-        filePath += device.getPlatformName().contains("CUDA") ? "add.cu" : "add.cl";
+        String platform = device.getPlatformName();
+        // The prebuilt kernels hard-code the array header size: 16 bytes with compressed oops, 24 without.
+        filePath += TornadoNativeArray.ARRAY_HEADER == 16 ? "add" : "add_uncompressed";
+        filePath += platform.contains("CUDA") ? ".cu" : platform.contains("HIP") ? ".hip" : ".cl";
 
         AccessorParameters accessorParameters = new AccessorParameters(3);
         accessorParameters.set(0, a, Access.READ_ONLY);

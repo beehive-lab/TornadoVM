@@ -68,6 +68,7 @@ final class BackendChecks {
             case CUDA -> ".cu";
             case OPENCL -> ".cl";
             case METAL -> ".metal";
+            case HIP -> ".hip";
         };
         var file = Files.createTempFile("tornado-selftest-" + name + "-", extension);
         file.toFile().deleteOnExit();

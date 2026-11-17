@@ -31,13 +31,16 @@ import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.util.List;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.cuvs.CuVSAllNeighborsOptions;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
+import uk.ac.manchester.tornado.runtime.ffm.ROCmLibraries;
 
 /**
- * Panama FFM bindings to the cuVS C API ({@code libcuvs_c}), and the DLPack tensors it takes.
+ * Panama FFM bindings to the cuVS C API ({@code libcuvs_c}), and the DLPack tensors it takes. On AMD GPUs the same
+ * API comes from hipVS, AMD's HIP port of cuVS, whose C library has the same name.
  *
  * <p>Written against the cuVS 26.08 C headers. The resources, brute-force, all-neighbors and k-means entry points
  * used here are opaque-handle functions; the only struct fields written directly are {@code n_clusters},
@@ -51,8 +54,16 @@ final class CuVSNativeLib {
 
     private static final SymbolLookup LIBCUVS = FFMSupport.loadLibrary("libcuvs_c.so", "libcuvs_c.so.26", "cuvs_c.dll");
 
+    /**
+     * Whether the library is hipVS, whose tasks run on HIP devices: {@code -Dtornado.cuvs.library=hipvs|cuvs}, else
+     * whether the libcuvs_c that loaded runs on the HIP runtime. cuVS and hipVS have the same library name, so a
+     * process holds one of them, and the provider handles devices of its backend only.
+     */
+    private static final boolean HIPVS = useHipvs();
+
     // DLPack (dlpack.h): device types, data type codes and the DLManagedTensor layout
     static final int DL_CPU = 1;
+    /** hipVS takes device tensors as {@code kDLCUDA} too: it refuses {@code kDLROCM} ones. */
     static final int DL_CUDA = 2;
     static final byte DL_INT = 0;
     static final byte DL_UINT = 1;
@@ -113,6 +124,31 @@ final class CuVSNativeLib {
     private static final MethodHandle KMEANS_FIT;
     private static final MethodHandle KMEANS_PREDICT;
 
+    /**
+     * hipVS builds an all-neighbors graph of a host dataset into device outputs only, so the host path stages them
+     * through device memory (cuVS also takes host outputs): RMM memory from the resources, a stream sync, and a copy
+     * back with the HIP runtime.
+     */
+    private static final MethodHandle RMM_ALLOC;
+    private static final MethodHandle RMM_FREE;
+    private static final MethodHandle STREAM_SYNC;
+    private static final MethodHandle HIP_MEMCPY;
+
+    static {
+        if (LIBCUVS == null || !HIPVS) {
+            RMM_ALLOC = null;
+            RMM_FREE = null;
+            STREAM_SYNC = null;
+            HIP_MEMCPY = null;
+        } else {
+            RMM_ALLOC = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_LONG, C_POINTER, C_LONG), "cuvsRMMAlloc");
+            RMM_FREE = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG), "cuvsRMMFree");
+            STREAM_SYNC = FFMSupport.downcall(LIBCUVS, FunctionDescriptor.of(C_INT, C_LONG), "cuvsStreamSync");
+            SymbolLookup hip = ROCmLibraries.load(List.of("libamdhip64.so.7", "libamdhip64.so.6", "libamdhip64.so"), List.of("amdhip64_7.dll", "amdhip64_6.dll"));
+            HIP_MEMCPY = hip == null ? null : FFMSupport.downcall(hip, FunctionDescriptor.of(C_INT, C_POINTER, C_LONG, C_LONG, C_INT), "hipMemcpy");
+        }
+    }
+
     static {
         if (LIBCUVS == null) {
             RESOURCES_CREATE = null;
@@ -162,8 +198,25 @@ final class CuVSNativeLib {
     private CuVSNativeLib() {
     }
 
+    private static boolean useHipvs() {
+        String library = System.getProperty("tornado.cuvs.library", "");
+        if (!library.isBlank()) {
+            return library.trim().equalsIgnoreCase("hipvs");
+        }
+        // the lookup also searches the libraries libcuvs_c depends on
+        return LIBCUVS != null && FFMSupport.findSymbol(LIBCUVS, "hipGetDevice") != null;
+    }
+
+    /** Whether the library is hipVS, whose tasks run on HIP devices. */
+    static boolean isHipvs() {
+        return HIPVS;
+    }
+
     /** Throws if the cuVS C library could not be loaded. */
     static synchronized void load() {
+        if ((LIBCUVS == null || RESOURCES_CREATE == null) && HIPVS) {
+            throw new TornadoRuntimeException("[ERROR] Unable to load hipVS. Install the hipVS C library (the amd-libhipvs wheel) and put libcuvs_c.so on the library path.");
+        }
         if (LIBCUVS == null || RESOURCES_CREATE == null) {
             throw new TornadoRuntimeException("[ERROR] Unable to load cuVS. Install the cuVS C library (e.g. pip install libcuvs-cu12) and put libcuvs_c.so on the library path.");
         }
@@ -289,15 +342,61 @@ final class CuVSNativeLib {
         long res = resourcesCreate();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment data = hostTensor(arena, dataset, DL_FLOAT, 32, rows, dim);
-            MemorySegment ids = hostTensor(arena, neighbors, DL_INT, 64, rows, k);
-            MemorySegment dist = hostTensor(arena, distances, DL_FLOAT, 32, rows, k);
             long clusters = options != null && options.getClusters() > 0 ? options.getClusters() : 1L;
             long overlap = options != null && options.getOverlapFactor() > 0 ? options.getOverlapFactor() : 1L;
-            allNeighbors(res, data, algo, metric, k, ids, dist, options, clusters, overlap);
+            if (HIPVS) {
+                allNeighborsOnHostStaged(arena, res, data, rows, algo, metric, k, neighbors, distances, options, clusters, overlap);
+            } else {
+                MemorySegment ids = hostTensor(arena, neighbors, DL_INT, 64, rows, k);
+                MemorySegment dist = hostTensor(arena, distances, DL_FLOAT, 32, rows, k);
+                allNeighbors(res, data, algo, metric, k, ids, dist, options, clusters, overlap);
+            }
         } finally {
             resourcesDestroy(res);
         }
     }
+
+    private static void allNeighborsOnHostStaged(Arena arena, long res, MemorySegment data, long rows, int algo, int metric, long k, MemorySegment neighbors,
+            MemorySegment distances, CuVSAllNeighborsOptions options, long clusters, long overlap) {
+        if (HIP_MEMCPY == null) {
+            throw new TornadoRuntimeException("[ERROR] cuvsAllNeighborsBuild on hipVS: the HIP runtime could not be loaded");
+        }
+        long idsBytes = rows * k * Long.BYTES;
+        long distBytes = rows * k * Float.BYTES;
+        long ids = 0;
+        long dist = 0;
+        try {
+            MemorySegment out = arena.allocate(C_LONG);
+            check((int) RMM_ALLOC.invokeExact(res, out, idsBytes), "cuvsRMMAlloc");
+            ids = out.get(C_LONG, 0);
+            check((int) RMM_ALLOC.invokeExact(res, out, distBytes), "cuvsRMMAlloc");
+            dist = out.get(C_LONG, 0);
+            int device = deviceId(res);
+            allNeighbors(res, data, algo, metric, k, deviceTensor(arena, ids, device, DL_INT, 64, rows, k), deviceTensor(arena, dist, device, DL_FLOAT, 32, rows, k), options,
+                    clusters, overlap);
+            check((int) STREAM_SYNC.invokeExact(res), "cuvsStreamSync");
+            if ((int) HIP_MEMCPY.invokeExact(neighbors, ids, idsBytes, HIP_MEMCPY_DEVICE_TO_HOST) != 0
+                    || (int) HIP_MEMCPY.invokeExact(distances, dist, distBytes, HIP_MEMCPY_DEVICE_TO_HOST) != 0) {
+                throw new TornadoRuntimeException("[ERROR] cuvsAllNeighborsBuild on hipVS: copying the graph to the host failed");
+            }
+        } catch (Throwable t) {
+            throw rethrow(t);
+        } finally {
+            try {
+                if (dist != 0) {
+                    int ignored = (int) RMM_FREE.invokeExact(res, dist, distBytes);
+                }
+                if (ids != 0) {
+                    int ignored = (int) RMM_FREE.invokeExact(res, ids, idsBytes);
+                }
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
+        }
+    }
+
+    /** {@code hipMemcpyDeviceToHost}. */
+    private static final int HIP_MEMCPY_DEVICE_TO_HOST = 2;
 
     private static void allNeighbors(long res, MemorySegment dataset, int algo, int metric, long k, MemorySegment neighbors, MemorySegment distances, CuVSAllNeighborsOptions options,
             long clusters, long overlap) {

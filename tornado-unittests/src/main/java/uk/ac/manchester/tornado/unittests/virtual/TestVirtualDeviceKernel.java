@@ -120,6 +120,7 @@ public class TestVirtualDeviceKernel extends TornadoTestBase {
     public void testVirtualDeviceKernel() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.METAL);
         assertNotBackend(TornadoVMBackendType.CUDA);
+        assertNotBackend(TornadoVMBackendType.HIP);
 
         boolean coops = TornadoNativeArray.ARRAY_HEADER == 16;
         String kernelFile = coops ? "virtualDeviceKernelGPU.cl" : "virtualDeviceKernelGPU_uncompressed.cl";

@@ -48,6 +48,8 @@ public final class NcclCommunicator implements AutoCloseable {
     private static final Map<Long, NcclCommunicator> COMMUNICATORS = new ConcurrentHashMap<>();
 
     private final long handle;
+    /** NCCL, or RCCL for HIP devices. */
+    private final NcclNativeLib lib;
     /** CUDA runtime ordinal, {@code ncclComm_t} and global rank of each of this process's ranks. */
     private final int[] ordinals;
     private final long[] comms;
@@ -63,8 +65,9 @@ public final class NcclCommunicator implements AutoCloseable {
      */
     private static final ThreadLocal<Set<NcclCommunicator>> USED_ON_THIS_THREAD = new ThreadLocal<>();
 
-    private NcclCommunicator(int[] ordinals, long[] comms, int[] ranks, int size) {
+    private NcclCommunicator(NcclNativeLib lib, int[] ordinals, long[] comms, int[] ranks, int size) {
         this.handle = NEXT_HANDLE.getAndIncrement();
+        this.lib = lib;
         this.ordinals = ordinals;
         this.comms = comms;
         this.ranks = ranks;
@@ -79,11 +82,12 @@ public final class NcclCommunicator implements AutoCloseable {
         if (devices == null || devices.length == 0) {
             throw new TornadoRuntimeException("[ERROR] An NCCL communicator needs at least one device");
         }
-        NcclNativeLib.load();
+        NcclNativeLib lib = bindings(devices);
+        lib.load();
         int[] ordinals = distinctOrdinals(devices);
         int[] ranks = new int[devices.length];
         Arrays.setAll(ranks, i -> i);
-        return register(new NcclCommunicator(ordinals, NcclNativeLib.commInitAll(ordinals), ranks, devices.length));
+        return register(new NcclCommunicator(lib, ordinals, lib.commInitAll(ordinals), ranks, devices.length));
     }
 
     /**
@@ -103,7 +107,8 @@ public final class NcclCommunicator implements AutoCloseable {
         if (worldSize < 1 || firstRank < 0 || firstRank + devices.length > worldSize) {
             throw new TornadoRuntimeException("[ERROR] Ranks " + firstRank + " to " + (firstRank + devices.length - 1) + " do not fit a communicator of " + worldSize + " ranks");
         }
-        NcclNativeLib.load();
+        NcclNativeLib lib = bindings(devices);
+        lib.load();
         int[] ordinals = distinctOrdinals(devices);
         int[] ranks = new int[devices.length];
         long[] comms = new long[devices.length];
@@ -111,25 +116,36 @@ public final class NcclCommunicator implements AutoCloseable {
             ranks[0] = firstRank;
             // ncclCommInitRank works on the CUDA device current on the calling thread.
             cudaOrdinal(devices[0]);
-            comms[0] = NcclNativeLib.commInitRank(worldSize, id.bytes(), firstRank);
+            comms[0] = lib.commInitRank(worldSize, id.bytes(), firstRank);
         } else {
-            NcclNativeLib.groupStart();
+            lib.groupStart();
             try {
                 for (int i = 0; i < devices.length; i++) {
                     ranks[i] = firstRank + i;
                     cudaOrdinal(devices[i]);
-                    comms[i] = NcclNativeLib.commInitRank(worldSize, id.bytes(), firstRank + i);
+                    comms[i] = lib.commInitRank(worldSize, id.bytes(), firstRank + i);
                 }
             } finally {
-                NcclNativeLib.groupEnd();
+                lib.groupEnd();
             }
         }
-        return register(new NcclCommunicator(ordinals, comms, ranks, worldSize));
+        return register(new NcclCommunicator(lib, ordinals, comms, ranks, worldSize));
     }
 
     private static NcclCommunicator register(NcclCommunicator communicator) {
         COMMUNICATORS.put(communicator.handle, communicator);
         return communicator;
+    }
+
+    /** The library of the devices' backend (NCCL, or RCCL for HIP devices), which must be the same for all of them. */
+    static NcclNativeLib bindings(TornadoDevice[] devices) {
+        NcclNativeLib lib = NcclNativeLib.forBackend(devices[0].getTornadoVMBackend());
+        for (TornadoDevice device : devices) {
+            if (NcclNativeLib.forBackend(device.getTornadoVMBackend()) != lib) {
+                throw new TornadoRuntimeException("[ERROR] NCCL ranks must all be on devices of one backend: " + devices[0] + " and " + device + " are not");
+            }
+        }
+        return lib;
     }
 
     /** The CUDA ordinals of the devices, which must all be different. */
@@ -155,7 +171,7 @@ public final class NcclCommunicator implements AutoCloseable {
             throw new TornadoRuntimeException("[ERROR] NCCL needs CUDA devices; " + device + " is not one");
         }
         nativeDevice.makeNativeContextCurrent();
-        return NcclNativeLib.currentDeviceOrdinal();
+        return NcclNativeLib.forBackend(device.getTornadoVMBackend()).currentDeviceOrdinal();
     }
 
     /** The value task graphs use to refer to this communicator. */
@@ -228,7 +244,7 @@ public final class NcclCommunicator implements AutoCloseable {
             return; // ncclCommAbort has already freed the communicators
         }
         for (long comm : comms) {
-            NcclNativeLib.commDestroy(comm);
+            lib.commDestroy(comm);
         }
     }
 
@@ -254,7 +270,7 @@ public final class NcclCommunicator implements AutoCloseable {
         Thread aborter = new Thread(() -> {
             for (long comm : comms) {
                 try {
-                    NcclNativeLib.commAbort(comm);
+                    lib.commAbort(comm);
                 } catch (RuntimeException e) {
                     // Keep aborting the other ranks: a rank left running would keep its peers waiting.
                 }

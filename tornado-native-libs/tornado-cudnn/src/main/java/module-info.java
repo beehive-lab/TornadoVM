@@ -7,5 +7,6 @@ open module tornado.cudnn {
     exports uk.ac.manchester.tornado.cudnn.tests;
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //
-            uk.ac.manchester.tornado.cudnn.provider.CuDnnLibraryProvider;
+            uk.ac.manchester.tornado.cudnn.provider.CuDnnLibraryProvider, //
+            uk.ac.manchester.tornado.cudnn.provider.MIOpenLibraryProvider;
 }

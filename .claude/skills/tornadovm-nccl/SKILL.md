@@ -92,7 +92,8 @@ Types: `FloatArray`, `DoubleArray`, `HalfFloatArray`, `BFloat16Array`, `IntArray
 - **Hang without failure** (unmatched send/recv): `withStepTimeout(Duration)` aborts the step and
   throws, naming the unfinished ranks.
 - **Several processes:**
-  - Rank 0 runs `NcclUniqueId.create()` and publishes `toBase64()`.
+  - Rank 0 runs `NcclUniqueId.create(gpu)` and publishes `toBase64()`. `create()` without a device
+    starts no backend and takes NCCL when it loads, else RCCL (`-Dtornado.nccl.library` overrides).
   - Every process calls `NcclCommunicator.create(id, worldSize, firstRank, localGpus...)` and runs
     an `NcclPlanGroup` over its own plans.
   - The id creator must stay alive until all ranks join; a helper that exits early gives

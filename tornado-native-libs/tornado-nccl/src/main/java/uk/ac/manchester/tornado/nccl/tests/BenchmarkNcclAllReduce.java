@@ -251,7 +251,7 @@ public class BenchmarkNcclAllReduce {
             devices[i] = TornadoExecutionPlan.getDevice(0, i);
             names.append(i == 0 ? "" : ", ").append(devices[i].getPhysicalDevice().getDeviceName());
         }
-        int version = NcclNativeLib.version();
+        int version = NcclNativeLib.forBackend(devices[0].getTornadoVMBackend()).version();
         String mode = CUDA_GRAPH ? ", CUDA graphs" : "";
         System.out.printf("NCCL %d.%d.%d, %d rank(s): %s, %d iterations (median)%s%n", version / 10000, (version / 100) % 100, version % 100, numDevices, names, iterations, mode);
         System.out.printf("%12s %10s | %16s %12s %9s | %16s %12s %12s%n", "elements", "MiB/rank", "step host-staged", "step NCCL", "speedup", "all-reduce only", "algbw GB/s", "busbw GB/s");

@@ -47,6 +47,7 @@ import uk.ac.manchester.tornado.cudf.provider.CudfLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * cuDF library tasks: sort order, grouped aggregation, running sum and inner join.
@@ -69,13 +70,16 @@ public class TestCudf extends TornadoTestBase {
         // abort cycles per CUDA test run: enough device churn to leave the next test class unable
         // to allocate. Cheapest refusal first, and nothing here needs a device to decide.
         if (!CudfLibraryProvider.isAvailable()) {
-            throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so) is not built on this host");
+            throw new TornadoVMCUDANotSupported("the cuDF shim (libtornado-cudf.so, or libtornado-hipdf.so for HIP) is not built on this host");
         }
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuDF library tasks require the CUDA backend (default device is " + backendType + ")";
+        // the hipDF build of the shim serves HIP devices, the RAPIDS one CUDA devices
+        TornadoVMBackendType shimBackend = CudfLibraryProvider.isHipdf() ? TornadoVMBackendType.HIP : TornadoVMBackendType.CUDA;
+        if (backendType != shimBackend) {
+            String message = "cuDF library tasks require the " + shimBackend + " backend for this build of the shim (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
+                case HIP -> throw new TornadoVMHIPNotSupported(message);
                 default -> throw new TornadoVMCUDANotSupported(message);
             }
         }

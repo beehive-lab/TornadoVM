@@ -82,6 +82,7 @@ public class PrebuiltTests extends TornadoTestBase {
             case OPENCL -> ".cl";
             case METAL  -> ".metal";
             case CUDA   -> ".cu";
+            case HIP    -> ".hip";
             default     -> throw new TornadoRuntimeException("Backend not supported");
         };
 
@@ -153,6 +154,7 @@ public class PrebuiltTests extends TornadoTestBase {
     public void testPrebuiltDynamicParallelism() throws TornadoExecutionPlanException {
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.METAL);
+        assertNotBackend(TornadoVMBackendType.HIP, "HIP kernels cannot launch kernels");
 
         final int numElements = 1024;
         IntArray a = new IntArray(numElements);

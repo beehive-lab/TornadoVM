@@ -51,8 +51,8 @@ public class TestHalfFloatInlineWrite extends TornadoTestBase {
      */
     private void assumeCudaBackend() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA && backendType != TornadoVMBackendType.OPENCL) {
-            String message = "This HalfFloat inline-write fix targets the CUDA and OpenCL backends (default device is " + backendType + ")";
+        if (backendType != TornadoVMBackendType.CUDA && backendType != TornadoVMBackendType.HIP && backendType != TornadoVMBackendType.OPENCL) {
+            String message = "This HalfFloat inline-write fix targets the CUDA, HIP and OpenCL backends (default device is " + backendType + ")";
             switch (backendType) {
                 case METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

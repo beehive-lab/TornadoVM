@@ -82,23 +82,29 @@ A communicator can span several processes, on one or more machines:
 
 ```java
 // rank 0: create the id and hand it to the other processes (socket, MPI, file, environment...)
-NcclUniqueId id = NcclUniqueId.create();
+TornadoDevice gpu = TornadoExecutionPlan.getDevice(0, 0);
+NcclUniqueId id = NcclUniqueId.create(gpu);
 publish(id.toBase64());
-NcclCommunicator comm = NcclCommunicator.create(id, worldSize, 0, TornadoExecutionPlan.getDevice(0, 0));
+NcclCommunicator comm = NcclCommunicator.create(id, worldSize, 0, gpu);
 
 // rank r, in its own process
 NcclUniqueId id = NcclUniqueId.fromBase64(received);
 NcclCommunicator comm = NcclCommunicator.create(id, worldSize, r, TornadoExecutionPlan.getDevice(0, localGpu));
 ```
 
-`create` blocks until every rank has joined. A process may own several ranks:
+`NcclUniqueId.create(gpu)` uses the library of the GPU's backend (RCCL for a HIP device).
+`NcclUniqueId.create()`, for a process that has no device at hand, starts no backend: it uses the
+library `-Dtornado.nccl.library=nccl|rccl` names, else NCCL when it loads, else RCCL.
+
+`NcclCommunicator.create` blocks until every rank has joined. A process may own several ranks:
 `create(id, worldSize, firstRank, gpu0, gpu1)` gives its GPUs ranks `firstRank` and `firstRank + 1`.
 Each process runs an `NcclPlanGroup` over the plans of its own ranks; `size()` is the world size,
 so collectives and peers are checked against the whole job. The process that created the id must
 keep running until all ranks have joined, because NCCL's bootstrap listener lives in it.
 
 `NcclMultiProcessWorker` is a runnable example: start rank 0 with `new` (it prints the id), then
-every other rank with that id.
+every other rank with that id. The last argument is a device index of backend 0, or
+`<backend index>:<device index>`.
 
 ```bash
 tornado -m tornado.nccl/uk.ac.manchester.tornado.nccl.tests.NcclMultiProcessWorker new 2 0 0      # prints NCCL-ID <id>

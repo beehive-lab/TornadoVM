@@ -36,24 +36,23 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
 
 /**
- * FP8 (8-bit float, CUDA-only storage type) tests: host-side codec correctness plus on-device
- * dequantization - a kernel reads a {@link FP8Array} and expands each element to {@code float},
- * proving the {@link FP8} arithmetic decoders compile and run on the CUDA backend.
+ * FP8 (8-bit float storage type of the CUDA and HIP backends) tests: host-side codec correctness
+ * plus on-device dequantization - a kernel reads a {@link FP8Array} and expands each element to
+ * {@code float}, proving the {@link FP8} arithmetic decoders compile and run on those backends.
  *
  * <p>How to run: {@code tornado-test -V uk.ac.manchester.tornado.unittests.arrays.TestFP8}</p>
  */
 public class TestFP8 extends TornadoTestBase {
 
     /**
-     * FP8 is a CUDA-only storage type (the array is registered only in the CUDA device dispatch and
-     * the decoders are tuned for the CUDA code generator). The on-device tests must therefore run on
-     * the CUDA backend only; on other backends they report Unsupported rather than Failed. The
-     * host-codec tests are backend-agnostic and always run.
+     * FP8 is a storage type of the CUDA and HIP backends only. The on-device tests must therefore run
+     * on those backends; on others they report Unsupported rather than Failed. The host-codec tests
+     * are backend-agnostic and always run.
      */
     private void assumeCudaBackend() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
-        if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "FP8 device kernels require the CUDA backend (default device is " + backendType + ")";
+        if (backendType != TornadoVMBackendType.CUDA && backendType != TornadoVMBackendType.HIP) {
+            String message = "FP8 device kernels require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

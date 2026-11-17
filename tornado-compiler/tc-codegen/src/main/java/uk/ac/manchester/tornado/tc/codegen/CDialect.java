@@ -34,7 +34,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps.Dialect;
  * <p>Methods that spell a type or a conversion record the {@link Feature}s it needs, so the preamble
  * comes from what was used, never from scanning the emitted text.</p>
  */
-sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
+sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect, HipDialect {
 
     /** Something the preamble must provide. */
     enum Feature {
@@ -63,6 +63,7 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect {
             case CUDA -> new CudaDialect();
             case OPENCL -> new OpenClDialect();
             case METAL -> new MetalDialect();
+            case HIP -> new HipDialect();
         };
     }
 

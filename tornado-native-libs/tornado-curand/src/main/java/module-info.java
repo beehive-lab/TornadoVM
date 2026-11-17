@@ -7,5 +7,6 @@ open module tornado.curand {
     exports uk.ac.manchester.tornado.curand.provider;
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //
-            uk.ac.manchester.tornado.curand.provider.CuRandLibraryProvider;
+            uk.ac.manchester.tornado.curand.provider.CuRandLibraryProvider, //
+            uk.ac.manchester.tornado.curand.provider.HipRandLibraryProvider;
 }

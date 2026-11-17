@@ -70,6 +70,33 @@ export LD_LIBRARY_PATH=$(find "$SITE" -name '*.so*' -path '*lib*' -printf '%h\n'
 To check, run `ldd $TORNADOVM_HOME/lib/libtornado-cudf.so | grep 'not found'`; it should print
 nothing.
 
+## On AMD GPUs (hipDF)
+
+The `hip-backend` profile builds the same shim, unchanged, against hipDF -- AMD's HIP port of
+libcudf, which keeps cuDF's headers and C++ API -- in `tornado-native-libs/cudf-hip`, into
+`libtornado-hipdf.so`. As with RAPIDS, the build skips it with a warning when hipDF is absent
+(`TORNADO_HIPDF_REQUIRED=1` makes that an error). hipDF ships as wheels on AMD's package index:
+`amd-libhipdf` carries libcudf's headers and libraries, `amd-libhipmm` librmm, and
+`amd-rocmds-logger` (which `amd-libhipmm` depends on) rapids_logger; they install as sibling
+directories:
+
+```bash
+python3 -m venv /tmp/hipdfenv
+/tmp/hipdfenv/bin/pip install --extra-index-url=https://pypi.amd.com/rocm-7.2.3/simple amd-libhipdf amd-libhipmm
+export HIPDF_HOME=$(echo /tmp/hipdfenv/lib/python3.*/site-packages/libcudf)
+make BACKEND=hip
+```
+
+The build reports `-- TornadoVM hipDF: cudf <version> from ...` when it found it. At run time,
+put hipDF's library directories on `LD_LIBRARY_PATH` as above (`libcudf/lib64`, `librmm/lib64`,
+`rapids_logger/lib64`). Both shims load a `libcudf.so`, so a process uses one of them: the module
+binds `libtornado-cudf.so` when it loads (the SDK has it and RAPIDS libcudf resolves), else
+`libtornado-hipdf.so`, and `-Dtornado.cudf.library=hipdf|cudf` overrides that choice. cuDF tasks
+then run on the devices of the shim's backend, HIP devices for the hipDF build.
+
+hipDF 3.0 cannot write Zstandard-compressed Parquet: `writeParquetColumns` with ZSTD reports the
+task as unsupported there, with hipDF's reason. Snappy and uncompressed writes work.
+
 ## Using it
 
 ```java

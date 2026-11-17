@@ -263,9 +263,10 @@ public class TestSimdgroupMatrixHalf extends TornadoTestBase {
     }
 
     private void assumeMetal() {
-        // simdgroup_matrix is Metal-only: no equivalent in OpenCL or CUDA.
+        // simdgroup_matrix is Metal-only: no equivalent in OpenCL, CUDA or HIP.
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.CUDA);
+        assertNotBackend(TornadoVMBackendType.HIP);
     }
 
     @Test

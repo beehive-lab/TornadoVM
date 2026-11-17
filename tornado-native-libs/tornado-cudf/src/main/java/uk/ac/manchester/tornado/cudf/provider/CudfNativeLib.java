@@ -25,11 +25,14 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 
+import uk.ac.manchester.tornado.api.exceptions.TornadoLibraryTaskNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
 
 /**
- * FFM bindings to {@code libtornado-cudf.so}, the {@code extern "C"} shim over cuDF.
+ * FFM bindings to {@code libtornado-cudf.so}, the {@code extern "C"} shim over cuDF, or, when
+ * TornadoVM runs on AMD GPUs, to {@code libtornado-hipdf.so}: the same shim built against hipDF,
+ * AMD's HIP port of libcudf, by {@code tornado-native-libs/cudf-hip}.
  *
  * <p>
  * Every entry point takes the stream to run on, device pointers for its operands, and returns a
@@ -54,7 +57,23 @@ public final class CudfNativeLib {
      * library the SDK ships in its own {@code lib/} rather than one the system provides, so it is
      * on {@code java.library.path} and not on the loader's path.
      */
-    private static final SymbolLookup LIBTORNADO_CUDF = FFMSupport.loadBundledLibrary("libtornado-cudf.so", "tornado-cudf.dll", "libtornado-cudf.dylib");
+    private static final SymbolLookup LIBTORNADO_CUDF;
+
+    /**
+     * Whether the shim is the hipDF build, whose tasks run on HIP devices. Both builds load a
+     * {@code libcudf.so}, so a process holds one of them: {@code -Dtornado.cudf.library=hipdf|cudf}
+     * picks it, otherwise it is the RAPIDS build when that loads (the SDK has it, and libcudf and the
+     * CUDA runtime resolve), else the hipDF build. The provider handles devices of its backend only.
+     */
+    private static final boolean HIPDF;
+
+    static {
+        String library = System.getProperty("tornado.cudf.library", "").trim();
+        SymbolLookup rapids = library.equalsIgnoreCase("hipdf") ? null : FFMSupport.loadBundledLibrary("libtornado-cudf.so", "tornado-cudf.dll", "libtornado-cudf.dylib");
+        SymbolLookup hipdf = rapids != null || library.equalsIgnoreCase("cudf") ? null : FFMSupport.loadBundledLibrary("libtornado-hipdf.so");
+        HIPDF = hipdf != null || library.equalsIgnoreCase("hipdf");
+        LIBTORNADO_CUDF = HIPDF ? hipdf : rapids;
+    }
 
     private static final MethodHandle SORTED_ORDER;
     private static final MethodHandle GROUP_SUM;
@@ -203,6 +222,11 @@ public final class CudfNativeLib {
     }
 
     private CudfNativeLib() {
+    }
+
+    /** Whether the shim is the hipDF build, whose tasks run on HIP devices. */
+    public static boolean isHipdf() {
+        return HIPDF;
     }
 
     /** Whether the shim is present and exports everything this module calls. */
@@ -471,6 +495,10 @@ public final class CudfNativeLib {
     }
 
     static void load() {
+        if (!isAvailable() && HIPDF) {
+            throw new TornadoRuntimeException("[ERROR] Unable to load the cuDF shim for HIP devices. Build libtornado-hipdf.so against hipDF "
+                    + "-- see tornado-native-libs/tornado-cudf/README.md -- and put hipDF's libraries on the library path.");
+        }
         if (!isAvailable()) {
             throw new TornadoRuntimeException("[ERROR] Unable to load the cuDF shim. Build libtornado-cudf.so against RAPIDS libcudf "
                     + "-- see tornado-native-libs/tornado-cudf/README.md -- and put it on the library path.");
@@ -496,8 +524,15 @@ public final class CudfNativeLib {
                 detail = "";
             }
         }
+        if (HIPDF && detail.contains(HIPDF_NO_ZSTD)) {
+            // a codec the hipDF build lacks, not a failure of the task's inputs
+            throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] cuDF " + what + " on hipDF" + detail);
+        }
         throw new TornadoRuntimeException("[ERROR] cuDF " + what + " failed with status " + status + detail);
     }
+
+    /** What hipDF reports when asked to write Zstandard pages, which its GPU compressor does not provide yet. */
+    private static final String HIPDF_NO_ZSTD = "required for Zstandard compression";
 
     static int sortedOrder(long stream, long keys, int n, long outOrder) {
         try {

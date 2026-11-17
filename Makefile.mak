@@ -1,6 +1,6 @@
 all: build
 
-# Variable passed for the build process. List of backend/s to use { opencl, cuda, metal }. The default one is `opencl`.
+# Variable passed for the build process. List of backend/s to use { opencl, cuda, metal, hip }. The default one is `opencl`.
 # nmake BACKENDS="<comma_separated_backend_list>"
 BACKEND = opencl
 
@@ -45,6 +45,9 @@ mvn-single-threaded-jdk22plus:
 cuda:
 	python bin\compile --jdk jdk21 --backend cuda
 
+hip:
+	python bin\compile --jdk jdk21 --backend hip
+
 sdk:
 	python bin\compile --jdk $(JDK_PROFILE) --sdk --backend $(BACKEND)
 
@@ -70,7 +73,7 @@ test-nogpu:
 test-reflection: test-nogpu
 
 clean:
-	.\mvnw -Popencl-backend,cuda-backend clean
+	.\mvnw -Popencl-backend,cuda-backend,hip-backend clean
 
 example:
 	%TORNADOVM_HOME%\bin\tornado.exe --printKernel --debug -m tornado.examples/uk.ac.manchester.tornado.examples.VectorAddInt --params="8192"

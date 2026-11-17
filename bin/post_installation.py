@@ -55,7 +55,7 @@ def detect_backends_from_sdk_path(sdk_path):
     sdk_dir_name = os.path.basename(sdk_path)
 
     # Known backends
-    known_backends = ["opencl", "cuda", "metal"]
+    known_backends = ["opencl", "cuda", "metal", "hip"]
     detected_backends = []
 
     # Check for "full" which means all backends

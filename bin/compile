@@ -175,10 +175,10 @@ def verify_jdk_matches_java_home(jdk):
 
 def maven_cleanup():
     mvn_cmd = get_mvn_command()
-    print("mvnw -Popencl-backend,cuda-backend clean")
+    print("mvnw -Popencl-backend,cuda-backend,hip-backend clean")
 
     subprocess.run(
-        [mvn_cmd, "-Popencl-backend,cuda-backend", "clean"],
+        [mvn_cmd, "-Popencl-backend,cuda-backend,hip-backend", "clean"],
         stdout=subprocess.PIPE, shell=is_win_or_bat()
     )
 
@@ -289,6 +289,19 @@ def build_tornadovm(args, backend_profiles):
 
         process.append("install")
         print(' '.join(process))
+
+        # The HIP backend's native kernels (ck-hip) are well over a hundred CK translation units;
+        # the CMake builds Maven starts are serial unless told otherwise. One job per physical
+        # core (psutil, when installed, tells them from logical CPUs): each unit is compiled for
+        # several GPU targets and is memory-hungry.
+        if "hip" in backend_list and "CMAKE_BUILD_PARALLEL_LEVEL" not in os.environ:
+            try:
+                import psutil
+
+                cores = psutil.cpu_count(logical=False)
+            except ImportError:
+                cores = None
+            os.environ["CMAKE_BUILD_PARALLEL_LEVEL"] = os.environ.get("MAX_JOBS") or str(cores or os.cpu_count() or 1)
 
         result = subprocess.run(
             process,
@@ -428,7 +441,7 @@ def parse_args():
     parser.add_argument(
         "--jdk", help="JDK profile (jdk21, jdk22plus)"
     )
-    parser.add_argument("--backend", help="e.g., opencl,cuda,metal")
+    parser.add_argument("--backend", help="e.g., opencl,cuda,metal,hip")
     parser.add_argument(
         "--mvn_single_threaded",
         action="store_true",

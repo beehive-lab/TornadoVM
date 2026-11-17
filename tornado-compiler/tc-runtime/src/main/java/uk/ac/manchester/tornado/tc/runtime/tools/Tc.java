@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * or MSL and prints them. No GPU and no TornadoVM runtime are needed.
  *
  * <pre>
- *   tc emit [--target cuda|opencl|metal] [--cc N] [--fp16 on|off] [--fp64 on|off] [--cp PATH] [--stats] Class method
+ *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--cp PATH] [--stats] Class method
  *   tc emit [same options] --all
  *   tc --version
  *   ... [--arg name=value]...
@@ -129,7 +129,8 @@ public final class Tc {
                             case "cuda" -> dialect = TargetCaps.Dialect.CUDA;
                             case "opencl" -> dialect = TargetCaps.Dialect.OPENCL;
                             case "metal" -> dialect = TargetCaps.Dialect.METAL;
-                            default -> throw new IllegalArgumentException("--target takes cuda, opencl or metal");
+                            case "hip" -> dialect = TargetCaps.Dialect.HIP;
+                            default -> throw new IllegalArgumentException("--target takes cuda, opencl, metal or hip");
                         }
                     }
                     case "--cc" -> cc = Integer.parseInt(value(args, ++i));
@@ -217,9 +218,10 @@ public final class Tc {
             case CUDA -> new TargetCaps(TargetCaps.Dialect.CUDA, cc, true, cc >= 53, 16, 1024, 48 * 1024, 32, cc >= 35, 0);
             case OPENCL -> TargetCaps.OPENCL_GENERIC;
             case METAL -> TargetCaps.METAL_APPLE;
+            case HIP -> TargetCaps.HIP_GFX942;
         };
         return new TargetCaps(base.dialect(), base.computeCapability(), fp64 == null ? base.fp64() : fp64, fp16 == null ? base.fp16() : fp16, base.arrayHeaderBytes(), base.maxWorkGroupSize(),
-                base.localMemoryBytes(), base.warpSize(), base.deviceLaunch(), base.nvrtcVersion());
+                base.localMemoryBytes(), base.warpSize(), base.deviceLaunch(), base.nvrtcVersion(), base.arch());
     }
 
     /**
@@ -440,7 +442,7 @@ public final class Tc {
     }
 
     private static int usage(PrintStream err) {
-        err.println("usage: tc emit [--target cuda|opencl|metal] [--cc N] [--fp16 on|off] [--fp64 on|off] [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
+        err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
         return 2;
     }
 }

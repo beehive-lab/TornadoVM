@@ -294,6 +294,458 @@ final class Helpers {
                     """));
 
     /**
+     * What every HIP MMA helper builds on: the matrix-core family of the target (from the architecture
+     * macros hipRTC defines), the operand vector types, fetching a k-word of the A and B fragments from
+     * the lane that holds it, and moving a result into the PTX C/D layout. Guarded, so that a kernel with
+     * several MMA helpers defines it once.
+     */
+    private static final String MMA_COMMON = """
+                    #ifndef TC_MMA_COMMON
+                    #define TC_MMA_COMMON
+                    #if defined(__gfx908__) || defined(__gfx90a__) || defined(__gfx940__) || defined(__gfx941__) || defined(__gfx942__) || defined(__gfx950__)
+                    #define TC_MFMA 1
+                    #elif defined(__GFX11__)
+                    #define TC_WMMA11 1
+                    #elif defined(__gfx1200__) || defined(__gfx1201__)
+                    #define TC_WMMA12 1
+                    #elif defined(__gfx1250__)
+                    #define TC_WMMA1250 1
+                    #else
+                    #error "KernelContext MMA: no matrix-core lowering for this GPU architecture"
+                    #endif
+                    typedef _Float16 tc_h4_t __attribute__((ext_vector_type(4)));
+                    typedef _Float16 tc_h8_t __attribute__((ext_vector_type(8)));
+                    typedef _Float16 tc_h16_t __attribute__((ext_vector_type(16)));
+                    typedef short tc_s2_t __attribute__((ext_vector_type(2)));
+                    typedef short tc_s4_t __attribute__((ext_vector_type(4)));
+                    typedef short tc_s8_t __attribute__((ext_vector_type(8)));
+                    typedef short tc_s16_t __attribute__((ext_vector_type(16)));
+                    typedef float tc_f4_t __attribute__((ext_vector_type(4)));
+                    typedef float tc_f8_t __attribute__((ext_vector_type(8)));
+                    typedef int tc_i2_t __attribute__((ext_vector_type(2)));
+                    typedef int tc_i4_t __attribute__((ext_vector_type(4)));
+                    typedef int tc_i8_t __attribute__((ext_vector_type(8)));
+                    #if defined(TC_WMMA1250)
+                    typedef __bf16 tc_b16_t __attribute__((ext_vector_type(16)));
+                    #endif
+                    // A fragment lives in the registers of a 32-lane warp in the PTX m16n8 layouts: register i of lane
+                    // 4g + t holds k-word 4(i/2) + t of row g + 8(i%2) of A; register j holds k-word 4j + t of column g of
+                    // B. A k-word is 2 halves (k16 shapes) or 4 bytes (k32 shapes). These fetch k-word w = 4wq + wl of a
+                    // row of A or a column of B from the lane of the calling warp that holds it.
+                    __device__ static inline int tc_mma_lane(int l) {
+                      return (int) (__lane_id() & ~31u) + l;
+                    }
+                    __device__ static inline int tc_mma_a_word(int4 a, int r, int wq, int wl) {
+                      int src = tc_mma_lane(4 * (r & 7) + wl);
+                      int lo = __shfl(wq ? a.z : a.x, src), hi = __shfl(wq ? a.w : a.y, src);
+                      return r < 8 ? lo : hi;
+                    }
+                    __device__ static inline int tc_mma_a_word_any(int4 a, int r, int wq, int wl) {
+                      int src = tc_mma_lane(4 * (r & 7) + wl);
+                      int x = __shfl(a.x, src), y = __shfl(a.y, src), z = __shfl(a.z, src), w = __shfl(a.w, src);
+                      return wq ? (r < 8 ? z : w) : (r < 8 ? x : y);
+                    }
+                    __device__ static inline int tc_mma_b_word(int2 b, int n, int wq, int wl) {
+                      return __shfl(wq ? b.y : b.x, tc_mma_lane(4 * (n & 7) + wl));
+                    }
+                    __device__ static inline int tc_mma_b_word_any(int2 b, int n, int wq, int wl) {
+                      int src = tc_mma_lane(4 * (n & 7) + wl);
+                      int x = __shfl(b.x, src), y = __shfl(b.y, src);
+                      return wq ? y : x;
+                    }
+                    // Element e of the calling lane's C/D fragment is row g + 8(e/2), column 2t + e%2 of the 16 x 8 tile.
+                    __device__ static inline int tc_mma_row(int e) {
+                      return (int) ((__lane_id() & 31u) >> 2) + 8 * (e >> 1);
+                    }
+                    __device__ static inline int tc_mma_col(int e) {
+                      return 2 * (int) (__lane_id() & 3u) + (e & 1);
+                    }
+                    // Four FP8 values (one k-word) as halves, exactly (every E4M3 and E5M2 value is a half).
+                    __device__ static inline _Float16 tc_mma_e4m3(unsigned b) {
+                      unsigned x = (b >> 3) & 15u, m = b & 7u;
+                      float v = x == 0u ? (float) m * 0x1p-9f : (x == 15u && m == 7u) ? __int_as_float(0x7fc00000) : __uint_as_float(((x + 120u) << 23) | (m << 20));
+                      return (_Float16) ((b & 0x80u) ? -v : v);
+                    }
+                    __device__ static inline _Float16 tc_mma_e5m2(unsigned b) {
+                      return __builtin_bit_cast(_Float16, (unsigned short) (b << 8));
+                    }
+                    template <bool E4M3> __device__ static inline tc_h4_t tc_mma_fp8_word(int w) {
+                      unsigned u = (unsigned) w;
+                      tc_h4_t h;
+                      for (int e = 0; e < 4; e++) {
+                        unsigned b = (u >> (8 * e)) & 0xffu;
+                        h[e] = E4M3 ? tc_mma_e4m3(b) : tc_mma_e5m2(b);
+                      }
+                      return h;
+                    }
+                    #if defined(TC_MFMA)
+                    // Each 32-lane warp computes its 16 x 8 tile as eight 4 x 4 blocks of the 4x4 MFMA instructions, which
+                    // keep every block within four lanes: a warp's data never meets another warp's, so the wavefront's
+                    // other half may be idle. Lane 4(2bm + bn) + x supplies row 4bm + x of A and column 4bn + x of B for
+                    // block (bm, bn), and receives column 4bn + x of its result.
+                    __device__ static inline int tc_mfma_row() {
+                      int l = (int) (__lane_id() & 31u);
+                      return 4 * (l >> 3) + (l & 3);
+                    }
+                    __device__ static inline int tc_mfma_col() {
+                      int l = (int) (__lane_id() & 31u);
+                      return 4 * ((l >> 2) & 1) + (l & 3);
+                    }
+                    template <typename V, typename T> __device__ static inline T tc_mfma_out(V d, int e) {
+                      int row = tc_mma_row(e), col = tc_mma_col(e);
+                      int src = tc_mma_lane(4 * (2 * (row >> 2) + (col >> 2)) + (col & 3));
+                      T x = __shfl(d[0], src), y = __shfl(d[1], src), z = __shfl(d[2], src), w = __shfl(d[3], src);
+                      int i = row & 3;
+                      return i == 0 ? x : i == 1 ? y : i == 2 ? z : w;
+                    }
+                    #elif defined(TC_WMMA11)
+                    // One warp is the whole wavefront and computes a 16 x 16 tile with one WMMA instruction; B is the
+                    // warp's 16 x 8 tile padded with zero columns. Lane l supplies row l % 16 of A and column l % 16 of B
+                    // (every k), and receives column l % 16 of rows 2i + l / 16 of the result.
+                    template <typename V, typename T> __device__ static inline T tc_wmma_out(V d, int e) {
+                      int row = tc_mma_row(e), col = tc_mma_col(e), src = col + 16 * (row & 1), hi = 4 * (e >> 1);
+                      T x = __shfl(d[hi], src), y = __shfl(d[hi + 1], src), z = __shfl(d[hi + 2], src), w = __shfl(d[hi + 3], src);
+                      int i = (row >> 1) & 3;
+                      return i == 0 ? x : i == 1 ? y : i == 2 ? z : w;
+                    }
+                    #elif defined(TC_WMMA12) || defined(TC_WMMA1250)
+                    // As on RDNA3, but lane l supplies k = 8(l / 16) .. 8(l / 16) + 7 of row l % 16 of A and of column
+                    // l % 16 of B, and receives column l % 16 of rows 8(l / 16) + i of the result. gfx1250's longer
+                    // forms repeat that every 16 k: lane l holds k = 16j + 8(l / 16) .. 16j + 8(l / 16) + 7 for each j.
+                    template <typename V, typename T> __device__ static inline T tc_wmma_out(V d, int e) {
+                      int row = tc_mma_row(e), col = tc_mma_col(e), src = col + 16 * (row >> 3);
+                      T v[8];
+                      for (int i = 0; i < 8; i++) {
+                        v[i] = __shfl(d[i], src);
+                      }
+                      T r = v[0];
+                      for (int i = 1; i < 8; i++) {
+                        r = (row & 7) == i ? v[i] : r;
+                      }
+                      return r;
+                    }
+                    #endif
+                    #if defined(TC_WMMA1250)
+                    // The A and B operands of gfx1250's 16x16x64 8-bit forms for a k32 fragment pair (k 32-63 zero): lane
+                    // l holds k-words 2(l / 16), 2(l / 16) + 1, 4 + 2(l / 16) and 5 + 2(l / 16) of row l % 16 of A and of
+                    // column l % 16 of B, the columns past the warp's 8 being zero.
+                    __device__ static inline void tc_wmma1250_k32(int4 a, int2 b, tc_i8_t &av, tc_i8_t &bv) {
+                      int l = (int) __lane_id(), m = l & 15, half = l >> 4;
+                      av = {};
+                      bv = {};
+                      for (int kb = 0; kb < 2; kb++) {
+                        for (int h = 0; h < 2; h++) {
+                          av[2 * kb + h] = tc_mma_a_word(a, m, kb, 2 * half + h);
+                          int bword = tc_mma_b_word(b, m, kb, 2 * half + h);
+                          bv[2 * kb + h] = m < 8 ? bword : 0;
+                        }
+                      }
+                    }
+                    #endif
+                    // D = A x B + C for 16-bit inputs (m16n8k16): CVT names the half or bfloat16 vector types.
+                    template <bool BF16> __device__ static inline float4 tc_mma_k16(int4 a, int2 b, float4 c) {
+                    #if defined(TC_MFMA)
+                      int ra = tc_mfma_row(), cb = tc_mfma_col();
+                      tc_f4_t d = {0.0f, 0.0f, 0.0f, 0.0f};
+                    #if defined(__gfx908__)
+                      if (BF16) {
+                        for (int w = 0; w < 8; w++) {
+                          tc_s2_t av = __builtin_bit_cast(tc_s2_t, tc_mma_a_word(a, ra, w >> 2, w & 3));
+                          tc_s2_t bv = __builtin_bit_cast(tc_s2_t, tc_mma_b_word(b, cb, w >> 2, w & 3));
+                          d = __builtin_amdgcn_mfma_f32_4x4x2bf16(av, bv, d, 0, 0, 0);
+                        }
+                      } else
+                    #endif
+                      for (int s = 0; s < 4; s++) {
+                        tc_i2_t av = {tc_mma_a_word(a, ra, s >> 1, (2 * s) & 3), tc_mma_a_word(a, ra, s >> 1, (2 * s + 1) & 3)};
+                        tc_i2_t bv = {tc_mma_b_word(b, cb, s >> 1, (2 * s) & 3), tc_mma_b_word(b, cb, s >> 1, (2 * s + 1) & 3)};
+                    #if !defined(__gfx908__)
+                        if (BF16) {
+                          d = __builtin_amdgcn_mfma_f32_4x4x4bf16_1k(__builtin_bit_cast(tc_s4_t, av), __builtin_bit_cast(tc_s4_t, bv), d, 0, 0, 0);
+                        } else
+                    #endif
+                        {
+                          d = __builtin_amdgcn_mfma_f32_4x4x4f16(__builtin_bit_cast(tc_h4_t, av), __builtin_bit_cast(tc_h4_t, bv), d, 0, 0, 0);
+                        }
+                      }
+                      return make_float4(c.x + tc_mfma_out<tc_f4_t, float>(d, 0), c.y + tc_mfma_out<tc_f4_t, float>(d, 1), c.z + tc_mfma_out<tc_f4_t, float>(d, 2),
+                          c.w + tc_mfma_out<tc_f4_t, float>(d, 3));
+                    #elif defined(TC_WMMA11)
+                      int l = (int) __lane_id(), m = l & 15;
+                      tc_i8_t aw, bw;
+                      for (int w = 0; w < 8; w++) {
+                        aw[w] = tc_mma_a_word(a, m, w >> 2, w & 3);
+                        int bword = tc_mma_b_word(b, m, w >> 2, w & 3);
+                        bw[w] = m < 8 ? bword : 0;
+                      }
+                      tc_f8_t z = {};
+                      tc_f8_t d = BF16 ? __builtin_amdgcn_wmma_f32_16x16x16_bf16_w32(__builtin_bit_cast(tc_s16_t, aw), __builtin_bit_cast(tc_s16_t, bw), z)
+                                       : __builtin_amdgcn_wmma_f32_16x16x16_f16_w32(__builtin_bit_cast(tc_h16_t, aw), __builtin_bit_cast(tc_h16_t, bw), z);
+                      return make_float4(c.x + tc_wmma_out<tc_f8_t, float>(d, 0), c.y + tc_wmma_out<tc_f8_t, float>(d, 1), c.z + tc_wmma_out<tc_f8_t, float>(d, 2),
+                          c.w + tc_wmma_out<tc_f8_t, float>(d, 3));
+                    #elif defined(TC_WMMA12)
+                      int l = (int) __lane_id(), m = l & 15, wq = l >> 4;
+                      tc_i4_t aw, bw;
+                      for (int j = 0; j < 4; j++) {
+                        aw[j] = tc_mma_a_word_any(a, m, wq, j);
+                        int bword = tc_mma_b_word_any(b, m, wq, j);
+                        bw[j] = m < 8 ? bword : 0;
+                      }
+                      tc_f8_t z = {};
+                      tc_f8_t d = BF16 ? __builtin_amdgcn_wmma_f32_16x16x16_bf16_w32_gfx12(__builtin_bit_cast(tc_s8_t, aw), __builtin_bit_cast(tc_s8_t, bw), z)
+                                       : __builtin_amdgcn_wmma_f32_16x16x16_f16_w32_gfx12(__builtin_bit_cast(tc_h8_t, aw), __builtin_bit_cast(tc_h8_t, bw), z);
+                      return make_float4(c.x + tc_wmma_out<tc_f8_t, float>(d, 0), c.y + tc_wmma_out<tc_f8_t, float>(d, 1), c.z + tc_wmma_out<tc_f8_t, float>(d, 2),
+                          c.w + tc_wmma_out<tc_f8_t, float>(d, 3));
+                    #elif defined(TC_WMMA1250)
+                      // 16x16x32 with k 16-31 zero: the first 8 values of each lane are the RDNA4 operand.
+                      int l = (int) __lane_id(), m = l & 15, wq = l >> 4;
+                      tc_i8_t aw = {}, bw = {};
+                      for (int j = 0; j < 4; j++) {
+                        aw[j] = tc_mma_a_word_any(a, m, wq, j);
+                        int bword = tc_mma_b_word_any(b, m, wq, j);
+                        bw[j] = m < 8 ? bword : 0;
+                      }
+                      tc_f8_t z = {};
+                      tc_f8_t d = BF16 ? __builtin_amdgcn_wmma_f32_16x16x32_bf16(false, __builtin_bit_cast(tc_b16_t, aw), false, __builtin_bit_cast(tc_b16_t, bw), (short) 0, z, false, false)
+                                       : __builtin_amdgcn_wmma_f32_16x16x32_f16(false, __builtin_bit_cast(tc_h16_t, aw), false, __builtin_bit_cast(tc_h16_t, bw), (short) 0, z, false, false);
+                      return make_float4(c.x + tc_wmma_out<tc_f8_t, float>(d, 0), c.y + tc_wmma_out<tc_f8_t, float>(d, 1), c.z + tc_wmma_out<tc_f8_t, float>(d, 2),
+                          c.w + tc_wmma_out<tc_f8_t, float>(d, 3));
+                    #endif
+                    }
+                    // D = A x B + C for FP8 inputs (m16n8k32), widened exactly to halves and multiplied as halves.
+                    template <bool E4M3> __device__ static inline float4 tc_mma_k32_fp8(int4 a, int2 b, float4 c) {
+                    #if defined(TC_MFMA)
+                      int ra = tc_mfma_row(), cb = tc_mfma_col();
+                      tc_f4_t d = {0.0f, 0.0f, 0.0f, 0.0f};
+                      for (int w = 0; w < 8; w++) {
+                        tc_h4_t av = tc_mma_fp8_word<E4M3>(tc_mma_a_word(a, ra, w >> 2, w & 3));
+                        tc_h4_t bv = tc_mma_fp8_word<E4M3>(tc_mma_b_word(b, cb, w >> 2, w & 3));
+                        d = __builtin_amdgcn_mfma_f32_4x4x4f16(av, bv, d, 0, 0, 0);
+                      }
+                      return make_float4(c.x + tc_mfma_out<tc_f4_t, float>(d, 0), c.y + tc_mfma_out<tc_f4_t, float>(d, 1), c.z + tc_mfma_out<tc_f4_t, float>(d, 2),
+                          c.w + tc_mfma_out<tc_f4_t, float>(d, 3));
+                    #elif defined(TC_WMMA11)
+                      int l = (int) __lane_id(), m = l & 15;
+                      tc_f8_t d = {};
+                      for (int kb = 0; kb < 2; kb++) {
+                        tc_h16_t av, bv;
+                        for (int j = 0; j < 4; j++) {
+                          tc_h4_t ah = tc_mma_fp8_word<E4M3>(tc_mma_a_word(a, m, kb, j));
+                          tc_h4_t bh = tc_mma_fp8_word<E4M3>(tc_mma_b_word(b, m, kb, j));
+                          for (int e = 0; e < 4; e++) {
+                            av[4 * j + e] = ah[e];
+                            bv[4 * j + e] = m < 8 ? bh[e] : (_Float16) 0.0f;
+                          }
+                        }
+                        d = __builtin_amdgcn_wmma_f32_16x16x16_f16_w32(av, bv, d);
+                      }
+                      return make_float4(c.x + tc_wmma_out<tc_f8_t, float>(d, 0), c.y + tc_wmma_out<tc_f8_t, float>(d, 1), c.z + tc_wmma_out<tc_f8_t, float>(d, 2),
+                          c.w + tc_wmma_out<tc_f8_t, float>(d, 3));
+                    #elif defined(TC_WMMA12)
+                      int l = (int) __lane_id(), m = l & 15, half = l >> 4;
+                      tc_f8_t d = {};
+                      for (int kb = 0; kb < 2; kb++) {
+                        tc_h8_t av, bv;
+                        for (int h = 0; h < 2; h++) {
+                          tc_h4_t ah = tc_mma_fp8_word<E4M3>(tc_mma_a_word(a, m, kb, 2 * half + h));
+                          tc_h4_t bh = tc_mma_fp8_word<E4M3>(tc_mma_b_word(b, m, kb, 2 * half + h));
+                          for (int e = 0; e < 4; e++) {
+                            av[4 * h + e] = ah[e];
+                            bv[4 * h + e] = m < 8 ? bh[e] : (_Float16) 0.0f;
+                          }
+                        }
+                        d = __builtin_amdgcn_wmma_f32_16x16x16_f16_w32_gfx12(av, bv, d);
+                      }
+                      return make_float4(c.x + tc_wmma_out<tc_f8_t, float>(d, 0), c.y + tc_wmma_out<tc_f8_t, float>(d, 1), c.z + tc_wmma_out<tc_f8_t, float>(d, 2),
+                          c.w + tc_wmma_out<tc_f8_t, float>(d, 3));
+                    #elif defined(TC_WMMA1250)
+                      // gfx1250 multiplies E4M3 (fp8) and E5M2 (bf8) natively.
+                      tc_i8_t av, bv;
+                      tc_wmma1250_k32(a, b, av, bv);
+                      tc_f8_t z = {};
+                      tc_f8_t d = E4M3 ? __builtin_amdgcn_wmma_f32_16x16x64_fp8_fp8(av, bv, (short) 0, z, false, false)
+                                       : __builtin_amdgcn_wmma_f32_16x16x64_bf8_bf8(av, bv, (short) 0, z, false, false);
+                      return make_float4(c.x + tc_wmma_out<tc_f8_t, float>(d, 0), c.y + tc_wmma_out<tc_f8_t, float>(d, 1), c.z + tc_wmma_out<tc_f8_t, float>(d, 2),
+                          c.w + tc_wmma_out<tc_f8_t, float>(d, 3));
+                    #endif
+                    }
+                    #endif
+                    """;
+
+    /**
+     * HIP helpers where the CUDA one does not apply; every other helper is the CUDA one, since HIP C++
+     * accepts it unchanged. The warp operations name their width: a KernelContext warp is 32 lanes.
+     */
+    private static final Map<String, String> HIP = Map.ofEntries(
+            Map.entry("tc_warp_sum", """
+                    __device__ static inline float tc_warp_sum(float v) {
+                      for (int lane = 16; lane > 0; lane >>= 1) v += __shfl_xor(v, lane, 32);
+                      return v;
+                    }
+                    """),
+            // The 32 ballot bits of the lane's warp: the low half of a 64-wide wavefront's ballot for
+            // lanes 0-31, the high half for lanes 32-63 (all of it on a 32-wide wavefront).
+            Map.entry("tc_warp_bits", """
+                    __device__ static inline unsigned tc_warp_bits(unsigned long long ballot) {
+                      return (unsigned) (ballot >> (__lane_id() & 32u));
+                    }
+                    """),
+            // Signed int8 dot product of the four bytes of a and b, plus c (CUDA's __dp4a).
+            Map.entry("tc_dp4a", """
+                    __device__ static inline int tc_dp4a(int a, int b, int c) {
+                      return c + (int) (signed char) a * (int) (signed char) b + (int) (signed char) (a >> 8) * (int) (signed char) (b >> 8)
+                          + (int) (signed char) (a >> 16) * (int) (signed char) (b >> 16) + (int) (a >> 24) * (int) (b >> 24);
+                    }
+                    """),
+            // cp.async as a plain copy: the slot is written before the copying thread reaches its wait, so
+            // commit and wait have nothing to do (the barrier after the wait publishes it to the block).
+            Map.entry("tc_cp_async_4", """
+                    __device__ static inline void tc_cp_async_4(int *dst, const char *src) {
+                      *dst = *(const int *) src;
+                    }
+                    """),
+            Map.entry("tc_cp_async_16", """
+                    __device__ static inline void tc_cp_async_16(int *dst, const char *src) {
+                      *(int4 *) dst = *(const int4 *) src;
+                    }
+                    """),
+            Map.entry("tc_cp_async_commit", """
+                    __device__ static inline void tc_cp_async_commit() {
+                    }
+                    """),
+            Map.entry("tc_cp_async_wait", """
+                    __device__ static inline void tc_cp_async_wait(int n) {
+                    }
+                    """),
+            // Tensor-core MMA on AMD matrix cores. Fragments keep the PTX m16n8 layouts KernelContext documents
+            // (the loads read what ldmatrix and movmatrix would); mma moves them into the operand layouts of
+            // MFMA (CDNA, 4x4 blocks within each warp) or WMMA (RDNA3, RDNA4, gfx1250) and the result back.
+            Map.entry("tc_mma_load_a", """
+                    // A: a 16 x k row-major tile of elementBytes-wide elements, as ldmatrix .x4 reads it: register j holds
+                    // row 8(j%2) + g, bytes 16(j/2) + 4t of the tile.
+                    __device__ static inline int4 tc_mma_load_a(const int *tile, int k, int elementBytes) {
+                      unsigned lane = threadIdx.x & 31u, g = lane >> 2, t = lane & 3u, row = (unsigned) (k * elementBytes);
+                      const char *p = (const char *) tile + 4u * t;
+                      int4 a;
+                      a.x = *(const int *) (p + g * row);
+                      a.y = *(const int *) (p + (g + 8u) * row);
+                      a.z = *(const int *) (p + g * row + 16u);
+                      a.w = *(const int *) (p + (g + 8u) * row + 16u);
+                      return a;
+                    }
+                    """),
+            Map.entry("tc_mma_load_b", """
+                    // B: a k x 8 row-major tile of 16-bit pairs (rows of 16 bytes), as ldmatrix .x2 .trans reads it: register
+                    // j holds column g of rows 8j + 2t and 8j + 2t + 1.
+                    __device__ static inline int2 tc_mma_load_b(const int *tile, int k) {
+                      unsigned lane = threadIdx.x & 31u, g = lane >> 2, t = lane & 3u;
+                      const unsigned short *p = (const unsigned short *) tile + g;
+                      int2 b;
+                      b.x = (int) (p[16u * t] | ((unsigned) p[16u * t + 8u] << 16));
+                      b.y = (int) (p[16u * t + 64u] | ((unsigned) p[16u * t + 72u] << 16));
+                      return b;
+                    }
+                    """),
+            Map.entry("tc_mma_load_b_swizzled", """
+                    // As tc_mma_load_b from a tile whose rows were stored with the stride-32 swizzle (row r of the second
+                    // 8-row half at bytes 128 + 16(r ^ 1)).
+                    __device__ static inline int2 tc_mma_load_b_swizzled(const void *tile, int k, int byteOffset) {
+                      unsigned lane = threadIdx.x & 31u, g = lane >> 2, t = lane & 3u;
+                      const unsigned char *p = (const unsigned char *) tile + byteOffset + 2u * g;
+                      int2 b;
+                      b.x = (int) (*(const unsigned short *) (p + 32u * t) | ((unsigned) *(const unsigned short *) (p + 32u * t + 16u) << 16));
+                      b.y = (int) (*(const unsigned short *) (p + 128u + ((32u * t) ^ 16u)) | ((unsigned) *(const unsigned short *) (p + 128u + ((32u * t + 16u) ^ 16u)) << 16));
+                      return b;
+                    }
+                    """),
+            Map.entry("tc_mma_load_b_global", """
+                    // B from global memory: register i holds column col + g of rows row + 8i + 2t and the next one.
+                    __device__ static inline int2 tc_mma_load_b_global(const unsigned short *b, int row, int col, int ld) {
+                      unsigned lane = threadIdx.x & 31u;
+                      long long l = ld;
+                      const unsigned short *p = b + (long long) (row + 2 * (int) (lane & 3u)) * l + col + (int) (lane >> 2);
+                      int2 r;
+                      r.x = (int) (p[0] | ((unsigned) p[l] << 16));
+                      r.y = (int) (p[8 * l] | ((unsigned) p[9 * l] << 16));
+                      return r;
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k16", MMA_COMMON + """
+                    __device__ static inline float4 tc_mma_m16n8k16(int4 a, int2 b, float4 c) {
+                      return tc_mma_k16<false>(a, b, c);
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k16_bf16", MMA_COMMON + """
+                    __device__ static inline float4 tc_mma_m16n8k16_bf16(int4 a, int2 b, float4 c) {
+                      return tc_mma_k16<true>(a, b, c);
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k32_s8", MMA_COMMON + """
+                    __device__ static inline int4 tc_mma_m16n8k32_s8(int4 a, int2 b, int4 c) {
+                    #if defined(TC_MFMA)
+                      int ra = tc_mfma_row(), cb = tc_mfma_col();
+                      tc_i4_t d = {0, 0, 0, 0};
+                      for (int w = 0; w < 8; w++) {
+                        d = __builtin_amdgcn_mfma_i32_4x4x4i8(tc_mma_a_word(a, ra, w >> 2, w & 3), tc_mma_b_word(b, cb, w >> 2, w & 3), d, 0, 0, 0);
+                      }
+                      return make_int4(c.x + tc_mfma_out<tc_i4_t, int>(d, 0), c.y + tc_mfma_out<tc_i4_t, int>(d, 1), c.z + tc_mfma_out<tc_i4_t, int>(d, 2), c.w + tc_mfma_out<tc_i4_t, int>(d, 3));
+                    #elif defined(TC_WMMA11)
+                      int l = (int) __lane_id(), m = l & 15;
+                      tc_i8_t d = {};
+                      for (int kb = 0; kb < 2; kb++) {
+                        tc_i4_t av, bv;
+                        for (int j = 0; j < 4; j++) {
+                          av[j] = tc_mma_a_word(a, m, kb, j);
+                          int bword = tc_mma_b_word(b, m, kb, j);
+                          bv[j] = m < 8 ? bword : 0;
+                        }
+                        d = __builtin_amdgcn_wmma_i32_16x16x16_iu8_w32(true, av, true, bv, d, false);
+                      }
+                      return make_int4(c.x + tc_wmma_out<tc_i8_t, int>(d, 0), c.y + tc_wmma_out<tc_i8_t, int>(d, 1), c.z + tc_wmma_out<tc_i8_t, int>(d, 2), c.w + tc_wmma_out<tc_i8_t, int>(d, 3));
+                    #elif defined(TC_WMMA12)
+                      int l = (int) __lane_id(), m = l & 15, half = l >> 4;
+                      tc_i8_t d = {};
+                      for (int kb = 0; kb < 2; kb++) {
+                        tc_i2_t av, bv;
+                        for (int h = 0; h < 2; h++) {
+                          av[h] = tc_mma_a_word(a, m, kb, 2 * half + h);
+                          int bword = tc_mma_b_word(b, m, kb, 2 * half + h);
+                          bv[h] = m < 8 ? bword : 0;
+                        }
+                        d = __builtin_amdgcn_wmma_i32_16x16x16_iu8_w32_gfx12(true, av, true, bv, d, false);
+                      }
+                      return make_int4(c.x + tc_wmma_out<tc_i8_t, int>(d, 0), c.y + tc_wmma_out<tc_i8_t, int>(d, 1), c.z + tc_wmma_out<tc_i8_t, int>(d, 2), c.w + tc_wmma_out<tc_i8_t, int>(d, 3));
+                    #elif defined(TC_WMMA1250)
+                      tc_i8_t av, bv;
+                      tc_wmma1250_k32(a, b, av, bv);
+                      tc_i8_t z = {};
+                      tc_i8_t d = __builtin_amdgcn_wmma_i32_16x16x64_iu8(true, av, true, bv, z, false, false);
+                      return make_int4(c.x + tc_wmma_out<tc_i8_t, int>(d, 0), c.y + tc_wmma_out<tc_i8_t, int>(d, 1), c.z + tc_wmma_out<tc_i8_t, int>(d, 2), c.w + tc_wmma_out<tc_i8_t, int>(d, 3));
+                    #endif
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k32_e4m3", MMA_COMMON + """
+                    __device__ static inline float4 tc_mma_m16n8k32_e4m3(int4 a, int2 b, float4 c) {
+                      return tc_mma_k32_fp8<true>(a, b, c);
+                    }
+                    """),
+            Map.entry("tc_mma_m16n8k32_e5m2", MMA_COMMON + """
+                    __device__ static inline float4 tc_mma_m16n8k32_e5m2(int4 a, int2 b, float4 c) {
+                      return tc_mma_k32_fp8<false>(a, b, c);
+                    }
+                    """),
+            Map.entry("tc_llmin", """
+                    __device__ static inline long long tc_llmin(long long a, long long b) {
+                      return a < b ? a : b;
+                    }
+                    """),
+            Map.entry("tc_llmax", """
+                    __device__ static inline long long tc_llmax(long long a, long long b) {
+                      return a > b ? a : b;
+                    }
+                    """));
+
+    /**
      * OpenCL C helpers, from the JLS like the CUDA ones. OpenCL 1.2 has no float atomics: they are a
      * compare-and-swap loop on the bits (global memory).
      */
@@ -531,6 +983,11 @@ final class Helpers {
             case CUDA -> CUDA.values();
             case OPENCL -> OPENCL.values();
             case METAL -> METAL.values();
+            case HIP -> {
+                var all = new java.util.HashMap<>(CUDA);
+                all.putAll(HIP);
+                yield all.values();
+            }
         };
     }
 
@@ -539,6 +996,7 @@ final class Helpers {
             case CUDA -> CUDA.get(helper);
             case OPENCL -> OPENCL.get(helper);
             case METAL -> METAL.get(helper);
+            case HIP -> HIP.getOrDefault(helper, CUDA.get(helper));
         };
         if (text == null) {
             throw new IllegalArgumentException("no " + dialect + " definition for helper " + helper);

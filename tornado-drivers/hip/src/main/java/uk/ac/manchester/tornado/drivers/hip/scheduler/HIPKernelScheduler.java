@@ -1,0 +1,218 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2013-2020, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.scheduler;
+
+import java.util.Arrays;
+
+import uk.ac.manchester.tornado.api.WorkerGrid;
+import uk.ac.manchester.tornado.api.common.Event;
+import uk.ac.manchester.tornado.api.profiler.ProfilerType;
+import uk.ac.manchester.tornado.drivers.hip.HIPDeviceContext;
+import uk.ac.manchester.tornado.drivers.hip.HIPGridInfo;
+import uk.ac.manchester.tornado.drivers.hip.HIPKernel;
+import uk.ac.manchester.tornado.runtime.common.TornadoOptions;
+import uk.ac.manchester.tornado.runtime.tasks.TornadoTaskGraph;
+import uk.ac.manchester.tornado.runtime.tasks.meta.TaskDataContext;
+
+public abstract class HIPKernelScheduler {
+
+    protected final HIPDeviceContext deviceContext;
+
+    protected double min;
+    protected double max;
+
+    public static final String WARNING_THREAD_LOCAL = "[TornadoVM HIP] Warning: TornadoVM changed the user-defined local size to null. Now, the HIPDriver driver will select the best configuration.";
+
+    protected HIPKernelScheduler(final HIPDeviceContext context) {
+        deviceContext = context;
+    }
+
+    public abstract void calculateGlobalWork(final TaskDataContext meta, long batchThreads);
+
+    public abstract void calculateLocalWork(final TaskDataContext meta);
+
+    public abstract void checkAndAdaptLocalWork(final TaskDataContext meta);
+
+    public long[] getDefaultLocalWorkGroup() {
+        return null;
+    }
+
+    public int submit(long executionPlanId, final HIPKernel kernel, final TaskDataContext meta, long batchThreads) {
+        return submit(executionPlanId, kernel, meta, null, batchThreads);
+    }
+
+    private void updateProfiler(long executionPlanId, final int taskEvent, final TaskDataContext meta) {
+        // Skipped while capturing into a HIP graph: waiting on (or querying) an event that was
+        // recorded into a capturing stream is illegal and invalidates the capture.
+        if (TornadoOptions.isProfilerEnabled() && !deviceContext.isStreamCapturing(executionPlanId)) {
+            // Metrics captured before blocking
+            meta.getProfiler().setTaskPowerUsage(ProfilerType.POWER_USAGE_mW, meta.getId(), deviceContext.getPowerUsage());
+
+            Event tornadoKernelEvent = deviceContext.resolveEvent(executionPlanId, taskEvent);
+            tornadoKernelEvent.waitForEvents(executionPlanId);
+            long timer = meta.getProfiler().getTimer(ProfilerType.TOTAL_KERNEL_TIME);
+            // Register globalTime
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_KERNEL_TIME, timer + tornadoKernelEvent.getElapsedTime());
+            // Register the time for the task
+            meta.getProfiler().setTaskTimer(ProfilerType.TASK_KERNEL_TIME, meta.getId(), tornadoKernelEvent.getElapsedTime());
+            // Register the dispatch time of the kernel
+            long dispatchValue = meta.getProfiler().getTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME);
+            dispatchValue += tornadoKernelEvent.getDriverDispatchTime();
+            meta.getProfiler().setTimer(ProfilerType.TOTAL_DISPATCH_KERNEL_TIME, dispatchValue);
+        }
+    }
+
+    public int launch(long executionPlanId, final HIPKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+        if (meta.isWorkerGridAvailable()) {
+            WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+            long[] global = grid.getGlobalWork();
+            long[] offset = grid.getGlobalOffset();
+            long[] local = grid.getLocalWork();
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, grid.dimension(), offset, global, local, waitEvents);
+        } else {
+            return deviceContext.enqueueNDRangeKernel(executionPlanId, kernel, meta.getDims(), meta.getGlobalOffset(), meta.getGlobalWork(), (meta.shouldUseOpenCLDriverScheduling()
+                    ? null
+                    : meta.getLocalWork()), waitEvents);
+        }
+    }
+
+    /**
+     * Checks if the selected local work group fits on the target device. If it does
+     * not fit, it sets the local work group to null, so the HIPDriver driver chooses a
+     * default value. In this case, the threads configured in the local work sizes
+     * depends on each HIPDriver driver.
+     *
+     * @param meta
+     *     TaskMetaData.
+     */
+    private void checkLocalWorkGroupFitsOnDevice(final TaskDataContext meta) {
+        WorkerGrid grid = meta.getWorkerGrid(meta.getId());
+        long[] local = grid.getLocalWork();
+        if (local != null) {
+            HIPGridInfo gridInfo = new HIPGridInfo(deviceContext, local);
+            boolean checkedDimensions = gridInfo.checkGridDimensions();
+            if (!checkedDimensions) {
+                System.out.println(WARNING_THREAD_LOCAL);
+                grid.setLocalWorkToNull();
+                grid.setNumberOfWorkgroupsToNull();
+            }
+        }
+    }
+
+    public int submit(long executionPlanId, final HIPKernel kernel, final TaskDataContext meta, final int[] waitEvents, long batchThreads) {
+        if (!meta.isWorkerGridAvailable()) {
+            if (!meta.isGlobalWorkDefined()) {
+                calculateGlobalWork(meta, batchThreads);
+            }
+            if (!meta.isLocalWorkDefined()) {
+                // For multi-dimensional kernels, size the block from the HIP occupancy API,
+                // which accounts for the kernel's register/shared-memory usage.
+                // This prevents register-heavy 2D/3D kernels from requesting an
+                // unlaunchable block (HIP_ERROR_LAUNCH_OUT_OF_RESOURCES). 1D kernels keep the
+                // existing heuristic so reduction thread/partial layout is unaffected.
+                int maxBlockThreads = (meta.getDims() > 1) ? kernel.getMaxPotentialBlockSize() : 0;
+                if (maxBlockThreads > 0) {
+                    calculateLocalWorkFromMaxBlock(meta, maxBlockThreads);
+                } else {
+                    calculateLocalWork(meta);
+                    checkAndAdaptLocalWork(meta);
+                    clampLocalWorkToKernelLimit(meta, kernel);
+                }
+            }
+        } else {
+            checkLocalWorkGroupFitsOnDevice(meta);
+        }
+
+        if (meta.isThreadInfoEnabled()) {
+            meta.printThreadDims();
+        }
+        final int taskEvent = launch(executionPlanId, kernel, meta, waitEvents, batchThreads);
+        updateProfiler(executionPlanId, taskEvent, meta);
+        return taskEvent;
+    }
+
+    /**
+     * Distributes an occupancy-suggested maximum block size ({@code maxBlockThreads} total
+     * threads) across the kernel's dimensions, choosing per-dimension sizes that divide the
+     * global work evenly.
+     */
+    protected void calculateLocalWorkFromMaxBlock(final TaskDataContext meta, int maxBlockThreads) {
+        final long[] localWork = meta.initLocalWork();
+        final long[] globalWork = meta.getGlobalWork();
+        final int dims = meta.getDims();
+        final long perDimensionMax = (long) Math.pow(maxBlockThreads, 1.0 / dims);
+        for (int i = 0; i < dims; i++) {
+            localWork[i] = blockSizeForDimension(perDimensionMax, globalWork[i]);
+        }
+    }
+
+    /**
+     * Lowers a heuristic block size that the kernel cannot actually launch.
+     *
+     * <p>The 1D path above sizes the block from the <em>device</em> maximum and knows nothing about
+     * how many registers the compiled kernel uses. An arithmetically heavy kernel then asks for a
+     * block whose combined register demand exceeds what an SM can supply, and the driver rejects
+     * the launch with {@code HIP_ERROR_LAUNCH_OUT_OF_RESOURCES} -- reported as a bailout, so the
+     * work silently moves to the host.
+     *
+     * <p>This never raises the heuristic's choice; it only lowers one the kernel cannot support, so
+     * a block that already fits -- which includes the reduction layouts the 1D path exists to
+     * preserve -- is left exactly as it was.
+     */
+    private void clampLocalWorkToKernelLimit(final TaskDataContext meta, final HIPKernel kernel) {
+        if (meta.getId().startsWith(TornadoTaskGraph.GENERATED_TASK_GRAPH_PREFIX)) {
+            // Reductions size their partial-results array from the device's maximum work group,
+            // independently of what this scheduler picks. Lowering the block here would raise the
+            // number of workgroups past the partials the reduction allocated and silently produce
+            // wrong sums, so a generated reduction graph keeps the heuristic's block size and
+            // fails to launch loudly instead.
+            return;
+        }
+        final long[] localWork = meta.getLocalWork();
+        if (localWork == null) {
+            return;
+        }
+        long requested = 1;
+        for (long perDimension : localWork) {
+            requested *= perDimension;
+        }
+        final int maxBlockThreads = kernel.getMaxPotentialBlockSize();
+        if (maxBlockThreads <= 0 || requested <= maxBlockThreads) {
+            return;
+        }
+        calculateLocalWorkFromMaxBlock(meta, maxBlockThreads);
+    }
+
+    private static long blockSizeForDimension(long maxBlockSize, long globalWorkSize) {
+        if (maxBlockSize == globalWorkSize) {
+            maxBlockSize /= 4;
+        }
+        long value = Math.min(maxBlockSize, globalWorkSize);
+        if (value <= 0) {
+            return 1;
+        }
+        while (globalWorkSize % value != 0) {
+            value--;
+        }
+        return value;
+    }
+
+}

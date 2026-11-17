@@ -1,0 +1,228 @@
+/*
+ * This file is part of Tornado: A heterogeneous programming framework:
+ * https://github.com/beehive-lab/tornadovm
+ *
+ * Copyright (c) 2026, APT Group, Department of Computer Science,
+ * The University of Manchester. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package uk.ac.manchester.tornado.drivers.hip.ffm;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * The opaque {@code long} handles the HIP backend's Java layer passes around, and the state each
+ * one stands for.
+ *
+ * <p>
+ * The JNI implementation this replaces boxed HIP primitives inside {@code malloc}'d C structs and
+ * handed their addresses to Java as longs. That worked, but the state those structs carried -- a
+ * kernel's packed arguments, a program's source, build log and compiled image -- is Java state that
+ * had been pushed across the boundary, and every handle was a raw pointer the Java side could get
+ * wrong without the JVM noticing. Here the state stays in Java objects and the handle is a plain
+ * counter: a stale or fabricated handle resolves to {@code null} instead of dereferencing whatever
+ * happens to be at that address.
+ *
+ * <p>
+ * Handles start above zero because the Java layer already treats {@code 0} as "no handle".
+ */
+public final class HIPHandles {
+
+    /**
+     * Handles start well above zero for two reasons. The Java layer already treats {@code 0} as "no
+     * handle", and the event wait list is passed in two different layouts -- a plain list of
+     * handles, and one prefixed with an element count -- so a small integer reaching
+     * {@link #resolve} has to be recognisable as a count word rather than resolving to whatever
+     * object happens to have been registered first. No wait list is anywhere near this long.
+     */
+    private static final long FIRST_HANDLE = 0x1000_0000L;
+
+    private static final AtomicLong NEXT_HANDLE = new AtomicLong(FIRST_HANDLE);
+
+    private static final ConcurrentHashMap<Long, Object> OBJECTS = new ConcurrentHashMap<>();
+
+    private HIPHandles() {
+    }
+
+    /** Registers {@code object} and returns the handle the Java layer will address it by. */
+    public static long register(Object object) {
+        long handle = NEXT_HANDLE.getAndIncrement();
+        OBJECTS.put(handle, object);
+        return handle;
+    }
+
+    /** Resolves a handle, or returns {@code null} if it was never registered or has been released. */
+    @SuppressWarnings("unchecked")
+    public static <T> T resolve(long handle, Class<T> type) {
+        Object object = OBJECTS.get(handle);
+        return type.isInstance(object) ? (T) object : null;
+    }
+
+    /** Drops a handle. Returns what it referred to so the caller can release native resources. */
+    public static Object release(long handle) {
+        return OBJECTS.remove(handle);
+    }
+
+    /** A HIP device: the driver's {@code hipDevice_t} plus the ordinal it was enumerated at. */
+    public record Device(int device, int ordinal) {
+    }
+
+    /** A HIP context bound to one device. {@code context} is the raw {@code context}. */
+    public record Context(long context, int device, int ordinal) {
+    }
+
+    /**
+     * A command queue: one {@code hipStream_t} plus the context and device it belongs to.
+     * {@code properties} carries the OpenCL-style queue property bits the Java layer created it
+     * with, which is what tells the profiler whether the queue was asked to time its operations.
+     */
+    /**
+     * A command queue: a HIP stream plus the context it belongs to.
+     *
+     * <p>
+     * Not a record, because it carries one piece of mutable state. {@code pending} says whether
+     * anything has been enqueued on the stream since it was last drained, so that a
+     * {@code hipStreamSynchronize} against a stream that is already empty can be skipped. A task
+     * graph ends with a blocking read-back, a flush and a wait, and the last two synchronise a
+     * stream that the read-back already drained.
+     *
+     * <p>
+     * It is {@code volatile} rather than an {@code AtomicBoolean} because the transitions are a
+     * plain set and a plain clear -- there is no read-modify-write to lose -- and every write is a
+     * conservative "assume work is outstanding".
+     */
+    public static final class Queue {
+
+        private final long stream;
+        private final long context;
+        private final int device;
+        private final long properties;
+        private volatile boolean pending;
+
+        public Queue(long stream, long context, int device, long properties) {
+            this.stream = stream;
+            this.context = context;
+            this.device = device;
+            this.properties = properties;
+        }
+
+        public long stream() {
+            return stream;
+        }
+
+        public long context() {
+            return context;
+        }
+
+        public int device() {
+            return device;
+        }
+
+        public long properties() {
+            return properties;
+        }
+
+        /** Records that work may now be outstanding on the stream. Always safe to call. */
+        public void markPending() {
+            pending = true;
+        }
+
+        /** Records that the stream has been drained. Only ever called after a successful sync. */
+        public void clearPending() {
+            pending = false;
+        }
+
+        public boolean isPending() {
+            return pending;
+        }
+    }
+
+    /**
+     * An event pair. {@code event} is the completion event used for waits, queries and
+     * dependencies; {@code start} is an optional timestamp recorded before the operation so that
+     * {@code hipEventElapsedTime(start, event)} yields the operation's device time. {@code start} is
+     * {@code 0} for events that do not bracket a timed operation, such as markers and barriers, and
+     * their elapsed time is reported as zero.
+     *
+     * <p>
+     * {@code dispatchTime} is the host time, in nanoseconds, the driver took to accept the
+     * operation: HIP has no queued/start timestamps to derive it from on the device. It is
+     * {@code 0} when timing is off and for events that do not bracket an operation.
+     */
+    public record Event(long event, long start, long dispatchTime) {
+
+        public Event(long event, long start) {
+            this(event, start, 0);
+        }
+    }
+
+    /** A program: HIP C++ source, the image hipRTC produced for it, and the module it was loaded as. */
+    public static final class Program {
+
+        /** Matches the OpenCL {@code CL_BUILD_SUCCESS} the cloned Java enum expects. */
+        public static final int BUILD_SUCCESS = 0;
+        /** Matches the OpenCL {@code CL_BUILD_ERROR} the cloned Java enum expects. */
+        public static final int BUILD_ERROR = -2;
+        /** Matches the OpenCL {@code CL_BUILD_NONE} the cloned Java enum expects. */
+        public static final int BUILD_NONE = -1;
+
+        public final long context;
+        public final String source;
+
+        /** The loadable module image: a hipRTC code object, or a pre-supplied binary. */
+        public byte[] binary;
+        public String log = "";
+        public int buildStatus = BUILD_NONE;
+        public long module;
+        public boolean moduleLoaded;
+
+        public Program(long context, String source, byte[] binary) {
+            this.context = context;
+            this.source = source;
+            this.binary = binary == null ? new byte[0] : binary;
+        }
+    }
+
+    /** A kernel: a {@code hipFunction_t} plus the argument blobs staged for its next launch. */
+    public static final class Kernel {
+
+        public final long function;
+        public final long module;
+        public final String name;
+
+        /**
+         * One byte blob per argument index, in the order {@code hipModuleLaunchKernel} expects them. A
+         * blob is replaced wholesale when the argument is set again, and the vector is grown to fit
+         * the highest index the caller has used.
+         */
+        public final List<byte[]> arguments = new ArrayList<>();
+
+        public Kernel(long function, long module, String name) {
+            this.function = function;
+            this.module = module;
+            this.name = name;
+        }
+
+        public void setArgument(int index, byte[] value) {
+            while (arguments.size() <= index) {
+                arguments.add(null);
+            }
+            arguments.set(index, value);
+        }
+    }
+}

@@ -231,6 +231,64 @@ fallback, which would run without complaint and produce a wrong result.
 ``local only`` means the operation is supported when the array was allocated
 with ``KernelContext.allocateIntLocalArray(int)``; a global array is rejected.
 
+Warps on 64-lane AMD wavefronts (HIP backend)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``KernelContext`` warp operations (``simd*``, the warp votes, ``mma*``) are
+defined for 32-lane warps. On AMD GPUs with 32-lane wavefronts (RDNA) a warp is
+a wavefront. On AMD GPUs with 64-lane wavefronts (CDNA: ``gfx90a``, ``gfx942``,
+``gfx950``) the HIP backend runs each half of a wavefront as one warp, with the
+exact 32-lane results for shuffles, votes, reductions and MMA.
+
+The two warps of a 64-lane wavefront share one instruction stream, so they do
+not make independent forward progress the way NVIDIA warps do. A kernel in
+which threads of one warp wait in a loop for a value that a thread of the other
+warp of the same wavefront writes can hang where it completes on an NVIDIA GPU:
+the waiting loop can run first and never let the write execute. Order such
+accesses with ``localBarrier()`` instead.
+
+Where the compiler can prove the pattern, the HIP backend rejects the kernel on
+a 64-lane GPU with ``TC-E4019`` instead of letting it hang: a loop that only
+rereads local memory until it changes, with no barrier in it, where every
+thread that can write the value after the wait starts is in one wavefront and a
+waiting thread certainly shares it, as told by conditions on ``localIdx`` in a
+kernel that uses no other dimension. Waits that complete are accepted: the value
+is written before the wait starts (by the waiting thread itself, or before a
+barrier or another point where all threads meet again). A wait the compiler
+cannot decide is also accepted and can still hang, for example when the writing
+thread is chosen from data, in a kernel that uses ``localIdy`` or another second
+or third dimension, or when a thread in another wavefront can write the value:
+two wavefronts that release each other's waiters, or a ticket-style wait in
+which every thread writes after its own wait. The check
+does not cover waits on global memory, whose writer may be another work-group
+(which does make progress). The compiler does not know the work-group shape, so
+two launches of a rejected kernel would have completed: a kernel that uses only
+``localIdx`` launched with a 2D or 3D work-group, where a writer in another row
+releases the waiters (for example rows of 56 threads, the writer at
+``localIdx == 40`` and the waiters at ``localIdx < 8``: the writer of the second
+row is in a wavefront without waiters), and a work-group too small for any
+thread to reach the wait.
+
+MMA accumulation precision (HIP backend)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+On AMD GPUs the ``mma*`` operations run on MFMA (CDNA) or WMMA (RDNA3, RDNA4,
+``gfx1250``) instructions, which accumulate inside the instruction in single
+precision. The result is not always bit-identical to adding the products in
+order in ``float``:
+
+- MFMA (checked on ``gfx950``) and RDNA4 WMMA (checked on ``gfx1201``) return
+  the exact result when every product and partial sum is exactly representable.
+- RDNA3 and RDNA3.5 (``gfx11``) WMMA can be one or two ``float`` ulps off even
+  then (for example ``-1.5000001`` for an exact ``-1.5``): about ``1e-7``
+  relative to the sum of the magnitudes of the products. FP8 inputs, which are
+  widened exactly to halves on these GPUs, behave the same.
+- ``gfx1250`` keeps about 14 to 16 bits while it sums the products of an FP8
+  WMMA, so FP8 results can differ by up to about ``1e-4`` relative to the sum of
+  the magnitudes of the products. Its 16-bit forms behave like RDNA4.
+
+Compare MMA results with a relative tolerance rather than for bit equality.
+
 Launching kernels from the device (CUDA Dynamic Parallelism)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

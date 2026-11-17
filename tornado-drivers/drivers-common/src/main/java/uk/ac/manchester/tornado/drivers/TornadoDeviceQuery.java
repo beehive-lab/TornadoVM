@@ -50,6 +50,7 @@ public class TornadoDeviceQuery {
         colourMapping.put(TornadoVMBackendType.OPENCL, ColoursTerminal.CYAN);
         colourMapping.put(TornadoVMBackendType.CUDA, ColoursTerminal.GREEN);
         colourMapping.put(TornadoVMBackendType.METAL, ColoursTerminal.YELLOW);
+        colourMapping.put(TornadoVMBackendType.HIP, ColoursTerminal.RED);
     }
 
     private static String formatSize(long v) {

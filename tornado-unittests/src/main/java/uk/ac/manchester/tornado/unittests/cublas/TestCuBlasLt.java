@@ -40,7 +40,9 @@ import uk.ac.manchester.tornado.cublas.enums.CuBlasOperation;
 import uk.ac.manchester.tornado.unittests.common.LibraryStreamPerThread;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
 import uk.ac.manchester.tornado.cublas.provider.CuBlasLibraryProvider;
+import uk.ac.manchester.tornado.cublas.provider.HipBlasLtLibraryProvider;
 import uk.ac.manchester.tornado.unittests.common.TornadoVMCUDANotSupported;
+import uk.ac.manchester.tornado.unittests.common.TornadoVMHIPNotSupported;
 
 /**
  * Unit tests for cuBLASLt library tasks (matmul with fused epilogues).
@@ -62,8 +64,14 @@ public class TestCuBlasLt extends TornadoTestBase {
     @BeforeEach
     public void cuBlasLtMustBeAvailable() {
         TornadoVMBackendType backendType = getTornadoRuntime().getDefaultDevice().getTornadoVMBackend();
+        if (backendType == TornadoVMBackendType.HIP) {
+            if (!HipBlasLtLibraryProvider.isAvailable()) {
+                throw new TornadoVMHIPNotSupported("hipBLASLt is not available on this host");
+            }
+            return;
+        }
         if (backendType != TornadoVMBackendType.CUDA) {
-            String message = "cuBLASLt library tasks require the CUDA backend (default device is " + backendType + ")";
+            String message = "cuBLASLt library tasks require the CUDA or HIP backend (default device is " + backendType + ")";
             switch (backendType) {
                 case OPENCL, METAL -> assertNotBackend(backendType, message);
                 default -> throw new TornadoVMCUDANotSupported(message);

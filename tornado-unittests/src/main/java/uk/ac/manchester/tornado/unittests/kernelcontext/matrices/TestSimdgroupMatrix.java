@@ -79,9 +79,10 @@ public class TestSimdgroupMatrix extends TornadoTestBase {
     }
 
     private void runAndCheck(int m, int n, int k) throws TornadoExecutionPlanException {
-        // simdgroup_matrix is Metal-only: no equivalent in OpenCL or CUDA.
+        // simdgroup_matrix is Metal-only: no equivalent in OpenCL, CUDA or HIP.
         assertNotBackend(TornadoVMBackendType.OPENCL);
         assertNotBackend(TornadoVMBackendType.CUDA);
+        assertNotBackend(TornadoVMBackendType.HIP);
 
         FloatArray a = new FloatArray(m * k);
         FloatArray b = new FloatArray(k * n);

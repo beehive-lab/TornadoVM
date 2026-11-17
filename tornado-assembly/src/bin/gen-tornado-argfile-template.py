@@ -100,7 +100,7 @@ def get_export_list_paths(tornado_sdk):
     Get the paths to all export list files.
 
     Export lists contain --add-exports directives that expose internal JDK modules
-    to TornadoVM. Each backend (OpenCL, CUDA) requires specific module exports.
+    to TornadoVM. Each backend (OpenCL, CUDA, Metal, HIP) requires specific module exports.
 
     Args:
         tornado_sdk (str): Path to the TORNADOVM_HOME directory
@@ -114,6 +114,7 @@ def get_export_list_paths(tornado_sdk):
         "opencl": export_lists_dir / "opencl-exports",
         "metal": export_lists_dir / "metal-exports",
         "cuda": export_lists_dir / "cuda-exports",
+        "hip": export_lists_dir / "hip-exports",
     }
 
 

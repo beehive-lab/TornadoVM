@@ -20,12 +20,13 @@ package uk.ac.manchester.tornado.nccl;
 import java.util.Arrays;
 import java.util.Base64;
 
+import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.nccl.provider.NcclNativeLib;
 
 /**
  * The NCCL unique id that ties together the processes of one communicator. One process creates it
- * with {@link #create()}, the application hands its bytes to every other process (over a socket,
+ * with {@link #create(TornadoDevice...)}, the application hands its bytes to every other process (over a socket,
  * MPI, a shared file, an environment variable...), and every process passes it to
  * {@link NcclCommunicator#create(NcclUniqueId, int, int, uk.ac.manchester.tornado.api.common.TornadoDevice...)}.
  *
@@ -37,7 +38,7 @@ import uk.ac.manchester.tornado.nccl.provider.NcclNativeLib;
  *
  * <pre>{@code
  * // process of rank 0
- * NcclUniqueId id = NcclUniqueId.create();
+ * NcclUniqueId id = NcclUniqueId.create(myGpu);
  * send(id.toBase64());                       // however the application reaches the other processes
  *
  * // every process
@@ -53,9 +54,25 @@ public final class NcclUniqueId {
         this.bytes = bytes;
     }
 
-    /** A new unique id ({@code ncclGetUniqueId}); create it in one process only. */
+    /**
+     * A new unique id ({@code ncclGetUniqueId}) from the library of the devices' backend (RCCL for HIP
+     * devices), for a communicator whose ranks in this process run on {@code devices}; create it in
+     * one process only.
+     */
+    public static NcclUniqueId create(TornadoDevice... devices) {
+        if (devices == null || devices.length == 0) {
+            throw new TornadoRuntimeException("[ERROR] An NCCL unique id for devices needs at least one device");
+        }
+        return new NcclUniqueId(NcclCommunicator.bindings(devices).getUniqueId());
+    }
+
+    /**
+     * A new unique id ({@code ncclGetUniqueId}) when no device is at hand. No TornadoVM backend is
+     * started: the library is the one {@code -Dtornado.nccl.library=rccl|nccl} names, else NCCL when
+     * it can be loaded, else RCCL. Prefer {@link #create(TornadoDevice...)} on a host with both.
+     */
     public static NcclUniqueId create() {
-        return new NcclUniqueId(NcclNativeLib.getUniqueId());
+        return new NcclUniqueId(NcclNativeLib.withoutDevice().getUniqueId());
     }
 
     /** The id from the bytes another process obtained with {@link #toBytes()}. */

@@ -116,6 +116,10 @@ public final class CompilerFlags {
             // --fmad wins, as it does in withStrictFloatingPoint().
             merged = merge("--fmad=false", merged);
         }
+        if (strictFloatingPoint && backend == TornadoVMBackendType.HIP) {
+            // The same for hipRTC, whose clang contracts by default.
+            merged = merge("-ffp-contract=off", merged);
+        }
         return merged;
     }
 

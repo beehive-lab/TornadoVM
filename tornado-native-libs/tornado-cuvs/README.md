@@ -72,6 +72,26 @@ try (Arena arena = Arena.ofShared(); FileChannel ch = FileChannel.open(path)) {
 The module binds to `libcuvs_c` through `java.lang.foreign`; there is no JNI shim. Without the library,
 `CuVSLibraryProvider.isAvailable()` returns `false`, and the unit tests report `UNSUPPORTED`.
 
+### On AMD GPUs (hipVS)
+
+hipVS, AMD's HIP port of cuVS, has the same C API and library name. With the HIP backend, put its
+`libcuvs_c.so` and the libraries it needs on the library path (the `amd-libhipvs`, `amd-libraft` and
+`amd-libhipmm` wheels from AMD's package index, plus ROCm's OpenMP runtime in `lib/llvm/lib`), and cuVS tasks
+run on HIP devices:
+
+```bash
+python3 -m venv /tmp/hipvsenv
+/tmp/hipvsenv/bin/pip install --extra-index-url=https://pypi.amd.com/rocm-7.2.3/simple amd-libhipvs amd-libraft amd-libhipmm
+SITE=$(echo /tmp/hipvsenv/lib/python3.*/site-packages)
+export LD_LIBRARY_PATH=$SITE/libcuvs/lib64:$SITE/libraft/lib64:$SITE/librmm/lib64:$SITE/rapids_logger/lib64:$ROCM_PATH/lib/llvm/lib:$LD_LIBRARY_PATH
+```
+
+cuVS and hipVS have the same library name, so a process loads whichever `libcuvs_c.so` the library path finds;
+the module treats it as hipVS when it runs on the HIP runtime (`-Dtornado.cuvs.library=hipvs|cuvs` overrides
+that), and cuVS tasks then run on HIP devices. hipVS takes device tensors as CUDA ones
+(`kDLCUDA`), and builds the graph of a host dataset into device memory only, so `allNeighborsOnHost` stages its
+outputs through device memory there.
+
 ## Notes
 
 * **Memory:** cuVS allocates its scratch memory itself (through RMM), so cuVS tasks cannot be captured in a

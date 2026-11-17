@@ -29,15 +29,25 @@ import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.util.List;
 
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
+import uk.ac.manchester.tornado.runtime.ffm.ROCmLibraries;
 
 /**
  * Bindings to NVIDIA NCCL and the one CUDA runtime call the provider needs. Communicators, streams
  * and device pointers are opaque handles carried as {@code long}; device pointers are raw
  * {@code CUdeviceptr} values of TornadoVM-managed buffers, and every collective is enqueued on the
  * TornadoVM execution stream of its plan, so it is ordered with the kernels and transfers around it.
+ *
+ * <p>
+ * On AMD GPUs the same bindings reach RCCL, ROCm's implementation of the NCCL API and ABI, with the
+ * HIP runtime in place of the CUDA runtime (the calls used here have the same signatures). Each
+ * device uses the bindings of its backend ({@link #forBackend}): RCCL for HIP devices, NCCL for CUDA
+ * ones, each loaded when first used; {@code -Dtornado.nccl.library=rccl|nccl} picks one for every
+ * device.
  */
 public final class NcclNativeLib {
 
@@ -60,106 +70,147 @@ public final class NcclNativeLib {
     /** {@code ncclUniqueId}: a struct holding {@code char internal[128]}, passed by value to {@code ncclCommInitRank}. */
     private static final StructLayout UNIQUE_ID = MemoryLayout.structLayout(MemoryLayout.sequenceLayout(UNIQUE_ID_BYTES, ValueLayout.JAVA_BYTE).withName("internal"));
 
-    private static final SymbolLookup LIBNCCL = FFMSupport.loadLibrary("libnccl.so.2", "libnccl.so");
+    /** Whether these bindings reach RCCL and the HIP runtime rather than NCCL and the CUDA runtime. */
+    private final boolean rccl;
 
-    /**
-     * The CUDA runtime is only used to ask which device the current context belongs to: NCCL
-     * addresses devices by CUDA runtime ordinal, while TornadoVM addresses them by its own index.
-     */
-    private static final SymbolLookup LIBCUDART = FFMSupport.loadLibrary("libcudart.so.13", "libcudart.so.12", "libcudart.so");
-
-    private static final MethodHandle NCCL_GET_VERSION;
-    private static final MethodHandle NCCL_GET_ERROR_STRING;
-    private static final MethodHandle NCCL_COMM_INIT_ALL;
-    private static final MethodHandle NCCL_GET_UNIQUE_ID;
-    private static final MethodHandle NCCL_COMM_INIT_RANK;
-    private static final MethodHandle NCCL_COMM_DESTROY;
-    private static final MethodHandle NCCL_COMM_ABORT;
-    private static final MethodHandle NCCL_ALL_REDUCE;
-    private static final MethodHandle NCCL_BROADCAST;
-    private static final MethodHandle NCCL_REDUCE;
-    private static final MethodHandle NCCL_ALL_GATHER;
-    private static final MethodHandle NCCL_REDUCE_SCATTER;
-    private static final MethodHandle NCCL_SEND;
-    private static final MethodHandle NCCL_RECV;
-    private static final MethodHandle NCCL_GROUP_START;
-    private static final MethodHandle NCCL_GROUP_END;
-    private static final MethodHandle CUDA_GET_DEVICE;
-    private static final MethodHandle CUDA_STREAM_CREATE_WITH_FLAGS;
-    private static final MethodHandle CUDA_EVENT_CREATE_WITH_FLAGS;
-    private static final MethodHandle CUDA_EVENT_RECORD;
-    private static final MethodHandle CUDA_STREAM_WAIT_EVENT;
+    private final MethodHandle ncclGetVersion;
+    private final MethodHandle ncclGetErrorString;
+    private final MethodHandle ncclCommInitAll;
+    private final MethodHandle ncclGetUniqueId;
+    private final MethodHandle ncclCommInitRank;
+    private final MethodHandle ncclCommDestroy;
+    private final MethodHandle ncclCommAbort;
+    private final MethodHandle ncclAllReduce;
+    private final MethodHandle ncclBroadcast;
+    private final MethodHandle ncclReduce;
+    private final MethodHandle ncclAllGather;
+    private final MethodHandle ncclReduceScatter;
+    private final MethodHandle ncclSend;
+    private final MethodHandle ncclRecv;
+    private final MethodHandle ncclGroupStart;
+    private final MethodHandle ncclGroupEnd;
+    private final MethodHandle cudaGetDevice;
+    private final MethodHandle cudaStreamCreateWithFlags;
+    private final MethodHandle cudaEventCreateWithFlags;
+    private final MethodHandle cudaEventRecord;
+    private final MethodHandle cudaStreamWaitEvent;
 
     /** {@code cudaStreamNonBlocking} and {@code cudaEventDisableTiming}. */
     private static final int CUDA_STREAM_NON_BLOCKING = 1;
     private static final int CUDA_EVENT_DISABLE_TIMING = 2;
 
-    static {
-        if (LIBNCCL == null || LIBCUDART == null) {
-            NCCL_GET_VERSION = null;
-            NCCL_GET_ERROR_STRING = null;
-            NCCL_COMM_INIT_ALL = null;
-            NCCL_GET_UNIQUE_ID = null;
-            NCCL_COMM_INIT_RANK = null;
-            NCCL_COMM_DESTROY = null;
-            NCCL_COMM_ABORT = null;
-            NCCL_ALL_REDUCE = null;
-            NCCL_BROADCAST = null;
-            NCCL_REDUCE = null;
-            NCCL_ALL_GATHER = null;
-            NCCL_REDUCE_SCATTER = null;
-            NCCL_SEND = null;
-            NCCL_RECV = null;
-            NCCL_GROUP_START = null;
-            NCCL_GROUP_END = null;
-            CUDA_GET_DEVICE = null;
-            CUDA_STREAM_CREATE_WITH_FLAGS = null;
-            CUDA_EVENT_CREATE_WITH_FLAGS = null;
-            CUDA_EVENT_RECORD = null;
-            CUDA_STREAM_WAIT_EVENT = null;
+    private NcclNativeLib(boolean rccl) {
+        this.rccl = rccl;
+        // The CUDA runtime (for RCCL, the HIP runtime) is only used to ask which device the current
+        // context belongs to, and for the side streams: NCCL addresses devices by runtime ordinal,
+        // while TornadoVM addresses them by its own index.
+        SymbolLookup libnccl = rccl ? ROCmLibraries.load(List.of("librccl.so.1", "librccl.so"), List.of("rccl.dll", "librccl.dll"))
+                : FFMSupport.loadLibrary("libnccl.so.2", "libnccl.so");
+        SymbolLookup libcudart = rccl ? ROCmLibraries.load(List.of("libamdhip64.so.7", "libamdhip64.so.6", "libamdhip64.so"), List.of("amdhip64_7.dll", "amdhip64_6.dll"))
+                : FFMSupport.loadLibrary("libcudart.so.13", "libcudart.so.12", "libcudart.so");
+        if (libnccl == null || libcudart == null) {
+            ncclGetVersion = null;
+            ncclGetErrorString = null;
+            ncclCommInitAll = null;
+            ncclGetUniqueId = null;
+            ncclCommInitRank = null;
+            ncclCommDestroy = null;
+            ncclCommAbort = null;
+            ncclAllReduce = null;
+            ncclBroadcast = null;
+            ncclReduce = null;
+            ncclAllGather = null;
+            ncclReduceScatter = null;
+            ncclSend = null;
+            ncclRecv = null;
+            ncclGroupStart = null;
+            ncclGroupEnd = null;
+            cudaGetDevice = null;
+            cudaStreamCreateWithFlags = null;
+            cudaEventCreateWithFlags = null;
+            cudaEventRecord = null;
+            cudaStreamWaitEvent = null;
         } else {
-            NCCL_GET_VERSION = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetVersion");
-            NCCL_GET_ERROR_STRING = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_POINTER, C_INT), "ncclGetErrorString");
-            NCCL_COMM_INIT_ALL = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_POINTER), "ncclCommInitAll");
-            NCCL_GET_UNIQUE_ID = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetUniqueId");
+            ncclGetVersion = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetVersion");
+            ncclGetErrorString = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_POINTER, C_INT), "ncclGetErrorString");
+            ncclCommInitAll = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, C_POINTER), "ncclCommInitAll");
+            ncclGetUniqueId = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_POINTER), "ncclGetUniqueId");
             // (comm*, nranks, ncclUniqueId passed by value, rank)
-            NCCL_COMM_INIT_RANK = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, UNIQUE_ID, C_INT), "ncclCommInitRank");
-            NCCL_COMM_DESTROY = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommDestroy");
-            NCCL_COMM_ABORT = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommAbort");
+            ncclCommInitRank = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_POINTER, C_INT, UNIQUE_ID, C_INT), "ncclCommInitRank");
+            ncclCommDestroy = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommDestroy");
+            ncclCommAbort = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG), "ncclCommAbort");
             // (sendbuff, recvbuff, count, datatype, op, comm, stream)
-            NCCL_ALL_REDUCE = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclAllReduce");
+            ncclAllReduce = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclAllReduce");
             // (sendbuff, recvbuff, count, datatype, root, comm, stream)
-            NCCL_BROADCAST = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclBroadcast");
+            ncclBroadcast = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclBroadcast");
             // (sendbuff, recvbuff, count, datatype, op, root, comm, stream)
-            NCCL_REDUCE = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_INT, C_LONG, C_LONG), "ncclReduce");
+            ncclReduce = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_INT, C_LONG, C_LONG), "ncclReduce");
             // (sendbuff, recvbuff, sendcount, datatype, comm, stream)
-            NCCL_ALL_GATHER = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG), "ncclAllGather");
+            ncclAllGather = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_LONG, C_LONG), "ncclAllGather");
             // (sendbuff, recvbuff, recvcount, datatype, op, comm, stream)
-            NCCL_REDUCE_SCATTER = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclReduceScatter");
+            ncclReduceScatter = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclReduceScatter");
             // (buff, count, datatype, peer, comm, stream)
-            NCCL_SEND = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclSend");
-            NCCL_RECV = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclRecv");
-            NCCL_GROUP_START = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT), "ncclGroupStart");
-            NCCL_GROUP_END = FFMSupport.downcall(LIBNCCL, FunctionDescriptor.of(C_INT), "ncclGroupEnd");
-            CUDA_GET_DEVICE = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_POINTER), "cudaGetDevice");
+            ncclSend = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclSend");
+            ncclRecv = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT, C_INT, C_LONG, C_LONG), "ncclRecv");
+            ncclGroupStart = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT), "ncclGroupStart");
+            ncclGroupEnd = FFMSupport.downcall(libnccl, FunctionDescriptor.of(C_INT), "ncclGroupEnd");
+            cudaGetDevice = FFMSupport.downcall(libcudart, FunctionDescriptor.of(C_INT, C_POINTER), rccl ? "hipGetDevice" : "cudaGetDevice");
             // the side stream and the events of the collectives started with allReduceInPlaceStart
-            CUDA_STREAM_CREATE_WITH_FLAGS = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), "cudaStreamCreateWithFlags");
-            CUDA_EVENT_CREATE_WITH_FLAGS = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), "cudaEventCreateWithFlags");
-            CUDA_EVENT_RECORD = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_LONG, C_LONG), "cudaEventRecord");
-            CUDA_STREAM_WAIT_EVENT = FFMSupport.downcall(LIBCUDART, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT), "cudaStreamWaitEvent");
+            cudaStreamCreateWithFlags = FFMSupport.downcall(libcudart, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), rccl ? "hipStreamCreateWithFlags" : "cudaStreamCreateWithFlags");
+            cudaEventCreateWithFlags = FFMSupport.downcall(libcudart, FunctionDescriptor.of(C_INT, C_POINTER, C_INT), rccl ? "hipEventCreateWithFlags" : "cudaEventCreateWithFlags");
+            cudaEventRecord = FFMSupport.downcall(libcudart, FunctionDescriptor.of(C_INT, C_LONG, C_LONG), rccl ? "hipEventRecord" : "cudaEventRecord");
+            cudaStreamWaitEvent = FFMSupport.downcall(libcudart, FunctionDescriptor.of(C_INT, C_LONG, C_LONG, C_INT), rccl ? "hipStreamWaitEvent" : "cudaStreamWaitEvent");
         }
     }
 
-    private NcclNativeLib() {
+    private static final class Nccl {
+        static final NcclNativeLib BINDINGS = new NcclNativeLib(false);
+    }
+
+    private static final class Rccl {
+        static final NcclNativeLib BINDINGS = new NcclNativeLib(true);
+    }
+
+    /**
+     * The bindings for devices of {@code backend}: RCCL for HIP devices, NCCL for the others, or the
+     * library {@code -Dtornado.nccl.library=rccl|nccl} names. Each is loaded on first use.
+     */
+    public static NcclNativeLib forBackend(TornadoVMBackendType backend) {
+        String library = System.getProperty("tornado.nccl.library", "").trim();
+        boolean rccl = library.isEmpty() ? backend == TornadoVMBackendType.HIP : library.equalsIgnoreCase("rccl");
+        return rccl ? Rccl.BINDINGS : Nccl.BINDINGS;
+    }
+
+    /**
+     * The bindings for calls that name no device, chosen without starting any backend: the library
+     * {@code -Dtornado.nccl.library=rccl|nccl} names, else NCCL when it can be loaded, else RCCL when
+     * it can, else NCCL (whose {@link #load()} then reports it missing).
+     */
+    public static NcclNativeLib withoutDevice() {
+        if (!System.getProperty("tornado.nccl.library", "").isBlank()) {
+            return forBackend(null);
+        }
+        if (!Nccl.BINDINGS.isAvailable() && Rccl.BINDINGS.isAvailable()) {
+            return Rccl.BINDINGS;
+        }
+        return Nccl.BINDINGS;
+    }
+
+    /** Whether the collectives run through RCCL (AMD GPUs) rather than NCCL. */
+    public boolean isRccl() {
+        return rccl;
     }
 
     /** Whether NCCL and the CUDA runtime can both be reached on this host. */
-    public static boolean isAvailable() {
-        return NCCL_COMM_INIT_ALL != null && CUDA_GET_DEVICE != null;
+    public boolean isAvailable() {
+        return ncclCommInitAll != null && cudaGetDevice != null;
     }
 
     /** Fails with a clear message when NCCL cannot be reached. */
-    public static void load() {
+    public void load() {
+        if (!isAvailable() && rccl) {
+            throw new TornadoRuntimeException("[ERROR] Unable to load RCCL. Install ROCm with RCCL and set ROCM_PATH (or HIP_PATH) to its root.");
+        }
         if (!isAvailable()) {
             throw new TornadoRuntimeException("[ERROR] Unable to load NCCL. Install NCCL (e.g. the nvidia-nccl-cu13 wheel or the libnccl2 package) and make sure libnccl.so.2 is on the library path.");
         }
@@ -176,11 +227,11 @@ public final class NcclNativeLib {
     }
 
     /** NCCL version as {@code major * 10000 + minor * 100 + patch}. */
-    public static int version() {
+    public int version() {
         load();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment version = FFMSupport.allocateInt(arena);
-            check((int) NCCL_GET_VERSION.invokeExact(version), "ncclGetVersion");
+            check((int) ncclGetVersion.invokeExact(version), "ncclGetVersion");
             return version.get(C_INT, 0);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -188,11 +239,11 @@ public final class NcclNativeLib {
     }
 
     /** CUDA runtime ordinal of the device whose context is current on the calling thread. */
-    public static int currentDeviceOrdinal() {
+    public int currentDeviceOrdinal() {
         load();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment device = FFMSupport.allocateInt(arena);
-            int result = (int) CUDA_GET_DEVICE.invokeExact(device);
+            int result = (int) cudaGetDevice.invokeExact(device);
             if (result != CUDA_SUCCESS) {
                 throw new TornadoRuntimeException("[ERROR] cudaGetDevice failed with status " + result);
             }
@@ -203,7 +254,7 @@ public final class NcclNativeLib {
     }
 
     /** Creates one communicator per device ordinal, in the same order; rank {@code i} runs on {@code ordinals[i]}. */
-    public static long[] commInitAll(int[] ordinals) {
+    public long[] commInitAll(int[] ordinals) {
         load();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment comms = FFMSupport.allocateArray(arena, C_LONG, ordinals.length);
@@ -211,7 +262,7 @@ public final class NcclNativeLib {
             for (int i = 0; i < ordinals.length; i++) {
                 devices.setAtIndex(C_INT, i, ordinals[i]);
             }
-            check((int) NCCL_COMM_INIT_ALL.invokeExact(comms, ordinals.length, devices), "ncclCommInitAll");
+            check((int) ncclCommInitAll.invokeExact(comms, ordinals.length, devices), "ncclCommInitAll");
             long[] result = new long[ordinals.length];
             for (int i = 0; i < ordinals.length; i++) {
                 result[i] = comms.getAtIndex(C_LONG, i);
@@ -223,11 +274,11 @@ public final class NcclNativeLib {
     }
 
     /** A new NCCL unique id: the 128 bytes every process of a communicator must be given. */
-    public static byte[] getUniqueId() {
+    public byte[] getUniqueId() {
         load();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment id = arena.allocate(UNIQUE_ID);
-            check((int) NCCL_GET_UNIQUE_ID.invokeExact(id), "ncclGetUniqueId");
+            check((int) ncclGetUniqueId.invokeExact(id), "ncclGetUniqueId");
             return id.toArray(ValueLayout.JAVA_BYTE);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -240,38 +291,38 @@ public final class NcclNativeLib {
      * of one process are created inside {@link #groupStart()}/{@link #groupEnd()}, the calls then
      * returning without waiting.
      */
-    public static long commInitRank(int worldSize, byte[] uniqueId, int rank) {
+    public long commInitRank(int worldSize, byte[] uniqueId, int rank) {
         load();
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment comm = FFMSupport.allocateLong(arena);
             MemorySegment id = arena.allocate(UNIQUE_ID);
             MemorySegment.copy(uniqueId, 0, id, ValueLayout.JAVA_BYTE, 0, UNIQUE_ID_BYTES);
-            check((int) NCCL_COMM_INIT_RANK.invokeExact(comm, worldSize, id, rank), "ncclCommInitRank");
+            check((int) ncclCommInitRank.invokeExact(comm, worldSize, id, rank), "ncclCommInitRank");
             return comm.get(C_LONG, 0);
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    public static void groupStart() {
+    public void groupStart() {
         try {
-            check((int) NCCL_GROUP_START.invokeExact(), "ncclGroupStart");
+            check((int) ncclGroupStart.invokeExact(), "ncclGroupStart");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    public static void groupEnd() {
+    public void groupEnd() {
         try {
-            check((int) NCCL_GROUP_END.invokeExact(), "ncclGroupEnd");
+            check((int) ncclGroupEnd.invokeExact(), "ncclGroupEnd");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    public static void commDestroy(long comm) {
+    public void commDestroy(long comm) {
         try {
-            check((int) NCCL_COMM_DESTROY.invokeExact(comm), "ncclCommDestroy");
+            check((int) ncclCommDestroy.invokeExact(comm), "ncclCommDestroy");
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -281,17 +332,17 @@ public final class NcclNativeLib {
      * Frees a communicator and aborts its operations still running on the device, so that ranks
      * waiting for a peer that will never arrive return. Safe to call from another thread.
      */
-    public static void commAbort(long comm) {
+    public void commAbort(long comm) {
         try {
-            check((int) NCCL_COMM_ABORT.invokeExact(comm), "ncclCommAbort");
+            check((int) ncclCommAbort.invokeExact(comm), "ncclCommAbort");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static void allReduce(long send, long recv, long count, int dataType, int op, long comm, long stream) {
+    void allReduce(long send, long recv, long count, int dataType, int op, long comm, long stream) {
         try {
-            check((int) NCCL_ALL_REDUCE.invokeExact(send, recv, count, dataType, op, comm, stream), "ncclAllReduce");
+            check((int) ncclAllReduce.invokeExact(send, recv, count, dataType, op, comm, stream), "ncclAllReduce");
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -301,14 +352,14 @@ public final class NcclNativeLib {
      * A non-blocking stream and two events (no timing) of the device current on this thread: where a
      * started collective runs, and the fork and join points that order it with the plan's stream.
      */
-    static long[] createSideChannel() {
+    long[] createSideChannel() {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment handle = FFMSupport.allocateArray(arena, C_LONG, 1);
             long[] result = new long[3];
-            cudaCheck((int) CUDA_STREAM_CREATE_WITH_FLAGS.invokeExact(handle, CUDA_STREAM_NON_BLOCKING), "cudaStreamCreateWithFlags");
+            cudaCheck((int) cudaStreamCreateWithFlags.invokeExact(handle, CUDA_STREAM_NON_BLOCKING), "cudaStreamCreateWithFlags");
             result[0] = handle.get(C_LONG, 0);
             for (int i = 1; i < 3; i++) {
-                cudaCheck((int) CUDA_EVENT_CREATE_WITH_FLAGS.invokeExact(handle, CUDA_EVENT_DISABLE_TIMING), "cudaEventCreateWithFlags");
+                cudaCheck((int) cudaEventCreateWithFlags.invokeExact(handle, CUDA_EVENT_DISABLE_TIMING), "cudaEventCreateWithFlags");
                 result[i] = handle.get(C_LONG, 0);
             }
             return result;
@@ -317,18 +368,18 @@ public final class NcclNativeLib {
         }
     }
 
-    static void eventRecord(long event, long stream) {
+    void eventRecord(long event, long stream) {
         try {
-            cudaCheck((int) CUDA_EVENT_RECORD.invokeExact(event, stream), "cudaEventRecord");
+            cudaCheck((int) cudaEventRecord.invokeExact(event, stream), "cudaEventRecord");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
     /** Work enqueued on {@code stream} after this waits for {@code event}. */
-    static void streamWaitEvent(long stream, long event) {
+    void streamWaitEvent(long stream, long event) {
         try {
-            cudaCheck((int) CUDA_STREAM_WAIT_EVENT.invokeExact(stream, event, 0), "cudaStreamWaitEvent");
+            cudaCheck((int) cudaStreamWaitEvent.invokeExact(stream, event, 0), "cudaStreamWaitEvent");
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -340,49 +391,49 @@ public final class NcclNativeLib {
         }
     }
 
-    static void broadcast(long send, long recv, long count, int dataType, int root, long comm, long stream) {
+    void broadcast(long send, long recv, long count, int dataType, int root, long comm, long stream) {
         try {
-            check((int) NCCL_BROADCAST.invokeExact(send, recv, count, dataType, root, comm, stream), "ncclBroadcast");
+            check((int) ncclBroadcast.invokeExact(send, recv, count, dataType, root, comm, stream), "ncclBroadcast");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static void reduce(long send, long recv, long count, int dataType, int op, int root, long comm, long stream) {
+    void reduce(long send, long recv, long count, int dataType, int op, int root, long comm, long stream) {
         try {
-            check((int) NCCL_REDUCE.invokeExact(send, recv, count, dataType, op, root, comm, stream), "ncclReduce");
+            check((int) ncclReduce.invokeExact(send, recv, count, dataType, op, root, comm, stream), "ncclReduce");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static void allGather(long send, long recv, long sendCount, int dataType, long comm, long stream) {
+    void allGather(long send, long recv, long sendCount, int dataType, long comm, long stream) {
         try {
-            check((int) NCCL_ALL_GATHER.invokeExact(send, recv, sendCount, dataType, comm, stream), "ncclAllGather");
+            check((int) ncclAllGather.invokeExact(send, recv, sendCount, dataType, comm, stream), "ncclAllGather");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static void reduceScatter(long send, long recv, long recvCount, int dataType, int op, long comm, long stream) {
+    void reduceScatter(long send, long recv, long recvCount, int dataType, int op, long comm, long stream) {
         try {
-            check((int) NCCL_REDUCE_SCATTER.invokeExact(send, recv, recvCount, dataType, op, comm, stream), "ncclReduceScatter");
+            check((int) ncclReduceScatter.invokeExact(send, recv, recvCount, dataType, op, comm, stream), "ncclReduceScatter");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static void send(long buffer, long count, int dataType, int peer, long comm, long stream) {
+    void send(long buffer, long count, int dataType, int peer, long comm, long stream) {
         try {
-            check((int) NCCL_SEND.invokeExact(buffer, count, dataType, peer, comm, stream), "ncclSend");
+            check((int) ncclSend.invokeExact(buffer, count, dataType, peer, comm, stream), "ncclSend");
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    static void recv(long buffer, long count, int dataType, int peer, long comm, long stream) {
+    void recv(long buffer, long count, int dataType, int peer, long comm, long stream) {
         try {
-            check((int) NCCL_RECV.invokeExact(buffer, count, dataType, peer, comm, stream), "ncclRecv");
+            check((int) ncclRecv.invokeExact(buffer, count, dataType, peer, comm, stream), "ncclRecv");
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -392,16 +443,16 @@ public final class NcclNativeLib {
      * A send and a receive that progress together, as one NCCL group. Issued separately, two ranks
      * that each send to the other before receiving would both wait in their send forever.
      */
-    static void sendRecv(long send, int toPeer, long recv, int fromPeer, long count, int dataType, long comm, long stream) {
+    void sendRecv(long send, int toPeer, long recv, int fromPeer, long count, int dataType, long comm, long stream) {
         try {
-            check((int) NCCL_GROUP_START.invokeExact(), "ncclGroupStart");
+            check((int) ncclGroupStart.invokeExact(), "ncclGroupStart");
             int result;
             try {
-                check((int) NCCL_SEND.invokeExact(send, count, dataType, toPeer, comm, stream), "ncclSend");
-                check((int) NCCL_RECV.invokeExact(recv, count, dataType, fromPeer, comm, stream), "ncclRecv");
+                check((int) ncclSend.invokeExact(send, count, dataType, toPeer, comm, stream), "ncclSend");
+                check((int) ncclRecv.invokeExact(recv, count, dataType, fromPeer, comm, stream), "ncclRecv");
             } finally {
                 // The group has to be closed whatever happened inside it, or the thread stays in group mode.
-                result = (int) NCCL_GROUP_END.invokeExact();
+                result = (int) ncclGroupEnd.invokeExact();
             }
             check(result, "ncclGroupEnd");
         } catch (Throwable t) {
@@ -409,9 +460,9 @@ public final class NcclNativeLib {
         }
     }
 
-    private static void check(int result, String call) throws Throwable {
+    private void check(int result, String call) throws Throwable {
         if (result != NCCL_SUCCESS) {
-            MemorySegment message = (MemorySegment) NCCL_GET_ERROR_STRING.invokeExact(result);
+            MemorySegment message = (MemorySegment) ncclGetErrorString.invokeExact(result);
             String text = message.equals(MemorySegment.NULL) ? "unknown error" : FFMSupport.readCString(message);
             throw new TornadoRuntimeException("[ERROR] " + call + " failed: " + text + " (ncclResult_t " + result + ")");
         }

@@ -36,7 +36,8 @@ import uk.ac.manchester.tornado.tc.codegen.tools.EmitTool;
  * Runs every {@code .tcir} file under {@code src/test/lit}. When {@code nvcc} is available, CUDA tests
  * also compile the emitted CUDA to PTX for sm_89; when {@code utils/clbuild/clbuild} is built, OpenCL
  * tests are built with clBuildProgram on the GPUs; when {@code utils/metalc/metalc} is built (on a Mac),
- * Metal tests are compiled by the Metal framework on the GPU. A RUN line naming one of these tools is
+ * Metal tests are compiled by the Metal framework on the GPU; when {@code utils/hiprtccheck/hiprtccheck}
+ * is built, HIP tests are compiled by hipRTC for a 64-wide and a 32-wide AMD GPU. A RUN line naming one of these tools is
  * skipped on a machine without it.
  */
 public class LitTest {
@@ -75,7 +76,13 @@ public class LitTest {
             features.add("metal");
             tools.put("metalc", ExternalTool.of(".metal", List.of(metalc.toAbsolutePath().toString(), "%in")));
         }
-        var absent = new HashSet<>(List.of("nvcc-ptx", "clbuild", "mslcheck", "metalc"));
+        // utils/hiprtccheck (see hiprtccheck.c for the build line): hipRTC, as the HIP backend compiles; no GPU needed.
+        var hiprtccheck = Path.of("..", "utils", "hiprtccheck", "hiprtccheck");
+        if (java.nio.file.Files.isExecutable(hiprtccheck)) {
+            features.add("hip");
+            tools.put("hiprtccheck", ExternalTool.of(".hip", List.of(hiprtccheck.toAbsolutePath().toString(), "%in")));
+        }
+        var absent = new HashSet<>(List.of("nvcc-ptx", "clbuild", "mslcheck", "metalc", "hiprtccheck"));
         absent.removeAll(tools.keySet());
         LIT = new Lit(tools, features, absent);
     }
