@@ -159,9 +159,14 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal] [--cp <class path>] [--stats] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
+
+`--strict-fp` compiles as a plan with `withStrictFloatingPoint()` does: no multiply is fused with
+an add, so results round as Java's do. The printed source is strict by itself (on CUDA through
+`__fmul_rn`/`__dmul_rn`, since NVRTC contracts by default and has no pragma against it), so it
+stays strict whichever compiler and flags build it later, such as cudf's JIT.
 
 `build-tc-native` (with `GRAALVM_HOME` set to a GraalVM for JDK 25+) builds it as a native image,
 `bin/tc-native`, which `tc` then uses. A cold compile then takes about 20 ms instead of about

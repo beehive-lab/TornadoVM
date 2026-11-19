@@ -870,6 +870,13 @@ public final class CEmitter {
                 return new R(function.get() + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
             }
         }
+        if (op == BinaryOp.FMUL && features.contains(CDialect.Feature.NO_CONTRACT) && (type.equals(Type.F32) || type.equals(Type.F64))) {
+            // A strict plan: Java rounds the product before any add, so it may not become an fma.
+            var function = dialect.strictMultiply(type.equals(Type.F64));
+            if (function.isPresent()) {
+                return new R(function.get() + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
+            }
+        }
         return switch (op) {
             case ADD, FADD -> infix(a, "+", b, ADD);
             case SUB, FSUB -> infix(a, "-", b, ADD);

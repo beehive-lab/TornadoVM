@@ -120,6 +120,15 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect, HipD
         return Optional.empty();
     }
 
+    /**
+     * Under {@link Feature#NO_CONTRACT}, the function for a {@code float} ({@code dbl} false) or
+     * {@code double} multiply that the device compiler must not contract into an fma, or empty when the
+     * preamble already forbids contraction for the whole source (a pragma) and the operator is printed.
+     */
+    default Optional<String> strictMultiply(boolean dbl) {
+        return Optional.empty();
+    }
+
     default boolean printf() {
         return true;
     }

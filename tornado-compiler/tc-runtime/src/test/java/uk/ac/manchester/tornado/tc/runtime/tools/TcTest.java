@@ -184,6 +184,42 @@ public class TcTest {
         assertFalse(r.err().contains("note:"), r.err());
     }
 
+    private static final String AXPY_KERNEL = String.join("\n", //
+            "import uk.ac.manchester.tornado.api.annotations.Parallel;", //
+            "import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;", //
+            "import uk.ac.manchester.tornado.api.types.arrays.FloatArray;", //
+            "class Axpy {", //
+            "    static void axpy(FloatArray x, FloatArray y, float a, DoubleArray d) {", //
+            "        for (@Parallel int i = 0; i < y.getSize(); i++) {", //
+            "            y.set(i, a * x.get(i) + y.get(i));", //
+            "            d.set(i, d.get(i) * d.get(i) + 1.0);", //
+            "        }", //
+            "    }", //
+            "}", "");
+
+    /**
+     * --strict-fp: the printed CUDA is strict by itself, whatever flags the compiler that takes it uses
+     * (NVRTC contracts a * b + c by default and has no pragma against it); OpenCL says so in a pragma.
+     */
+    @Test
+    public void strictFloatingPointKeepsMultipliesOutOfFusedMultiplyAdds(@TempDir Path dir) throws IOException {
+        javac(dir, "Axpy", AXPY_KERNEL);
+        var cp = dir + File.pathSeparator + API;
+        var plain = run("emit", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, plain.status(), plain.err());
+        assertFalse(plain.out().contains("__fmul_rn") || plain.out().contains("__dmul_rn"), plain.out());
+
+        var strict = run("emit", "--strict-fp", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, strict.status(), strict.err());
+        assertTrue(strict.out().contains("__fmul_rn("), strict.out());
+        assertTrue(strict.out().contains("__dmul_rn("), strict.out());
+        assertFalse(strict.out().contains("fma"), strict.out());
+
+        var opencl = run("emit", "--target", "opencl", "--strict-fp", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, opencl.status(), opencl.err());
+        assertTrue(opencl.out().contains("#pragma OPENCL FP_CONTRACT OFF"), opencl.out());
+    }
+
     @Test
     public void givenValuesSpecialiseTheKernel() {
         var r = run("emit", "--arg", "arg0=4096", "--cp", KERNELS + File.pathSeparator + API, "uk.ac.manchester.tornado.tc.frontend.kernels.ParallelKernels", "escapeTime");
