@@ -29,6 +29,7 @@ import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
+import uk.ac.manchester.tornado.api.memory.DeviceViewBinding;
 import uk.ac.manchester.tornado.api.plan.types.OffConcurrentDevices;
 import uk.ac.manchester.tornado.api.plan.types.OffMemoryLimit;
 import uk.ac.manchester.tornado.api.plan.types.OffPlanResultsHistory;
@@ -262,11 +263,18 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Binds an existing device allocation to a {@code cudaDeviceView} argument of this plan, for the
+     * Binds an existing device allocation to a {@code deviceView} argument of this plan, for the
      * executions that follow.
      *
      * <p>
-     * The address is <b>borrowed</b>: TornadoVM reads and (for a read-write view) writes through it
+     * Use this method for device buffers owned by another library, including shared Metal buffers
+     * that the CPU can access. Eligible host-backed TornadoVM arrays instead use
+     * {@link TaskGraph#consumeFromUnifiedMemory(Object...)}. These are separate API contracts;
+     * shared physical memory does not make a device view eligible for consumption.
+     * </p>
+     *
+     * <p>
+     * The buffer is <b>borrowed</b>: TornadoVM reads and (for a read-write view) writes through it
      * and does nothing else to it -- no allocation, no implicit transfer in either direction, no
      * header written into it, no free. Keeping it alive while the plan may run, freeing it after,
      * and making another stream's data visible to this one are the caller's. Rebinding between
@@ -274,12 +282,142 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * </p>
      *
      * <p>
-     * CUDA backend only. A plan that runs on any other backend refuses the binding with
-     * {@link TornadoDeviceViewNotSupported} here, rather than at execution.
+     * CUDA and Metal backends. A plan that runs on any other backend refuses the binding with
+     * {@link TornadoDeviceViewNotSupported} here, rather than at execution. On CUDA,
+     * {@code deviceBuffer} is a device address. On Metal, it is an {@code id<MTLBuffer>} of the
+     * plan's device, and {@link #execute()} returns once the task graph's work has finished, because
+     * a plan gives the caller nothing to wait on for the command queue it uses. Work that produces the
+     * buffer's contents must finish before {@link #execute()} on both.
+     * </p>
+     *
+     * <p>
+     * The binding is checked again before every execution. {@link DeviceViewBinding} states the
+     * contract and the execution modes a view does not support.
      * </p>
      *
      * @param view
-     *     An array created by a {@code cudaDeviceView} factory, e.g. {@code FloatArray.cudaDeviceView(n)}.
+     *     An array created by a {@code deviceView} factory, e.g. {@code FloatArray.deviceView(n)}.
+     * @param deviceBuffer
+     *     The device allocation: a CUDA device address, or a Metal {@code id<MTLBuffer>}.
+     * @param byteLength
+     *     How many bytes are valid from the start of the allocation; must be a whole number of
+     *     elements and must fit in the view's capacity.
+     * @return {@link TornadoExecutionPlan}
+     * @throws TornadoDeviceViewNotSupported
+     *     if this plan does not run on the CUDA or Metal backend.
+     * @since 8.1.1
+     */
+    public TornadoExecutionPlan bindDeviceBuffer(TornadoNativeArray view, long deviceBuffer, long byteLength) {
+        return bindDeviceBuffer(view, deviceBuffer, byteLength, -1, -1, false);
+    }
+
+    /**
+     * Binds an existing device allocation to a {@code deviceView} argument of this plan, stating the
+     * device it belongs to, how many of its elements hold data, and whether the kernel may write
+     * through it. See {@link #bindDeviceBuffer(TornadoNativeArray, long, long)}.
+     *
+     * @param view
+     *     An array created by a {@code deviceView} factory.
+     * @param deviceBuffer
+     *     The device allocation: a CUDA device address, or a Metal {@code id<MTLBuffer>}.
+     * @param byteLength
+     *     How many bytes are valid from the start of the allocation.
+     * @param logicalLength
+     *     How many elements of that span hold data, or -1 to derive it from {@code byteLength}. This
+     *     is what {@code getSize()} reports; it is not necessarily a row count (a {@code LIST}
+     *     offsets array holds one more element than there are rows).
+     * @param deviceIndex
+     *     Index of the device the allocation belongs to, or -1 when the caller does not state it.
+     *     When given, it is checked against the device this plan runs on.
+     * @param readOnly
+     *     Whether the kernel may only read through this view.
+     * @return {@link TornadoExecutionPlan}
+     * @since 8.1.1
+     */
+    public TornadoExecutionPlan bindDeviceBuffer(TornadoNativeArray view, long deviceBuffer, long byteLength, long logicalLength, int deviceIndex, boolean readOnly) {
+        return bindDeviceBuffer(view, deviceBuffer, 0, byteLength, logicalLength, deviceIndex, readOnly);
+    }
+
+    /**
+     * Binds part of an existing device allocation to a {@code deviceView} argument of this plan, so
+     * that views can share one allocation. See
+     * {@link #bindDeviceBuffer(TornadoNativeArray, long, long, long, int, boolean)}.
+     *
+     * @param view
+     *     An array created by a {@code deviceView} factory.
+     * @param deviceBuffer
+     *     The device allocation: a CUDA device address, or a Metal {@code id<MTLBuffer>}.
+     * @param byteOffset
+     *     Where element 0 of the view starts in the allocation; must align to the element size.
+     * @param byteLength
+     *     How many bytes are valid from {@code byteOffset}.
+     * @param logicalLength
+     *     How many elements of that span hold data, or -1 to derive it from {@code byteLength}.
+     * @param deviceIndex
+     *     Index of the device the allocation belongs to, or -1 when the caller does not state it.
+     * @param readOnly
+     *     Whether the kernel may only read through this view.
+     * @return {@link TornadoExecutionPlan}
+     * @since 8.1.1
+     */
+    public TornadoExecutionPlan bindDeviceBuffer(TornadoNativeArray view, long deviceBuffer, long byteOffset, long byteLength, long logicalLength, int deviceIndex, boolean readOnly) {
+        Objects.requireNonNull(view, "view");
+        if (!view.isDeviceView()) {
+            throw new IllegalArgumentException("Only an array created by a deviceView factory can be bound to an external device buffer. "
+                    + "A normal array owns a TornadoVM buffer with a header, and overwriting that with a foreign buffer would corrupt both.");
+        }
+        TornadoDevice planDevice = tornadoExecutor.getDevice(0);
+        if (planDevice == null) {
+            // What the handle means depends on the backend, and it must not be guessed.
+            throw new TornadoDeviceViewNotSupported("This plan has no device yet, so nothing says which backend the device buffer belongs to");
+        }
+        // Per device, not per build: a single installation may be built with several backends
+        // (make BACKEND=opencl,cuda), so what matters is the backend this plan runs on.
+        TornadoVMBackendType backend = planDevice.getTornadoVMBackend();
+        if (backend != TornadoVMBackendType.CUDA && backend != TornadoVMBackendType.METAL) {
+            throw new TornadoDeviceViewNotSupported("Device views are implemented for the CUDA and Metal backends, and this plan runs on " + backend + ". Use an ordinary array instead.");
+        }
+        checkBoundDevice(planDevice, deviceIndex);
+        view.deviceViewBinding().bind(backend, deviceBuffer, byteOffset, byteLength, logicalLength, deviceIndex, readOnly, rootNode.executionFrame);
+        return this;
+    }
+
+    private static void checkBoundDevice(TornadoDevice planDevice, int deviceIndex) {
+        if (deviceIndex >= 0) {
+            TornadoDeviceContext planContext = planDevice == null ? null : planDevice.getDeviceContext();
+            if (planContext != null && planContext.getDeviceIndex() != deviceIndex) {
+                throw new IllegalArgumentException("The buffer belongs to device " + deviceIndex + " but this plan runs on device " + planContext.getDeviceIndex()
+                        + "; a device buffer is only valid on its own device.");
+            }
+        }
+    }
+
+    /**
+     * Releases the binding of a {@code deviceView} argument made with
+     * {@link #bindDeviceBuffer(TornadoNativeArray, long, long)}. The device memory is the caller's
+     * and is not freed. A view must be unbound before another plan may bind it.
+     *
+     * @param view
+     *     The device view to unbind.
+     * @return {@link TornadoExecutionPlan}
+     * @since 8.1.1
+     */
+    public TornadoExecutionPlan unbindDeviceBuffer(TornadoNativeArray view) {
+        Objects.requireNonNull(view, "view");
+        if (!view.isDeviceView()) {
+            throw new IllegalArgumentException("This array is not a device view, so it has no external binding to release");
+        }
+        view.deviceViewBinding().unbind(rootNode.executionFrame);
+        return this;
+    }
+
+    /**
+     * Binds a CUDA device address to a device view of this plan: the CUDA-only compatibility form of
+     * {@link #bindDeviceBuffer(TornadoNativeArray, long, long)}, whose address is never taken for
+     * another backend's handle.
+     *
+     * @param view
+     *     An array created by a {@code deviceView} or {@code cudaDeviceView} factory.
      * @param devicePointer
      *     Device address of the first element.
      * @param byteLength
@@ -295,56 +433,49 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
     }
 
     /**
-     * Binds an existing device allocation to a {@code cudaDeviceView} argument of this plan, stating the
-     * device it belongs to, how many of its elements hold data, and whether the kernel may write
-     * through it. See {@link #bindCUDADeviceBuffer(TornadoNativeArray, long, long)}.
+     * Binds a CUDA device address to a device view of this plan: the CUDA-only compatibility form of
+     * {@link #bindDeviceBuffer(TornadoNativeArray, long, long, long, int, boolean)}.
      *
      * @param view
-     *     An array created by a {@code cudaDeviceView} factory.
+     *     An array created by a {@code deviceView} or {@code cudaDeviceView} factory.
      * @param devicePointer
      *     Device address of the first element.
      * @param byteLength
      *     How many bytes are valid at that address.
      * @param logicalLength
-     *     How many elements of that span hold data, or -1 to derive it from {@code byteLength}. This
-     *     is what {@code getSize()} reports; it is not necessarily a row count (a {@code LIST}
-     *     offsets array holds one more element than there are rows).
+     *     How many elements of that span hold data, or -1 to derive it from {@code byteLength}.
      * @param deviceIndex
-     *     Index of the device the address belongs to, or -1 when the caller does not state it. When
-     *     given, it is checked against the device this plan runs on.
+     *     Index of the device the address belongs to, or -1 when the caller does not state it.
      * @param readOnly
      *     Whether the kernel may only read through this view.
      * @return {@link TornadoExecutionPlan}
+     * @throws TornadoDeviceViewNotSupported
+     *     if this plan does not run on the CUDA backend.
      * @since 8.0.1
      */
     public TornadoExecutionPlan bindCUDADeviceBuffer(TornadoNativeArray view, long devicePointer, long byteLength, long logicalLength, int deviceIndex, boolean readOnly) {
         Objects.requireNonNull(view, "view");
-        if (!view.isCUDADeviceView()) {
-            throw new IllegalArgumentException("Only an array created by a cudaDeviceView factory can be bound to an external device address. "
+        if (!view.isDeviceView()) {
+            throw new IllegalArgumentException("Only an array created by a deviceView factory can be bound to an external device address. "
                     + "A normal array owns a TornadoVM buffer with a header, and overwriting that with a foreign pointer would corrupt both.");
         }
         TornadoDevice planDevice = tornadoExecutor.getDevice(0);
-        // Per device, not per build: a single installation may be built with several backends
-        // (make BACKEND=opencl,cuda), so what matters is the backend this plan runs on.
         if (planDevice != null && planDevice.getTornadoVMBackend() != TornadoVMBackendType.CUDA) {
-            throw new TornadoDeviceViewNotSupported("Device views are implemented for the CUDA backend only, and this plan runs on " + planDevice.getTornadoVMBackend()
-                    + ". Binding borrows a raw device address, which " + planDevice.getTornadoVMBackend() + " has no equivalent of; use an ordinary array instead.");
+            throw new TornadoDeviceViewNotSupported("bindCUDADeviceBuffer binds a CUDA device address, and this plan runs on " + planDevice.getTornadoVMBackend()
+                    + ". Use bindDeviceBuffer for a handle of that backend, or an ordinary array.");
         }
-        if (deviceIndex >= 0) {
-            TornadoDeviceContext planContext = planDevice == null ? null : planDevice.getDeviceContext();
-            if (planContext != null && planContext.getDeviceIndex() != deviceIndex) {
-                throw new IllegalArgumentException("The address belongs to device " + deviceIndex + " but this plan runs on device " + planContext.getDeviceIndex()
-                        + "; a device address is only valid in its own device's context.");
-            }
+        checkBoundDevice(planDevice, deviceIndex);
+        DeviceViewBinding binding = view.deviceViewBinding();
+        if (devicePointer % binding.elementSize() != 0) {
+            throw new IllegalArgumentException("The device address 0x" + Long.toHexString(devicePointer) + " is not aligned to the " + binding.elementSize() + "-byte element size");
         }
-        view.cudaDeviceViewBinding().bind(devicePointer, byteLength, logicalLength, deviceIndex, readOnly, rootNode.executionFrame);
+        binding.bind(TornadoVMBackendType.CUDA, devicePointer, 0, byteLength, logicalLength, deviceIndex, readOnly, rootNode.executionFrame);
         return this;
     }
 
     /**
-     * Releases the binding of a {@code cudaDeviceView} argument made with
-     * {@link #bindCUDADeviceBuffer(TornadoNativeArray, long, long)}. The device memory is the caller's
-     * and is not freed. A view must be unbound before another plan may bind it.
+     * Releases a binding made with {@link #bindCUDADeviceBuffer(TornadoNativeArray, long, long)}: the
+     * compatibility form of {@link #unbindDeviceBuffer(TornadoNativeArray)}.
      *
      * @param view
      *     The device view to unbind.
@@ -352,12 +483,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @since 8.0.1
      */
     public TornadoExecutionPlan unbindCUDADeviceBuffer(TornadoNativeArray view) {
-        Objects.requireNonNull(view, "view");
-        if (!view.isCUDADeviceView()) {
-            throw new IllegalArgumentException("This array is not a device view, so it has no external binding to release");
-        }
-        view.cudaDeviceViewBinding().unbind(rootNode.executionFrame);
-        return this;
+        return unbindDeviceBuffer(view);
     }
 
     /**

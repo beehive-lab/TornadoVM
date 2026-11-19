@@ -52,6 +52,8 @@ public final class MetalAPI {
     public static final long MTL_RESOURCE_STORAGE_MODE_SHARED = 0L;
     /** {@code MTLResourceStorageModePrivate}, GPU-only, needing a blit to reach. */
     public static final long MTL_RESOURCE_STORAGE_MODE_PRIVATE = 2L << 4;
+    /** {@code MTLStorageModePrivate}, what {@link #bufferStorageMode} answers for a GPU-only buffer. */
+    public static final long MTL_STORAGE_MODE_PRIVATE = 2L;
 
     /** {@code MTLPipelineOptionArgumentInfo}, the reflection bit for pipeline creation. */
     public static final long MTL_PIPELINE_OPTION_ARGUMENT_INFO = 1L;
@@ -211,16 +213,27 @@ public final class MetalAPI {
 
     /**
      * {@code -[MTLBuffer contents]}: the CPU-visible address of a shared-storage buffer, which is
-     * how a transfer becomes a plain memory copy rather than a blit. Returns 0 for a private
-     * buffer, where it is not addressable from the CPU at all.
+     * how a transfer becomes a plain memory copy rather than a blit. The answer for a private buffer
+     * means nothing: it can be non-zero, and the CPU still may not use it. Ask
+     * {@link #bufferStorageMode} rather than testing this value.
      */
     public static long bufferContents(long buffer) {
         return ObjCRuntime.send(buffer, "contents");
     }
 
+    /** {@code -[MTLBuffer storageMode]}. */
+    public static long bufferStorageMode(long buffer) {
+        return ObjCRuntime.send(buffer, "storageMode");
+    }
+
     /** {@code -[MTLBuffer length]}. */
     public static long bufferLength(long buffer) {
         return ObjCRuntime.send(buffer, "length");
+    }
+
+    /** {@code -[MTLBuffer device]}. */
+    public static long bufferDevice(long buffer) {
+        return ObjCRuntime.send(buffer, "device");
     }
 
     /* ---- Libraries, functions, pipelines ---- */

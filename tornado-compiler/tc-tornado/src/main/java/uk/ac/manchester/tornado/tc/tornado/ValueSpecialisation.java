@@ -39,7 +39,7 @@ import uk.ac.manchester.tornado.tc.ir.Value;
  * initialised.</li>
  * <li>{@link Fact.Scalar}: uses of a primitive parameter become the constant; the parameter stays in
  * the signature, as on the Graal path.</li>
- * <li>{@link Fact.DeviceView}: the parameter is a {@code cudaDeviceView} bound to foreign device memory,
+ * <li>{@link Fact.DeviceView}: the parameter is a {@code deviceView} bound to foreign device memory,
  * so it has no header and {@link AbiLowering} addresses it from the pointer itself. Its length folds
  * like {@link Fact.Length} only when the view asked for that; otherwise the kernel may not read it at
  * all, and the length stays out of the fact so that rebinding the view to a different number of rows
@@ -57,7 +57,7 @@ public final class ValueSpecialisation {
         }
 
         /**
-         * A headerless {@code cudaDeviceView} parameter. {@code elements} is the logical length to fold
+         * A headerless {@code deviceView} parameter. {@code elements} is the logical length to fold
          * {@code getSize()} to, or -1 when the kernel must not read the length -- which is the default,
          * because a view rebound per batch would otherwise key a new compilation per row count.
          */

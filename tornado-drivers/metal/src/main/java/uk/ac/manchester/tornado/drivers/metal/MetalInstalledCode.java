@@ -33,6 +33,7 @@ import uk.ac.manchester.tornado.api.memory.XPUBuffer;
 import uk.ac.manchester.tornado.api.profiler.ProfilerType;
 import uk.ac.manchester.tornado.drivers.common.mm.PrimitiveSerialiser;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalByteBuffer;
+import uk.ac.manchester.tornado.drivers.metal.mm.MetalExternalDeviceBuffer.BorrowedBufferArgument;
 import uk.ac.manchester.tornado.drivers.metal.mm.MetalKernelStackFrame;
 import uk.ac.manchester.tornado.drivers.metal.runtime.MetalTornadoDevice;
 import uk.ac.manchester.tornado.drivers.metal.scheduler.MetalAppleGPUScheduler;
@@ -279,8 +280,13 @@ public class MetalInstalledCode implements TornadoInstalledCode {
             // cannot distinguish them. Calling setArgRef on a scalar value crashes with
             // objc_retain on a garbage pointer.
             if (arg.isReferenceType()) {
-                // Device buffer: arg value is a Long containing the native MTLBuffer pointer.
-                kernel.setArgRef(nativeArgIndex, (Long) arg.getValue());
+                // Device buffer: arg value is a Long containing the native MTLBuffer pointer, or the
+                // pointer and the offset to bind it at when the buffer is borrowed.
+                if (arg.getValue() instanceof BorrowedBufferArgument borrowed) {
+                    kernel.setBorrowedArgRef(nativeArgIndex, borrowed.buffer(), borrowed.byteOffset());
+                } else {
+                    kernel.setArgRef(nativeArgIndex, (Long) arg.getValue());
+                }
             } else if (isBoxedPrimitive(arg.getValue()) || arg.getValue().getClass().isPrimitive()) {
                 buffer.clear();
                 PrimitiveSerialiser.put(buffer, arg.getValue());

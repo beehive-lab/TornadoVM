@@ -18,12 +18,13 @@
 package uk.ac.manchester.tornado.api.exceptions;
 
 /**
- * Thrown when a CUDA device view is bound to a plan that does not run on the CUDA backend.
+ * Thrown when a device view is used on a backend that has not implemented device views, or on a
+ * backend other than the one its device buffer was bound for.
  *
  * <p>
- * Binding borrows a raw device address, which is a CUDA notion: OpenCL passes a {@code cl_mem}
- * handle rather than an address, so there is nothing for an address to be bound to there. The
- * refusal is a deliberate one made while the plan is still being set up, so that a caller who can
+ * Binding borrows a device allocation another library owns: a device address on CUDA, an
+ * {@code MTLBuffer} on Metal. The OpenCL backend has not implemented the same for a {@code cl_mem}
+ * yet. The refusal is a deliberate one made before any kernel launches, so that a caller who can
  * do something else -- fall back to ordinary arrays, or to a CPU path -- can catch this and do it,
  * rather than discovering the problem when a kernel reads from an address the device cannot use.
  * </p>
