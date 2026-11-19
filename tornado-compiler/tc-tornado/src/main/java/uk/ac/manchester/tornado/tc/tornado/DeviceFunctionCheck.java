@@ -53,7 +53,7 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 public final class DeviceFunctionCheck {
 
     /** Intrinsics a device function may use: values computed from values. */
-    private static final List<String> ALLOWED = List.of("math.", "tornado.vector.make", "tornado.vector.lane", "tornado.vector.insert", "tornado.dp4a", "tornado.devfn.");
+    private static final List<String> ALLOWED = List.of("math.", "tornado.vector.make", "tornado.vector.lane", "tornado.vector.insert", "tornado.dp4a", "tornado.devfn.", "tc.udf.");
 
     /** The byte length of a string row ({@code byte[]} parameter): the emitter prints the view's {@code size_bytes()}. */
     public static final String STRING_LENGTH = "tornado.devfn.string_length";

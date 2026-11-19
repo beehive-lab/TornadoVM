@@ -132,6 +132,9 @@ public final class IntrinsicRegistry {
         pure("tile.", "tile values, views and arithmetic (CUDA Tile)");
         // Frontend markers that never reach code generation.
         add("tc.vector_param_unchanged", EnumSet.of(Effect.SIDE_EFFECT), "frontend check: a device function must not change a vector argument");
+        // A device function (cudf::transform UDF) that fails the row: returns the error code when its
+        // operand is true. It ends the function, so it may not be moved, merged or dropped.
+        add("tc.udf.fail", EnumSet.of(Effect.SIDE_EFFECT), "device function: return an error code (cudf::errc) when the condition holds", "code");
         // Longest match first, so a specific entry wins over its family.
         DEFS.sort(Comparator.comparingInt((Def d) -> d.name().length()).reversed());
     }

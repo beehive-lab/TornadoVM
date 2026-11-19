@@ -254,7 +254,20 @@ public final class CEmitter {
      * multiplications are {@code __fmul_rn} and {@code __dmul_rn}, which the CUDA compiler never
      * contracts into an fma, since the library compiles the function with flags of its own.
      */
-    public record DeviceFunction(String descriptor) {
+    public record DeviceFunction(String descriptor, boolean nullAware, boolean errors) {
+        /** Neither null-aware nor reporting errors. */
+        public DeviceFunction(String descriptor) {
+            this(descriptor, false, false);
+        }
+
+        /**
+         * Whether the function returns an error code: {@code int}, 0 for success, else a cudf::errc
+         * (1 OVERFLOW, 2 DIVISION_BY_ZERO; 3, a null unboxed, past its last, which cudf reports as
+         * UNKNOWN_ERROR). cudf's kernel takes either a void or an int result.
+         */
+        public boolean returnsError() {
+            return nullAware || errors;
+        }
     }
 
     public static Result emit(S.Kernel kernel, TargetCaps target) {
@@ -350,23 +363,50 @@ public final class CEmitter {
                 throw new EmitException("TC-E3503", "a device function cannot use tiles");
             }
             var java = deviceFunctionTypes(deviceFunction.descriptor());
-            if (java.size() - 1 != k.params().size()) {
-                throw new EmitException("TC-E3503", "the device function has " + k.params().size() + " parameters where " + deviceFunction.descriptor() + " has " + (java.size() - 1));
+            var tokens = deviceFunctionTokens(deviceFunction.descriptor());
+            boolean nullAware = deviceFunction.nullAware();
+            int irParams = tokens.stream().skip(1).mapToInt(t -> t.startsWith("L") ? 2 : 1).sum();
+            if (irParams != k.params().size()) {
+                throw new EmitException("TC-E3503", "the device function has " + k.params().size() + " parameters where " + deviceFunction.descriptor() + " has " + irParams);
             }
-            header.append("__device__ void ").append(entry).append('(').append(java.get(0)).append(" *").append(OUT);
-            for (int i = 0; i < k.params().size(); i++) {
-                var param = k.params().get(i);
+            // null-aware: a null primitive or string argument makes the result null (Spark's rule for a
+            // primitive argument); the function has ended, so nothing else runs.
+            var nullResult = "{ *" + OUT + " = cuda::std::nullopt; return 0; }";
+            header.append("__device__ ").append(deviceFunction.returnsError() ? "int " : "void ").append(entry).append('(');
+            header.append(nullAware ? optional(java.get(0)) : java.get(0)).append(" *").append(OUT);
+            int p = 0;
+            for (int i = 1; i < tokens.size(); i++) {
+                var param = k.params().get(p++);
                 var name = names.get(param);
-                if (java.get(i + 1).equals(STRING_VIEW)) {
+                if (tokens.get(i).startsWith("L")) {
+                    // A box: one optional argument, given to the body as its validity and value parameters.
+                    var value = k.params().get(p++);
+                    var argument = cIdentifier(names.get(value) + "_opt", used);
+                    header.append(", ").append(optional(java.get(i))).append(' ').append(argument);
+                    stringRowLines.add(declaration(param.type(), name) + " = " + argument + ".has_value() ? 1 : 0;");
+                    stringRowLines.add(declaration(value.type(), names.get(value)) + " = " + argument + ".has_value() ? (" + typeName(value.type()) + ") *" + argument + " : 0;");
+                } else if (java.get(i).equals(STRING_VIEW)) {
                     // A string row: the view is the parameter; its bytes and length are named for the body.
                     var view = cIdentifier(name + "_sv", used);
                     var length = cIdentifier(name + "_len", used);
                     stringRows.put(name, length);
+                    if (nullAware) {
+                        var argument = cIdentifier(name + "_opt", used);
+                        header.append(", ").append(optional(STRING_VIEW)).append(' ').append(argument);
+                        stringRowLines.add("if (!" + argument + ".has_value()) " + nullResult);
+                        stringRowLines.add(STRING_VIEW + " " + view + " = *" + argument + ";");
+                    } else {
+                        header.append(", ").append(STRING_VIEW).append(' ').append(view);
+                    }
                     stringRowLines.add(declaration(param.type(), name) + " = (" + typeName(param.type()) + ") " + view + ".data();");
                     stringRowLines.add("const int " + length + " = (int) " + view + ".size_bytes();");
-                    header.append(", ").append(STRING_VIEW).append(' ').append(view);
+                } else if (nullAware) {
+                    var argument = cIdentifier(name + "_opt", used);
+                    header.append(", ").append(optional(java.get(i))).append(' ').append(argument);
+                    stringRowLines.add("if (!" + argument + ".has_value()) " + nullResult);
+                    stringRowLines.add(java.get(i) + " " + name + " = *" + argument + ";");
                 } else {
-                    header.append(", ").append(java.get(i + 1)).append(' ').append(name);
+                    header.append(", ").append(java.get(i)).append(' ').append(name);
                 }
             }
         } else if (f.kind() == Function.Kind.KERNEL) {
@@ -451,18 +491,43 @@ public final class CEmitter {
 
     /** The C types of a device function's signature: the result first, then each parameter. */
     static List<String> deviceFunctionTypes(String descriptor) {
-        var types = new ArrayList<String>();
+        return deviceFunctionTokens(descriptor).stream().map(t -> t.equals("[B") ? STRING_VIEW : t.startsWith("L") ? BOX_TYPES.get(t) : deviceFunctionType(t.charAt(0), descriptor)).toList();
+    }
+
+    /** The descriptor's types, the result first: a primitive's letter, {@code [B} or a box's {@code Ljava/lang/Integer;}. */
+    static List<String> deviceFunctionTokens(String descriptor) {
+        var tokens = new ArrayList<String>();
         int close = descriptor.indexOf(')');
-        types.add(deviceFunctionType(descriptor.charAt(close + 1), descriptor));
-        for (int i = 1; i < close; i++) {
-            if (descriptor.charAt(i) == '[' && i + 1 < close && descriptor.charAt(i + 1) == 'B') {
-                types.add(STRING_VIEW); // byte[]: one row of a strings column, its UTF-8 bytes
-                i++;
-            } else {
-                types.add(deviceFunctionType(descriptor.charAt(i), descriptor));
-            }
+        tokens.add(token(descriptor, close + 1));
+        for (int i = 1; i < close;) {
+            var t = token(descriptor, i);
+            tokens.add(t);
+            i += t.length();
         }
-        return types;
+        return tokens;
+    }
+
+    private static String token(String descriptor, int i) {
+        char c = descriptor.charAt(i);
+        if (c == '[' && i + 1 < descriptor.length() && descriptor.charAt(i + 1) == 'B') {
+            return "[B"; // one row of a strings column, its UTF-8 bytes
+        }
+        if (c == 'L') {
+            var box = descriptor.substring(i, descriptor.indexOf(';', i) + 1);
+            if (!BOX_TYPES.containsKey(box)) {
+                throw new EmitException("TC-E3501", "a device function takes and returns primitives, byte[] strings and, when null-aware, boxes: not " + box);
+            }
+            return box;
+        }
+        return String.valueOf(c);
+    }
+
+    /** The C type of each box a null-aware device function takes or returns (its column's element type). */
+    private static final java.util.Map<String, String> BOX_TYPES = java.util.Map.of("Ljava/lang/Integer;", "int", "Ljava/lang/Long;", "long long", "Ljava/lang/Short;", "short",
+            "Ljava/lang/Byte;", "signed char", "Ljava/lang/Character;", "unsigned short", "Ljava/lang/Boolean;", "bool", "Ljava/lang/Float;", "float", "Ljava/lang/Double;", "double");
+
+    private static String optional(String type) {
+        return "cuda::std::optional<" + type + ">";
     }
 
     private static String deviceFunctionType(char c, String descriptor) {
@@ -489,7 +554,10 @@ public final class CEmitter {
      * as lambdas at the top of its body, dependencies first.
      */
     private Result deviceFunctionResult(String header, String body, String entry) {
-        var includes = dialect.preamble(features);
+        var includes = new ArrayList<>(dialect.preamble(features));
+        if (deviceFunction.nullAware()) {
+            includes.add("#include <cuda/std/optional>");
+        }
         for (var include : includes) {
             if (include.indexOf('(') >= 0) {
                 throw new EmitException("TC-E3503", "a device function cannot have a preamble with declarations: " + include.lines().findFirst().orElse(include));
@@ -523,7 +591,42 @@ public final class CEmitter {
     private void statements(List<S.Stmt> body, Set<String> fallthrough, int depth) {
         for (int i = 0; i < body.size(); i++) {
             statement(body.get(i), i == body.size() - 1 ? fallthrough : Set.of(), depth);
+            if (failsAlways(body.get(i))) {
+                return; // the device function has returned its error code: what follows never runs
+            }
         }
+    }
+
+    /** The two lanes of {@code make_T2(a, b)} as printed, or empty for any other expression. */
+    private static java.util.Optional<List<String>> madeLanes(String text) {
+        int open = text.indexOf('(');
+        if (!text.startsWith("make_") || open < 0 || !text.endsWith(")") || !text.substring(5, open).matches("[a-z]+2")) {
+            return java.util.Optional.empty();
+        }
+        var lanes = new ArrayList<String>();
+        int depth = 0;
+        int start = open + 1;
+        for (int i = open + 1; i < text.length() - 1; i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                if (--depth < 0) {
+                    return java.util.Optional.empty(); // the first ( does not close at the end
+                }
+            } else if (c == ',' && depth == 0) {
+                lanes.add(text.substring(start, i).strip());
+                start = i + 1;
+            }
+        }
+        lanes.add(text.substring(start, text.length() - 1).strip());
+        return lanes.size() == 2 && depth == 0 ? java.util.Optional.of(lanes) : java.util.Optional.empty();
+    }
+
+    /** A device function's unconditional failure ({@code throw}): {@code return code;}. */
+    private boolean failsAlways(S.Stmt stmt) {
+        return deviceFunction != null && stmt instanceof S.Effect(var op, var loc) && op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tc.udf.fail")
+                && op.operands().get(0) instanceof S.Const c && c.inst().opcode() instanceof Opcode.ConstInt(var v) && v != 0;
     }
 
     private void statement(S.Stmt stmt, Set<String> fallthrough, int depth) {
@@ -558,6 +661,13 @@ public final class CEmitter {
                 }
                 op.operands().forEach(o -> args.append(", ").append(expr(o).text));
                 line(depth, "printf(\"tornado[%3d,%3d,%3d]> " + format + "\"" + args + ");" + comment(loc));
+            }
+            case S.Effect(var op, var loc) when deviceFunction != null && op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tc.udf.fail") -> {
+                // The row fails: the function returns cudf's error code (cudf::errc), and transform throws.
+                var code = op.inst().immediates().requireInt("code");
+                var condition = expr(op.operands().get(0)).text;
+                boolean always = condition.equals("true") || condition.equals("1");
+                line(depth, (always ? "" : "if (" + condition + ") ") + "return " + code + ";" + comment(loc));
             }
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
             case S.ZeroFill(var alloca, var loc) -> {
@@ -607,10 +717,24 @@ public final class CEmitter {
             case S.Return(var value) when deviceFunction != null && value.isPresent() -> {
                 var result = expr(value.get()).text;
                 var type = deviceFunctionTypes(deviceFunction.descriptor()).get(0);
-                // A narrow Java result (boolean, byte, char, short) is an int in TC: store it as the column's type.
-                var narrow = !type.equals("int") && !type.equals("long long") && !type.equals("float") && !type.equals("double");
-                line(depth, "*" + OUT + " = " + (narrow ? "(" + type + ") (" + result + ")" : result) + ";");
-                if (current != finalReturn) {
+                if (deviceFunctionTokens(deviceFunction.descriptor()).get(0).startsWith("L")) {
+                    // A box: present, or null (lane 0, the validity, is zero).
+                    var lanes = madeLanes(result);
+                    if (lanes.isPresent() && lanes.get().get(0).matches("0+(\\.0+)?(LL)?f?")) {
+                        line(depth, "*" + OUT + " = cuda::std::nullopt;");
+                    } else if (lanes.isPresent() && lanes.get().get(0).matches("1(\\.0+)?(LL)?f?")) {
+                        line(depth, "*" + OUT + " = (" + type + ") (" + lanes.get().get(1) + ");");
+                    } else {
+                        line(depth, "if ((" + result + ").x != 0) *" + OUT + " = (" + type + ") (" + result + ").y; else *" + OUT + " = cuda::std::nullopt;");
+                    }
+                } else {
+                    // A narrow Java result (boolean, byte, char, short) is an int in TC: store it as the column's type.
+                    var narrow = !type.equals("int") && !type.equals("long long") && !type.equals("float") && !type.equals("double");
+                    line(depth, "*" + OUT + " = " + (narrow ? "(" + type + ") (" + result + ")" : result) + ";");
+                }
+                if (deviceFunction.returnsError()) {
+                    line(depth, "return 0;");
+                } else if (current != finalReturn) {
                     line(depth, "return;");
                 }
             }
