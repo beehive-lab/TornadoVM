@@ -52,8 +52,9 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * or MSL and prints them. No GPU and no TornadoVM runtime are needed.
  *
  * <pre>
- *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--cp PATH] [--stats] Class method
+ *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--cp PATH] [--stats] [--device-fn] Class method
  *   tc emit [same options] --all
+ *   tc emit [--cc N] [--cp PATH] [--stats] --device-fn Class method
  *   tc --version
  *   ... [--arg name=value]...
  * </pre>
@@ -86,6 +87,12 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * {@code static final DeviceKernel} fields, enum constants such as {@code DType.FP8_E4M3} and computed
  * constants resolve as when TornadoVM compiles a task. As a GraalVM native image, class bytes are
  * only read, and kernels that need those are refused.
+ *
+ * <p>
+ * {@code --device-fn} compiles a static method with primitive parameters and a primitive result, not
+ * a kernel, as a CUDA {@code __device__} function in the shape {@code cudf::transform} calls:
+ * {@code __device__ void f(R *out, A0 in0, ...)}, everything in that one function (see
+ * {@code TcCompiler.compileDeviceFunction}). It is CUDA only and takes one method, not {@code --all}.
  *
  * <p>
  * The default class path is {@code .}; {@code $TORNADOVM_HOME/share/java/tornado/tornado-api*.jar}
@@ -126,6 +133,7 @@ public final class Tc {
         boolean stats = false;
         boolean all = false;
         boolean strictFp = false;
+        boolean deviceFunction = false;
         var given = new LinkedHashMap<String, String>();
         var positional = new ArrayList<String>();
         try {
@@ -147,6 +155,7 @@ public final class Tc {
                     case "--stats" -> stats = true;
                     case "--all" -> all = true;
                     case "--strict-fp" -> strictFp = true;
+                    case "--device-fn" -> deviceFunction = true;
                     case "--arg" -> {
                         var nameValue = value(args, ++i).split("=", 2);
                         if (nameValue.length != 2) {
@@ -164,8 +173,12 @@ public final class Tc {
         if (all ? !positional.isEmpty() : positional.size() != 2) {
             return usage(err);
         }
+        if (deviceFunction && all) {
+            err.println("tc: --device-fn compiles one method: name it instead of --all");
+            return usage(err);
+        }
         var target = target(dialect, cc, fp16, fp64);
-        var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp);
+        var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withDeviceFunction(deviceFunction);
         var path = withApi(classPath);
         var source = source(path);
         List<Kernel> kernels = all ? kernels(classPath) : List.of(named(source, positional.get(0).replace('.', '/'), positional.get(1)));
@@ -178,14 +191,14 @@ public final class Tc {
             var assumed = new ArrayList<String>();
             TcCompiler.Compilation c;
             try {
-                c = compile(source, kernel, target, options, method, given, false, assumed);
+                c = compile(source, kernel, target, method, given, false, assumed, options);
             } catch (TypeLayouts.BadArgument e) {
                 err.println("tc: " + e.getMessage());
                 return usage(err);
             }
             if (!c.succeeded() && method != null && c.diagnostics().stream().anyMatch(d -> NEEDS_VALUES.contains(d.code()))) {
                 // The runtime knows every argument when it compiles a task; here, assume what the domain needs.
-                var retry = compile(source, kernel, target, options, method, given, true, assumed);
+                var retry = compile(source, kernel, target, method, given, true, assumed, options);
                 if (retry.succeeded()) {
                     c = retry;
                     var note = location(kernel) + "note: compiled for " + String.join(", ", assumed) + ": these values must be known when the kernel is compiled,"
@@ -251,11 +264,15 @@ public final class Tc {
     /** Refusals a value the runtime would know fixes: the launch domain (E3103), an object's layout (E3101). */
     private static final Set<String> NEEDS_VALUES = Set.of("TC-E3103", "TC-E3101");
 
-    private static TcCompiler.Compilation compile(Frontend.BytecodeSource source, Kernel kernel, TargetCaps target, TcOptions options, Method method, Map<String, String> given, boolean assume,
-            List<String> assumed) {
+    private static TcCompiler.Compilation compile(Frontend.BytecodeSource source, Kernel kernel, TargetCaps target, Method method, Map<String, String> given, boolean assume,
+            List<String> assumed, TcOptions options) {
         // Facts need the loaded class (parameter types and names, object constructors): none in a native image.
         // Without values given or assumed, no facts at all: the kernel TC compiles before any argument is seen.
         List<ValueSpecialisation.Fact> facts = method == null || (given.isEmpty() && !assume) ? List.of() : TypeLayouts.facts(method, given, assume, assumed);
+        if (options.deviceFunction()) {
+            // A device function has no launch or array facts: its arguments are one row's values.
+            return TcCompiler.compileDeviceFunction(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options);
+        }
         return TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options, facts);
     }
 
@@ -452,7 +469,7 @@ public final class Tc {
 
     private static int usage(PrintStream err) {
         err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp]"
-                + " [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
+                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn] (Class method | --all)");
         return 2;
     }
 }

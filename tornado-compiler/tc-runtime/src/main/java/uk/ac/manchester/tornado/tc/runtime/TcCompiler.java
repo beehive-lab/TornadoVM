@@ -54,6 +54,7 @@ import uk.ac.manchester.tornado.tc.lower.Structurizer;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
 import uk.ac.manchester.tornado.tc.tornado.AtomicSlots;
 import uk.ac.manchester.tornado.tc.tornado.BatchOffset;
+import uk.ac.manchester.tornado.tc.tornado.DeviceFunctionCheck;
 import uk.ac.manchester.tornado.tc.tornado.Legality;
 import uk.ac.manchester.tornado.tc.tornado.ObjectLayout;
 import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
@@ -122,6 +123,8 @@ public final class TcCompiler {
     private CEmitter.Result emitted;
     /** File-name stem of this compilation's dumps, chosen at its first dump. */
     private String dumpStem;
+    /** The JVM descriptor of the method compiled as a device function ({@link TcOptions#deviceFunction}). */
+    private String deviceFunctionDescriptor;
 
     private TcCompiler(Function function, TargetCaps target, TcOptions options) {
         this.function = function;
@@ -149,6 +152,17 @@ public final class TcCompiler {
      */
     public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
         return compileJava(source, className, methodName, null, target, options, facts);
+    }
+
+    /**
+     * Compiles a static method with primitive parameters and a primitive result as a CUDA device
+     * function in the shape {@code cudf::transform} calls, {@code __device__ void f(R *out, A0 in0, ...)}
+     * (see {@link TcOptions#withDeviceFunction}): source a library compiles into its own kernel, with
+     * no array headers, no launch parameters and nothing before the function but includes.
+     * {@code descriptor} is the JVM method descriptor, {@code null} for the first method of that name.
+     */
+    public static Compilation compileDeviceFunction(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options) {
+        return compileJava(source, className, methodName, descriptor, target, options.withDeviceFunction(true), List.of());
     }
 
     /**
@@ -295,6 +309,16 @@ public final class TcCompiler {
     private static Compiled compileJava(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
             List<ValueSpecialisation.Fact> facts, String rename) {
         long start = System.nanoTime();
+        String deviceDescriptor = null;
+        if (options.deviceFunction()) {
+            var signature = deviceFunctionSignature(source, className, methodName, descriptor);
+            if (signature instanceof Diagnostic problem) {
+                var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
+                return new Compiled(new Compilation(name, target, false, "", "", List.of(), List.of(problem), System.nanoTime() - start, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of()),
+                        KernelFeatures.NONE), null, null);
+            }
+            deviceDescriptor = (String) signature;
+        }
         var translated = Frontend.translateWithCallees(source, className, methodName, descriptor);
         java.util.Optional<Function> kernel = translated.module().map(m -> m.functions().get(0));
         if (rename != null) {
@@ -308,6 +332,7 @@ public final class TcCompiler {
             return new Compiled(new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of()), KernelFeatures.NONE), null, null);
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
+        compiler.deviceFunctionDescriptor = deviceDescriptor;
         compiler.facts = List.copyOf(facts);
         compiler.module = translated.module().get();
         compiler.stages.add(bytecode);
@@ -317,6 +342,36 @@ public final class TcCompiler {
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
         return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics(), c.features(), c.readsLengths()),
                 c.succeeded() ? compiler.function : null, c.succeeded() ? compiler.emitted : null);
+    }
+
+    /**
+     * The descriptor of the method to compile as a device function, or the diagnostic (TC-E3501) that
+     * refuses it: it must be static, with primitive parameters and a primitive result. A method that is
+     * not found is left to the frontend, which reports it as for a kernel.
+     */
+    private static Object deviceFunctionSignature(Frontend.BytecodeSource source, String className, String methodName, String descriptor) {
+        java.util.Optional<uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile.Method> method;
+        try {
+            method = source.classFile(className.replace('.', '/')).flatMap(c -> c.method(methodName, descriptor));
+        } catch (RuntimeException e) {
+            return descriptor == null ? "()V" : descriptor; // unreadable: the frontend reports it
+        }
+        if (method.isEmpty()) {
+            return descriptor == null ? "()V" : descriptor;
+        }
+        var m = method.get();
+        var where = "@" + className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
+        if (!m.isStatic()) {
+            return new Diagnostic("TC-E3501", methodName + " is an instance method: a device function is a static method", where, Loc.UNKNOWN);
+        }
+        var d = m.descriptor();
+        for (int i = 1; i < d.length(); i++) {
+            char c = d.charAt(i);
+            if (c != ')' && "ZBCSIJFD".indexOf(c) < 0) {
+                return new Diagnostic("TC-E3501", methodName + d + " takes or returns an array, an object or void: a device function maps primitives to a primitive", where, Loc.UNKNOWN);
+            }
+        }
+        return d;
     }
 
     /**
@@ -340,6 +395,10 @@ public final class TcCompiler {
     private static final List<Step> PIPELINE = List.of(
             new Step("inline", c -> c.module != null && c.module.functions().size() > 1, c -> Inliner.run(c.module, c.function), Verifier.Stage.PRE_ABI),
             new Step("local-collections", c -> c.module != null, c -> LocalCollections.run(c.function), Verifier.Stage.PRE_ABI),
+            // Before anything lowers what a device function may not use, so the refusal names it.
+            new Step("device-function", c -> c.options.deviceFunction(), c -> c.deviceFunctionDescriptor == null
+                    ? List.of(new Diagnostic("TC-E3501", "device-function output compiles a Java method, not IR text", "@" + c.function.name(), Loc.UNKNOWN))
+                    : DeviceFunctionCheck.run(c.function, c.target), Verifier.Stage.PRE_ABI),
             new Step("specialise", c -> !c.facts.isEmpty(), TcCompiler::specialise, Verifier.Stage.PRE_ABI),
             new Step("tiles", c -> TileTyping.usesTiles(c.function), TcCompiler::tiles, Verifier.Stage.PRE_ABI),
             new Step("atomics", c -> c.usesIntrinsic("tornado.atomic_int."), c -> AtomicSlots.run(c.function), Verifier.Stage.PRE_ABI),
@@ -488,7 +547,8 @@ public final class TcCompiler {
             var emitted = new CEmitter.Result[1];
             stage("emit", Kind.SOURCE, () -> {
                 try {
-                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd());
+                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd(),
+                            deviceFunctionDescriptor == null ? null : new CEmitter.DeviceFunction(deviceFunctionDescriptor));
                 } catch (CEmitter.EmitException e) {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }

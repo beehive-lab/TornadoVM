@@ -207,16 +207,42 @@ public final class CEmitter {
     /** Labelled blocks found to need wrapping; non-empty means emit again. */
     private final Set<String> toWrap = new HashSet<>();
     private String jumpFlag;
+    /** Device-function output (null for a kernel): see {@link DeviceFunction}. */
+    private final DeviceFunction deviceFunction;
+    /** The device function's last statement when it is its return (printed without {@code return;}). */
+    private S.Stmt finalReturn;
+    /** The device function's result pointer parameter. */
+    private static final String OUT = "out";
     /** The index of the loops that zero private arrays allocated inside the kernel's control flow. */
     private String zeroIndex;
     private int flagJumps;
 
-    private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped) {
+    private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped, DeviceFunction deviceFunction) {
         this.dialect = CDialect.of(target.dialect());
         this.target = target;
         this.lineComments = lineComments;
         this.task = task;
         this.wrapped = wrapped;
+        this.deviceFunction = deviceFunction;
+    }
+
+    /**
+     * Emit a CUDA {@code __device__} function for a host library to call once per row, instead of a
+     * kernel: {@code __device__ void f(R *out, A0 in0, ...)}, the shape {@code cudf::transform} calls
+     * (output pointers first, then the row's input values; its JIT renames the first function of the
+     * source). {@code descriptor} is the Java method's JVM descriptor, whose parameter and return types
+     * are all primitive: they name the C types of the signature, as narrow as the Java types
+     * ({@code byte} is {@code signed char}, {@code char} {@code unsigned short}), so that the out
+     * pointer matches the output column's element type.
+     *
+     * <p>
+     * Everything is in the one function, because the library takes the first {@code (} of the source
+     * to be its parameter list: helpers become lambdas at the top of the body, and includes may only
+     * be lines without a parenthesis. On a strict-floating-point compilation, float and double
+     * multiplications are {@code __fmul_rn} and {@code __dmul_rn}, which the CUDA compiler never
+     * contracts into an fma, since the library compiles the function with flags of its own.
+     */
+    public record DeviceFunction(String descriptor) {
     }
 
     public static Result emit(S.Kernel kernel, TargetCaps target) {
@@ -237,9 +263,14 @@ public final class CEmitter {
      * and OpenCL C lets the compiler contract unless the kernel says otherwise.
      */
     public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task, boolean contract) {
+        return emit(kernel, target, lineComments, task, contract, null);
+    }
+
+    /** As above; a non-null {@code deviceFunction} emits a device function instead of a kernel ({@link DeviceFunction}). */
+    public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task, boolean contract, DeviceFunction deviceFunction) {
         var wrapped = new HashSet<String>();
         while (true) {
-            var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped));
+            var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped), deviceFunction);
             if (!contract) {
                 emitter.features.add(CDialect.Feature.NO_CONTRACT);
             }
@@ -286,6 +317,9 @@ public final class CEmitter {
     private Result kernel(S.Kernel k) {
         elementTypes = k.elementTypes();
         var used = new HashSet<String>();
+        if (deviceFunction != null) {
+            used.add(OUT); // the result pointer's name, taken first so that no parameter gets it
+        }
         k.params().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.locals().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.allocas().forEach(a -> allocaNames.put(a, cIdentifier(a.name(), used)));
@@ -299,7 +333,19 @@ public final class CEmitter {
         if (tiles) {
             tileFeatures(f);
         }
-        if (f.kind() == Function.Kind.KERNEL) {
+        if (deviceFunction != null) {
+            if (tiles) {
+                throw new EmitException("TC-E3503", "a device function cannot use tiles");
+            }
+            var java = deviceFunctionTypes(deviceFunction.descriptor());
+            if (java.size() - 1 != k.params().size()) {
+                throw new EmitException("TC-E3503", "the device function has " + k.params().size() + " parameters where " + deviceFunction.descriptor() + " has " + (java.size() - 1));
+            }
+            header.append("__device__ void ").append(entry).append('(').append(java.get(0)).append(" *").append(OUT);
+            for (int i = 0; i < k.params().size(); i++) {
+                header.append(", ").append(java.get(i + 1)).append(' ').append(names.get(k.params().get(i)));
+            }
+        } else if (f.kind() == Function.Kind.KERNEL) {
             header.append(dialect.kernelPrefix(tiles)).append(entry).append('(').append(dialect.abiParameters());
             int index = dialect.abiParameterCount();
             for (var p : k.params()) {
@@ -344,6 +390,9 @@ public final class CEmitter {
         if (f.returnType() instanceof Type.VoidType && !body.isEmpty() && body.get(body.size() - 1) instanceof S.Return(var value) && value.isEmpty()) {
             body = body.subList(0, body.size() - 1); // a void function ends anyway
         }
+        if (deviceFunction != null && !body.isEmpty() && body.get(body.size() - 1) instanceof S.Return) {
+            finalReturn = body.get(body.size() - 1); // stores the result and ends anyway: no `return;` after it
+        }
         int declarations = out.length();
         int declarationLines = origins.size();
         statements(body, Set.of(), 1);
@@ -354,6 +403,9 @@ public final class CEmitter {
         out.append("}\n");
 
         var emitted = out.toString();
+        if (deviceFunction != null) {
+            return deviceFunctionResult(header.toString(), emitted, entry);
+        }
         var source = new StringBuilder();
         var includes = dialect.preamble(features);
         includes.forEach(i -> source.append(i).append('\n'));
@@ -368,6 +420,71 @@ public final class CEmitter {
         source.append(definition);
         var declaration = header.substring(0, header.length() - "\n{\n".length()) + ";\n";
         return new Result(source.toString(), entry, List.copyOf(includes), List.copyOf(helpers), definition, declaration, java.util.Collections.unmodifiableList(new ArrayList<>(origins)));
+    }
+
+    // ---------------------------------------------------------------- device function
+
+    /** The C types of a device function's signature: the result first, then each parameter. */
+    static List<String> deviceFunctionTypes(String descriptor) {
+        var types = new ArrayList<String>();
+        int close = descriptor.indexOf(')');
+        types.add(deviceFunctionType(descriptor.charAt(close + 1), descriptor));
+        for (int i = 1; i < close; i++) {
+            types.add(deviceFunctionType(descriptor.charAt(i), descriptor));
+        }
+        return types;
+    }
+
+    private static String deviceFunctionType(char c, String descriptor) {
+        return switch (c) {
+            case 'Z' -> "bool";
+            case 'B' -> "signed char";
+            case 'C' -> "unsigned short";
+            case 'S' -> "short";
+            case 'I' -> "int";
+            case 'J' -> "long long";
+            case 'F' -> "float";
+            case 'D' -> "double";
+            default -> throw new EmitException("TC-E3501", "a device function takes and returns primitives only, not " + descriptor);
+        };
+    }
+
+    /** A C helper, {@code __device__ static inline T name(params) { body }}: its result type, name, parameters and body. */
+    private static final java.util.regex.Pattern HELPER = java.util.regex.Pattern
+            .compile("\\s*__device__\\s+static\\s+inline\\s+([A-Za-z_][A-Za-z0-9_ ]*?)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{(.*)\\}\\s*", java.util.regex.Pattern.DOTALL);
+
+    /**
+     * The device function as one translation unit (see {@link DeviceFunction}): the includes the
+     * dialect needs (each a line without a parenthesis), then the function, with the helpers it uses
+     * as lambdas at the top of its body, dependencies first.
+     */
+    private Result deviceFunctionResult(String header, String body, String entry) {
+        var includes = dialect.preamble(features);
+        for (var include : includes) {
+            if (include.indexOf('(') >= 0) {
+                throw new EmitException("TC-E3503", "a device function cannot have a preamble with declarations: " + include.lines().findFirst().orElse(include));
+            }
+        }
+        var lambdas = new StringBuilder();
+        for (var helper : helpers) {
+            var m = HELPER.matcher(Helpers.source(helper, target.dialect()));
+            if (!m.matches()) {
+                throw new EmitException("TC-E3503", "helper " + helper + " cannot be written as a lambda in a device function");
+            }
+            lambdas.append("  auto ").append(m.group(2)).append(" = [&](").append(m.group(3).strip()).append(") -> ").append(m.group(1).strip()).append(" {\n");
+            m.group(4).strip().lines().forEach(l -> lambdas.append("    ").append(l.strip()).append('\n'));
+            lambdas.append("  };\n");
+        }
+        var definition = header + lambdas + body;
+        var source = new StringBuilder();
+        includes.forEach(i -> source.append(i).append('\n'));
+        source.append(definition);
+        var declaration = header.substring(0, header.length() - "\n{\n".length()) + ";\n";
+        // bodyOrigins: one entry per line after the header; the lambdas print no statement.
+        var lineOrigins = new ArrayList<S.Stmt>();
+        lambdas.toString().lines().forEach(l -> lineOrigins.add(null));
+        lineOrigins.addAll(origins);
+        return new Result(source.toString(), entry, List.copyOf(includes), List.of(), definition, declaration, java.util.Collections.unmodifiableList(lineOrigins));
     }
 
     // ---------------------------------------------------------------- statements
@@ -456,6 +573,16 @@ public final class CEmitter {
                 line(depth, "}");
                 frames.pop();
                 repeatFlagged(frame.flagged(), depth);
+            }
+            case S.Return(var value) when deviceFunction != null && value.isPresent() -> {
+                var result = expr(value.get()).text;
+                var type = deviceFunctionTypes(deviceFunction.descriptor()).get(0);
+                // A narrow Java result (boolean, byte, char, short) is an int in TC: store it as the column's type.
+                var narrow = !type.equals("int") && !type.equals("long long") && !type.equals("float") && !type.equals("double");
+                line(depth, "*" + OUT + " = " + (narrow ? "(" + type + ") (" + result + ")" : result) + ";");
+                if (current != finalReturn) {
+                    line(depth, "return;");
+                }
             }
             case S.Return(var value) -> line(depth, value.map(v -> "return " + expr(v).text + ";").orElse("return;"));
             case S.Unreachable _u -> line(depth, dialect.unreachable());
@@ -880,6 +1007,7 @@ public final class CEmitter {
         return switch (op) {
             case ADD, FADD -> infix(a, "+", b, ADD);
             case SUB, FSUB -> infix(a, "-", b, ADD);
+            // A strict product on CUDA was already printed as __fmul_rn / __dmul_rn above (strictMultiply).
             case MUL, FMUL -> infix(a, "*", b, MUL);
             case DIV -> javaDivision(type, a, "/", b, type.equals(Type.I64) ? "java_ldiv" : "java_idiv");
             case REM -> javaDivision(type, a, "%", b, type.equals(Type.I64) ? "java_lrem" : "java_irem");

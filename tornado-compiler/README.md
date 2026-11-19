@@ -159,7 +159,7 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] [--device-fn] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
 
@@ -167,6 +167,32 @@ tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 an add, so results round as Java's do. The printed source is strict by itself (on CUDA through
 `__fmul_rn`/`__dmul_rn`, since NVRTC contracts by default and has no pragma against it), so it
 stays strict whichever compiler and flags build it later, such as cudf's JIT.
+
+**Device functions for other libraries.** `tc emit --device-fn` compiles a static method with
+primitive parameters and a primitive result, not a kernel, as one CUDA `__device__` function in the
+shape `cudf::transform` calls: the output pointer first, then the row's values. The source can be
+passed to `cudf::transform` with `udf_source_type::CUDA` as it is printed. The Java API is
+`TcCompiler.compileDeviceFunction` (or `TcOptions.withDeviceFunction`).
+
+```bash
+tc emit --device-fn --cp udfs.jar com.example.Udfs collatz
+# __device__ void Udfs_collatz(int *out, long long x)
+# { ... *out = steps; }
+```
+
+- The C types are as narrow as the Java ones (`byte` is `signed char`, `char` is `unsigned short`),
+  so `out` matches the output column's element type. There are no array headers and no launch
+  parameters.
+- Everything is in that one function, because cudf takes the source's first `(` as the function's
+  parameter list. Java-semantics helpers (`int` division, `Math.min` on doubles) become lambdas at
+  the top of the body.
+- A strict-floating-point compilation (`--strict-fp`, or `TcOptions.withStrictFloatingPoint`) writes `float` and
+  `double` products as `__fmul_rn`/`__dmul_rn`, which the CUDA compiler never fuses into an `fma`.
+  This matters because cudf compiles the function with its own compiler flags.
+- TC refuses what a per-row function cannot do, with the reason: arrays, objects or `void`
+  (`TC-E3501`); thread indices, `@Parallel` loops, barriers, atomics, shared memory, device
+  launches, tiles or `printf` (`TC-E3502`); and any target other than CUDA (`TC-E3504`).
+  Private arrays (`new int[4]`) are allowed.
 
 `build-tc-native` (with `GRAALVM_HOME` set to a GraalVM for JDK 25+) builds it as a native image,
 `bin/tc-native`, which `tc` then uses. A cold compile then takes about 20 ms instead of about
