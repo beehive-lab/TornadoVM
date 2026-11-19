@@ -333,7 +333,7 @@ public final class TcCompiler {
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
         compiler.deviceFunctionDescriptor = deviceDescriptor;
-        compiler.facts = List.copyOf(facts);
+        compiler.facts = deviceDescriptor == null ? List.copyOf(facts) : stringRowFacts(deviceDescriptor);
         compiler.module = translated.module().get();
         compiler.stages.add(bytecode);
         var c = compiler.run();
@@ -342,6 +342,27 @@ public final class TcCompiler {
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
         return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics(), c.features(), c.readsLengths()),
                 c.succeeded() ? compiler.function : null, c.succeeded() ? compiler.emitted : null);
+    }
+
+    /**
+     * The facts of a device function: each {@code byte[]} parameter is one row of a strings column,
+     * which the library passes as a {@code cudf::string_view}. Its bytes are addressed from
+     * {@code data()} itself, with no array header, so it is a headerless view; its length is
+     * {@code size_bytes()}, which {@link DeviceFunctionCheck} substitutes for {@code .length} before
+     * ABI lowering would refuse a headerless length.
+     */
+    private static List<ValueSpecialisation.Fact> stringRowFacts(String descriptor) {
+        var facts = new ArrayList<ValueSpecialisation.Fact>();
+        int close = descriptor.indexOf(')');
+        for (int i = 1; i < close; i++) {
+            if (descriptor.charAt(i) == '[') {
+                facts.add(new ValueSpecialisation.Fact.DeviceView(-1));
+                i++;
+            } else {
+                facts.add(new ValueSpecialisation.Fact.Unknown());
+            }
+        }
+        return facts.stream().anyMatch(f -> f instanceof ValueSpecialisation.Fact.DeviceView) ? List.copyOf(facts) : List.of();
     }
 
     /**
@@ -365,10 +386,16 @@ public final class TcCompiler {
             return new Diagnostic("TC-E3501", methodName + " is an instance method: a device function is a static method", where, Loc.UNKNOWN);
         }
         var d = m.descriptor();
+        int close = d.indexOf(')');
         for (int i = 1; i < d.length(); i++) {
             char c = d.charAt(i);
+            if (c == '[' && i < close && i + 1 < close && d.charAt(i + 1) == 'B') {
+                i++; // a byte[] parameter: one string row, its UTF-8 bytes (a cudf::string_view)
+                continue;
+            }
             if (c != ')' && "ZBCSIJFD".indexOf(c) < 0) {
-                return new Diagnostic("TC-E3501", methodName + d + " takes or returns an array, an object or void: a device function maps primitives to a primitive", where, Loc.UNKNOWN);
+                return new Diagnostic("TC-E3501", methodName + d + " takes or returns an array, an object or void: a device function maps primitives (and byte[] strings) to a primitive", where,
+                        Loc.UNKNOWN);
             }
         }
         return d;

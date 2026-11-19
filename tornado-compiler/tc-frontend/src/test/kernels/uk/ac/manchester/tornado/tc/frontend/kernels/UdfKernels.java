@@ -100,7 +100,67 @@ public final class UdfKernels {
         return t[i & 3];
     }
 
+    // ---- string rows: a byte[] parameter is one row of a strings column, its UTF-8 bytes
+
+    /** FNV-1a, 32-bit (GrowthBook's bucketing hash), over the row's bytes. */
+    public static int fnv1a(byte[] s) {
+        int h = 0x811c9dc5;
+        for (int i = 0; i < s.length; i++) {
+            h ^= s[i] & 0xff;
+            h *= 0x01000193;
+        }
+        return h;
+    }
+
+    /**
+     * Murmur3_x86_32 of the row's bytes with a seed, with the standard tail (as Guava's
+     * murmur3_32_fixed(seed).hashBytes and Optimizely's bucketing hash), not Spark's.
+     */
+    public static int murmur3(byte[] s, int seed) {
+        int h = seed;
+        int n = s.length;
+        int blocks = n >> 2;
+        for (int b = 0; b < blocks; b++) {
+            int i = b << 2;
+            int k = (s[i] & 0xff) | (s[i + 1] & 0xff) << 8 | (s[i + 2] & 0xff) << 16 | (s[i + 3] & 0xff) << 24;
+            h = mix(h, k);
+        }
+        int tail = blocks << 2;
+        int k = 0;
+        switch (n & 3) {
+            case 3:
+                k ^= (s[tail + 2] & 0xff) << 16;
+            case 2:
+                k ^= (s[tail + 1] & 0xff) << 8;
+            case 1:
+                k ^= s[tail] & 0xff;
+                k *= 0xcc9e2d51;
+                k = Integer.rotateLeft(k, 15);
+                k *= 0x1b873593;
+                h ^= k;
+            default:
+        }
+        h ^= n;
+        h ^= h >>> 16;
+        h *= 0x85ebca6b;
+        h ^= h >>> 13;
+        h *= 0xc2b2ae35;
+        h ^= h >>> 16;
+        return h;
+    }
+
+    /** An experiment bucket of a string user id and an integer salt, in [0, 10000). */
+    public static int stringBucket(byte[] user, int salt) {
+        return Math.floorMod(murmur3(user, salt), 10000);
+    }
+
     // ---- refused
+
+    /** Writes into the row: strings are read-only. */
+    public static int scribble(byte[] s) {
+        s[0] = 1;
+        return s.length;
+    }
 
     public static int sum(int[] a) {
         return a[0];

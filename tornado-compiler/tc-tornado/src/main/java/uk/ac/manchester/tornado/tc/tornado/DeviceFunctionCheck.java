@@ -24,8 +24,11 @@ import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
 import uk.ac.manchester.tornado.tc.ir.Function;
 import uk.ac.manchester.tornado.tc.ir.IntrinsicRegistry;
+import uk.ac.manchester.tornado.tc.ir.IrBuilder;
 import uk.ac.manchester.tornado.tc.ir.Loc;
 import uk.ac.manchester.tornado.tc.ir.Opcode;
+import uk.ac.manchester.tornado.tc.ir.Type;
+import uk.ac.manchester.tornado.tc.ir.Value;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
 /**
@@ -38,13 +41,22 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * are allowed: they live in the function's own frame.
  *
  * <p>
+ * A {@code byte[]} parameter is one row of a strings column: the library passes a
+ * {@code cudf::string_view}, and the method sees its UTF-8 bytes. It is read-only (a store into it is
+ * refused), and its {@code .length} becomes {@link #STRING_LENGTH}, the view's {@code size_bytes()},
+ * since a headerless view has no length of its own to read.
+ *
+ * <p>
  * Allowed intrinsics are a whitelist (math, vector values, {@code dp4a}), so an intrinsic added later
  * is refused here until it is known to be safe in a device function.
  */
 public final class DeviceFunctionCheck {
 
     /** Intrinsics a device function may use: values computed from values. */
-    private static final List<String> ALLOWED = List.of("math.", "tornado.vector.make", "tornado.vector.lane", "tornado.vector.insert", "tornado.dp4a");
+    private static final List<String> ALLOWED = List.of("math.", "tornado.vector.make", "tornado.vector.lane", "tornado.vector.insert", "tornado.dp4a", "tornado.devfn.");
+
+    /** The byte length of a string row ({@code byte[]} parameter): the emitter prints the view's {@code size_bytes()}. */
+    public static final String STRING_LENGTH = "tornado.devfn.string_length";
 
     private DeviceFunctionCheck() {
     }
@@ -54,6 +66,12 @@ public final class DeviceFunctionCheck {
         if (target.dialect() != TargetCaps.Dialect.CUDA) {
             problems.add(new Diagnostic("TC-E3504", "device-function output is CUDA C++ only, not " + target.dialect(), "@" + function.name(), Loc.UNKNOWN));
             return problems;
+        }
+        var strings = new java.util.HashSet<Value>();
+        for (var param : function.params()) {
+            if (param.type() instanceof Type.ArrayType) {
+                strings.add(param);
+            }
         }
         for (var block : function.blocks()) {
             if (block.attributes().stream().anyMatch(a -> a.name().equals("parallel"))) {
@@ -65,6 +83,8 @@ public final class DeviceFunctionCheck {
                         var what = IntrinsicRegistry.lookup(name).map(IntrinsicRegistry.Def::description).filter(d -> !d.isBlank()).orElse(name);
                         problems.add(new Diagnostic("TC-E3502", "a device function cannot use " + what + " (" + name + ")", "@" + function.name(), inst.loc()));
                     }
+                    case Opcode.ArrayStore _s when strings.contains(inst.operand(0)) -> problems.add(new Diagnostic("TC-E3502",
+                            "a device function cannot write into a string row (a byte[] parameter is the row's bytes, read-only)", "@" + function.name(), inst.loc()));
                     case Opcode.Alloca alloca when alloca.space() != AddressSpace.PRIVATE -> problems.add(new Diagnostic("TC-E3502",
                             "a device function cannot allocate " + alloca.space().name().toLowerCase(java.util.Locale.ROOT) + " memory", "@" + function.name(), inst.loc()));
                     default -> {
@@ -72,6 +92,22 @@ public final class DeviceFunctionCheck {
                 }
             }
         }
+        if (problems.isEmpty()) {
+            lowerStringLengths(function, strings);
+        }
         return problems;
+    }
+
+    /** {@code row.length} on a string row becomes {@link #STRING_LENGTH} of the row. */
+    private static void lowerStringLengths(Function function, java.util.Set<Value> strings) {
+        for (var block : function.blocks()) {
+            for (var inst : List.copyOf(block.insts())) {
+                if (inst.opcode() instanceof Opcode.ArrayLength && strings.contains(inst.operand(0))) {
+                    var length = IrBuilder.insertingBefore(inst).intrinsic(STRING_LENGTH, inst.type(), List.of(inst.operand(0)));
+                    inst.replaceAllUsesWith(length);
+                    inst.erase();
+                }
+            }
+        }
     }
 }

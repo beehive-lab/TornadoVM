@@ -183,6 +183,10 @@ tc emit --device-fn --cp udfs.jar com.example.Udfs collatz
 - The C types are as narrow as the Java ones (`byte` is `signed char`, `char` is `unsigned short`),
   so `out` matches the output column's element type. There are no array headers and no launch
   parameters.
+- A `byte[]` parameter is one row of a strings column: cudf passes it as a `cudf::string_view`, and
+  the method sees the row's UTF-8 bytes, `s[i]` read from `data()` and `s.length` as
+  `size_bytes()`. This is how string hashes such as Murmur3 with a seed (standard tail) or FNV-1a
+  run in `transform`. The row is read-only: a store into it is refused (`TC-E3502`).
 - Everything is in that one function, because cudf takes the source's first `(` as the function's
   parameter list. Java-semantics helpers (`int` division, `Math.min` on doubles) become lambdas at
   the top of the body.

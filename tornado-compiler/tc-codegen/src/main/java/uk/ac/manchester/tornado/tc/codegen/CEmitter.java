@@ -209,6 +209,18 @@ public final class CEmitter {
     private String jumpFlag;
     /** Device-function output (null for a kernel): see {@link DeviceFunction}. */
     private final DeviceFunction deviceFunction;
+
+    /** The C type of a device function's string-row ({@code byte[]}) parameter. */
+    static final String STRING_VIEW = "cudf::string_view";
+
+    /** DeviceFunctionCheck's intrinsic for a string row's byte length. */
+    private static final String STRING_LENGTH = "tornado.devfn.string_length";
+
+    /** A device function's string rows: the name of each byte pointer, to the name of its length. */
+    private final java.util.Map<String, String> stringRows = new java.util.HashMap<>();
+
+    /** The declarations that open a device function with string rows: each row's bytes and length. */
+    private final List<String> stringRowLines = new ArrayList<>();
     /** The device function's last statement when it is its return (printed without {@code return;}). */
     private S.Stmt finalReturn;
     /** The device function's result pointer parameter. */
@@ -343,7 +355,19 @@ public final class CEmitter {
             }
             header.append("__device__ void ").append(entry).append('(').append(java.get(0)).append(" *").append(OUT);
             for (int i = 0; i < k.params().size(); i++) {
-                header.append(", ").append(java.get(i + 1)).append(' ').append(names.get(k.params().get(i)));
+                var param = k.params().get(i);
+                var name = names.get(param);
+                if (java.get(i + 1).equals(STRING_VIEW)) {
+                    // A string row: the view is the parameter; its bytes and length are named for the body.
+                    var view = cIdentifier(name + "_sv", used);
+                    var length = cIdentifier(name + "_len", used);
+                    stringRows.put(name, length);
+                    stringRowLines.add(declaration(param.type(), name) + " = (" + typeName(param.type()) + ") " + view + ".data();");
+                    stringRowLines.add("const int " + length + " = (int) " + view + ".size_bytes();");
+                    header.append(", ").append(STRING_VIEW).append(' ').append(view);
+                } else {
+                    header.append(", ").append(java.get(i + 1)).append(' ').append(name);
+                }
             }
         } else if (f.kind() == Function.Kind.KERNEL) {
             header.append(dialect.kernelPrefix(tiles)).append(entry).append('(').append(dialect.abiParameters());
@@ -358,6 +382,7 @@ public final class CEmitter {
         }
         header.append(")\n{\n");
 
+        stringRowLines.forEach(l -> line(1, l));
         for (var alloca : k.allocas()) {
             var a = alloca.kind();
             // Java zero-fills `new T[n]` (private arrays); KernelContext local arrays start undefined, as on Graal.
@@ -430,7 +455,12 @@ public final class CEmitter {
         int close = descriptor.indexOf(')');
         types.add(deviceFunctionType(descriptor.charAt(close + 1), descriptor));
         for (int i = 1; i < close; i++) {
-            types.add(deviceFunctionType(descriptor.charAt(i), descriptor));
+            if (descriptor.charAt(i) == '[' && i + 1 < close && descriptor.charAt(i + 1) == 'B') {
+                types.add(STRING_VIEW); // byte[]: one row of a strings column, its UTF-8 bytes
+                i++;
+            } else {
+                types.add(deviceFunctionType(descriptor.charAt(i), descriptor));
+            }
         }
         return types;
     }
@@ -1233,6 +1263,13 @@ public final class CEmitter {
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
+        if (name.equals(STRING_LENGTH)) {
+            var length = stringRows.get(expr(ops.get(0)).text);
+            if (length == null) {
+                throw new EmitException("TC-E3503", "the length of a string row is read through something other than its parameter");
+            }
+            return new R(length, ATOM);
+        }
         if (name.startsWith("tile.")) {
             // Tile values are always named variables; the result is a whole statement's expression.
             return new R(dialect.tileExpression(name, inst, ops.stream().map(o -> wrap(expr(o), UNARY)).toList()), COND);
