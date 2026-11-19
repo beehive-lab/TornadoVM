@@ -451,7 +451,8 @@ public final class Tc {
     }
 
     private static int usage(PrintStream err) {
-        err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
+        err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp]"
+                + " [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
         return 2;
     }
 }
