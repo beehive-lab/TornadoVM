@@ -127,6 +127,9 @@ final class Translator {
     /** Vector parameters of a kernel (hidden SSA variable → parameter): setters on them reach the host. */
     private final Map<VectorParam, BlockArg> vectorParams = new java.util.LinkedHashMap<>();
 
+    /** A read-only table of constants ({@link #constantTable}). */
+    static final String TABLE = "tc.table";
+
     private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
         this(source, classFile, method, kind, null);
     }
@@ -520,6 +523,75 @@ final class Translator {
                     push(v1);
                 }
             }
+            // The remaining dup forms (JVMS 6.5), by the categories of the values under the top: javac
+            // emits them for chained assignments such as y[0] = r = a - b on longs and doubles.
+            case DUP_X2 -> {
+                var v1 = pop();
+                var v2 = pop();
+                if (category(v2) == 2) {
+                    push(v1);
+                    push(v2);
+                    push(v1);
+                } else {
+                    var v3 = pop();
+                    push(v1);
+                    push(v3);
+                    push(v2);
+                    push(v1);
+                }
+            }
+            case DUP2_X1 -> {
+                var v1 = pop();
+                if (category(v1) == 2) {
+                    var v2 = pop();
+                    push(v1);
+                    push(v2);
+                    push(v1);
+                } else {
+                    var v2 = pop();
+                    var v3 = pop();
+                    push(v2);
+                    push(v1);
+                    push(v3);
+                    push(v2);
+                    push(v1);
+                }
+            }
+            case DUP2_X2 -> {
+                var v1 = pop();
+                if (category(v1) == 2) {
+                    var v2 = pop();
+                    if (category(v2) == 2) {
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        var v3 = pop();
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                } else {
+                    var v2 = pop();
+                    var v3 = pop();
+                    if (category(v3) == 2) {
+                        push(v2);
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        var v4 = pop();
+                        push(v2);
+                        push(v1);
+                        push(v4);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+            }
             case SWAP -> {
                 var v1 = pop();
                 var v2 = pop();
@@ -627,6 +699,13 @@ final class Translator {
                         break;
                     }
                 }
+                if (op == GETSTATIC && ref.descriptor().length() == 2 && ref.descriptor().charAt(0) == '[' && Bindings.field(ref.owner(), ref.name()).isEmpty()) {
+                    var table = source.staticFinalArray(ref.owner(), ref.name());
+                    if (table.isPresent()) {
+                        push(constantTable(table.get()));
+                        break;
+                    }
+                }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
                 if (binding instanceof Intrinsic(var name, var type, var immediates)) {
                     push(b.intrinsic(name, immediates, type, List.of()));
@@ -670,6 +749,8 @@ final class Translator {
                 var array = pop();
                 if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
                     push(b.constInt(Type.I32, count));
+                } else if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(TABLE)) {
+                    push(b.constInt(Type.I32, inst.immediates().requireInt("count")));
                 } else if (array instanceof Inst inst && LocalArrays.isPending(inst)) {
                     push(inst.operand(0));
                 } else if (array.type() instanceof Type.PointerType) {
@@ -1211,7 +1292,9 @@ final class Translator {
 
     private void invoke(Insn insn) {
         var ref = classFile.constants().member(insn.index());
-        var binding = Bindings.method(ref.owner(), ref.name(), ref.descriptor());
+        // Java-exact math: the StrictMath-specified functions are inlined (to FdLibm), not bound.
+        var binding = source.javaMath() && Bindings.javaExact(ref.owner(), ref.name(), ref.descriptor()) ? Optional.<Bindings.Binding>empty()
+                : Bindings.method(ref.owner(), ref.name(), ref.descriptor());
         int argCount = parameterDescriptors(ref.descriptor()).size() + (insn.opcode() == INVOKESTATIC ? 0 : 1);
         var args = new ArrayList<Value>();
         for (int k = 0; k < argCount; k++) {
@@ -1402,6 +1485,32 @@ final class Translator {
             return builder.alloca(space, element, (int) v);
         }
         return builder.intrinsic(LocalArrays.PENDING, LocalArrays.pendingImmediates(space, element), new Type.PointerType(space), List.of(length));
+    }
+
+    /**
+     * A constant table ({@link ConstantTables}): a pointer to constant memory holding its values
+     * ({@code tc.table}), which the dialects declare once as a read-only array. Reads go through it as
+     * through any array.
+     */
+    private Value constantTable(ConstantTables.Table table) {
+        var element = switch (table.newarrayType()) {
+            case 4, 8 -> Type.I8;
+            case 5, 9 -> Type.I16;
+            case 6 -> Type.F32;
+            case 7 -> Type.F64;
+            case 10 -> Type.I32;
+            default -> Type.I64;
+        };
+        var bits = new StringBuilder();
+        for (var v : table.values()) {
+            if (!bits.isEmpty()) {
+                bits.append(',');
+            }
+            // Raw bits for floating point, so -0.0, NaN payloads and every last digit survive the text.
+            bits.append(v instanceof Double d ? Double.doubleToRawLongBits(d) : v instanceof Float f ? Float.floatToRawIntBits(f) : v.longValue());
+        }
+        return builder.intrinsic(TABLE, Immediates.of("elem", element.text(), "count", (long) table.values().size(), "values", bits.toString()),
+                new Type.PointerType(AddressSpace.CONSTANT), List.of());
     }
 
     // ---------------------------------------------------------------- helpers

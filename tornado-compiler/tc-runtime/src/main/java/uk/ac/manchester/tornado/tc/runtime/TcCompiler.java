@@ -295,6 +295,10 @@ public final class TcCompiler {
     private static Compiled compileJava(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
             List<ValueSpecialisation.Fact> facts, String rename) {
         long start = System.nanoTime();
+        if (options.javaMath()) {
+            // StrictMath's functions are inlined from FdLibm rather than bound (TcOptions.withJavaMath).
+            source = Frontend.BytecodeSource.withJavaMath(source);
+        }
         var translated = Frontend.translateWithCallees(source, className, methodName, descriptor);
         java.util.Optional<Function> kernel = translated.module().map(m -> m.functions().get(0));
         if (rename != null) {

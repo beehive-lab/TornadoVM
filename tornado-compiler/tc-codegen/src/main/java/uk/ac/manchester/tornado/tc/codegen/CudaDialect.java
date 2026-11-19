@@ -88,6 +88,12 @@ final class CudaDialect implements CDialect {
         return space == AddressSpace.SHARED ? "__shared__ " : "";
     }
 
+    /** A function-scope static: initialised once with the module, not per thread. */
+    @Override
+    public Optional<String> tableQualifier() {
+        return Optional.of("static const ");
+    }
+
     @Override
     public String pointee(AddressSpace space, String element) {
         return element; // generic addressing: CUDA pointers carry no address space

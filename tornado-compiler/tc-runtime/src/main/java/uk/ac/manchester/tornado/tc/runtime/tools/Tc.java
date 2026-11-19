@@ -52,7 +52,7 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * or MSL and prints them. No GPU and no TornadoVM runtime are needed.
  *
  * <pre>
- *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--cp PATH] [--stats] Class method
+ *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--java-math] [--cp PATH] [--stats] Class method
  *   tc emit [same options] --all
  *   tc --version
  *   ... [--arg name=value]...
@@ -64,6 +64,11 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * except {@code main}, synthetic methods and the children of {@code DeviceKernel.of} (compiled with
  * the kernel that launches them). Each kernel's code follows a {@code // ===== Class.method =====}
  * header, in source order; a refused kernel prints its diagnostics and the others still compile.
+ *
+ * <p>
+ * {@code --java-math} makes the functions {@code StrictMath} specifies ({@code sin}, {@code exp},
+ * {@code pow}, ...) bit-identical to {@code StrictMath}: they are compiled from the JDK's FdLibm code
+ * instead of the device library ({@code TcOptions.withJavaMath}). It implies {@code --strict-fp}.
  *
  * <p>
  * {@code --strict-fp} compiles as a plan with {@code withStrictFloatingPoint()} does: no multiply is
@@ -126,6 +131,7 @@ public final class Tc {
         boolean stats = false;
         boolean all = false;
         boolean strictFp = false;
+        boolean javaMath = false;
         var given = new LinkedHashMap<String, String>();
         var positional = new ArrayList<String>();
         try {
@@ -147,6 +153,7 @@ public final class Tc {
                     case "--stats" -> stats = true;
                     case "--all" -> all = true;
                     case "--strict-fp" -> strictFp = true;
+                    case "--java-math" -> javaMath = true;
                     case "--arg" -> {
                         var nameValue = value(args, ++i).split("=", 2);
                         if (nameValue.length != 2) {
@@ -165,7 +172,7 @@ public final class Tc {
             return usage(err);
         }
         var target = target(dialect, cc, fp16, fp64);
-        var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp);
+        var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withJavaMath(javaMath);
         var path = withApi(classPath);
         var source = source(path);
         List<Kernel> kernels = all ? kernels(classPath) : List.of(named(source, positional.get(0).replace('.', '/'), positional.get(1)));
@@ -451,7 +458,7 @@ public final class Tc {
     }
 
     private static int usage(PrintStream err) {
-        err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp]"
+        err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--java-math]"
                 + " [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
         return 2;
     }

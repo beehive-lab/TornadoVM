@@ -43,6 +43,15 @@ final class Bindings {
     private static final String ARRAYS = "uk/ac/manchester/tornado/api/types/arrays/";
     private static final String TORNADO_MATH = "uk/ac/manchester/tornado/api/math/TornadoMath";
     private static final String JAVA_MATH = "java/lang/Math";
+    private static final String STRICT_MATH = "java/lang/StrictMath";
+
+    /**
+     * The double functions whose results {@code StrictMath} specifies (the FdLibm algorithms). With
+     * Java-exact math on, calls to them through {@code Math} or {@code TornadoMath} are not bound to the
+     * device library but inlined, down to the JDK's FdLibm code ({@link #javaExact}).
+     */
+    private static final java.util.Set<String> JAVA_EXACT = java.util.Set.of("sin", "cos", "tan", "asin", "acos", "atan", "atan2", "exp", "log", "log10", "pow", "cbrt", "sinh",
+            "cosh", "tanh");
 
     /** What a call or field access becomes. */
     sealed interface Binding {
@@ -460,6 +469,9 @@ final class Bindings {
             METHODS.put(TORNADO_MATH + "." + fn + "(F)F", new Intrinsic("math." + fn, Type.F32));
             METHODS.put(TORNADO_MATH + "." + fn + "(D)D", new Intrinsic("math." + fn, Type.F64));
         }
+        // StrictMath.sqrt is FdLibm's bit-by-bit square root in Java; the device's double sqrt is correctly
+        // rounded too (IEEE 754), so it gives the same bits, much faster.
+        METHODS.put(STRICT_MATH + ".sqrt(D)D", new Intrinsic("math.sqrt", Type.F64));
         METHODS.put(JAVA_MATH + ".fma(FFF)F", new Intrinsic("math.fma", Type.F32));
         METHODS.put(JAVA_MATH + ".fma(DDD)D", new Intrinsic("math.fma", Type.F64));
     }
@@ -469,6 +481,14 @@ final class Bindings {
 
     static Optional<Binding> field(String owner, String name) {
         return Optional.ofNullable(FIELDS.get(owner + "." + name));
+    }
+
+    /**
+     * Whether a call is one Java-exact math leaves unbound: a {@code Math} or {@code TornadoMath} double
+     * function {@code StrictMath} specifies.
+     */
+    static boolean javaExact(String owner, String name, String descriptor) {
+        return (owner.equals(JAVA_MATH) || owner.equals(TORNADO_MATH)) && JAVA_EXACT.contains(name) && (descriptor.equals("(D)D") || descriptor.equals("(DD)D"));
     }
 
     static Optional<Binding> method(String owner, String name, String descriptor) {

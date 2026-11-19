@@ -86,6 +86,11 @@ final class HipDialect implements CDialect {
     }
 
     @Override
+    public Optional<String> tableQualifier() {
+        return cuda.tableQualifier();
+    }
+
+    @Override
     public String pointee(AddressSpace space, String element) {
         return cuda.pointee(space, element);
     }

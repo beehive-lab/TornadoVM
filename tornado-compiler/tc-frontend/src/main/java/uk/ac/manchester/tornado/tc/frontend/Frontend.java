@@ -87,6 +87,75 @@ public final class Frontend {
             return Optional.empty();
         }
 
+        /**
+         * The contents of a {@code static final} primitive array a kernel reads as a constant table,
+         * taken from the class initialiser's bytecode ({@link ConstantTables}). Only the JDK's FdLibm
+         * classes qualify: their tables are never written after initialisation, which TC cannot prove
+         * of an arbitrary class (any code may store into a final array).
+         */
+        default Optional<ConstantTables.Table> staticFinalArray(String ownerInternalName, String field) {
+            if (!ConstantTables.trusted(ownerInternalName)) {
+                return Optional.empty();
+            }
+            return classFile(ownerInternalName).flatMap(cf -> ConstantTables.read(cf, field));
+        }
+
+        /**
+         * Java-exact math ({@code TcOptions.withJavaMath}): the functions {@code StrictMath} specifies
+         * are inlined from the JDK's FdLibm code instead of being bound to the device library.
+         */
+        default boolean javaMath() {
+            return false;
+        }
+
+        /** This source, with {@link #javaMath} on; everything else is forwarded. */
+        static BytecodeSource withJavaMath(BytecodeSource source) {
+            if (source.javaMath()) {
+                return source;
+            }
+            return new BytecodeSource() {
+                @Override
+                public Optional<byte[]> classBytes(String internalName) {
+                    return source.classBytes(internalName);
+                }
+
+                @Override
+                public Optional<ClassFile> classFile(String internalName) {
+                    return source.classFile(internalName);
+                }
+
+                @Override
+                public Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
+                    return source.deviceKernel(ownerInternalName, field);
+                }
+
+                @Override
+                public Optional<ClassLoader> loader() {
+                    return source.loader();
+                }
+
+                @Override
+                public Optional<EnumInfo> enumInfo(String internalName) {
+                    return source.enumInfo(internalName);
+                }
+
+                @Override
+                public Optional<Number> staticFinal(String ownerInternalName, String field) {
+                    return source.staticFinal(ownerInternalName, field);
+                }
+
+                @Override
+                public Optional<ConstantTables.Table> staticFinalArray(String ownerInternalName, String field) {
+                    return source.staticFinalArray(ownerInternalName, field);
+                }
+
+                @Override
+                public boolean javaMath() {
+                    return true;
+                }
+            };
+        }
+
         /** Class files on a path of directories and jars, separated by the platform path separator. */
         static BytecodeSource classpath(String path) {
             var entries = List.of(path.split(java.io.File.pathSeparator));
@@ -264,6 +333,9 @@ public final class Frontend {
 
     /** Parsed class files per class loader ({@link BytecodeSource#classLoader}). */
     private static final Map<ClassLoader, Map<String, Optional<ClassFile>>> PARSED = new WeakHashMap<>();
+
+    /** The most distinct methods a kernel's call graph may reach (TC-E1009 beyond). */
+    private static final int MAX_CALLEES = 256;
 
     private Frontend() {
     }
@@ -480,8 +552,10 @@ public final class Frontend {
             } catch (Translator.FrontendError e) {
                 return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.result().listing());
             }
-            if (seen.size() > 64) {
-                var why = "more than 64 distinct callees: recursion or an unbounded call graph";
+            // A bound on the call graph's size. 64 was too few for a kernel using a dozen of FdLibm's functions
+            // (Java-exact math), which share some helpers but bring their own: about 70 in all.
+            if (seen.size() > MAX_CALLEES) {
+                var why = "more than " + MAX_CALLEES + " distinct callees: recursion or an unbounded call graph";
                 return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", why, "", Loc.UNKNOWN)), kernel.result().listing());
             }
         }

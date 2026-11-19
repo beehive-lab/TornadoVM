@@ -192,6 +192,8 @@ public final class CEmitter {
     private final Set<String> helpers = new LinkedHashSet<>();
     private final Map<S.Var, String> names = new IdentityHashMap<>();
     private final Map<S.Alloca, String> allocaNames = new IdentityHashMap<>();
+    /** Read-only tables of constants ({@code tc.table}), each declared once at the top of the function. */
+    private final Map<Inst, String> tableNames = new IdentityHashMap<>();
     private Map<S.Var, Type> elementTypes = Map.of();
     private final CDialect dialect;
     private final Set<CDialect.Feature> features = java.util.EnumSet.noneOf(CDialect.Feature.class);
@@ -315,8 +317,23 @@ public final class CEmitter {
         for (var alloca : k.allocas()) {
             var a = alloca.kind();
             // Java zero-fills `new T[n]` (private arrays); KernelContext local arrays start undefined, as on Graal.
-            var init = a.space() == AddressSpace.PRIVATE ? " = {}" : "";
+            // An allocation outside the entry block is zeroed where it runs (S.ZeroFill), every time: zeroing
+            // its declaration too would only cost every thread the stores up front (FdLibm's 20-element
+            // arrays for sin's rare huge arguments cost 3x the whole function that way).
+            var init = a.space() == AddressSpace.PRIVATE && f.entry().insts().stream().anyMatch(i -> i == alloca.inst()) ? " = {}" : "";
             line(1, dialect.arrayQualifier(a.space()) + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "]" + init + ";");
+        }
+        for (var block : f.blocks()) {
+            for (var inst : block.insts()) {
+                if (inst.opcode() instanceof Opcode.Intrinsic(var n) && n.equals(TABLE)) {
+                    var qualifier = dialect.tableQualifier().orElseThrow(() -> unsupported(inst, "constant tables, which Java-exact math needs, are not supported on " + target.dialect() + " yet"));
+                    var name = cIdentifier("tc_table", used);
+                    tableNames.put(inst, name);
+                    var element = tableElement(inst.immediates().requireString("elem"));
+                    line(1, qualifier + typeName(element) + " " + name + "[" + inst.immediates().requireInt("count") + "] = { " + tableValues(element, inst.immediates().requireString("values"))
+                            + " };");
+                }
+            }
         }
         // Locals of one type share a declaration (`float x, v;`, `float *a_data, *b_data;`), in first-use order.
         var groups = new java.util.LinkedHashMap<String, List<String>>();
@@ -1105,6 +1122,9 @@ public final class CEmitter {
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
+        if (name.equals(TABLE)) {
+            return new R("(" + pointer(AddressSpace.CONSTANT, "unsigned char") + ") " + tableNames.get(inst), UNARY);
+        }
         if (name.startsWith("tile.")) {
             // Tile values are always named variables; the result is a whole statement's expression.
             return new R(dialect.tileExpression(name, inst, ops.stream().map(o -> wrap(expr(o), UNARY)).toList()), COND);
@@ -1321,6 +1341,50 @@ public final class CEmitter {
 
     private String cIdentifier(String name, Set<String> used) {
         return Naming.of(target.dialect()).identifier(name, used);
+    }
+
+    /** The intrinsic of a read-only table of constants (the frontend's constant tables). */
+    static final String TABLE = "tc.table";
+
+    private static Type tableElement(String text) {
+        return switch (text) {
+            case "i8" -> Type.I8;
+            case "i16" -> Type.I16;
+            case "i32" -> Type.I32;
+            case "i64" -> Type.I64;
+            case "f32" -> Type.F32;
+            case "f64" -> Type.F64;
+            default -> throw new EmitException("TC-E4001", "constant table of " + text);
+        };
+    }
+
+    /**
+     * A table's initialiser, from the raw bits the frontend recorded: floating point as exact hex literals,
+     * integers cast to the element type (so INT_MIN is not a narrowing conversion in a brace list).
+     */
+    private String tableValues(Type element, String bits) {
+        var out = new ArrayList<String>();
+        for (var word : bits.isEmpty() ? new String[0] : bits.split(",")) {
+            long raw = Long.parseLong(word);
+            if (element.equals(Type.F64)) {
+                double d = Double.longBitsToDouble(raw);
+                if (Double.isNaN(d) || Double.isInfinite(d)) {
+                    throw new EmitException("TC-E4001", "constant table holding " + d);
+                }
+                out.add(Double.toHexString(d));
+            } else if (element.equals(Type.F32)) {
+                float f = Float.intBitsToFloat((int) raw);
+                if (Float.isNaN(f) || Float.isInfinite(f)) {
+                    throw new EmitException("TC-E4001", "constant table holding " + f);
+                }
+                out.add(Float.toHexString(f) + "f");
+            } else if (element.equals(Type.I64)) {
+                out.add("(" + typeName(element) + ") 0x" + Long.toHexString(raw) + "ULL");
+            } else {
+                out.add("(" + typeName(element) + ") " + raw);
+            }
+        }
+        return String.join(", ", out);
     }
 
     private static EmitException unsupported(Inst inst, String why) {
