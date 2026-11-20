@@ -159,7 +159,7 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--java-math] [--cp <class path>] [--stats] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--java-math] [--cp <class path>] [--stats] [--device-fn [--no-strict-fp]] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
 
@@ -198,6 +198,51 @@ constant arrays. `sqrt` stays the device's, which is correctly rounded as Java's
   for large arguments makes the code much larger.
 - CUDA, HIP and OpenCL only. Metal cannot yet declare the constant tables, so kernels that need
   them are refused there.
+
+**Device functions for other libraries.** `tc emit --device-fn` compiles a static method with
+primitive parameters and a primitive result, not a kernel, as one CUDA `__device__` function in the
+shape `cudf::transform` calls: the output pointer first, then the row's values. The source can be
+passed to `cudf::transform` with `udf_source_type::CUDA` as it is printed. The Java API is
+`TcCompiler.compileDeviceFunction` (or `TcOptions.withDeviceFunction`).
+
+```bash
+tc emit --device-fn --cp udfs.jar com.example.Udfs collatz
+# __device__ void Udfs_collatz(int *out, long long x)
+# { ... *out = steps; }
+```
+
+- The C types are as narrow as the Java ones (`byte` is `signed char`, `char` is `unsigned short`),
+  so `out` matches the output column's element type. There are no array headers and no launch
+  parameters.
+- A `byte[]` parameter is one row of a strings column: cudf passes it as a `cudf::string_view`, and
+  the method sees the row's UTF-8 bytes, `s[i]` read from `data()` and `s.length` as
+  `size_bytes()`. This is how string hashes such as Murmur3 with a seed (standard tail) or FNV-1a
+  run in `transform`. The row is read-only: a store into it is refused (`TC-E3502`).
+- Everything is in that one function, because cudf takes the source's first `(` as the function's
+  parameter list. Java-semantics helpers (`int` division, `Math.min` on doubles) become lambdas at
+  the top of the body.
+- **A device function is strict floating point by default.** `float` and `double` products are
+  written as `__fmul_rn`/`__dmul_rn`, which the CUDA compiler never fuses into an `fma`, so the
+  results are the CPU's to the last bit even though cudf compiles the function with its own flags.
+  Without that, NVRTC contracts `a * x + y` and the GPU column differs from the Java one in the last
+  bits. `--no-strict-fp` (or `TcOptions.withFusedMultiplyAdd(true)` after `withDeviceFunction`) allows
+  contraction, for a UDF that does not need the CPU's exact results.
+- TC refuses what a per-row function cannot do, with the reason: arrays, objects or `void`
+  (`TC-E3501`); thread indices, `@Parallel` loops, barriers, atomics, shared memory, device
+  launches, tiles or `printf` (`TC-E3502`); and any target other than CUDA (`TC-E3504`).
+  Private arrays (`new int[4]`) are allowed; a store must go directly into one, so a store into an
+  array chosen at run time (`byte[] a = c ? s : t`) is refused too (`TC-E3502`). The
+  string row is also declared `const`, so the CUDA compiler rejects any store into it.
+- **Accepted, but not Java's behaviour.** A device function has no way to report an error and knows
+  nothing of nulls, so what Java would throw becomes a wrong value in that row rather than a failed
+  query:
+  - `int` and `long` division or remainder by zero gives an undefined value; Java throws
+    `ArithmeticException`. (`MIN_VALUE / -1` is Java's.) Guard the divisor in the UDF.
+  - An index outside a string row or a private array reads or writes out of bounds; Java throws
+    `ArrayIndexOutOfBoundsException`.
+  - There is no null: the function cannot tell a null row from a value, and cannot return null.
+  - `Math.sin`, `Math.pow`, `Math.exp` and the like are CUDA's, within a few ulp of Java's, not
+    bit-exact.
 
 `build-tc-native` (with `GRAALVM_HOME` set to a GraalVM for JDK 25+) builds it as a native image,
 `bin/tc-native`, which `tc` then uses. A cold compile then takes about 20 ms instead of about

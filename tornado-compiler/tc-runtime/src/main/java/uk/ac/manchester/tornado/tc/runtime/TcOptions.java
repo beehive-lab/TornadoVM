@@ -42,11 +42,24 @@ import java.util.Set;
  * {@code StrictMath}'s. Implies strict floating point (no fused multiply-adds). See
  * {@link #withJavaMath}.</li>
  * </ul>
+ *
+ * <p>
+ * {@code deviceFunction} (no system property; {@link #withDeviceFunction}, {@code tc emit --device-fn}):
+ * compile a scalar method as a CUDA {@code __device__} function in the shape {@code cudf::transform}
+ * calls, {@code void f(R *out, A0 in0, ...)}, rather than as a kernel. A device function stands in for a
+ * CPU UDF, so it is strict floating point unless asked otherwise: {@link #withDeviceFunction} turns
+ * fused multiply-adds off, and {@link #withFusedMultiplyAdd} after it turns them back on.
  */
 public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
-        boolean fuseMultiplyAdd, boolean javaMath) {
+        boolean fuseMultiplyAdd, boolean deviceFunction, boolean javaMath) {
 
     /** No Java-exact math. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd,
+            boolean deviceFunction) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction, false);
+    }
+
+    /** A kernel, not a device function. */
     public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd) {
         this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, false);
     }
@@ -86,17 +99,27 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd, javaMath);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd, deviceFunction, javaMath);
     }
 
     /** The task being compiled, as the runtime names it (device-launch reports print it, as on the Graal path). */
     public TcOptions withTask(String id) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd, javaMath);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd, deviceFunction, javaMath);
     }
 
     /** A plan with strict floating point: the multiply and the add round separately, as on the host. */
     public TcOptions withStrictFloatingPoint(boolean strict) {
-        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, javaMath) : this;
+        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction, javaMath) : this;
+    }
+
+    /**
+     * Compile as a device function ({@code __device__ void f(R *out, A0 in0, ...)}) instead of a kernel.
+     * Turning it on also makes the compilation strict floating point: a device function replaces a CPU
+     * UDF, and a product contracted into an fma would differ from the CPU's result in the last bits.
+     * Call {@link #withFusedMultiplyAdd} afterwards to allow contraction anyway.
+     */
+    public TcOptions withDeviceFunction(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on ? false : fuseMultiplyAdd, on, javaMath);
     }
 
     /**
@@ -110,6 +133,11 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
      * rounded as Java's is.
      */
     public TcOptions withJavaMath(boolean on) {
-        return on ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, true) : this;
+        return on ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction, true) : this;
+    }
+
+    /** Fused multiply-adds on or off, whatever was chosen before (the opposite of {@link #withStrictFloatingPoint}). */
+    public TcOptions withFusedMultiplyAdd(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on, deviceFunction, javaMath);
     }
 }

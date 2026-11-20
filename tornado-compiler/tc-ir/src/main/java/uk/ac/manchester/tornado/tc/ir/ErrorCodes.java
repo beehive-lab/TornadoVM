@@ -95,6 +95,12 @@ public final class ErrorCodes {
             Map.entry("TC-E3401", new Entry(Category.INVALID_KERNEL, "a tile shape, axis or element type must be a compile-time constant (a literal or a static final); shapes must be powers of two")),
             Map.entry("TC-E3402", new Entry(Category.INVALID_KERNEL, "the tile operands do not fit together (rank, broadcast or element type); see the TileContext documentation")),
             Map.entry("TC-E3403", new Entry(Category.UNSUPPORTED, "this TileContext operation is not compiled by TC yet")),
+            // Device-function output (a per-row UDF for cudf::transform rather than a kernel).
+            Map.entry("TC-E3501", new Entry(Category.INVALID_KERNEL, "a device function takes primitive parameters and returns a primitive (boolean, byte, char, short, int, long, float, double)")),
+            Map.entry("TC-E3502", new Entry(Category.INVALID_KERNEL, "a device function computes one row from its arguments: no thread indices, KernelContext, @Parallel loops, barriers, "
+                    + "atomics, shared or local memory, device launches, tiles or printf")),
+            Map.entry("TC-E3503", new Entry(Category.UNSUPPORTED, "this helper or type cannot be emitted inside a single device function yet")),
+            Map.entry("TC-E3504", new Entry(Category.UNSUPPORTED, "device-function output is emitted as CUDA C++ only: use --target cuda")),
             Map.entry("TC-E4010", new Entry(Category.UNSUPPORTED, "CUDA Tile needs compute capability 8.0 or higher (Ampere and newer); rewrite the task with KernelContext for the SIMT path")),
             Map.entry("TC-E4011", new Entry(Category.UNSUPPORTED, "fp8 tiles need compute capability 9.0 (Hopper) or newer; use F16 or BF16 operands on this device")),
             Map.entry("TC-E4012", new Entry(Category.UNSUPPORTED, "the device has no double precision: use float")),
