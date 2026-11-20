@@ -23,9 +23,10 @@
  * binds -- cuBLAS, cuFFT, cuDNN, cuSPARSE -- needs no shim and this one does.
  *
  * Plain C++, not CUDA: it declares no __global__ kernel of its own -- every kernel it runs is
- * already compiled inside libcudf -- and touches the CUDA runtime only for stream copies and a
- * synchronise. So a host compiler builds it and nvcc is not needed, which is also why this module
- * does not enable the CUDA language and cannot break a CUDA build that has no usable nvcc.
+ * already compiled inside libcudf -- and touches the CUDA runtime only for stream copies (and a
+ * synchronise where a result has to reach the host). So a host compiler builds it and nvcc is not
+ * needed, which is also why this module does not enable the CUDA language and cannot break a CUDA
+ * build that has no usable nvcc.
  *
  * Two rules the whole file obeys:
  *
@@ -71,6 +72,7 @@
 
 #include <cstdint>
 #include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 #include <cstring>
@@ -130,28 +132,63 @@ std::unique_ptr<cudf::reduce_aggregation> reduce_agg_for(int32_t code) {
 }
 
 /**
- * Installs an RMM pool the first time anything here touches the device.
+ * Installs an RMM pool the first time anything here touches the device, unless the process already
+ * chose its own memory resource.
  *
- * Without this, cuDF allocates through RMM's default resource, which is a raw cudaMalloc/cudaFree
+ * Without a pool, cuDF allocates through RMM's initial resource, which is a raw cudaMalloc/cudaFree
  * per allocation -- and a Parquet read makes many: one per column, per page, plus decompression
- * scratch. Every one of those synchronises. spark-rapids treats the pool as mandatory and has a
- * whole GpuDeviceManager to size it; this module had none at all, which is why its read ran at
- * 2.2 GB/s against a page cache that delivers the same file at 13.7 GB/s.
+ * scratch. Every one of those synchronises, which is why the read ran at 2.2 GB/s against a page
+ * cache that delivers the same file at 13.7 GB/s.
  *
- * Sized from free device memory so it coexists with TornadoVM's own allocations rather than
- * claiming the card. TORNADO_CUDF_POOL_MB overrides the initial size; 0 disables pooling.
+ * The current device resource is process-wide state, though, and it is not ours. A host that loads
+ * this library next to its own cuDF -- spark-rapids, say, whose GpuDeviceManager sets up RMM with
+ * spill tracking -- has already installed a resource, and replacing it would take every later cuDF
+ * allocation in the process out of that host's accounting. So by default the pool is installed
+ * only when the current resource is still a plain cuda_memory_resource -- RMM's initial one, or one
+ * equivalent to it -- and otherwise this library allocates through whatever the host installed.
+ *
+ * That is a check of state at the moment of our first call, not of the host's intent: it decides
+ * by what is installed, not by what will be. If this library touches the device before the host
+ * configures RMM (before spark-rapids' GpuDeviceManager runs, say), auto sees the initial resource
+ * and installs the pool, and the host then replaces it with its own. That is harmless -- the host
+ * ends up with the resource it chose -- but it means auto defers to a host that got there first,
+ * not to every host. A host that wants to be sure sets TORNADO_CUDF_POOL=off.
+ *
+ * TORNADO_CUDF_POOL chooses: "auto" (the default, as above), "on" (always install, the previous
+ * behaviour) or "off" (never). TORNADO_CUDF_POOL_MB=0 is kept as a synonym for "off"; a value that
+ * is not a number is ignored rather than read as 0.
  */
-void ensure_pool() {
-    static bool installed = false;
-    if (installed) {
-        return;
+bool pool_wanted() {
+    if (const char* env = std::getenv("TORNADO_CUDF_POOL_MB")) {
+        char* end = nullptr;
+        const unsigned long mb = std::strtoul(env, &end, 10);
+        if (end != env && *end == '\0' && mb == 0) {
+            return false;  // an escape hatch for measuring what the pool is worth
+        }
     }
-    installed = true;
+    const char* mode = std::getenv("TORNADO_CUDF_POOL");
+    const std::string choice = mode == nullptr ? "auto" : mode;
+    if (choice == "off" || choice == "0" || choice == "false") {
+        return false;
+    }
+    if (choice == "on" || choice == "1" || choice == "true") {
+        return true;
+    }
+    // auto: only when the current resource is a plain cuda_memory_resource. RMM documents that all
+    // instances of cuda_memory_resource compare equal, and resource_ref equality compares the
+    // resources, so a local instance stands in for the initial one with public API only -- unlike
+    // rmm::mr::detail::initial_resource(), which carries no stability promise across RAPIDS
+    // releases. A host that deliberately installs a cuda_memory_resource of its own looks the same
+    // as one that never configured RMM; replacing a resource that is cudaMalloc per allocation is
+    // what this pool is for, and TORNADO_CUDF_POOL=off keeps it.
+    static rmm::mr::cuda_memory_resource plain;
+    return rmm::mr::get_current_device_resource_ref() == rmm::device_async_resource_ref{plain};
+}
+
+void install_pool() {
     try {
-        if (const char* env = std::getenv("TORNADO_CUDF_POOL_MB")) {
-            if (std::strtoul(env, nullptr, 10) == 0) {
-                return;  // an escape hatch for measuring what the pool is worth
-            }
+        if (!pool_wanted()) {
+            return;
         }
         // CUDA's own stream-ordered pool, via cudaMallocAsync. A pool_memory_resource would do
         // the same and needs an initial and a maximum size chosen up front; this one grows, and
@@ -177,8 +214,66 @@ void ensure_pool() {
         static rmm::mr::cuda_async_memory_resource async_mr{std::nullopt, release_mb << 20};
         rmm::mr::set_current_device_resource(async_mr);
     } catch (...) {
-        // A pool is an optimisation; the default resource still works without it.
+        // A pool is an optimisation; the resource already in place still works without it.
     }
+}
+
+/** Runs install_pool once per process, whichever thread gets here first. */
+void ensure_pool() {
+    static std::once_flag once;
+    std::call_once(once, install_pool);
+}
+
+/**
+ * Whether each entry point waits for its stream before returning (TORNADO_CUDF_SYNC=1).
+ *
+ * It does not by default. Every operand and result is device memory on the caller's stream, so the
+ * caller's next operation on that stream -- a TornadoVM kernel, a copy to the host, another call
+ * here -- is already ordered after this one, and a synchronise per call only stalls the host.
+ * Results written to host memory are the exception, and the entry points that produce one
+ * synchronise before reading it themselves.
+ *
+ * What makes returning early safe is the memory resource, not this file. Many entry points copy out
+ * of a column libcudf allocated (a read's table, a sort's order, a join's indices) with
+ * cudaMemcpyAsync on the caller's stream, and that column is freed when it goes out of scope at the
+ * return -- before the copy has run. libcudf allocated it on that same stream, so a stream-ordered
+ * resource (cuda_async_memory_resource, which is what install_pool installs, or a
+ * pool_memory_resource or arena_memory_resource) orders the free after the copy, and the block is
+ * not handed out again until the copy is done. The same holds for cuDF's own temporaries.
+ *
+ * So without the synchronise, correctness depends on the installed resource being stream-ordered.
+ * In auto mode that resource may be a host's (see pool_wanted). A resource that recycles a freed
+ * block to another stream at once, without stream ordering, would let another stream overwrite a
+ * column while our copy is still reading it: silent corruption, not a crash. RMM's own resources
+ * are all stream-ordered; a host with one that is not must set TORNADO_CUDF_SYNC=1.
+ *
+ * Error attribution moves too. Without the synchronise, finish() reports what cudaGetLastError has
+ * recorded so far, so an asynchronous fault in one call can surface as the status of a later call,
+ * and a fault in the last call of a sequence surfaces later still, in TornadoVM's or the host's
+ * next synchronise on the stream. TORNADO_CUDF_SYNC=1 is also how to pin a fault to its call.
+ */
+bool sync_each_call() {
+    static const bool sync = [] {
+        const char* env = std::getenv("TORNADO_CUDF_SYNC");
+        return env != nullptr && std::strcmp(env, "0") != 0 && std::strcmp(env, "false") != 0;
+    }();
+    return sync;
+}
+
+/**
+ * The status an entry point returns once its work is enqueued: 0, or 4 when the CUDA runtime has
+ * recorded an error (or, with TORNADO_CUDF_SYNC, when the stream fails to complete).
+ */
+int finish(cudaStream_t stream) {
+    if (sync_each_call()) {
+        return cudaStreamSynchronize(stream) == cudaSuccess ? 0 : 4;
+    }
+    const cudaError_t rc = cudaGetLastError();
+    if (rc != cudaSuccess) {
+        g_last_error = std::string("CUDA error after enqueue: ") + cudaGetErrorString(rc);
+        return 4;
+    }
+    return 0;
 }
 
 int fail(const char* what, const std::exception& e) {
@@ -301,7 +396,7 @@ int tornado_cudf_sorted_order(void* stream, const void* keys, int32_t n, void* o
             g_last_error = std::string("sortedOrder copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("sortedOrder", e);
     } catch (...) {
@@ -345,7 +440,7 @@ int tornado_cudf_group_sum(void* stream, const void* keys, const void* values, i
             g_last_error = std::string("groupSum copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("groupSum", e);
     } catch (...) {
@@ -368,7 +463,7 @@ int tornado_cudf_running_sum(void* stream, const void* values, int32_t n, void* 
             g_last_error = std::string("runningSum copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("runningSum", e);
     } catch (...) {
@@ -411,7 +506,7 @@ int tornado_cudf_inner_join(void* stream, const void* left_keys, int32_t left_co
             g_last_error = std::string("innerJoin copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("innerJoin", e);
     } catch (...) {
@@ -492,7 +587,7 @@ int tornado_cudf_group_aggregate(void* stream, const void* keys, const void* val
             g_last_error = std::string("groupAggregate copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("groupAggregate", e);
     } catch (...) {
@@ -531,7 +626,7 @@ int tornado_cudf_reduce(void* stream, const void* values, int32_t n, int32_t op,
             g_last_error = std::string("reduce copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("reduce", e);
     } catch (...) {
@@ -581,7 +676,7 @@ int tornado_cudf_selected_indices(void* stream, const void* mask, int32_t n, int
             g_last_error = std::string("selectedIndices copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("selectedIndices", e);
     } catch (...) {
@@ -624,7 +719,7 @@ int tornado_cudf_sorted_order_multi(void* stream, const void* keys, int32_t n, i
             g_last_error = std::string("sortedOrderMulti copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("sortedOrderMulti", e);
     } catch (...) {
@@ -846,8 +941,9 @@ int tornado_cudf_read_parquet(void* stream, const char* path, int32_t row_group_
             }
         }
 
-        // The table is freed when result goes out of scope, so the copies have to have landed.
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        // The table is freed at the return, before the copies above have run. That is safe because
+        // it was allocated on raw and the resource orders its free after them; see sync_each_call.
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("readParquet", e);
     } catch (...) {
@@ -938,7 +1034,7 @@ int tornado_cudf_read_parquet_strings(void* stream, const char* path, int32_t ro
                 return 3;
             }
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("readParquetStrings", e);
     } catch (...) {
@@ -964,11 +1060,20 @@ int tornado_cudf_contains_re(void* stream, int64_t rows, const void* offsets, co
             g_last_error = "containsRe: null buffer or pattern";
             return 5;
         }
+        // Shared by every thread that calls in, so lookups and inserts are locked. Entries are never
+        // erased and std::map does not move its nodes, so the program stays valid after the lock is
+        // released; contains_re only reads it.
+        static std::mutex programs_lock;
         static std::map<std::string, std::unique_ptr<cudf::strings::regex_program>> programs;
         const std::string key(pattern);
-        auto found = programs.find(key);
-        if (found == programs.end()) {
-            found = programs.emplace(key, cudf::strings::regex_program::create(key)).first;
+        const cudf::strings::regex_program* program = nullptr;
+        {
+            std::lock_guard<std::mutex> guard(programs_lock);
+            auto found = programs.find(key);
+            if (found == programs.end()) {
+                found = programs.emplace(key, cudf::strings::regex_program::create(key)).first;
+            }
+            program = found->second.get();
         }
 
         auto view = rmm::cuda_stream_view{static_cast<cudaStream_t>(stream)};
@@ -976,7 +1081,7 @@ int tornado_cudf_contains_re(void* stream, int64_t rows, const void* offsets, co
         cudf::column_view strings_view(cudf::data_type{cudf::type_id::STRING}, static_cast<cudf::size_type>(rows), chars, nullptr, 0, 0, {offsets_view});
         cudf::strings_column_view scv(strings_view);
 
-        auto mask = cudf::strings::contains_re(scv, *found->second, view);
+        auto mask = cudf::strings::contains_re(scv, *program, view);
         if (mask->type().id() != cudf::type_id::BOOL8) {
             g_last_error = "containsRe: contains_re did not return BOOL8";
             return 8;
@@ -987,7 +1092,7 @@ int tornado_cudf_contains_re(void* stream, int64_t rows, const void* offsets, co
             g_last_error = std::string("containsRe copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("containsRe", e);
     } catch (...) {
@@ -1227,7 +1332,7 @@ int tornado_cudf_read_parquet_columns(void* stream, const char* path, int32_t ro
                 }
             }
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("readParquetColumns", e);
     } catch (...) {
@@ -1266,7 +1371,7 @@ int tornado_cudf_contains(void* stream, int32_t kind, const void* set, int32_t m
                 g_last_error = std::string("containedIn memset: ") + cudaGetErrorString(rc);
                 return 3;
             }
-            return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+            return finish(raw);
         }
         auto view = rmm::cuda_stream_view{raw};
         const auto id = kind == 0 ? cudf::type_id::INT32 : cudf::type_id::INT64;
@@ -1282,7 +1387,7 @@ int tornado_cudf_contains(void* stream, int32_t kind, const void* set, int32_t m
             g_last_error = std::string("containedIn copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("containedIn", e);
     } catch (...) {
@@ -1511,7 +1616,7 @@ int write_parquet_columns(void* stream, const char* path, int32_t column_count, 
             options.set_row_group_size_rows(row_group_rows);
         }
         cudf::io::write_parquet(options, view);
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("writeParquetColumns", e);
     } catch (...) {
@@ -1573,7 +1678,7 @@ int tornado_cudf_sort_keys(void* stream, int32_t kind, const void* keys, int32_t
             g_last_error = std::string("sortKeys copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("sortKeys", e);
     } catch (...) {
@@ -1611,7 +1716,7 @@ int tornado_cudf_sorted_order_longs(void* stream, const void* keys, int32_t n, i
             g_last_error = std::string("sortedOrderLongs copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("sortedOrderLongs", e);
     } catch (...) {
@@ -1719,7 +1824,7 @@ int tornado_cudf_read_parquet_string_columns(void* stream, const char* path, int
                 return 3;
             }
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("readParquetStringColumns", e);
     } catch (...) {
@@ -1784,7 +1889,7 @@ int tornado_cudf_group_aggregate_longs(void* stream, int32_t n, int32_t key_colu
             g_last_error = std::string("groupAggregateLongs copy-out: ") + cudaGetErrorString(rc);
             return 3;
         }
-        return cudaStreamSynchronize(raw) == cudaSuccess ? 0 : 4;
+        return finish(raw);
     } catch (const std::exception& e) {
         return fail("groupAggregateLongs", e);
     } catch (...) {
