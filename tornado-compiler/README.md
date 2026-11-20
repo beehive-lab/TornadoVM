@@ -164,9 +164,20 @@ tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
 
 `--strict-fp` compiles as a plan with `withStrictFloatingPoint()` does: no multiply is fused with
-an add, so results round as Java's do. The printed source is strict by itself (on CUDA through
-`__fmul_rn`/`__dmul_rn`, since NVRTC contracts by default and has no pragma against it), so it
-stays strict whichever compiler and flags build it later, such as cudf's JIT.
+an add, so results round as Java's do. How far that holds once the source leaves `tc` depends on
+the target:
+
+- **CUDA**: strict by construction. Every `float` and `double` multiply is printed as
+  `__fmul_rn`/`__dmul_rn`, which no CUDA compiler contracts (NVRTC contracts `a * b + c` by
+  default and has no pragma against it), so the source stays strict whichever compiler and flags
+  build it later, such as cudf's JIT.
+- **OpenCL, HIP, Metal**: a request. The source carries `#pragma OPENCL FP_CONTRACT OFF` or
+  `#pragma clang fp contract(off)`, and build options can override it: `-cl-mad-enable` and
+  `-cl-fast-relaxed-math` on OpenCL, `-ffp-contract=fast` and `-ffast-math` under clang. `tc emit`
+  says so on stderr for these targets. Whoever builds the source must not pass those options.
+
+`Math.fma` is unaffected on every target: it is an exact fused operation in Java too, and is still
+printed as `fma`.
 
 **Device functions for other libraries.** `tc emit --device-fn` compiles a static method with
 primitive parameters and a primitive result, not a kernel, as one CUDA `__device__` function in the
@@ -200,7 +211,7 @@ tc emit --device-fn --cp udfs.jar com.example.Udfs collatz
   (`TC-E3501`); thread indices, `@Parallel` loops, barriers, atomics, shared memory, device
   launches, tiles or `printf` (`TC-E3502`); and any target other than CUDA (`TC-E3504`).
   Private arrays (`new int[4]`) are allowed; a store must go directly into one, so a store into an
-  array chosen at run time (`byte[] a = c ? s : new byte[4]`) is refused too (`TC-E3502`). The
+  array chosen at run time (`byte[] a = c ? s : t`) is refused too (`TC-E3502`). The
   string row is also declared `const`, so the CUDA compiler rejects any store into it.
 - **Accepted, but not Java's behaviour.** A device function has no way to report an error and knows
   nothing of nulls, so what Java would throw becomes a wrong value in that row rather than a failed
