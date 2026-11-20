@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -72,9 +73,10 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  *
  * <p>
  * {@code --strict-fp} compiles as a plan with {@code withStrictFloatingPoint()} does: no multiply is
- * fused with an add, so floating-point results round as Java's do. The source is strict by itself
- * (on CUDA, {@code __fmul_rn}/{@code __dmul_rn}; elsewhere a contraction pragma), so it stays strict
- * whichever compiler and flags later build it.
+ * fused with an add, so floating-point results round as Java's do. On CUDA the source is strict by
+ * itself ({@code __fmul_rn}/{@code __dmul_rn}), so it stays strict whichever compiler and flags later
+ * build it. Elsewhere it carries a contraction pragma, which build options such as
+ * {@code -cl-fast-relaxed-math} or {@code -ffast-math} override; a note on stderr says so.
  *
  * <p>
  * {@code --cc} is the CUDA compute capability (default 89: an RTX 4090), as {@code major * 10 + minor}.
@@ -173,6 +175,11 @@ public final class Tc {
         }
         var target = target(dialect, cc, fp16, fp64);
         var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withJavaMath(javaMath);
+        if (strictFp && dialect != TargetCaps.Dialect.CUDA) {
+            err.println("tc: note: --strict-fp on " + dialect.name().toLowerCase(Locale.ROOT) + " is a contraction pragma in the source, which "
+                    + (dialect == TargetCaps.Dialect.OPENCL ? "-cl-mad-enable and -cl-fast-relaxed-math" : "-ffp-contract=fast and -ffast-math")
+                    + " override: build it without them");
+        }
         var path = withApi(classPath);
         var source = source(path);
         List<Kernel> kernels = all ? kernels(classPath) : List.of(named(source, positional.get(0).replace('.', '/'), positional.get(1)));

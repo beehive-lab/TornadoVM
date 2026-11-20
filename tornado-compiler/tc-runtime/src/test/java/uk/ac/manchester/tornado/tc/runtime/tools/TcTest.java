@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.tools.ToolProvider;
 
@@ -195,7 +196,20 @@ public class TcTest {
             "            d.set(i, d.get(i) * d.get(i) + 1.0);", //
             "        }", //
             "    }", //
+            "    static void saxpy(FloatArray x, FloatArray y, float a) {", //
+            "        for (@Parallel int i = 0; i < y.getSize(); i++) {", //
+            "            y.set(i, a * x.get(i) + y.get(i));", //
+            "        }", //
+            "    }", //
+            "    static void fused(FloatArray x, FloatArray y, float a) {", //
+            "        for (@Parallel int i = 0; i < y.getSize(); i++) {", //
+            "            y.set(i, Math.fma(a, x.get(i), y.get(i)));", //
+            "        }", //
+            "    }", //
             "}", "");
+
+    /** A call to fma/fmaf in printed source; a substring test would also match an identifier such as fmaxValue. */
+    private static final Pattern FMA_CALL = Pattern.compile("\\bfmaf?\\s*\\(");
 
     /**
      * --strict-fp: the printed CUDA is strict by itself, whatever flags the compiler that takes it uses
@@ -213,11 +227,41 @@ public class TcTest {
         assertEquals(0, strict.status(), strict.err());
         assertTrue(strict.out().contains("__fmul_rn("), strict.out());
         assertTrue(strict.out().contains("__dmul_rn("), strict.out());
-        assertFalse(strict.out().contains("fma"), strict.out());
+        assertFalse(FMA_CALL.matcher(strict.out()).find(), strict.out());
+        assertFalse(strict.err().contains("note:"), strict.err());
 
+        // Elsewhere the guarantee is a pragma the build can override, and tc says so rather than succeeding quietly.
         var opencl = run("emit", "--target", "opencl", "--strict-fp", "--cp", cp, "Axpy", "axpy");
         assertEquals(0, opencl.status(), opencl.err());
         assertTrue(opencl.out().contains("#pragma OPENCL FP_CONTRACT OFF"), opencl.out());
+        assertTrue(opencl.err().contains("-cl-fast-relaxed-math"), opencl.err());
+        var hip = run("emit", "--target", "hip", "--strict-fp", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, hip.status(), hip.err());
+        assertTrue(hip.out().contains("#pragma clang fp contract(off)"), hip.out());
+        assertTrue(hip.err().contains("-ffast-math"), hip.err());
+        var metal = run("emit", "--target", "metal", "--strict-fp", "--cp", cp, "Axpy", "saxpy");
+        assertEquals(0, metal.status(), metal.err());
+        assertTrue(metal.out().contains("#pragma clang fp contract(off)"), metal.out());
+        assertTrue(metal.err().contains("-ffast-math"), metal.err());
+        for (var target : List.of("hip", "metal", "opencl")) {
+            var relaxed = run("emit", "--target", target, "--cp", cp, "Axpy", "saxpy");
+            assertEquals(0, relaxed.status(), relaxed.err());
+            assertFalse(relaxed.out().contains("contract(off)") || relaxed.out().contains("FP_CONTRACT OFF"), target + ": " + relaxed.out());
+            assertFalse(relaxed.err().contains("note:"), relaxed.err());
+        }
+    }
+
+    /** Java's Math.fma is an exact fused operation: --strict-fp must not unfuse it, on any target. */
+    @Test
+    public void strictFloatingPointKeepsMathFma(@TempDir Path dir) throws IOException {
+        javac(dir, "Axpy", AXPY_KERNEL);
+        var cp = dir + File.pathSeparator + API;
+        for (var target : List.of("cuda", "opencl", "hip", "metal")) {
+            var r = run("emit", "--target", target, "--strict-fp", "--cp", cp, "Axpy", "fused");
+            assertEquals(0, r.status(), target + ": " + r.err());
+            assertTrue(FMA_CALL.matcher(r.out()).find(), target + ": " + r.out());
+            assertFalse(r.out().contains("__fmul_rn"), target + ": " + r.out());
+        }
     }
 
     @Test
