@@ -22,6 +22,9 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -160,9 +163,21 @@ public final class TcCompiler {
      * (see {@link TcOptions#withDeviceFunction}): source a library compiles into its own kernel, with
      * no array headers, no launch parameters and nothing before the function but includes.
      * {@code descriptor} is the JVM method descriptor, {@code null} for the first method of that name.
+     * It is strict floating point unless {@code options} is already a device-function compilation with
+     * fused multiply-adds turned back on ({@link TcOptions#withDeviceFunction}).
      */
     public static Compilation compileDeviceFunction(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options) {
-        return compileJava(source, className, methodName, descriptor, target, options.withDeviceFunction(true), List.of());
+        return compileDeviceFunction(source, className, methodName, descriptor, target, options, List.of());
+    }
+
+    /**
+     * As above, with facts about the parameters as for a kernel ({@code facts.get(i)} for parameter
+     * {@code i}), such as a value known when the function is compiled. A {@code byte[]} parameter is a
+     * string row and takes no fact of its own.
+     */
+    public static Compilation compileDeviceFunction(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
+            List<ValueSpecialisation.Fact> facts) {
+        return compileJava(source, className, methodName, descriptor, target, options.deviceFunction() ? options : options.withDeviceFunction(true), facts);
     }
 
     /**
@@ -310,14 +325,23 @@ public final class TcCompiler {
             List<ValueSpecialisation.Fact> facts, String rename) {
         long start = System.nanoTime();
         String deviceDescriptor = null;
+        List<ValueSpecialisation.Fact> deviceFacts = null;
         if (options.deviceFunction()) {
             var signature = deviceFunctionSignature(source, className, methodName, descriptor, options.deviceFunctionModes().nullAware());
-            if (signature instanceof Diagnostic problem) {
+            if (signature instanceof Signature.Accepted(var accepted)) {
+                deviceDescriptor = accepted;
+                var merged = deviceFunctionFacts(accepted, facts, className, methodName);
+                if (merged instanceof Signature.Refused(var problem)) {
+                    signature = merged;
+                } else {
+                    deviceFacts = ((FactsFor) merged).facts();
+                }
+            }
+            if (signature instanceof Signature.Refused(var problem)) {
                 var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
-                return new Compiled(new Compilation(name, target, false, "", "", List.of(), List.of(problem), System.nanoTime() - start, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of()),
+                return new Compiled(new Compilation(name, target, false, "", "", List.of(), List.of(problem), System.nanoTime() - start, List.of(), new AtomicSlots.Info(List.of(), Map.of()),
                         KernelFeatures.NONE), null, null);
             }
-            deviceDescriptor = (String) signature;
         }
         var modes = options.deviceFunction() ? options.deviceFunctionModes() : Frontend.DeviceFunctionModes.NONE;
         var translated = Frontend.withDeviceFunctionModes(modes, () -> Frontend.translateWithCallees(source, className, methodName, descriptor));
@@ -334,7 +358,7 @@ public final class TcCompiler {
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
         compiler.deviceFunctionDescriptor = deviceDescriptor;
-        compiler.facts = deviceDescriptor == null ? List.copyOf(facts) : stringRowFacts(deviceDescriptor);
+        compiler.facts = deviceDescriptor == null ? List.copyOf(facts) : deviceFacts;
         compiler.module = translated.module().get();
         compiler.stages.add(bytecode);
         var c = compiler.run();
@@ -371,29 +395,73 @@ public final class TcCompiler {
         return facts.stream().anyMatch(f -> f instanceof ValueSpecialisation.Fact.DeviceView) ? List.copyOf(facts) : List.of();
     }
 
+    /** A device function's facts, once merged with the caller's. */
+    private record FactsFor(List<ValueSpecialisation.Fact> facts) implements Signature {
+    }
+
+    /**
+     * The caller's facts merged with the string rows' ({@link #stringRowFacts}): a caller's fact about a
+     * scalar parameter is kept, so a device function can be specialised on a value known when it is
+     * compiled. A caller's fact about a string row would contradict what the row is, and is refused
+     * rather than dropped.
+     */
+    private static Signature deviceFunctionFacts(String descriptor, List<ValueSpecialisation.Fact> given, String className, String methodName) {
+        var rows = stringRowFacts(descriptor);
+        if (given.isEmpty()) {
+            return new FactsFor(rows);
+        }
+        if (rows.isEmpty()) {
+            return new FactsFor(List.copyOf(given));
+        }
+        var merged = new ArrayList<ValueSpecialisation.Fact>();
+        for (int i = 0; i < rows.size(); i++) {
+            var fact = i < given.size() ? given.get(i) : new ValueSpecialisation.Fact.Unknown();
+            if (rows.get(i) instanceof ValueSpecialisation.Fact.DeviceView) {
+                if (!(fact instanceof ValueSpecialisation.Fact.Unknown)) {
+                    return new Signature.Refused(new Diagnostic("TC-E3501", "parameter " + i + " of " + methodName + " is a string row (byte[]), which takes no fact: " + fact,
+                            "@" + className.substring(className.lastIndexOf('.') + 1) + "." + methodName, Loc.UNKNOWN));
+                }
+                merged.add(rows.get(i));
+            } else {
+                merged.add(fact);
+            }
+        }
+        merged.addAll(given.subList(Math.min(rows.size(), given.size()), given.size())); // facts that are not about an argument
+        return new FactsFor(List.copyOf(merged));
+    }
+
+    /** Whether a method can be a device function: its descriptor, or the diagnostic that refuses it. */
+    private sealed interface Signature permits Signature.Accepted, Signature.Refused, FactsFor {
+        record Accepted(String descriptor) implements Signature {
+        }
+
+        record Refused(Diagnostic problem) implements Signature {
+        }
+    }
+
     /**
      * The descriptor of the method to compile as a device function, or the diagnostic (TC-E3501) that
      * refuses it: it must be static, with primitive parameters and a primitive result. A method that is
      * not found is left to the frontend, which reports it as for a kernel.
      */
     /** The boxed classes a null-aware device function may take and return. */
-    private static final java.util.Set<String> BOXES = java.util.Set.of("java/lang/Integer", "java/lang/Long", "java/lang/Short", "java/lang/Byte", "java/lang/Character",
+    private static final Set<String> BOXES = Set.of("java/lang/Integer", "java/lang/Long", "java/lang/Short", "java/lang/Byte", "java/lang/Character",
             "java/lang/Boolean", "java/lang/Float", "java/lang/Double");
 
-    private static Object deviceFunctionSignature(Frontend.BytecodeSource source, String className, String methodName, String descriptor, boolean nullAware) {
-        java.util.Optional<uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile.Method> method;
+    private static Signature deviceFunctionSignature(Frontend.BytecodeSource source, String className, String methodName, String descriptor, boolean nullAware) {
+        Optional<uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile.Method> method;
         try {
             method = source.classFile(className.replace('.', '/')).flatMap(c -> c.method(methodName, descriptor));
         } catch (RuntimeException e) {
-            return descriptor == null ? "()V" : descriptor; // unreadable: the frontend reports it
+            return new Signature.Accepted(descriptor == null ? "()V" : descriptor); // unreadable: the frontend reports it
         }
         if (method.isEmpty()) {
-            return descriptor == null ? "()V" : descriptor;
+            return new Signature.Accepted(descriptor == null ? "()V" : descriptor);
         }
         var m = method.get();
         var where = "@" + className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
         if (!m.isStatic()) {
-            return new Diagnostic("TC-E3501", methodName + " is an instance method: a device function is a static method", where, Loc.UNKNOWN);
+            return new Signature.Refused(new Diagnostic("TC-E3501", methodName + " is an instance method: a device function is a static method", where, Loc.UNKNOWN));
         }
         var d = m.descriptor();
         int close = d.indexOf(')');
@@ -408,12 +476,11 @@ public final class TcCompiler {
                 continue;
             }
             if (c != ')' && "ZBCSIJFD".indexOf(c) < 0) {
-                return new Diagnostic("TC-E3501", methodName + d + " takes or returns an array, an object or void: a device function maps primitives (and byte[] strings)"
-                        + (nullAware ? ", and boxes," : " (and, with --null-aware, boxes)") + " to a primitive", where,
-                        Loc.UNKNOWN);
+                return new Signature.Refused(new Diagnostic("TC-E3501", methodName + d + " takes or returns an array, an object or void: a device function maps primitives (and byte[] strings)"
+                        + (nullAware ? ", and boxes," : " (and, with --null-aware, boxes)") + " to a primitive", where, Loc.UNKNOWN));
             }
         }
-        return d;
+        return new Signature.Accepted(d);
     }
 
     /**

@@ -159,14 +159,25 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] [--device-fn [--null-aware] [--errors]] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
 
 `--strict-fp` compiles as a plan with `withStrictFloatingPoint()` does: no multiply is fused with
-an add, so results round as Java's do. The printed source is strict by itself (on CUDA through
-`__fmul_rn`/`__dmul_rn`, since NVRTC contracts by default and has no pragma against it), so it
-stays strict whichever compiler and flags build it later, such as cudf's JIT.
+an add, so results round as Java's do. How far that holds once the source leaves `tc` depends on
+the target:
+
+- **CUDA**: strict by construction. Every `float` and `double` multiply is printed as
+  `__fmul_rn`/`__dmul_rn`, which no CUDA compiler contracts (NVRTC contracts `a * b + c` by
+  default and has no pragma against it), so the source stays strict whichever compiler and flags
+  build it later, such as cudf's JIT.
+- **OpenCL, HIP, Metal**: a request. The source carries `#pragma OPENCL FP_CONTRACT OFF` or
+  `#pragma clang fp contract(off)`, and build options can override it: `-cl-mad-enable` and
+  `-cl-fast-relaxed-math` on OpenCL, `-ffp-contract=fast` and `-ffast-math` under clang. `tc emit`
+  says so on stderr for these targets. Whoever builds the source must not pass those options.
+
+`Math.fma` is unaffected on every target: it is an exact fused operation in Java too, and is still
+printed as `fma`.
 
 **Device functions for other libraries.** `tc emit --device-fn` compiles a static method with
 primitive parameters and a primitive result, not a kernel, as one CUDA `__device__` function in the
@@ -190,13 +201,28 @@ tc emit --device-fn --cp udfs.jar com.example.Udfs collatz
 - Everything is in that one function, because cudf takes the source's first `(` as the function's
   parameter list. Java-semantics helpers (`int` division, `Math.min` on doubles) become lambdas at
   the top of the body.
-- A strict-floating-point compilation (`--strict-fp`, or `TcOptions.withStrictFloatingPoint`) writes `float` and
-  `double` products as `__fmul_rn`/`__dmul_rn`, which the CUDA compiler never fuses into an `fma`.
-  This matters because cudf compiles the function with its own compiler flags.
+- **A device function is strict floating point by default.** `float` and `double` products are
+  written as `__fmul_rn`/`__dmul_rn`, which the CUDA compiler never fuses into an `fma`, so the
+  results are the CPU's to the last bit even though cudf compiles the function with its own flags.
+  Without that, NVRTC contracts `a * x + y` and the GPU column differs from the Java one in the last
+  bits. `--no-strict-fp` (or `TcOptions.withFusedMultiplyAdd(true)` after `withDeviceFunction`) allows
+  contraction, for a UDF that does not need the CPU's exact results.
 - TC refuses what a per-row function cannot do, with the reason: arrays, objects or `void`
   (`TC-E3501`); thread indices, `@Parallel` loops, barriers, atomics, shared memory, device
   launches, tiles or `printf` (`TC-E3502`); and any target other than CUDA (`TC-E3504`).
-  Private arrays (`new int[4]`) are allowed.
+  Private arrays (`new int[4]`) are allowed; a store must go directly into one, so a store into an
+  array chosen at run time (`byte[] a = c ? s : t`) is refused too (`TC-E3502`). The
+  string row is also declared `const`, so the CUDA compiler rejects any store into it.
+- **Accepted, but not Java's behaviour.** A device function has no way to report an error and knows
+  nothing of nulls, so what Java would throw becomes a wrong value in that row rather than a failed
+  query:
+  - `int` and `long` division or remainder by zero gives an undefined value; Java throws
+    `ArithmeticException`. (`MIN_VALUE / -1` is Java's.) Guard the divisor in the UDF.
+  - An index outside a string row or a private array reads or writes out of bounds; Java throws
+    `ArrayIndexOutOfBoundsException`.
+  - There is no null: the function cannot tell a null row from a value, and cannot return null.
+  - `Math.sin`, `Math.pow`, `Math.exp` and the like are CUDA's, within a few ulp of Java's, not
+    bit-exact.
 
 **Nulls and errors.** Two modes follow what libcudf 26.08's transform kernel
 (`cpp/src/transform/jit/kernel.cu`) accepts: a UDF may return an `int`, which it reads as a

@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.io.TempDir;
 import uk.ac.manchester.tornado.tc.check.ExternalTool;
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
+import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
 
 /**
  * Device-function output ({@link TcCompiler#compileDeviceFunction}): a scalar Java method as the CUDA
@@ -58,7 +60,11 @@ public class DeviceFunctionTest {
     private static final Path CLASSES = Path.of("../tc-frontend/target/test-classes");
 
     private static TcCompiler.Compilation compile(String method, TcOptions options) {
-        return TcCompiler.compileDeviceFunction(Frontend.BytecodeSource.classpath(CLASSES.toString()), KERNELS, method, null, TargetCaps.CUDA_SM89, options);
+        return compile(method, options, TargetCaps.CUDA_SM89);
+    }
+
+    private static TcCompiler.Compilation compile(String method, TcOptions options, TargetCaps target) {
+        return TcCompiler.compileDeviceFunction(Frontend.BytecodeSource.classpath(CLASSES.toString()), KERNELS, method, null, target, options);
     }
 
     private static String source(String method) {
@@ -117,13 +123,18 @@ public class DeviceFunctionTest {
         }
     }
 
+    /** A device function stands in for a CPU UDF: strict by default, so cudf's own compiler flags cannot contract it. */
     @Test
-    public void strictFloatingPointMultipliesWithoutContraction() {
-        var strict = compile("axpy", TcOptions.DEFAULTS.withStrictFloatingPoint(true));
-        assertTrue(strict.succeeded(), strict.diagnostics().toString());
-        assertTrue(strict.source().contains("__dmul_rn("), strict.source());
-        assertFalse(strict.source().contains("fma("), strict.source());
-        assertFalse(compile("axpy", TcOptions.DEFAULTS).source().contains("__dmul_rn("));
+    public void strictFloatingPointByDefault() {
+        for (var options : List.of(TcOptions.DEFAULTS, TcOptions.DEFAULTS.withStrictFloatingPoint(true))) {
+            var strict = compile("axpy", options);
+            assertTrue(strict.succeeded(), strict.diagnostics().toString());
+            assertTrue(strict.source().contains("__dmul_rn("), strict.source());
+            assertFalse(strict.source().contains("fma("), strict.source());
+        }
+        var contracting = compile("axpy", TcOptions.DEFAULTS.withDeviceFunction(true).withFusedMultiplyAdd(true));
+        assertTrue(contracting.succeeded(), contracting.diagnostics().toString());
+        assertFalse(contracting.source().contains("__dmul_rn("), contracting.source());
     }
 
     @Test
@@ -146,6 +157,30 @@ public class DeviceFunctionTest {
         refused("parallel", "TC-E3502", TargetCaps.CUDA_SM89);
         refused("collatz", "TC-E3504", TargetCaps.OPENCL_GENERIC);
         refused("scribble", "TC-E3502", TargetCaps.CUDA_SM89);
+        refused("mergedScribble", "TC-E3502", TargetCaps.CUDA_SM89);
+    }
+
+    /** The row pointer is const, and so is a local that may hold one, so a store the IR check missed would not compile. */
+    @Test
+    public void stringRowsAreConst() {
+        assertTrue(source("fnv1a").contains("const unsigned char *s = (const unsigned char *) s_sv.data();"), source("fnv1a"));
+        var src = source("pickFirst");
+        assertTrue(src.contains("const unsigned char *"), src);
+        assertFalse(src.lines().anyMatch(l -> l.strip().startsWith("unsigned char *")), src);
+    }
+
+    /** Facts about scalar parameters are kept; a fact about a string row is refused, not dropped. */
+    @Test
+    public void factsAreMergedWithStringRows() {
+        var source = Frontend.BytecodeSource.classpath(CLASSES.toString());
+        var salted = TcCompiler.compileDeviceFunction(source, KERNELS, "stringBucket", null, TargetCaps.CUDA_SM89, TcOptions.DEFAULTS,
+                List.of(new ValueSpecialisation.Fact.Unknown(), new ValueSpecialisation.Fact.Scalar(42)));
+        assertTrue(salted.succeeded(), salted.diagnostics().toString());
+        assertFalse(salted.source().equals(source("stringBucket")), "the salt was not specialised:\n" + salted.source());
+        var wrong = TcCompiler.compileDeviceFunction(source, KERNELS, "stringBucket", null, TargetCaps.CUDA_SM89, TcOptions.DEFAULTS,
+                List.of(new ValueSpecialisation.Fact.Length(8), new ValueSpecialisation.Fact.Unknown()));
+        assertFalse(wrong.succeeded(), wrong.source());
+        assertEquals("TC-E3501", wrong.diagnostics().get(0).code(), wrong.diagnostics().toString());
     }
 
     /** A byte[] parameter is a string row: a cudf::string_view, read through data() with its size_bytes() as length. */
@@ -189,32 +224,60 @@ public class DeviceFunctionTest {
         return z ^ (z >>> 27);
     }
 
+    /**
+     * The compute capability of GPU 0 ({@code major * 10 + minor}), from {@code nvidia-smi}; empty when
+     * there is no GPU to run on. The test then compiles and builds for that GPU, rather than for one card.
+     */
+    private static Optional<Integer> computeCapability(Path dir) throws IOException, InterruptedException {
+        var smi = ExternalTool.find("nvidia-smi", "/usr/bin");
+        if (smi.isEmpty()) {
+            return Optional.empty();
+        }
+        var query = run(dir, List.of(smi.get().toString(), "--query-gpu=compute_cap", "--format=csv,noheader"));
+        var first = query.output().strip().lines().findFirst().orElse("");
+        if (query.exit() != 0 || !first.matches("\\d+\\.\\d+")) {
+            return Optional.empty();
+        }
+        var parts = first.split("\\.");
+        return Optional.of(Integer.parseInt(parts[0]) * 10 + Integer.parseInt(parts[1]));
+    }
+
     @Test
     public void runsOnTheGpuAsInJava(@TempDir Path dir) throws Exception {
         var nvcc = ExternalTool.find("nvcc", "/usr/local/cuda/bin");
+        var cc = computeCapability(dir);
+        // Skipped without nvcc or a GPU, which is every machine without CUDA. A CI leg that has both sets
+        // TC_REQUIRE_GPU=1, so that losing either fails the build instead of skipping the check quietly.
+        if (System.getenv("TC_REQUIRE_GPU") != null) {
+            assertTrue(nvcc.isPresent() && cc.isPresent(), "TC_REQUIRE_GPU is set, but nvcc (" + nvcc.isPresent() + ") or a GPU (" + cc.isPresent() + ") is missing");
+        }
         assumeTrue(nvcc.isPresent(), "no nvcc");
+        assumeTrue(cc.isPresent(), "no GPU");
         try (var loader = new URLClassLoader(new URL[] { CLASSES.toUri().toURL() }, getClass().getClassLoader())) {
             var kernels = loader.loadClass(KERNELS);
-            check(dir, nvcc.get(), kernels, "collatz", TcOptions.DEFAULTS, rows(LONGS.size() + 200, i -> new Object[] { i < LONGS.size() ? LONGS.get(i) : (long) (i * 7919 + 1) }), 0);
-            check(dir, nvcc.get(), kernels, "bucket", TcOptions.DEFAULTS, rows(1000, i -> new Object[] { mixLong(i) }), 0);
-            check(dir, nvcc.get(), kernels, "mixed", TcOptions.DEFAULTS,
+            var gpu = new Gpu(dir, nvcc.get(), cc.get());
+            check(gpu, kernels, "collatz", TcOptions.DEFAULTS, rows(LONGS.size() + 200, i -> new Object[] { i < LONGS.size() ? LONGS.get(i) : (long) (i * 7919 + 1) }), 0);
+            check(gpu, kernels, "bucket", TcOptions.DEFAULTS, rows(1000, i -> new Object[] { mixLong(i) }), 0);
+            check(gpu, kernels, "mixed", TcOptions.DEFAULTS,
                     rows(1000, i -> new Object[] { (int) mixLong(i), mixLong(i + 7), (short) mixLong(i + 3), (byte) mixLong(i + 5) }), 0);
-            check(dir, nvcc.get(), kernels, "narrow", TcOptions.DEFAULTS, rows(500, i -> new Object[] { (int) mixLong(i) }), 0);
-            check(dir, nvcc.get(), kernels, "isEven", TcOptions.DEFAULTS, rows(100, i -> new Object[] { mixLong(i) }), 0);
-            check(dir, nvcc.get(), kernels, "table", TcOptions.DEFAULTS, rows(100, i -> new Object[] { (int) mixLong(i) }), 0);
-            check(dir, nvcc.get(), kernels, "minimum", TcOptions.DEFAULTS,
+            check(gpu, kernels, "narrow", TcOptions.DEFAULTS, rows(500, i -> new Object[] { (int) mixLong(i) }), 0);
+            check(gpu, kernels, "isEven", TcOptions.DEFAULTS, rows(100, i -> new Object[] { mixLong(i) }), 0);
+            check(gpu, kernels, "table", TcOptions.DEFAULTS, rows(100, i -> new Object[] { (int) mixLong(i) }), 0);
+            check(gpu, kernels, "minimum", TcOptions.DEFAULTS,
                     rows(8, i -> new Object[][] { { 1.0, 2.0 }, { -0.0, 0.0 }, { 0.0, -0.0 }, { Double.NaN, 1.0 }, { 1.0, Double.NaN }, { -1e300, 1e-300 }, { 3.5, 3.5 },
                             { Double.NEGATIVE_INFINITY, 0.0 } }[i]), 0);
-            // a * x + y: bit-exact only when the product is not contracted into an fma.
-            check(dir, nvcc.get(), kernels, "axpy", TcOptions.DEFAULTS.withStrictFloatingPoint(true),
+            // a * x + y: bit-exact only when the product is not contracted into an fma, which a device function's default ensures.
+            check(gpu, kernels, "axpy", TcOptions.DEFAULTS,
                     rows(1000, i -> new Object[] { Double.longBitsToDouble(0x3FF0000000000000L | (mixLong(i) >>> 12)), Double.longBitsToDouble(0x3FF0000000000000L | (mixLong(i + 1) >>> 12)),
                             -Double.longBitsToDouble(0x3FF0000000000000L | (mixLong(i + 2) >>> 12)) }), 0);
             // String rows (cudf::string_view): every length 0..40, so every Murmur3 tail; bytes of every value.
-            check(dir, nvcc.get(), kernels, "fnv1a", TcOptions.DEFAULTS, rows(500, i -> new Object[] { bytes(i) }), 0);
-            check(dir, nvcc.get(), kernels, "murmur3", TcOptions.DEFAULTS, rows(500, i -> new Object[] { bytes(i), (int) mixLong(i + 11) }), 0);
-            check(dir, nvcc.get(), kernels, "stringBucket", TcOptions.DEFAULTS, rows(500, i -> new Object[] { bytes(i), (int) mixLong(i + 13) }), 0);
+            check(gpu, kernels, "fnv1a", TcOptions.DEFAULTS, rows(500, i -> new Object[] { bytes(i) }), 0);
+            check(gpu, kernels, "murmur3", TcOptions.DEFAULTS, rows(500, i -> new Object[] { bytes(i), (int) mixLong(i + 11) }), 0);
+            check(gpu, kernels, "stringBucket", TcOptions.DEFAULTS, rows(500, i -> new Object[] { bytes(i), (int) mixLong(i + 13) }), 0);
+            // Two rows, one chosen at run time through a const local: rows of at least one byte, as a[0] needs.
+            check(gpu, kernels, "pickFirst", TcOptions.DEFAULTS, rows(300, i -> new Object[] { bytes(i * 41 + 1 + i % 40), bytes(i * 41 + 2 + i % 39), (int) mixLong(i) }), 0);
             // CUDA's sin, pow and exp are not Java's: within a few ulp.
-            check(dir, nvcc.get(), kernels, "fp", TcOptions.DEFAULTS, rows(1000, i -> new Object[] { i * 0.999 + 0.001 }), 4);
+            check(gpu, kernels, "fp", TcOptions.DEFAULTS, rows(1000, i -> new Object[] { i * 0.999 + 0.001 }), 4);
         }
     }
 
@@ -235,9 +298,18 @@ public class DeviceFunctionTest {
         };
     }
 
+    /** Where the GPU check builds and runs: a scratch directory, nvcc, and the compute capability of the GPU present. */
+    private record Gpu(Path dir, Path nvcc, int cc) {
+        TargetCaps target() {
+            var b = TargetCaps.CUDA_SM89;
+            return new TargetCaps(b.dialect(), cc, b.fp64(), b.fp16(), b.arrayHeaderBytes(), b.maxWorkGroupSize(), b.localMemoryBytes(), b.warpSize(), b.deviceLaunch(), b.nvrtcVersion(), b.arch());
+        }
+    }
+
     /** Compiles {@code method}, runs it on the GPU over {@code rows} and compares with Java ({@code ulps} for doubles). */
-    private static void check(Path dir, Path nvcc, Class<?> kernels, String method, TcOptions options, List<Object[]> rows, long ulps) throws Exception {
-        var c = compile(method, options);
+    private static void check(Gpu gpu, Class<?> kernels, String method, TcOptions options, List<Object[]> rows, long ulps) throws Exception {
+        var dir = gpu.dir();
+        var c = compile(method, options, gpu.target());
         assertTrue(c.succeeded(), method + ": " + c.diagnostics());
         Method java = null;
         for (var m : kernels.getDeclaredMethods()) {
@@ -307,27 +379,27 @@ public class DeviceFunctionTest {
         var file = dir.resolve(method + ".cu");
         Files.writeString(file, cu);
         var exe = dir.resolve(method);
-        var build = run(List.of(nvcc.toString(), "-std=c++17", "-arch=sm_89", "-o", exe.toString(), file.toString()));
+        var build = run(dir, List.of(gpu.nvcc().toString(), "-std=c++17", "-arch=sm_" + gpu.cc(), "-o", exe.toString(), file.toString()));
         assertEquals(0, build.exit(), method + ": nvcc failed\n" + build.output() + "\n" + cu);
-        var ran = run(List.of(exe.toString()));
-        assumeTrue(ran.exit() != 3, "no usable GPU");
-        assertEquals(0, ran.exit(), ran.output());
+        // A GPU is present (computeCapability), so a binary that cannot reach it is a failure, not a skip.
+        var ran = run(dir, List.of(exe.toString()));
+        assertEquals(0, ran.exit(), method + ": " + ran.output());
         var lines = ran.output().strip().lines().toList();
         assertEquals(rows.size(), lines.size(), ran.output());
         for (int i = 0; i < rows.size(); i++) {
             var expected = java.invoke(null, rows.get(i));
-            long gpu = result == double.class ? Long.parseUnsignedLong(lines.get(i).strip()) : Long.parseLong(lines.get(i).strip());
+            long got = result == double.class ? Long.parseUnsignedLong(lines.get(i).strip()) : Long.parseLong(lines.get(i).strip());
             if (result == double.class) {
                 long want = Double.doubleToRawLongBits((Double) expected);
-                long distance = Math.abs(want - gpu);
-                assertTrue(distance <= ulps, method + " row " + i + ": Java " + expected + ", GPU " + Double.longBitsToDouble(gpu) + " (" + distance + " ulp)");
+                long distance = Math.abs(want - got);
+                assertTrue(distance <= ulps, method + " row " + i + ": Java " + expected + ", GPU " + Double.longBitsToDouble(got) + " (" + distance + " ulp)");
             } else {
                 long want = switch (expected) {
                     case Boolean b -> b ? 1 : 0;
                     case Number num -> num.longValue();
                     default -> throw new IllegalStateException();
                 };
-                assertEquals(want, gpu, method + " row " + i + " " + java.toGenericString());
+                assertEquals(want, got, method + " row " + i + " " + java.toGenericString());
             }
         }
     }
@@ -360,13 +432,18 @@ public class DeviceFunctionTest {
     private record Ran(int exit, String output) {
     }
 
-    private static Ran run(List<String> command) throws IOException, InterruptedException {
-        var process = new ProcessBuilder(command).redirectErrorStream(true).start();
-        var output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        if (!process.waitFor(120, TimeUnit.SECONDS)) {
-            process.destroyForcibly();
-            return new Ran(124, output);
+    /**
+     * Runs {@code command} with its output going to a file in {@code dir}, so the timeout holds: reading
+     * the output from a pipe would block until the process exits, and a hung nvcc would hang the test.
+     */
+    private static Ran run(Path dir, List<String> command) throws IOException, InterruptedException {
+        var log = Files.createTempFile(dir, "run", ".log");
+        var process = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile()).start();
+        boolean finished = process.waitFor(120, TimeUnit.SECONDS);
+        if (!finished) {
+            process.destroyForcibly().waitFor(10, TimeUnit.SECONDS);
         }
-        return new Ran(process.exitValue(), output);
+        var output = Files.readString(log, StandardCharsets.UTF_8);
+        return new Ran(finished ? process.exitValue() : 124, output);
     }
 }

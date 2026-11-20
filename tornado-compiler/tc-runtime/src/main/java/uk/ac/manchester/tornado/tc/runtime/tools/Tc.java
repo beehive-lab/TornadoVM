@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -54,7 +55,7 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * <pre>
  *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--cp PATH] [--stats] [--device-fn] Class method
  *   tc emit [same options] --all
- *   tc emit [--cc N] [--cp PATH] [--stats] --device-fn [--null-aware] [--errors] Class method
+ *   tc emit [--cc N] [--cp PATH] [--stats] [--no-strict-fp] --device-fn [--null-aware] [--errors] Class method
  *   tc --version
  *   ... [--arg name=value]...
  * </pre>
@@ -68,9 +69,10 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  *
  * <p>
  * {@code --strict-fp} compiles as a plan with {@code withStrictFloatingPoint()} does: no multiply is
- * fused with an add, so floating-point results round as Java's do. The source is strict by itself
- * (on CUDA, {@code __fmul_rn}/{@code __dmul_rn}; elsewhere a contraction pragma), so it stays strict
- * whichever compiler and flags later build it.
+ * fused with an add, so floating-point results round as Java's do. On CUDA the source is strict by
+ * itself ({@code __fmul_rn}/{@code __dmul_rn}), so it stays strict whichever compiler and flags later
+ * build it. Elsewhere it carries a contraction pragma, which build options such as
+ * {@code -cl-fast-relaxed-math} or {@code -ffast-math} override; a note on stderr says so.
  *
  * <p>
  * {@code --cc} is the CUDA compute capability (default 89: an RTX 4090), as {@code major * 10 + minor}.
@@ -98,6 +100,8 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * ({@code Integer}, {@code Long}, {@code Double}, ...) are values that may be null. With
  * {@code --errors}, an {@code ArithmeticException} (Math.*Exact overflow, integer division by zero)
  * fails the row with cudf's error code. Either makes the function return that code, an {@code int}.
+ * It implies {@code --strict-fp}, since a device function stands in for a CPU UDF and should give the
+ * CPU's results; {@code --no-strict-fp} lets the compiler contract products into fmas anyway.
  *
  * <p>
  * The default class path is {@code .}; {@code $TORNADOVM_HOME/share/java/tornado/tornado-api*.jar}
@@ -141,6 +145,7 @@ public final class Tc {
         boolean deviceFunction = false;
         boolean nullAware = false;
         boolean errors = false;
+        boolean noStrictFp = false;
         var given = new LinkedHashMap<String, String>();
         var positional = new ArrayList<String>();
         try {
@@ -165,6 +170,7 @@ public final class Tc {
                     case "--device-fn" -> deviceFunction = true;
                     case "--null-aware" -> nullAware = true;
                     case "--errors" -> errors = true;
+                    case "--no-strict-fp" -> noStrictFp = true;
                     case "--arg" -> {
                         var nameValue = value(args, ++i).split("=", 2);
                         if (nameValue.length != 2) {
@@ -190,8 +196,21 @@ public final class Tc {
             err.println("tc: --device-fn compiles one method: name it instead of --all");
             return usage(err);
         }
+        if (noStrictFp && (strictFp || !deviceFunction)) {
+            err.println("tc: --no-strict-fp only turns off the strict floating point --device-fn implies");
+            return usage(err);
+        }
         var target = target(dialect, cc, fp16, fp64);
+        // --device-fn implies strict floating point (TcOptions.withDeviceFunction); --no-strict-fp undoes it.
         var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withDeviceFunction(deviceFunction).withNullAwareDeviceFunction(nullAware).withDeviceFunctionErrors(errors);
+        if (noStrictFp) {
+            options = options.withFusedMultiplyAdd(true);
+        }
+        if (strictFp && dialect != TargetCaps.Dialect.CUDA) {
+            err.println("tc: note: --strict-fp on " + dialect.name().toLowerCase(Locale.ROOT) + " is a contraction pragma in the source, which "
+                    + (dialect == TargetCaps.Dialect.OPENCL ? "-cl-mad-enable and -cl-fast-relaxed-math" : "-ffp-contract=fast and -ffast-math")
+                    + " override: build it without them");
+        }
         var path = withApi(classPath);
         var source = source(path);
         List<Kernel> kernels = all ? kernels(classPath) : List.of(named(source, positional.get(0).replace('.', '/'), positional.get(1)));
@@ -283,8 +302,8 @@ public final class Tc {
         // Without values given or assumed, no facts at all: the kernel TC compiles before any argument is seen.
         List<ValueSpecialisation.Fact> facts = method == null || (given.isEmpty() && !assume) ? List.of() : TypeLayouts.facts(method, given, assume, assumed);
         if (options.deviceFunction()) {
-            // A device function has no launch or array facts: its arguments are one row's values.
-            return TcCompiler.compileDeviceFunction(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options);
+            // A device function has no launch or array facts, but a value given with --arg still specialises it.
+            return TcCompiler.compileDeviceFunction(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options, facts);
         }
         return TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options, facts);
     }
@@ -482,7 +501,7 @@ public final class Tc {
 
     private static int usage(PrintStream err) {
         err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp]"
-                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn [--null-aware] [--errors]] (Class method | --all)");
+                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] (Class method | --all)");
         return 2;
     }
 }

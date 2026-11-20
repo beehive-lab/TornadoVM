@@ -20,12 +20,14 @@ package uk.ac.manchester.tornado.tc.codegen;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
@@ -216,8 +218,8 @@ public final class CEmitter {
     /** DeviceFunctionCheck's intrinsic for a string row's byte length. */
     private static final String STRING_LENGTH = "tornado.devfn.string_length";
 
-    /** A device function's string rows: the name of each byte pointer, to the name of its length. */
-    private final java.util.Map<String, String> stringRows = new java.util.HashMap<>();
+    /** A device function's string rows: each {@code byte[]} parameter, to the name of its length. */
+    private final Map<S.Var, String> stringRows = new HashMap<>();
 
     /** The declarations that open a device function with string rows: each row's bytes and length. */
     private final List<String> stringRowLines = new ArrayList<>();
@@ -389,7 +391,7 @@ public final class CEmitter {
                     // A string row: the view is the parameter; its bytes and length are named for the body.
                     var view = cIdentifier(name + "_sv", used);
                     var length = cIdentifier(name + "_len", used);
-                    stringRows.put(name, length);
+                    stringRows.put(param, length);
                     if (nullAware) {
                         var argument = cIdentifier(name + "_opt", used);
                         header.append(", ").append(optional(STRING_VIEW)).append(' ').append(argument);
@@ -398,7 +400,11 @@ public final class CEmitter {
                     } else {
                         header.append(", ").append(STRING_VIEW).append(' ').append(view);
                     }
-                    stringRowLines.add(declaration(param.type(), name) + " = (" + typeName(param.type()) + ") " + view + ".data();");
+                    // const: the row is the caller's strings column. DeviceFunctionCheck refuses a store into
+                    // it; const makes the C++ compiler refuse one too, should the IR check ever miss it
+                    // (stores through a device function's pointers are printed with reinterpret_cast, which
+                    // cannot cast const away).
+                    stringRowLines.add("const " + declaration(param.type(), name) + " = (const " + typeName(param.type()) + ") " + view + ".data();");
                     stringRowLines.add("const int " + length + " = (int) " + view + ".size_bytes();");
                 } else if (nullAware) {
                     var argument = cIdentifier(name + "_opt", used);
@@ -545,8 +551,8 @@ public final class CEmitter {
     }
 
     /** A C helper, {@code __device__ static inline T name(params) { body }}: its result type, name, parameters and body. */
-    private static final java.util.regex.Pattern HELPER = java.util.regex.Pattern
-            .compile("\\s*__device__\\s+static\\s+inline\\s+([A-Za-z_][A-Za-z0-9_ ]*?)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{(.*)\\}\\s*", java.util.regex.Pattern.DOTALL);
+    private static final Pattern HELPER = Pattern
+            .compile("\\s*__device__\\s+static\\s+inline\\s+([A-Za-z_][A-Za-z0-9_ ]*?)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{(.*)\\}\\s*", Pattern.DOTALL);
 
     /**
      * The device function as one translation unit (see {@link DeviceFunction}): the includes the
@@ -564,11 +570,7 @@ public final class CEmitter {
             }
         }
         var lambdas = new StringBuilder();
-        for (var helper : helpers) {
-            var m = HELPER.matcher(Helpers.source(helper, target.dialect()));
-            if (!m.matches()) {
-                throw new EmitException("TC-E3503", "helper " + helper + " cannot be written as a lambda in a device function");
-            }
+        for (var m : helperLambdas()) {
             lambdas.append("  auto ").append(m.group(2)).append(" = [&](").append(m.group(3).strip()).append(") -> ").append(m.group(1).strip()).append(" {\n");
             m.group(4).strip().lines().forEach(l -> lambdas.append("    ").append(l.strip()).append('\n'));
             lambdas.append("  };\n");
@@ -583,6 +585,48 @@ public final class CEmitter {
         lambdas.toString().lines().forEach(l -> lineOrigins.add(null));
         lineOrigins.addAll(origins);
         return new Result(source.toString(), entry, List.copyOf(includes), List.of(), definition, declaration, java.util.Collections.unmodifiableList(lineOrigins));
+    }
+
+    /**
+     * The helpers the function uses, parsed, in an order in which each comes after every helper its body
+     * calls. A C++ lambda can only name what is declared above it, unlike a function at file scope, so
+     * insertion order is not enough once a helper calls another one.
+     */
+    private List<java.util.regex.MatchResult> helperLambdas() {
+        var parsed = new java.util.LinkedHashMap<String, java.util.regex.MatchResult>();
+        for (var helper : helpers) {
+            var m = HELPER.matcher(Helpers.source(helper, target.dialect()));
+            if (!m.matches()) {
+                throw new EmitException("TC-E3503", "helper " + helper + " cannot be written as a lambda in a device function");
+            }
+            parsed.put(m.group(2), m.toMatchResult());
+        }
+        var ordered = new ArrayList<java.util.regex.MatchResult>();
+        var placed = new HashSet<String>();
+        while (ordered.size() < parsed.size()) {
+            boolean progress = false;
+            for (var entry : parsed.entrySet()) {
+                if (placed.contains(entry.getKey())) {
+                    continue;
+                }
+                var body = entry.getValue().group(4);
+                boolean ready = parsed.keySet().stream().allMatch(other -> other.equals(entry.getKey()) || placed.contains(other) || !calls(body, other));
+                if (ready) {
+                    ordered.add(entry.getValue());
+                    placed.add(entry.getKey());
+                    progress = true;
+                }
+            }
+            if (!progress) {
+                throw new EmitException("TC-E3503", "helpers " + parsed.keySet() + " call each other in a cycle: they cannot be lambdas in a device function");
+            }
+        }
+        return ordered;
+    }
+
+    /** Whether C source {@code body} calls {@code name}: the identifier followed by {@code (}. */
+    private static boolean calls(String body, String name) {
+        return Pattern.compile("(?<![A-Za-z0-9_])" + Pattern.quote(name) + "\\s*\\(").matcher(body).find();
     }
 
     // ---------------------------------------------------------------- statements
@@ -1088,6 +1132,7 @@ public final class CEmitter {
         var inst = op.inst();
         var ops = op.operands();
         return switch (inst.opcode()) {
+            case Opcode.Store _s when deviceFunction != null -> storeTarget(ops.get(0), ops.get(1).type()) + " = " + expr(ops.get(1)).text;
             case Opcode.Store _s -> deref(ops.get(0), ops.get(1).type()).text + " = " + expr(ops.get(1)).text;
             case Opcode.Intrinsic(var name) -> intrinsic(name, inst, ops).text;
             default -> expr(op).text;
@@ -1388,7 +1433,7 @@ public final class CEmitter {
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
         if (name.equals(STRING_LENGTH)) {
-            var length = stringRows.get(expr(ops.get(0)).text);
+            var length = ops.get(0) instanceof S.VarRef(var row) ? stringRows.get(row) : null;
             if (length == null) {
                 throw new EmitException("TC-E3503", "the length of a string row is read through something other than its parameter");
             }
@@ -1435,6 +1480,16 @@ public final class CEmitter {
     private R deref(S.Expr pointer, Type type) {
         var element = element(pointer, type);
         return element != null ? new R(element, ATOM) : new R("*((" + pointerTo(pointer, type) + ") " + wrap(expr(pointer), UNARY) + ")", UNARY);
+    }
+
+    /**
+     * The target of a store in a device function: as {@link #deref}, but the cast is a
+     * {@code reinterpret_cast}, which cannot drop {@code const}. So a store through a string row
+     * (declared {@code const}) does not compile, whatever the IR check let through.
+     */
+    private String storeTarget(S.Expr pointer, Type type) {
+        var element = element(pointer, type);
+        return element != null ? element : "*reinterpret_cast<" + pointerTo(pointer, type) + ">(" + expr(pointer).text + ")";
     }
 
     /** The address an atomic or helper takes: {@code &a_data[i]}, or a typed cast of the pointer. */
@@ -1576,10 +1631,12 @@ public final class CEmitter {
         var name = names.get(v);
         var element = elementTypes.get(v);
         if (element != null) {
-            return new Declarator(dialect.pointee(space(v.type()), typeName(element)), true, name);
+            return new Declarator((deviceFunction != null ? "const " : "") + dialect.pointee(space(v.type()), typeName(element)), true, name);
         }
         if (v.type() instanceof Type.PointerType(var space)) {
-            return new Declarator(dialect.pointee(space, "unsigned char"), true, name);
+            // In a device function a pointer local may hold a string row, which is const; the only stores
+            // DeviceFunctionCheck lets through go directly into private arrays, never through a local.
+            return new Declarator((deviceFunction != null ? "const " : "") + dialect.pointee(space, "unsigned char"), true, name);
         }
         return new Declarator(typeName(v.type()), false, name);
     }

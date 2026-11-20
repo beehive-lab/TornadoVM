@@ -162,6 +162,24 @@ public final class UdfKernels {
         return s.length;
     }
 
+    /**
+     * Writes into one of two rows chosen at run time: refused, as a direct write is. The store's array is
+     * a block argument, not a parameter, so a check that looked only for the parameter would pass it.
+     * (Merging a row with a private array, {@code c ? s : new byte[4]}, is refused earlier still, as a
+     * type mismatch: TC-E2104.)
+     */
+    public static int mergedScribble(byte[] s, byte[] t, boolean c) {
+        byte[] a = c ? s : t;
+        a[0] = 1;
+        return a[1];
+    }
+
+    /** Reads one of two rows chosen at run time: allowed, and its pointer is const as the rows are. */
+    public static int pickFirst(byte[] s, byte[] t, int which) {
+        byte[] a = (which & 1) == 0 ? s : t;
+        return a[0];
+    }
+
     public static int sum(int[] a) {
         return a[0];
     }
