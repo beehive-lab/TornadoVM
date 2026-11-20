@@ -234,6 +234,17 @@ final class CudaDialect implements CDialect {
         return lines;
     }
 
+    /**
+     * NVRTC contracts {@code a * b + c} unless it is given {@code --fmad=false}, and has no pragma to
+     * forbid it in the source. The runtime adds the flag for a strict plan, but source printed by
+     * {@code tc emit} is compiled by whoever takes it (cudf's JIT, say) with their own flags, so the
+     * source has to be strict by itself: the {@code _rn} multiplies are never contracted.
+     */
+    @Override
+    public Optional<String> strictMultiply(boolean dbl) {
+        return Optional.of(dbl ? "__dmul_rn" : "__fmul_rn");
+    }
+
     @Override
     public Optional<String> halfArithmetic(String op, Set<Feature> features) {
         // The _rn forms: correctly rounded, and never contracted into __hfma (cuda_fp16.h).

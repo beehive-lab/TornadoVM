@@ -159,9 +159,25 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal] [--cp <class path>] [--stats] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
+
+`--strict-fp` compiles as a plan with `withStrictFloatingPoint()` does: no multiply is fused with
+an add, so results round as Java's do. How far that holds once the source leaves `tc` depends on
+the target:
+
+- **CUDA**: strict by construction. Every `float` and `double` multiply is printed as
+  `__fmul_rn`/`__dmul_rn`, which no CUDA compiler contracts (NVRTC contracts `a * b + c` by
+  default and has no pragma against it), so the source stays strict whichever compiler and flags
+  build it later, such as cudf's JIT.
+- **OpenCL, HIP, Metal**: a request. The source carries `#pragma OPENCL FP_CONTRACT OFF` or
+  `#pragma clang fp contract(off)`, and build options can override it: `-cl-mad-enable` and
+  `-cl-fast-relaxed-math` on OpenCL, `-ffp-contract=fast` and `-ffast-math` under clang. `tc emit`
+  says so on stderr for these targets. Whoever builds the source must not pass those options.
+
+`Math.fma` is unaffected on every target: it is an exact fused operation in Java too, and is still
+printed as `fma`.
 
 `build-tc-native` (with `GRAALVM_HOME` set to a GraalVM for JDK 25+) builds it as a native image,
 `bin/tc-native`, which `tc` then uses. A cold compile then takes about 20 ms instead of about
