@@ -79,10 +79,14 @@ public class ConstantTablesTest {
     @Test
     public void onlyTheJdksFdLibmIsTrusted() {
         Frontend.BytecodeSource source = name -> Frontend.BytecodeSource.jrt(name);
-        // FdLibm's exp: ln2HI = {ln2_hi, -ln2_hi}.
-        var ln2hi = source.staticFinalArray("java/lang/FdLibm$Exp", "ln2HI").orElseThrow();
-        assertEquals(0x3fe62e42fee00000L, Double.doubleToRawLongBits(ln2hi.values().get(0).doubleValue()));
-        assertEquals(0xbfe62e42fee00000L, Double.doubleToRawLongBits(ln2hi.values().get(1).doubleValue()));
+        // FdLibm's atan: atanhi = {atan(0.5), pi/4, atan(1.5), pi/2}, the fdlibm constants.
+        //
+        // Not Exp's ln2HI: that was {ln2_hi, -ln2_hi} up to JDK 25 and is a plain double from 26 on, so a
+        // test written against it passes or fails by which JDK runs it. Atan's tables are arrays on every
+        // JDK this builds for, and hold the same bits on each.
+        var atanhi = source.staticFinalArray("java/lang/FdLibm$Atan", "atanhi").orElseThrow();
+        assertEquals(List.of(0x3fddac670561bb4fL, 0x3fe921fb54442d18L, 0x3fef730bd281f69bL, 0x3ff921fb54442d18L),
+                atanhi.values().stream().map(v -> Double.doubleToRawLongBits(v.doubleValue())).toList());
         // A user class could store into its final array anywhere: its tables are not taken as constants.
         Frontend.BytecodeSource own = name -> {
             try (var in = ConstantTablesTest.class.getResourceAsStream("/" + name + ".class")) {
