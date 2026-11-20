@@ -248,9 +248,12 @@ public final class Intrinsics {
             openclTyped("math.min", t, "min($0, $1)");
             openclTyped("math.max", t, "max($0, $1)");
         }
-        // abs returns the unsigned type in OpenCL C; Java keeps MIN_VALUE, which the cast back restores.
-        openclTyped("math.abs", "i32", "($0 < 0 ? (int) (0u - (uint) $0) : $0)");
-        openclTyped("math.abs", "i64", "($0 < 0 ? (long) (0ul - (ulong) $0) : $0)");
+        // Java's abs keeps MIN_VALUE (the wrap-around negation of MIN is MIN). Spelled as max(x, -x):
+        // Intel's OpenCL compiler (IGC 1.0.16510) recognises the select and the built-in abs, then
+        // treats the result as non-negative (max(abs(MIN), 2) gave MIN, unsigned) and lowers a rotate by
+        // abs(a) as a rotate by a; it does neither for max(x, -x). OpenCL's own abs returns the unsigned type.
+        openclTyped("math.abs", "i32", "max($0, (int) (0u - (uint) $0))");
+        openclTyped("math.abs", "i64", "max($0, (long) (0ul - (ulong) $0))");
     }
 
     /** Metal Shading Language spellings (MSL specification); thread positions are the kernel's system-value parameters. */
