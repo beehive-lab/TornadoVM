@@ -17,17 +17,20 @@
  */
 package uk.ac.manchester.tornado.api.runtime;
 
+import uk.ac.manchester.tornado.api.AutoTuneConfig;
 import uk.ac.manchester.tornado.api.GridScheduler;
 import uk.ac.manchester.tornado.api.enums.ProfilerMode;
 
 /**
  * Class to store all objects and parameters related to the dispatch of an execution plan.
+ *  It also holds the auto-tuning configuration when auto-tuning is enabled.
  */
 public class ExecutorFrame {
 
     private final long executionPlanId;
     private GridScheduler gridScheduler;
     private ProfilerMode profilerMode;
+    private AutoTuneConfig autoTuneConfig;
 
     public ExecutorFrame(long id) {
         this.executionPlanId = id;
@@ -42,6 +45,16 @@ public class ExecutorFrame {
 
     public GridScheduler getGridScheduler() {
         return gridScheduler;
+    }
+
+    /** Sets the auto-tuning configuration. {@code null} disables auto-tuning. */
+    public void setAutoTuneConfig(AutoTuneConfig autoTuneConfig) {
+            this.autoTuneConfig = autoTuneConfig;
+    }
+
+    /** Returns the auto-tuning configuration, or {@code null} if auto-tuning is disabled. */
+    public AutoTuneConfig getAutoTuneConfig() {
+        return autoTuneConfig;
     }
 
     public long getExecutionPlanId() {
