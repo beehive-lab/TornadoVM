@@ -49,7 +49,9 @@ import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
  */
 public class TestNaNSignComparisons extends TornadoTestBase {
 
-    private static final float[] FLOATS = { Float.NaN, -Float.NaN, 0.0f, -0.0f, 1.5f, -1.5f, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.MIN_VALUE, -3.0e38f };
+    // No subnormals: Apple GPUs flush float32 subnormals to zero even with strict floating point, so
+    // abs(MIN_VALUE) > 0 is false there for a reason unrelated to NaN.
+    private static final float[] FLOATS = { Float.NaN, -Float.NaN, 0.0f, -0.0f, 1.5f, -1.5f, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.MIN_NORMAL, -3.0e38f };
     private static final int CASES = 9;
 
     /** Each comparison as one bit of the result, so one kernel checks them all. */
