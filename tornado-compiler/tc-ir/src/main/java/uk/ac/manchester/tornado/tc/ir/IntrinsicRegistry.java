@@ -114,6 +114,7 @@ public final class IntrinsicRegistry {
         add("tornado.varargs.set", EnumSet.of(Effect.WRITES), "an element of a varargs array", "index");
         add("tornado.dp4a.packed", EnumSet.noneOf(Effect.class), "dot product of packed int8 words");
         add("tornado.dp4a", EnumSet.of(Effect.READS), "dot product of int8 words read from memory");
+        pure("tornado.devfn.string_length", "the byte length of a string row in a device function");
         // CUDA Tile (TileContext): block geometry, views (element type an immediate or a DType operand) and extracts.
         pure("tile.bid", "tile block index", "dim");
         pure("tile.num_blocks", "number of tile blocks", "dim");

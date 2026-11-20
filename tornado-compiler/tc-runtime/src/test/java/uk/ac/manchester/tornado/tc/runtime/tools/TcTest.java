@@ -123,6 +123,19 @@ public class TcTest {
         assertTrue(r.err().matches("(?s)TileKernels\\.java:\\d+: error: TC-E4010 .*"), r.err());
     }
 
+    @Test
+    public void deviceFunctionIsOneCudaFunctionForCudfTransform(@TempDir Path dir) throws IOException {
+        classes(dir, "UdfKernels");
+        var cp = dir + File.pathSeparator + API;
+        var r = run("emit", "--device-fn", "--cp", cp, "uk.ac.manchester.tornado.tc.frontend.kernels.UdfKernels", "bucket");
+        assertEquals(0, r.status(), r.err());
+        assertTrue(r.out().startsWith("__device__ void UdfKernels_bucket(int *out, long long "), r.out());
+        var refused = run("emit", "--device-fn", "--cp", cp, "uk.ac.manchester.tornado.tc.frontend.kernels.UdfKernels", "sum");
+        assertEquals(1, refused.status());
+        assertTrue(refused.err().contains("TC-E3501"), refused.err());
+        assertEquals(2, run("emit", "--device-fn", "--all", "--cp", cp).status());
+    }
+
     /**
      * The offsets the runtime's FieldLayout gives these API classes (read from it with the SDK): the
      * class-only layout tc emit uses must agree, or kernels would read object fields at the wrong place.

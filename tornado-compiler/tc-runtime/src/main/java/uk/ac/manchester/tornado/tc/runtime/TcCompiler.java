@@ -22,6 +22,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -54,6 +56,7 @@ import uk.ac.manchester.tornado.tc.lower.Structurizer;
 import uk.ac.manchester.tornado.tc.tornado.AbiLowering;
 import uk.ac.manchester.tornado.tc.tornado.AtomicSlots;
 import uk.ac.manchester.tornado.tc.tornado.BatchOffset;
+import uk.ac.manchester.tornado.tc.tornado.DeviceFunctionCheck;
 import uk.ac.manchester.tornado.tc.tornado.Legality;
 import uk.ac.manchester.tornado.tc.tornado.ObjectLayout;
 import uk.ac.manchester.tornado.tc.frontend.LocalArrays;
@@ -122,6 +125,8 @@ public final class TcCompiler {
     private CEmitter.Result emitted;
     /** File-name stem of this compilation's dumps, chosen at its first dump. */
     private String dumpStem;
+    /** The JVM descriptor of the method compiled as a device function ({@link TcOptions#deviceFunction}). */
+    private String deviceFunctionDescriptor;
 
     private TcCompiler(Function function, TargetCaps target, TcOptions options) {
         this.function = function;
@@ -149,6 +154,29 @@ public final class TcCompiler {
      */
     public static Compilation compileJava(Frontend.BytecodeSource source, String className, String methodName, TargetCaps target, TcOptions options, List<ValueSpecialisation.Fact> facts) {
         return compileJava(source, className, methodName, null, target, options, facts);
+    }
+
+    /**
+     * Compiles a static method with primitive parameters and a primitive result as a CUDA device
+     * function in the shape {@code cudf::transform} calls, {@code __device__ void f(R *out, A0 in0, ...)}
+     * (see {@link TcOptions#withDeviceFunction}): source a library compiles into its own kernel, with
+     * no array headers, no launch parameters and nothing before the function but includes.
+     * {@code descriptor} is the JVM method descriptor, {@code null} for the first method of that name.
+     * It is strict floating point unless {@code options} is already a device-function compilation with
+     * fused multiply-adds turned back on ({@link TcOptions#withDeviceFunction}).
+     */
+    public static Compilation compileDeviceFunction(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options) {
+        return compileDeviceFunction(source, className, methodName, descriptor, target, options, List.of());
+    }
+
+    /**
+     * As above, with facts about the parameters as for a kernel ({@code facts.get(i)} for parameter
+     * {@code i}), such as a value known when the function is compiled. A {@code byte[]} parameter is a
+     * string row and takes no fact of its own.
+     */
+    public static Compilation compileDeviceFunction(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
+            List<ValueSpecialisation.Fact> facts) {
+        return compileJava(source, className, methodName, descriptor, target, options.deviceFunction() ? options : options.withDeviceFunction(true), facts);
     }
 
     /**
@@ -295,6 +323,25 @@ public final class TcCompiler {
     private static Compiled compileJava(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
             List<ValueSpecialisation.Fact> facts, String rename) {
         long start = System.nanoTime();
+        String deviceDescriptor = null;
+        List<ValueSpecialisation.Fact> deviceFacts = null;
+        if (options.deviceFunction()) {
+            var signature = deviceFunctionSignature(source, className, methodName, descriptor);
+            if (signature instanceof Signature.Accepted(var accepted)) {
+                deviceDescriptor = accepted;
+                var merged = deviceFunctionFacts(accepted, facts, className, methodName);
+                if (merged instanceof Signature.Refused(var problem)) {
+                    signature = merged;
+                } else {
+                    deviceFacts = ((FactsFor) merged).facts();
+                }
+            }
+            if (signature instanceof Signature.Refused(var problem)) {
+                var name = className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
+                return new Compiled(new Compilation(name, target, false, "", "", List.of(), List.of(problem), System.nanoTime() - start, List.of(), new AtomicSlots.Info(List.of(), Map.of()),
+                        KernelFeatures.NONE), null, null);
+            }
+        }
         var translated = Frontend.translateWithCallees(source, className, methodName, descriptor);
         java.util.Optional<Function> kernel = translated.module().map(m -> m.functions().get(0));
         if (rename != null) {
@@ -308,7 +355,8 @@ public final class TcCompiler {
             return new Compiled(new Compilation(name, target, false, "", "", List.of(bytecode), frontendDiagnostics, frontendNanos, List.of(), new AtomicSlots.Info(List.of(), java.util.Map.of()), KernelFeatures.NONE), null, null);
         }
         var compiler = new TcCompiler(kernel.get(), target, options);
-        compiler.facts = List.copyOf(facts);
+        compiler.deviceFunctionDescriptor = deviceDescriptor;
+        compiler.facts = deviceDescriptor == null ? List.copyOf(facts) : deviceFacts;
         compiler.module = translated.module().get();
         compiler.stages.add(bytecode);
         var c = compiler.run();
@@ -317,6 +365,107 @@ public final class TcCompiler {
         stages.add(1, new Stage("frontend", Kind.NONE, "", frontendNanos, size));
         return new Compiled(new Compilation(c.function(), c.target(), c.succeeded(), c.source(), c.entryName(), List.copyOf(stages), c.diagnostics(), c.nanos() + frontendNanos, c.domain(), c.atomics(), c.features(), c.readsLengths()),
                 c.succeeded() ? compiler.function : null, c.succeeded() ? compiler.emitted : null);
+    }
+
+    /**
+     * The facts of a device function: each {@code byte[]} parameter is one row of a strings column,
+     * which the library passes as a {@code cudf::string_view}. Its bytes are addressed from
+     * {@code data()} itself, with no array header, so it is a headerless view; its length is
+     * {@code size_bytes()}, which {@link DeviceFunctionCheck} substitutes for {@code .length} before
+     * ABI lowering would refuse a headerless length.
+     */
+    private static List<ValueSpecialisation.Fact> stringRowFacts(String descriptor) {
+        var facts = new ArrayList<ValueSpecialisation.Fact>();
+        int close = descriptor.indexOf(')');
+        for (int i = 1; i < close; i++) {
+            if (descriptor.charAt(i) == '[') {
+                facts.add(new ValueSpecialisation.Fact.DeviceView(-1));
+                i++;
+            } else {
+                facts.add(new ValueSpecialisation.Fact.Unknown());
+            }
+        }
+        return facts.stream().anyMatch(f -> f instanceof ValueSpecialisation.Fact.DeviceView) ? List.copyOf(facts) : List.of();
+    }
+
+    /** A device function's facts, once merged with the caller's. */
+    private record FactsFor(List<ValueSpecialisation.Fact> facts) implements Signature {
+    }
+
+    /**
+     * The caller's facts merged with the string rows' ({@link #stringRowFacts}): a caller's fact about a
+     * scalar parameter is kept, so a device function can be specialised on a value known when it is
+     * compiled. A caller's fact about a string row would contradict what the row is, and is refused
+     * rather than dropped.
+     */
+    private static Signature deviceFunctionFacts(String descriptor, List<ValueSpecialisation.Fact> given, String className, String methodName) {
+        var rows = stringRowFacts(descriptor);
+        if (given.isEmpty()) {
+            return new FactsFor(rows);
+        }
+        if (rows.isEmpty()) {
+            return new FactsFor(List.copyOf(given));
+        }
+        var merged = new ArrayList<ValueSpecialisation.Fact>();
+        for (int i = 0; i < rows.size(); i++) {
+            var fact = i < given.size() ? given.get(i) : new ValueSpecialisation.Fact.Unknown();
+            if (rows.get(i) instanceof ValueSpecialisation.Fact.DeviceView) {
+                if (!(fact instanceof ValueSpecialisation.Fact.Unknown)) {
+                    return new Signature.Refused(new Diagnostic("TC-E3501", "parameter " + i + " of " + methodName + " is a string row (byte[]), which takes no fact: " + fact,
+                            "@" + className.substring(className.lastIndexOf('.') + 1) + "." + methodName, Loc.UNKNOWN));
+                }
+                merged.add(rows.get(i));
+            } else {
+                merged.add(fact);
+            }
+        }
+        merged.addAll(given.subList(Math.min(rows.size(), given.size()), given.size())); // facts that are not about an argument
+        return new FactsFor(List.copyOf(merged));
+    }
+
+    /** Whether a method can be a device function: its descriptor, or the diagnostic that refuses it. */
+    private sealed interface Signature permits Signature.Accepted, Signature.Refused, FactsFor {
+        record Accepted(String descriptor) implements Signature {
+        }
+
+        record Refused(Diagnostic problem) implements Signature {
+        }
+    }
+
+    /**
+     * The descriptor of the method to compile as a device function, or the diagnostic (TC-E3501) that
+     * refuses it: it must be static, with primitive parameters and a primitive result. A method that is
+     * not found is left to the frontend, which reports it as for a kernel.
+     */
+    private static Signature deviceFunctionSignature(Frontend.BytecodeSource source, String className, String methodName, String descriptor) {
+        Optional<uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile.Method> method;
+        try {
+            method = source.classFile(className.replace('.', '/')).flatMap(c -> c.method(methodName, descriptor));
+        } catch (RuntimeException e) {
+            return new Signature.Accepted(descriptor == null ? "()V" : descriptor); // unreadable: the frontend reports it
+        }
+        if (method.isEmpty()) {
+            return new Signature.Accepted(descriptor == null ? "()V" : descriptor);
+        }
+        var m = method.get();
+        var where = "@" + className.substring(className.lastIndexOf('.') + 1) + "." + methodName;
+        if (!m.isStatic()) {
+            return new Signature.Refused(new Diagnostic("TC-E3501", methodName + " is an instance method: a device function is a static method", where, Loc.UNKNOWN));
+        }
+        var d = m.descriptor();
+        int close = d.indexOf(')');
+        for (int i = 1; i < d.length(); i++) {
+            char c = d.charAt(i);
+            if (c == '[' && i < close && i + 1 < close && d.charAt(i + 1) == 'B') {
+                i++; // a byte[] parameter: one string row, its UTF-8 bytes (a cudf::string_view)
+                continue;
+            }
+            if (c != ')' && "ZBCSIJFD".indexOf(c) < 0) {
+                return new Signature.Refused(new Diagnostic("TC-E3501",
+                        methodName + d + " takes or returns an array, an object or void: a device function maps primitives (and byte[] strings) to a primitive", where, Loc.UNKNOWN));
+            }
+        }
+        return new Signature.Accepted(d);
     }
 
     /**
@@ -340,6 +489,10 @@ public final class TcCompiler {
     private static final List<Step> PIPELINE = List.of(
             new Step("inline", c -> c.module != null && c.module.functions().size() > 1, c -> Inliner.run(c.module, c.function), Verifier.Stage.PRE_ABI),
             new Step("local-collections", c -> c.module != null, c -> LocalCollections.run(c.function), Verifier.Stage.PRE_ABI),
+            // Before anything lowers what a device function may not use, so the refusal names it.
+            new Step("device-function", c -> c.options.deviceFunction(), c -> c.deviceFunctionDescriptor == null
+                    ? List.of(new Diagnostic("TC-E3501", "device-function output compiles a Java method, not IR text", "@" + c.function.name(), Loc.UNKNOWN))
+                    : DeviceFunctionCheck.run(c.function, c.target), Verifier.Stage.PRE_ABI),
             new Step("specialise", c -> !c.facts.isEmpty(), TcCompiler::specialise, Verifier.Stage.PRE_ABI),
             new Step("tiles", c -> TileTyping.usesTiles(c.function), TcCompiler::tiles, Verifier.Stage.PRE_ABI),
             new Step("atomics", c -> c.usesIntrinsic("tornado.atomic_int."), c -> AtomicSlots.run(c.function), Verifier.Stage.PRE_ABI),
@@ -488,7 +641,8 @@ public final class TcCompiler {
             var emitted = new CEmitter.Result[1];
             stage("emit", Kind.SOURCE, () -> {
                 try {
-                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd());
+                    emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd(),
+                            deviceFunctionDescriptor == null ? null : new CEmitter.DeviceFunction(deviceFunctionDescriptor));
                 } catch (CEmitter.EmitException e) {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }

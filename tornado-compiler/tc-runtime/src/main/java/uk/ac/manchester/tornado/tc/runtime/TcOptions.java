@@ -37,9 +37,21 @@ import java.util.Set;
  * <li>{@code tornado.enable.fma} (the runtime's switch, default on): fused multiply-adds; a plan
  * with {@code withStrictFloatingPoint()} turns them off for its tasks.</li>
  * </ul>
+ *
+ * <p>
+ * {@code deviceFunction} (no system property; {@link #withDeviceFunction}, {@code tc emit --device-fn}):
+ * compile a scalar method as a CUDA {@code __device__} function in the shape {@code cudf::transform}
+ * calls, {@code void f(R *out, A0 in0, ...)}, rather than as a kernel. A device function stands in for a
+ * CPU UDF, so it is strict floating point unless asked otherwise: {@link #withDeviceFunction} turns
+ * fused multiply-adds off, and {@link #withFusedMultiplyAdd} after it turns them back on.
  */
 public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
-        boolean fuseMultiplyAdd) {
+        boolean fuseMultiplyAdd, boolean deviceFunction) {
+
+    /** A kernel, not a device function. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, false);
+    }
 
     /** Fused multiply-adds on. */
     public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task) {
@@ -76,16 +88,31 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd, deviceFunction);
     }
 
     /** The task being compiled, as the runtime names it (device-launch reports print it, as on the Graal path). */
     public TcOptions withTask(String id) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd, deviceFunction);
     }
 
     /** A plan with strict floating point: the multiply and the add round separately, as on the host. */
     public TcOptions withStrictFloatingPoint(boolean strict) {
-        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false) : this;
+        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction) : this;
+    }
+
+    /**
+     * Compile as a device function ({@code __device__ void f(R *out, A0 in0, ...)}) instead of a kernel.
+     * Turning it on also makes the compilation strict floating point: a device function replaces a CPU
+     * UDF, and a product contracted into an fma would differ from the CPU's result in the last bits.
+     * Call {@link #withFusedMultiplyAdd} afterwards to allow contraction anyway.
+     */
+    public TcOptions withDeviceFunction(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on ? false : fuseMultiplyAdd, on);
+    }
+
+    /** Fused multiply-adds on or off, whatever was chosen before (the opposite of {@link #withStrictFloatingPoint}). */
+    public TcOptions withFusedMultiplyAdd(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on, deviceFunction);
     }
 }
