@@ -24,8 +24,9 @@
  *
  * Plain C++, not CUDA: it declares no __global__ kernel of its own -- every kernel it runs is
  * already compiled inside libcudf -- and touches the CUDA runtime only for stream copies (and a
- * synchronise where a result has to reach the host). So a host compiler builds it and nvcc is not needed, which is also why this module
- * does not enable the CUDA language and cannot break a CUDA build that has no usable nvcc.
+ * synchronise where a result has to reach the host). So a host compiler builds it and nvcc is not
+ * needed, which is also why this module does not enable the CUDA language and cannot break a CUDA
+ * build that has no usable nvcc.
  *
  * Two rules the whole file obeys:
  *
@@ -143,15 +144,25 @@ std::unique_ptr<cudf::reduce_aggregation> reduce_agg_for(int32_t code) {
  * this library next to its own cuDF -- spark-rapids, say, whose GpuDeviceManager sets up RMM with
  * spill tracking -- has already installed a resource, and replacing it would take every later cuDF
  * allocation in the process out of that host's accounting. So by default the pool is installed
- * only when the current resource is still RMM's initial one, i.e. nobody has configured RMM;
- * otherwise this library allocates through whatever the host installed.
+ * only when the current resource is still a plain cuda_memory_resource -- RMM's initial one, or one
+ * equivalent to it -- and otherwise this library allocates through whatever the host installed.
+ *
+ * That is a check of state at the moment of our first call, not of the host's intent: it decides
+ * by what is installed, not by what will be. If this library touches the device before the host
+ * configures RMM (before spark-rapids' GpuDeviceManager runs, say), auto sees the initial resource
+ * and installs the pool, and the host then replaces it with its own. That is harmless -- the host
+ * ends up with the resource it chose -- but it means auto defers to a host that got there first,
+ * not to every host. A host that wants to be sure sets TORNADO_CUDF_POOL=off.
  *
  * TORNADO_CUDF_POOL chooses: "auto" (the default, as above), "on" (always install, the previous
- * behaviour) or "off" (never). TORNADO_CUDF_POOL_MB=0 is kept as a synonym for "off".
+ * behaviour) or "off" (never). TORNADO_CUDF_POOL_MB=0 is kept as a synonym for "off"; a value that
+ * is not a number is ignored rather than read as 0.
  */
 bool pool_wanted() {
     if (const char* env = std::getenv("TORNADO_CUDF_POOL_MB")) {
-        if (std::strtoul(env, nullptr, 10) == 0) {
+        char* end = nullptr;
+        const unsigned long mb = std::strtoul(env, &end, 10);
+        if (end != env && *end == '\0' && mb == 0) {
             return false;  // an escape hatch for measuring what the pool is worth
         }
     }
@@ -163,10 +174,15 @@ bool pool_wanted() {
     if (choice == "on" || choice == "1" || choice == "true") {
         return true;
     }
-    // auto: only when RMM is still on its initial resource. initial_resource() is exported so that
-    // every DSO sharing RMM sees the same instance, which makes the comparison meaningful across
-    // libraries.
-    return rmm::mr::get_current_device_resource_ref() == rmm::device_async_resource_ref{rmm::mr::detail::initial_resource()};
+    // auto: only when the current resource is a plain cuda_memory_resource. RMM documents that all
+    // instances of cuda_memory_resource compare equal, and resource_ref equality compares the
+    // resources, so a local instance stands in for the initial one with public API only -- unlike
+    // rmm::mr::detail::initial_resource(), which carries no stability promise across RAPIDS
+    // releases. A host that deliberately installs a cuda_memory_resource of its own looks the same
+    // as one that never configured RMM; replacing a resource that is cudaMalloc per allocation is
+    // what this pool is for, and TORNADO_CUDF_POOL=off keeps it.
+    static rmm::mr::cuda_memory_resource plain;
+    return rmm::mr::get_current_device_resource_ref() == rmm::device_async_resource_ref{plain};
 }
 
 void install_pool() {
@@ -213,10 +229,28 @@ void ensure_pool() {
  *
  * It does not by default. Every operand and result is device memory on the caller's stream, so the
  * caller's next operation on that stream -- a TornadoVM kernel, a copy to the host, another call
- * here -- is already ordered after this one, and a synchronise per call only stalls the host. The
- * temporaries cuDF allocates are released stream-ordered through RMM, so returning before they are
- * consumed is safe. Results written to host memory are the exception, and the entry points that
- * produce one synchronise before reading it themselves.
+ * here -- is already ordered after this one, and a synchronise per call only stalls the host.
+ * Results written to host memory are the exception, and the entry points that produce one
+ * synchronise before reading it themselves.
+ *
+ * What makes returning early safe is the memory resource, not this file. Many entry points copy out
+ * of a column libcudf allocated (a read's table, a sort's order, a join's indices) with
+ * cudaMemcpyAsync on the caller's stream, and that column is freed when it goes out of scope at the
+ * return -- before the copy has run. libcudf allocated it on that same stream, so a stream-ordered
+ * resource (cuda_async_memory_resource, which is what install_pool installs, or a
+ * pool_memory_resource or arena_memory_resource) orders the free after the copy, and the block is
+ * not handed out again until the copy is done. The same holds for cuDF's own temporaries.
+ *
+ * So without the synchronise, correctness depends on the installed resource being stream-ordered.
+ * In auto mode that resource may be a host's (see pool_wanted). A resource that recycles a freed
+ * block to another stream at once, without stream ordering, would let another stream overwrite a
+ * column while our copy is still reading it: silent corruption, not a crash. RMM's own resources
+ * are all stream-ordered; a host with one that is not must set TORNADO_CUDF_SYNC=1.
+ *
+ * Error attribution moves too. Without the synchronise, finish() reports what cudaGetLastError has
+ * recorded so far, so an asynchronous fault in one call can surface as the status of a later call,
+ * and a fault in the last call of a sequence surfaces later still, in TornadoVM's or the host's
+ * next synchronise on the stream. TORNADO_CUDF_SYNC=1 is also how to pin a fault to its call.
  */
 bool sync_each_call() {
     static const bool sync = [] {
@@ -907,7 +941,8 @@ int tornado_cudf_read_parquet(void* stream, const char* path, int32_t row_group_
             }
         }
 
-        // The table is freed when result goes out of scope, so the copies have to have landed.
+        // The table is freed at the return, before the copies above have run. That is safe because
+        // it was allocated on raw and the resource orders its free after them; see sync_each_call.
         return finish(raw);
     } catch (const std::exception& e) {
         return fail("readParquet", e);
