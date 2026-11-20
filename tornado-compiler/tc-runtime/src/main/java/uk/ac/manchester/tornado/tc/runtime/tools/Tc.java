@@ -54,7 +54,7 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * <pre>
  *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--cp PATH] [--stats] [--device-fn] Class method
  *   tc emit [same options] --all
- *   tc emit [--cc N] [--cp PATH] [--stats] --device-fn Class method
+ *   tc emit [--cc N] [--cp PATH] [--stats] [--no-strict-fp] --device-fn Class method
  *   tc --version
  *   ... [--arg name=value]...
  * </pre>
@@ -93,6 +93,8 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * a kernel, as a CUDA {@code __device__} function in the shape {@code cudf::transform} calls:
  * {@code __device__ void f(R *out, A0 in0, ...)}, everything in that one function (see
  * {@code TcCompiler.compileDeviceFunction}). It is CUDA only and takes one method, not {@code --all}.
+ * It implies {@code --strict-fp}, since a device function stands in for a CPU UDF and should give the
+ * CPU's results; {@code --no-strict-fp} lets the compiler contract products into fmas anyway.
  *
  * <p>
  * The default class path is {@code .}; {@code $TORNADOVM_HOME/share/java/tornado/tornado-api*.jar}
@@ -134,6 +136,7 @@ public final class Tc {
         boolean all = false;
         boolean strictFp = false;
         boolean deviceFunction = false;
+        boolean noStrictFp = false;
         var given = new LinkedHashMap<String, String>();
         var positional = new ArrayList<String>();
         try {
@@ -156,6 +159,7 @@ public final class Tc {
                     case "--all" -> all = true;
                     case "--strict-fp" -> strictFp = true;
                     case "--device-fn" -> deviceFunction = true;
+                    case "--no-strict-fp" -> noStrictFp = true;
                     case "--arg" -> {
                         var nameValue = value(args, ++i).split("=", 2);
                         if (nameValue.length != 2) {
@@ -177,8 +181,16 @@ public final class Tc {
             err.println("tc: --device-fn compiles one method: name it instead of --all");
             return usage(err);
         }
+        if (noStrictFp && (strictFp || !deviceFunction)) {
+            err.println("tc: --no-strict-fp only turns off the strict floating point --device-fn implies");
+            return usage(err);
+        }
         var target = target(dialect, cc, fp16, fp64);
+        // --device-fn implies strict floating point (TcOptions.withDeviceFunction); --no-strict-fp undoes it.
         var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withDeviceFunction(deviceFunction);
+        if (noStrictFp) {
+            options = options.withFusedMultiplyAdd(true);
+        }
         var path = withApi(classPath);
         var source = source(path);
         List<Kernel> kernels = all ? kernels(classPath) : List.of(named(source, positional.get(0).replace('.', '/'), positional.get(1)));
@@ -270,8 +282,8 @@ public final class Tc {
         // Without values given or assumed, no facts at all: the kernel TC compiles before any argument is seen.
         List<ValueSpecialisation.Fact> facts = method == null || (given.isEmpty() && !assume) ? List.of() : TypeLayouts.facts(method, given, assume, assumed);
         if (options.deviceFunction()) {
-            // A device function has no launch or array facts: its arguments are one row's values.
-            return TcCompiler.compileDeviceFunction(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options);
+            // A device function has no launch or array facts, but a value given with --arg still specialises it.
+            return TcCompiler.compileDeviceFunction(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options, facts);
         }
         return TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options, facts);
     }
@@ -469,7 +481,7 @@ public final class Tc {
 
     private static int usage(PrintStream err) {
         err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp]"
-                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn] (Class method | --all)");
+                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn [--no-strict-fp]] (Class method | --all)");
         return 2;
     }
 }

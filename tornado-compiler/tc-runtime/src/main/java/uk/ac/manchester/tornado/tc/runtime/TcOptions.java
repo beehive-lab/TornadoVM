@@ -41,7 +41,9 @@ import java.util.Set;
  * <p>
  * {@code deviceFunction} (no system property; {@link #withDeviceFunction}, {@code tc emit --device-fn}):
  * compile a scalar method as a CUDA {@code __device__} function in the shape {@code cudf::transform}
- * calls, {@code void f(R *out, A0 in0, ...)}, rather than as a kernel.
+ * calls, {@code void f(R *out, A0 in0, ...)}, rather than as a kernel. A device function stands in for a
+ * CPU UDF, so it is strict floating point unless asked otherwise: {@link #withDeviceFunction} turns
+ * fused multiply-adds off, and {@link #withFusedMultiplyAdd} after it turns them back on.
  */
 public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
         boolean fuseMultiplyAdd, boolean deviceFunction) {
@@ -99,8 +101,18 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
         return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction) : this;
     }
 
-    /** Compile as a device function ({@code __device__ void f(R *out, A0 in0, ...)}) instead of a kernel. */
+    /**
+     * Compile as a device function ({@code __device__ void f(R *out, A0 in0, ...)}) instead of a kernel.
+     * Turning it on also makes the compilation strict floating point: a device function replaces a CPU
+     * UDF, and a product contracted into an fma would differ from the CPU's result in the last bits.
+     * Call {@link #withFusedMultiplyAdd} afterwards to allow contraction anyway.
+     */
     public TcOptions withDeviceFunction(boolean on) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, on);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on ? false : fuseMultiplyAdd, on);
+    }
+
+    /** Fused multiply-adds on or off, whatever was chosen before (the opposite of {@link #withStrictFloatingPoint}). */
+    public TcOptions withFusedMultiplyAdd(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on, deviceFunction);
     }
 }

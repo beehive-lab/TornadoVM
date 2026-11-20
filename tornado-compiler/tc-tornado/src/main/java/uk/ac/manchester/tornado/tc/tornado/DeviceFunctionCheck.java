@@ -18,7 +18,10 @@
 package uk.ac.manchester.tornado.tc.tornado;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
 import uk.ac.manchester.tornado.tc.ir.Diagnostic;
@@ -47,6 +50,13 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * since a headerless view has no length of its own to read.
  *
  * <p>
+ * Read-only is enforced by where a store may go, not by tracking the row: a store must go directly into
+ * a private array the function allocates. A store into anything else -- a string row, or an array
+ * chosen at run time ({@code byte[] a = cond ? s : new byte[4]}, a block argument or a select) that
+ * might be one -- is refused. The emitter also declares the row {@code const}, so a store that got past
+ * this check would not compile.
+ *
+ * <p>
  * Allowed intrinsics are a whitelist (math, vector values, {@code dp4a}), so an intrinsic added later
  * is refused here until it is known to be safe in a device function.
  */
@@ -67,7 +77,15 @@ public final class DeviceFunctionCheck {
             problems.add(new Diagnostic("TC-E3504", "device-function output is CUDA C++ only, not " + target.dialect(), "@" + function.name(), Loc.UNKNOWN));
             return problems;
         }
-        var strings = new java.util.HashSet<Value>();
+        var strings = new HashSet<Value>();
+        var privateArrays = new HashSet<Value>();
+        for (var block : function.blocks()) {
+            for (var inst : block.insts()) {
+                if (inst.opcode() instanceof Opcode.Alloca alloca && alloca.space() == AddressSpace.PRIVATE) {
+                    privateArrays.add(inst);
+                }
+            }
+        }
         for (var param : function.params()) {
             if (param.type() instanceof Type.ArrayType) {
                 strings.add(param);
@@ -85,8 +103,11 @@ public final class DeviceFunctionCheck {
                     }
                     case Opcode.ArrayStore _s when strings.contains(inst.operand(0)) -> problems.add(new Diagnostic("TC-E3502",
                             "a device function cannot write into a string row (a byte[] parameter is the row's bytes, read-only)", "@" + function.name(), inst.loc()));
+                    case Opcode.ArrayStore _s when !privateArrays.contains(inst.operand(0)) -> problems.add(new Diagnostic("TC-E3502",
+                            "a device function stores only directly into a private array it allocates, not into an array chosen at run time, which might be a read-only string row",
+                            "@" + function.name(), inst.loc()));
                     case Opcode.Alloca alloca when alloca.space() != AddressSpace.PRIVATE -> problems.add(new Diagnostic("TC-E3502",
-                            "a device function cannot allocate " + alloca.space().name().toLowerCase(java.util.Locale.ROOT) + " memory", "@" + function.name(), inst.loc()));
+                            "a device function cannot allocate " + alloca.space().name().toLowerCase(Locale.ROOT) + " memory", "@" + function.name(), inst.loc()));
                     default -> {
                     }
                 }
@@ -99,7 +120,7 @@ public final class DeviceFunctionCheck {
     }
 
     /** {@code row.length} on a string row becomes {@link #STRING_LENGTH} of the row. */
-    private static void lowerStringLengths(Function function, java.util.Set<Value> strings) {
+    private static void lowerStringLengths(Function function, Set<Value> strings) {
         for (var block : function.blocks()) {
             for (var inst : List.copyOf(block.insts())) {
                 if (inst.opcode() instanceof Opcode.ArrayLength && strings.contains(inst.operand(0))) {
