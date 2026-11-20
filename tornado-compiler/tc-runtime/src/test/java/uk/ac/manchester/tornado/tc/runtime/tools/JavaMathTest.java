@@ -150,6 +150,11 @@ public class JavaMathTest {
             "  size_t n = strtoull(argv[1], 0, 10), w = strtoull(argv[2], 0, 10);", //
             "  auto x = up(rd(argv[3], n)); auto y = up(rd(argv[4], n)); auto o = up(std::vector<double>(n * w, 0.0));", //
             "  JavaMath_all<<<(unsigned) ((n + 255) / 256), 256>>>(0, 0, 0, 0, x, y, o);", //
+            // The launch's own error, before the sync: a kernel the driver rejects (built for another
+            // architecture, or PTX the driver is too old to compile) leaves cudaDeviceSynchronize and the
+            // copy below both returning cudaSuccess, and the output buffer holding the zeros it was filled
+            // with -- which would be compared against StrictMath as though the kernel had run.
+            "  if (cudaGetLastError() != cudaSuccess) exit(4);", //
             "  if (cudaDeviceSynchronize() != cudaSuccess) exit(4);", //
             "  std::vector<double> r(n * w); cudaMemcpy(r.data(), o + 16, n * w * 8, cudaMemcpyDeviceToHost);", //
             "  FILE *f = fopen(argv[5], \"wb\"); fwrite(r.data(), 8, n * w, f); fclose(f); return 0; }", "");
@@ -197,7 +202,9 @@ public class JavaMathTest {
         assertEquals(0, exact.status(), exact.err());
         Files.writeString(dir.resolve("kernel.cu"), exact.out());
         Files.writeString(dir.resolve("harness.cu"), HARNESS);
-        int built = exec(dir, List.of(nvcc.toString(), "-O3", "-include", "kernel.cu", "-o", "harness", "harness.cu"));
+        // -arch=native: build for the GPU that is here. Without it nvcc builds for its own default,
+        // which a newer card cannot load, and the kernel then never runs (see the launch check in HARNESS).
+        int built = exec(dir, List.of(nvcc.toString(), "-O3", "-arch=native", "-include", "kernel.cu", "-o", "harness", "harness.cu"));
         assertEquals(0, built, () -> read(dir.resolve("log.txt")));
 
         int n = 1 << 18;

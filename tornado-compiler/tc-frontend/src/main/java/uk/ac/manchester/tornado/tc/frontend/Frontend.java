@@ -81,10 +81,13 @@ public final class Frontend {
          * The value of a primitive {@code static final} field that is not a compile-time constant
          * (javac inlines those): one the class initialiser computes, such as
          * {@code static final double TO_RADIANS = Math.PI / 180}. A kernel reads it as a constant.
-         * Only a source backed by the host's classes knows it; booleans and chars come as ints.
+         * Booleans and chars come as ints. A source backed by the host's classes reads it directly;
+         * failing that, and for a source that is only class bytes, it is worked out from the class
+         * initialiser ({@link ConstantTables#scalar}), which is the only way to reach the JDK's own
+         * (reflection cannot: {@code java.base} does not open {@code java.lang}).
          */
         default Optional<Number> staticFinal(String ownerInternalName, String field) {
-            return Optional.empty();
+            return classFile(ownerInternalName).flatMap(cf -> ConstantTables.scalar(cf, field));
         }
 
         /**
@@ -262,14 +265,19 @@ public final class Frontend {
                         var f = Class.forName(ownerInternalName.replace('/', '.'), true, loader).getDeclaredField(field);
                         int m = f.getModifiers();
                         if (!java.lang.reflect.Modifier.isStatic(m) || !java.lang.reflect.Modifier.isFinal(m) || !f.getType().isPrimitive()) {
-                            return Optional.empty();
+                            return fromBytecode(field, ownerInternalName);
                         }
                         f.setAccessible(true);
                         var v = f.get(null);
                         return Optional.of(v instanceof Boolean bool ? (bool ? 1 : 0) : v instanceof Character ch ? (int) ch : (Number) v);
                     } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-                        return Optional.empty();
+                        // A field of java.base, say: the module is not open to setAccessible, so read the bytecode.
+                        return fromBytecode(field, ownerInternalName);
                     }
+                }
+
+                private Optional<Number> fromBytecode(String field, String ownerInternalName) {
+                    return classFile(ownerInternalName).flatMap(cf -> ConstantTables.scalar(cf, field));
                 }
             };
         }
