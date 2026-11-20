@@ -109,7 +109,7 @@ public final class Canonicalizer implements Pass {
                 if (ca.isPresent() && cb.isPresent()) {
                     yield Optional.of(make(inst, Type.I1, compare(p, ca.get().doubleValue(), cb.get().doubleValue()) ? 1L : 0L));
                 }
-                yield Optional.empty();
+                yield signKnownCompare(inst, p, ops.get(0), ops.get(1));
             }
             case Opcode.Select s -> {
                 var c = Constants.number(ops.get(0));
@@ -401,6 +401,128 @@ public final class Canonicalizer implements Pass {
             case EQ, SLE, SGE, ULE, UGE -> true;
             default -> false;
         };
+    }
+
+    /** What is known about a floating-point value's sign: the value is NaN or in the given range. */
+    private enum Sign {
+        /** In [+0, +inf] or NaN (abs, sqrt, x * x, ...). */
+        NON_NEGATIVE,
+        /** In [-inf, -0] or NaN. */
+        NON_POSITIVE,
+        UNKNOWN;
+
+        Sign negate() {
+            return this == NON_NEGATIVE ? NON_POSITIVE : this == NON_POSITIVE ? NON_NEGATIVE : UNKNOWN;
+        }
+    }
+
+    private static final int SIGN_DEPTH = 8;
+
+    private static Sign sign(Value v, int depth) {
+        if (!v.type().isFloat() || depth > SIGN_DEPTH) {
+            return Sign.UNKNOWN;
+        }
+        var c = Constants.floating(v);
+        if (c.isPresent()) {
+            double d = c.getAsDouble();
+            return d > 0.0 || (d == 0.0 && Double.doubleToRawLongBits(d) == 0L) ? Sign.NON_NEGATIVE : d < 0.0 || d == 0.0 ? Sign.NON_POSITIVE : Sign.UNKNOWN;
+        }
+        if (!(v instanceof Inst inst)) {
+            return Sign.UNKNOWN;
+        }
+        var ops = inst.operands();
+        return switch (inst.opcode()) {
+            case Opcode.Intrinsic(var name) when name.equals("math.abs") || name.equals("math.sqrt") -> Sign.NON_NEGATIVE;
+            // max(a, b) is NaN when either is, otherwise at least a and at least b.
+            case Opcode.Intrinsic(var name) when name.equals("math.max") && ops.size() == 2 ->
+                sign(ops.get(0), depth + 1) == Sign.NON_NEGATIVE || sign(ops.get(1), depth + 1) == Sign.NON_NEGATIVE ? Sign.NON_NEGATIVE
+                        : both(ops.get(0), ops.get(1), depth, Sign.NON_POSITIVE);
+            case Opcode.Intrinsic(var name) when name.equals("math.min") && ops.size() == 2 ->
+                sign(ops.get(0), depth + 1) == Sign.NON_POSITIVE || sign(ops.get(1), depth + 1) == Sign.NON_POSITIVE ? Sign.NON_POSITIVE
+                        : both(ops.get(0), ops.get(1), depth, Sign.NON_NEGATIVE);
+            case Opcode.Unary(var op) when op == Opcode.UnaryOp.FNEG -> sign(ops.get(0), depth + 1).negate();
+            case Opcode.Binary(var op) when op == BinaryOp.FMUL -> {
+                if (ops.get(0) == ops.get(1)) {
+                    yield Sign.NON_NEGATIVE;
+                }
+                var sa = sign(ops.get(0), depth + 1);
+                var sb = sign(ops.get(1), depth + 1);
+                yield sa == Sign.UNKNOWN || sb == Sign.UNKNOWN ? Sign.UNKNOWN : sa == sb ? Sign.NON_NEGATIVE : Sign.NON_POSITIVE;
+            }
+            case Opcode.Binary(var op) when op == BinaryOp.FADD -> {
+                var sa = sign(ops.get(0), depth + 1);
+                yield sa != Sign.UNKNOWN && sa == sign(ops.get(1), depth + 1) ? sa : Sign.UNKNOWN;
+            }
+            case Opcode.Convert(var op) when op == ConvertOp.FEXT || op == ConvertOp.FTRUNC -> sign(ops.get(0), depth + 1);
+            case Opcode.Select s -> {
+                var sa = sign(ops.get(1), depth + 1);
+                yield sa != Sign.UNKNOWN && sa == sign(ops.get(2), depth + 1) ? sa : Sign.UNKNOWN;
+            }
+            default -> Sign.UNKNOWN;
+        };
+    }
+
+    private static Sign both(Value a, Value b, int depth, Sign wanted) {
+        return sign(a, depth + 1) == wanted && sign(b, depth + 1) == wanted ? wanted : Sign.UNKNOWN;
+    }
+
+    private static FloatPredicate swapped(FloatPredicate p) {
+        return switch (p) {
+            case OLT -> FloatPredicate.OGT;
+            case OLE -> FloatPredicate.OGE;
+            case OGT -> FloatPredicate.OLT;
+            case OGE -> FloatPredicate.OLE;
+            case ULT -> FloatPredicate.UGT;
+            case ULE -> FloatPredicate.UGE;
+            case UGT -> FloatPredicate.ULT;
+            case UGE -> FloatPredicate.ULE;
+            default -> p;
+        };
+    }
+
+    /**
+     * A comparison of a value whose sign is known, up to NaN, with a constant on the other side of zero:
+     * {@code abs(x) > -1} is true unless {@code x} is NaN, so it is {@code fcmp.ord x, x};
+     * {@code abs(x) < -1} is false. Rewriting these in TC keeps Java's NaN semantics and leaves the device
+     * compiler nothing to fold: NVIDIA's PTX assembler (CUDA 12.6, driver 610) folds
+     * {@code fabsf(x) > -1.0f}, {@code x * x > -1.0f} and similar f32 comparisons to true without the NaN
+     * case, and the NVIDIA OpenCL compiler does the same.
+     */
+    private static Optional<Value> signKnownCompare(Inst cmp, FloatPredicate p, Value a, Value b) {
+        var cb = Constants.floating(b);
+        if (cb.isEmpty()) {
+            var ca = Constants.floating(a);
+            return ca.isEmpty() ? Optional.empty() : signKnownCompare(cmp, swapped(p), b, a);
+        }
+        double c = cb.getAsDouble();
+        if (Double.isNaN(c)) {
+            return Optional.empty();
+        }
+        var s = sign(a, 0);
+        if (s == Sign.UNKNOWN) {
+            return Optional.empty();
+        }
+        boolean nonNeg = s == Sign.NON_NEGATIVE;
+        // For a non-NaN a: is "a p c" always true (TRUE), always false (FALSE), or undecided?
+        Boolean whenNumber = switch (p) {
+            case OGT, UGT -> nonNeg && c < 0.0 ? Boolean.TRUE : !nonNeg && c >= 0.0 ? Boolean.FALSE : null;
+            case OGE, UGE -> nonNeg && c <= 0.0 ? Boolean.TRUE : !nonNeg && c > 0.0 ? Boolean.FALSE : null;
+            case OLT, ULT -> !nonNeg && c > 0.0 ? Boolean.TRUE : nonNeg && c <= 0.0 ? Boolean.FALSE : null;
+            case OLE, ULE -> !nonNeg && c >= 0.0 ? Boolean.TRUE : nonNeg && c < 0.0 ? Boolean.FALSE : null;
+            default -> null;
+        };
+        if (whenNumber == null) {
+            return Optional.empty();
+        }
+        boolean unordered = switch (p) {
+            case UGT, UGE, ULT, ULE -> true;
+            default -> false;
+        };
+        // Result for NaN: ordered predicates are false, unordered ones true.
+        if (whenNumber == unordered) {
+            return Optional.of(make(cmp, Type.I1, whenNumber ? 1L : 0L));
+        }
+        return Optional.of(IrBuilder.insertingBefore(cmp).fcmp(whenNumber ? FloatPredicate.ORD : FloatPredicate.UNO, a, a));
     }
 
     private static boolean compare(FloatPredicate p, double a, double b) {
