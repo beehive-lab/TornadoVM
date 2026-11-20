@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -326,7 +327,7 @@ public final class TcCompiler {
         String deviceDescriptor = null;
         List<ValueSpecialisation.Fact> deviceFacts = null;
         if (options.deviceFunction()) {
-            var signature = deviceFunctionSignature(source, className, methodName, descriptor);
+            var signature = deviceFunctionSignature(source, className, methodName, descriptor, options.deviceFunctionModes().nullAware());
             if (signature instanceof Signature.Accepted(var accepted)) {
                 deviceDescriptor = accepted;
                 var merged = deviceFunctionFacts(accepted, facts, className, methodName);
@@ -342,7 +343,8 @@ public final class TcCompiler {
                         KernelFeatures.NONE), null, null);
             }
         }
-        var translated = Frontend.translateWithCallees(source, className, methodName, descriptor);
+        var modes = options.deviceFunction() ? options.deviceFunctionModes() : Frontend.DeviceFunctionModes.NONE;
+        var translated = Frontend.withDeviceFunctionModes(modes, () -> Frontend.translateWithCallees(source, className, methodName, descriptor));
         java.util.Optional<Function> kernel = translated.module().map(m -> m.functions().get(0));
         if (rename != null) {
             kernel.ifPresent(k -> k.rename(rename));
@@ -381,6 +383,11 @@ public final class TcCompiler {
             if (descriptor.charAt(i) == '[') {
                 facts.add(new ValueSpecialisation.Fact.DeviceView(-1));
                 i++;
+            } else if (descriptor.charAt(i) == 'L') {
+                // A box of a null-aware device function: two parameters, its validity and its value.
+                facts.add(new ValueSpecialisation.Fact.Unknown());
+                facts.add(new ValueSpecialisation.Fact.Unknown());
+                i = descriptor.indexOf(';', i);
             } else {
                 facts.add(new ValueSpecialisation.Fact.Unknown());
             }
@@ -437,7 +444,11 @@ public final class TcCompiler {
      * refuses it: it must be static, with primitive parameters and a primitive result. A method that is
      * not found is left to the frontend, which reports it as for a kernel.
      */
-    private static Signature deviceFunctionSignature(Frontend.BytecodeSource source, String className, String methodName, String descriptor) {
+    /** The boxed classes a null-aware device function may take and return. */
+    private static final Set<String> BOXES = Set.of("java/lang/Integer", "java/lang/Long", "java/lang/Short", "java/lang/Byte", "java/lang/Character",
+            "java/lang/Boolean", "java/lang/Float", "java/lang/Double");
+
+    private static Signature deviceFunctionSignature(Frontend.BytecodeSource source, String className, String methodName, String descriptor, boolean nullAware) {
         Optional<uk.ac.manchester.tornado.tc.frontend.classfile.ClassFile.Method> method;
         try {
             method = source.classFile(className.replace('.', '/')).flatMap(c -> c.method(methodName, descriptor));
@@ -460,9 +471,13 @@ public final class TcCompiler {
                 i++; // a byte[] parameter: one string row, its UTF-8 bytes (a cudf::string_view)
                 continue;
             }
+            if (c == 'L' && nullAware && BOXES.contains(d.substring(i + 1, Math.max(i + 1, d.indexOf(';', i))))) {
+                i = d.indexOf(';', i); // a boxed parameter or result of a null-aware device function: an SQL value that may be null
+                continue;
+            }
             if (c != ')' && "ZBCSIJFD".indexOf(c) < 0) {
-                return new Signature.Refused(new Diagnostic("TC-E3501",
-                        methodName + d + " takes or returns an array, an object or void: a device function maps primitives (and byte[] strings) to a primitive", where, Loc.UNKNOWN));
+                return new Signature.Refused(new Diagnostic("TC-E3501", methodName + d + " takes or returns an array, an object or void: a device function maps primitives (and byte[] strings)"
+                        + (nullAware ? ", and boxes," : " (and, with --null-aware, boxes)") + " to a primitive", where, Loc.UNKNOWN));
             }
         }
         return new Signature.Accepted(d);
@@ -642,7 +657,8 @@ public final class TcCompiler {
             stage("emit", Kind.SOURCE, () -> {
                 try {
                     emitted[0] = CEmitter.emit(structured[0], target, true, options.task(), options.fuseMultiplyAdd(),
-                            deviceFunctionDescriptor == null ? null : new CEmitter.DeviceFunction(deviceFunctionDescriptor));
+                            deviceFunctionDescriptor == null ? null
+                                    : new CEmitter.DeviceFunction(deviceFunctionDescriptor, options.deviceFunctionModes().nullAware(), options.deviceFunctionModes().errors()));
                 } catch (CEmitter.EmitException e) {
                     throw new Failed(List.of(new Diagnostic(e.code(), e.getMessage().substring(e.code().length() + 2), "@" + function.name(), Loc.UNKNOWN)));
                 }

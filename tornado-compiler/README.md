@@ -159,7 +159,7 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] [--device-fn [--no-strict-fp]] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
 
@@ -223,6 +223,47 @@ tc emit --device-fn --cp udfs.jar com.example.Udfs collatz
   - There is no null: the function cannot tell a null row from a value, and cannot return null.
   - `Math.sin`, `Math.pow`, `Math.exp` and the like are CUDA's, within a few ulp of Java's, not
     bit-exact.
+
+**Nulls and errors.** Two modes follow what libcudf 26.08's transform kernel
+(`cpp/src/transform/jit/kernel.cu`) accepts: a UDF may return an `int`, which it reads as a
+`cudf::errc`, takes the largest over the rows, and throws `cudf::evaluation_error` for the call if
+that is not `SUCCESS`; with `null_aware::YES` each argument is a `cuda::std::optional<T>` and the
+output a `cuda::std::optional<R> *`, whose `has_value()` is the row's validity.
+
+```bash
+tc emit --device-fn --null-aware --errors --cp udfs.jar com.example.Udfs safeAdd
+# #include <cuda/std/optional>
+# __device__ int Udfs_safeAdd(cuda::std::optional<int> *out, cuda::std::optional<int> a_opt, cuda::std::optional<int> b_opt)
+```
+
+- `--null-aware` (`TcOptions.withNullAwareDeviceFunction`), for `transform(..., null_aware::YES)`:
+  boxed parameters and results (`Integer`, `Long`, `Short`, `Byte`, `Character`, `Boolean`,
+  `Float`, `Double`) are SQL values that may be null. They are used as Java uses them: `valueOf`
+  (autoboxing), the `xxxValue()` getters (unboxing), `== null`, and `null`; anything else on a box,
+  such as `equals`, is refused (`TC-E3505`). Unboxing a null is Java's `NullPointerException`: the
+  row fails with code 3, which cudf reports as `UNKNOWN_ERROR` (26.08's `errc` has no code for it).
+  A primitive or `byte[]` parameter that is null makes the result null without running the method,
+  Spark's rule for a primitive UDF argument.
+- `--errors` (`TcOptions.withDeviceFunctionErrors`): an `ArithmeticException` fails the row with
+  cudf's code: `Math.addExact`/`multiplyExact`/`toIntExact`/... overflow and `throw new
+  ArithmeticException(...)` are `OVERFLOW` (1), integer `/` and `%` by zero (and `floorMod`) are
+  `DIVISION_BY_ZERO` (2). This is how Spark's ANSI mode fails a query. Without `--errors` these are
+  refused (`TC-E3506`), as is any other exception in either mode.
+- Either mode makes the function return the code (`int`, 0 for success); without them it is
+  `void`, as before. Without `--null-aware`, cudf skips a row with a null input and the result is
+  null there.
+
+`CudfTransformTest` runs these functions through the real `cudf::transform_extended` and compares
+every row with the Java method. It is opt-in: set `CUDF_HOME` to a libcudf prefix (with `include/`
+and `lib64/`; `RMM_HOME` and `RAPIDS_LOGGER_HOME` default to `librmm` and `rapids_logger` beside it,
+`CUDA_HOME` to `/usr/local/cuda`, and `CUDF_LD_LIBRARY_PATH` adds libcudf's own dependencies). It
+needs g++ and a GPU, builds `tc-runtime/src/test/resources/cudf/transform_check.cpp`, and prints a
+table of the cases (`CUDF_ROWS` sets the size of the large ones, default 10M):
+
+```bash
+CUDF_HOME=<prefix>/libcudf CUDF_LD_LIBRARY_PATH=<kvikio, nvcomp, ... lib dirs> \
+  ./mvnw -o -Pjdk22plus -pl tornado-compiler/tc-runtime -am test -Dtest=CudfTransformTest -Dsurefire.failIfNoSpecifiedTests=false
+```
 
 `build-tc-native` (with `GRAALVM_HOME` set to a GraalVM for JDK 25+) builds it as a native image,
 `bin/tc-native`, which `tc` then uses. A cold compile then takes about 20 ms instead of about

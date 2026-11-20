@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 
+import uk.ac.manchester.tornado.tc.frontend.Frontend;
+
 /**
  * Options of a TC compilation, read from {@code -Dtornado.tc.*} system properties.
  *
@@ -46,11 +48,17 @@ import java.util.Set;
  * fused multiply-adds off, and {@link #withFusedMultiplyAdd} after it turns them back on.
  */
 public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
-        boolean fuseMultiplyAdd, boolean deviceFunction) {
+        boolean fuseMultiplyAdd, boolean deviceFunction, Frontend.DeviceFunctionModes deviceFunctionModes) {
 
     /** A kernel, not a device function. */
     public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd) {
         this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, false);
+    }
+
+    /** As compiled before null-aware and error modes existed: neither. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd,
+            boolean deviceFunction) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction, Frontend.DeviceFunctionModes.NONE);
     }
 
     /** Fused multiply-adds on. */
@@ -88,17 +96,17 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd, deviceFunction);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd, deviceFunction, deviceFunctionModes);
     }
 
     /** The task being compiled, as the runtime names it (device-launch reports print it, as on the Graal path). */
     public TcOptions withTask(String id) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd, deviceFunction);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd, deviceFunction, deviceFunctionModes);
     }
 
     /** A plan with strict floating point: the multiply and the add round separately, as on the host. */
     public TcOptions withStrictFloatingPoint(boolean strict) {
-        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction) : this;
+        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction, deviceFunctionModes) : this;
     }
 
     /**
@@ -108,11 +116,34 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
      * Call {@link #withFusedMultiplyAdd} afterwards to allow contraction anyway.
      */
     public TcOptions withDeviceFunction(boolean on) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on ? false : fuseMultiplyAdd, on);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on ? false : fuseMultiplyAdd, on, deviceFunctionModes);
     }
 
     /** Fused multiply-adds on or off, whatever was chosen before (the opposite of {@link #withStrictFloatingPoint}). */
     public TcOptions withFusedMultiplyAdd(boolean on) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on, deviceFunction);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on, deviceFunction, deviceFunctionModes);
+    }
+
+    /**
+     * A null-aware device function ({@code tc emit --null-aware}), for {@code cudf::transform} with
+     * {@code null_aware::YES}: each input arrives as a {@code cuda::std::optional}, boxed parameters and
+     * results ({@code Integer}, {@code Long}, {@code Double}, ...) are SQL values that may be null, and the
+     * output is a {@code cuda::std::optional} too. A primitive parameter that is null makes the result
+     * null without running the method (Spark's rule for a primitive UDF argument).
+     */
+    public TcOptions withNullAwareDeviceFunction(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction,
+                new Frontend.DeviceFunctionModes(on, deviceFunctionModes.errors()));
+    }
+
+    /**
+     * A device function that reports {@code ArithmeticException}s ({@code tc emit --errors}): overflow in
+     * {@code Math.*Exact} and integer division by zero end the row with cudf's error code, and
+     * {@code cudf::transform} throws {@code cudf::evaluation_error} for the call (Spark ANSI mode's
+     * failure), instead of the compilation being refused.
+     */
+    public TcOptions withDeviceFunctionErrors(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction,
+                new Frontend.DeviceFunctionModes(deviceFunctionModes.nullAware(), on));
     }
 }
