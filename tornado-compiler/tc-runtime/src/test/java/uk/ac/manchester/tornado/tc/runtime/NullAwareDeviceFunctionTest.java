@@ -27,19 +27,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import uk.ac.manchester.tornado.tc.check.ExternalTool;
 import uk.ac.manchester.tornado.tc.frontend.Frontend;
 import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 
@@ -136,11 +133,18 @@ public class NullAwareDeviceFunctionTest {
 
     @Test
     public void runsOnTheGpuAsInJava(@TempDir Path dir) throws Exception {
-        var nvcc = ExternalTool.find("nvcc", "/usr/local/cuda/bin");
-        assumeTrue(nvcc.isPresent(), "no nvcc");
+        // Null-aware output includes <cuda/std/optional>, so a toolkit without CCCL is no use here even
+        // though it compiles everything else: the probe builds with that include ahead of it.
+        var toolkit = CudaProbe.find(dir, "#include <cuda/std/optional>\n");
+        if (System.getenv("TC_REQUIRE_GPU") != null) {
+            assertTrue(toolkit.usable(), "TC_REQUIRE_GPU is set, but nothing here can build and run a null-aware CUDA kernel: " + toolkit.why());
+        }
+        assumeTrue(toolkit.nvcc().isPresent(), "no nvcc");
+        assumeTrue(toolkit.cc().isPresent(), "no GPU");
+        assumeTrue(toolkit.usable(), "nothing this nvcc builds reaches this GPU: " + toolkit.why());
         try (var loader = new URLClassLoader(new URL[] { CLASSES.toUri().toURL() }, getClass().getClassLoader())) {
             var k = loader.loadClass(KERNELS);
-            var run = new Gpu(dir, nvcc.get(), k);
+            var run = new Gpu(dir, toolkit.nvccPath(), toolkit.architecture(), k);
             run.check("plusOne", NULL_AWARE, rows(300, i -> new Object[] { nullEvery(i, 5, i == 7 ? Integer.MAX_VALUE : (int) mix(i)) }));
             run.check("coalesce", NULL_AWARE, rows(300, i -> new Object[] { nullEvery(i, 3, mix(i)), nullEvery(i, 2, mix(i + 1)) }));
             run.check("ratio", NULL_AWARE, rows(300, i -> new Object[] { nullEvery(i, 7, mix(i)), nullEvery(i, 5, (int) (mix(i + 3) % 4)) }));
@@ -235,7 +239,7 @@ public class NullAwareDeviceFunctionTest {
     }
 
     /** One nvcc-built program per method: it calls the device function as cudf's kernel does, and prints each row. */
-    private record Gpu(Path dir, Path nvcc, Class<?> kernels) {
+    private record Gpu(Path dir, Path nvcc, CudaProbe.Arch arch, Class<?> kernels) {
 
         void check(String method, TcOptions options, List<Object[]> rows) throws Exception {
             var c = compile(method, options);
@@ -321,10 +325,11 @@ public class NullAwareDeviceFunctionTest {
             var file = dir.resolve(method + ".cu");
             Files.writeString(file, cu);
             var exe = dir.resolve(method);
-            var build = run(List.of(nvcc.toString(), "-std=c++17", "-arch=sm_89", "-o", exe.toString(), file.toString()));
-            assertEquals(0, build.exit(), method + ": nvcc failed\n" + build.output() + "\n" + cu);
-            var ran = run(List.of(exe.toString()));
-            assumeTrue(ran.exit() != 3, "no usable GPU");
+            var build = CudaProbe.run(dir, List.of(nvcc.toString(), "-std=c++17", "-arch=" + arch.flag(), "-o", exe.toString(), file.toString()));
+            assertEquals(0, build.exit(), method + ": nvcc failed (" + nvcc + " -arch=" + arch.flag() + ")\n" + build.output() + "\n" + cu);
+            // This architecture already built and ran a kernel on this GPU (CudaProbe.find), so a binary
+            // that cannot reach it now is a failure, not a skip.
+            var ran = CudaProbe.run(dir, List.of(exe.toString()));
             assertEquals(0, ran.exit(), ran.output());
             var lines = ran.output().strip().lines().toList();
             assertEquals(rows.size(), lines.size(), ran.output());
@@ -363,25 +368,12 @@ public class NullAwareDeviceFunctionTest {
         }
     }
 
-    record Ran(int exit, String output) {
-    }
-
-    static Ran run(List<String> command) throws IOException, InterruptedException {
-        return run(command, null);
+    static CudaProbe.Ran run(List<String> command) throws IOException, InterruptedException {
+        return CudaProbe.run(null, command, null);
     }
 
     /** {@code libraryPath}: the LD_LIBRARY_PATH to run with, or null to inherit it. */
-    static Ran run(List<String> command, String libraryPath) throws IOException, InterruptedException {
-        var builder = new ProcessBuilder(command).redirectErrorStream(true);
-        if (libraryPath != null) {
-            builder.environment().put("LD_LIBRARY_PATH", libraryPath);
-        }
-        var process = builder.start();
-        var output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        if (!process.waitFor(300, TimeUnit.SECONDS)) {
-            process.destroyForcibly();
-            return new Ran(124, output);
-        }
-        return new Ran(process.exitValue(), output);
+    static CudaProbe.Ran run(List<String> command, String libraryPath) throws IOException, InterruptedException {
+        return CudaProbe.run(null, command, libraryPath);
     }
 }
