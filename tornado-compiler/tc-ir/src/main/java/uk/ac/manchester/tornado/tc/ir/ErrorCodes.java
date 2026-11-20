@@ -101,6 +101,10 @@ public final class ErrorCodes {
                     + "atomics, shared or local memory, device launches, tiles or printf")),
             Map.entry("TC-E3503", new Entry(Category.UNSUPPORTED, "this helper or type cannot be emitted inside a single device function yet")),
             Map.entry("TC-E3504", new Entry(Category.UNSUPPORTED, "device-function output is emitted as CUDA C++ only: use --target cuda")),
+            Map.entry("TC-E3505", new Entry(Category.UNSUPPORTED, "a null-aware device function uses boxed values (Integer, Long, Double, ...) only through valueOf, the xxxValue() "
+                    + "getters, comparisons with null and null itself; a null whose type cannot be told needs the class compiled with -g")),
+            Map.entry("TC-E3506", new Entry(Category.UNSUPPORTED, "only ArithmeticException (Math.*Exact overflow, integer division by zero) becomes a device function's error code, "
+                    + "and only with --errors (TcOptions.withDeviceFunctionErrors)")),
             Map.entry("TC-E4010", new Entry(Category.UNSUPPORTED, "CUDA Tile needs compute capability 8.0 or higher (Ampere and newer); rewrite the task with KernelContext for the SIMT path")),
             Map.entry("TC-E4011", new Entry(Category.UNSUPPORTED, "fp8 tiles need compute capability 9.0 (Hopper) or newer; use F16 or BF16 operands on this device")),
             Map.entry("TC-E4012", new Entry(Category.UNSUPPORTED, "the device has no double precision: use float")),

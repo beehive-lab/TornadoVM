@@ -499,6 +499,45 @@ public final class Frontend {
         return new ModuleResult(Optional.of(module), List.of(), () -> "");
     }
 
+    /**
+     * How a method compiled as a device function for {@code cudf::transform} sees nulls and failures.
+     *
+     * <ul>
+     * <li>{@code nullAware}: boxed values ({@code Integer}, {@code Long}, {@code Double}, ...) are
+     * SQL values that may be null. Each is a two-lane vector, lane 0 its validity (1 or 0) and lane 1
+     * its value, so it flows through locals, branches and helper calls like any value; the device
+     * function's entry gets the two lanes as two parameters. Unboxing a null fails the row (a
+     * {@code NullPointerException} in Java).</li>
+     * <li>{@code errors}: an {@code ArithmeticException} -- {@code Math.*Exact} overflow, integer
+     * {@code /} or {@code %} by zero, or one the method throws itself -- fails the row with cudf's
+     * error code instead of being refused.</li>
+     * </ul>
+     *
+     * A failure is the intrinsic {@code tc.udf.fail}, which the device function prints as
+     * {@code if (cond) return code;}.
+     */
+    public record DeviceFunctionModes(boolean nullAware, boolean errors) {
+        public static final DeviceFunctionModes NONE = new DeviceFunctionModes(false, false);
+    }
+
+    private static final ThreadLocal<DeviceFunctionModes> MODES = ThreadLocal.withInitial(() -> DeviceFunctionModes.NONE);
+
+    /** Runs {@code work} (a translation) with {@code modes} in force on this thread. */
+    public static <T> T withDeviceFunctionModes(DeviceFunctionModes modes, Supplier<T> work) {
+        var previous = MODES.get();
+        MODES.set(modes);
+        try {
+            return work.get();
+        } finally {
+            MODES.set(previous);
+        }
+    }
+
+    /** The modes of the translation running on this thread ({@link DeviceFunctionModes#NONE} for a kernel). */
+    static DeviceFunctionModes deviceFunctionModes() {
+        return MODES.get();
+    }
+
     /** A kernel and every static method it calls, transitively: the kernel is the first function. */
     public record ModuleResult(Optional<uk.ac.manchester.tornado.tc.ir.IrModule> module, List<Diagnostic> diagnostics, Supplier<String> listing) {
         public String bytecode() {

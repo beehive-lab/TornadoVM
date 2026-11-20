@@ -55,7 +55,7 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * <pre>
  *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--java-math] [--cp PATH] [--stats] [--device-fn] Class method
  *   tc emit [same options] --all
- *   tc emit [--cc N] [--cp PATH] [--stats] [--no-strict-fp] --device-fn Class method
+ *   tc emit [--cc N] [--cp PATH] [--stats] [--no-strict-fp] --device-fn [--null-aware] [--errors] Class method
  *   tc --version
  *   ... [--arg name=value]...
  * </pre>
@@ -100,6 +100,11 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * a kernel, as a CUDA {@code __device__} function in the shape {@code cudf::transform} calls:
  * {@code __device__ void f(R *out, A0 in0, ...)}, everything in that one function (see
  * {@code TcCompiler.compileDeviceFunction}). It is CUDA only and takes one method, not {@code --all}.
+ * With {@code --null-aware} it is for {@code cudf::transform} with {@code null_aware::YES}: the
+ * arguments and result are {@code cuda::std::optional}s, and boxed parameters and results
+ * ({@code Integer}, {@code Long}, {@code Double}, ...) are values that may be null. With
+ * {@code --errors}, an {@code ArithmeticException} (Math.*Exact overflow, integer division by zero)
+ * fails the row with cudf's error code. Either makes the function return that code, an {@code int}.
  * It implies {@code --strict-fp}, since a device function stands in for a CPU UDF and should give the
  * CPU's results; {@code --no-strict-fp} lets the compiler contract products into fmas anyway.
  *
@@ -144,6 +149,8 @@ public final class Tc {
         boolean strictFp = false;
         boolean javaMath = false;
         boolean deviceFunction = false;
+        boolean nullAware = false;
+        boolean errors = false;
         boolean noStrictFp = false;
         var given = new LinkedHashMap<String, String>();
         var positional = new ArrayList<String>();
@@ -168,6 +175,8 @@ public final class Tc {
                     case "--strict-fp" -> strictFp = true;
                     case "--java-math" -> javaMath = true;
                     case "--device-fn" -> deviceFunction = true;
+                    case "--null-aware" -> nullAware = true;
+                    case "--errors" -> errors = true;
                     case "--no-strict-fp" -> noStrictFp = true;
                     case "--arg" -> {
                         var nameValue = value(args, ++i).split("=", 2);
@@ -186,6 +195,10 @@ public final class Tc {
         if (all ? !positional.isEmpty() : positional.size() != 2) {
             return usage(err);
         }
+        if ((nullAware || errors) && !deviceFunction) {
+            err.println("tc: --null-aware and --errors are modes of --device-fn");
+            return usage(err);
+        }
         if (deviceFunction && all) {
             err.println("tc: --device-fn compiles one method: name it instead of --all");
             return usage(err);
@@ -196,7 +209,8 @@ public final class Tc {
         }
         var target = target(dialect, cc, fp16, fp64);
         // --device-fn implies strict floating point (TcOptions.withDeviceFunction); --no-strict-fp undoes it.
-        var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withDeviceFunction(deviceFunction).withJavaMath(javaMath);
+        var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withDeviceFunction(deviceFunction).withNullAwareDeviceFunction(nullAware).withDeviceFunctionErrors(errors)
+                .withJavaMath(javaMath);
         if (noStrictFp) {
             options = options.withFusedMultiplyAdd(true);
         }
@@ -495,7 +509,7 @@ public final class Tc {
 
     private static int usage(PrintStream err) {
         err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--java-math]"
-                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn [--no-strict-fp]] (Class method | --all)");
+                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] (Class method | --all)");
         return 2;
     }
 }

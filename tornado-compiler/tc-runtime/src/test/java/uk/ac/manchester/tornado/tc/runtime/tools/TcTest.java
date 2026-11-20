@@ -136,6 +136,22 @@ public class TcTest {
         assertEquals(2, run("emit", "--device-fn", "--all", "--cp", cp).status());
     }
 
+    @Test
+    public void nullAwareAndErrorsAreModesOfDeviceFunctions(@TempDir Path dir) throws IOException {
+        classes(dir, "NullableUdfKernels");
+        var cp = dir + File.pathSeparator + API;
+        var k = "uk.ac.manchester.tornado.tc.frontend.kernels.NullableUdfKernels";
+        var r = run("emit", "--device-fn", "--null-aware", "--errors", "--cp", cp, k, "safeAdd");
+        assertEquals(0, r.status(), r.err());
+        assertTrue(r.out().contains("__device__ int NullableUdfKernels_safeAdd(cuda::std::optional<int> *out, cuda::std::optional<int> a_opt, cuda::std::optional<int> b_opt)"), r.out());
+        assertTrue(r.out().contains("return 1;"), r.out());
+        var refused = run("emit", "--device-fn", "--cp", cp, k, "addExact");
+        assertEquals(1, refused.status());
+        assertTrue(refused.err().contains("TC-E3506"), refused.err());
+        assertEquals(2, run("emit", "--null-aware", "--cp", cp, k, "plusOne").status());
+        assertEquals(2, run("emit", "--errors", "--cp", cp, k, "addExact").status());
+    }
+
     /**
      * The offsets the runtime's FieldLayout gives these API classes (read from it with the SDK): the
      * class-only layout tc emit uses must agree, or kernels would read object fields at the wrong place.
