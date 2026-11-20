@@ -242,20 +242,122 @@ public class DeviceFunctionTest {
         return Optional.of(Integer.parseInt(parts[0]) * 10 + Integer.parseInt(parts[1]));
     }
 
+    /**
+     * The {@code nvcc} to build with: the toolkit the native build uses ({@code CUDA_PATH} or
+     * {@code CUDA_HOME}, where CMake looks first) ahead of whatever happens to come first on PATH. A
+     * machine with two toolkits installed would otherwise check the generated CUDA with a compiler the
+     * rest of the build never calls, and an older one at that -- old enough, on a CI runner, not to know
+     * the name of the card it is running on.
+     */
+    private static Optional<Path> nvcc() {
+        for (var variable : List.of("CUDA_PATH", "CUDA_HOME")) {
+            var root = System.getenv(variable);
+            if (root != null && !root.isBlank()) {
+                var candidate = Path.of(root, "bin", "nvcc");
+                if (Files.isExecutable(candidate)) {
+                    return Optional.of(candidate);
+                }
+            }
+        }
+        return ExternalTool.find("nvcc", "/usr/local/cuda/bin");
+    }
+
+    /**
+     * The compute capabilities this {@code nvcc} can generate for, ascending, from {@code --list-gpu-arch};
+     * empty when it does not answer, which is an nvcc too old for the flag.
+     */
+    private static List<Integer> architectures(Path dir, Path nvcc) throws IOException, InterruptedException {
+        var listed = run(dir, List.of(nvcc.toString(), "--list-gpu-arch"));
+        if (listed.exit() != 0) {
+            return List.of();
+        }
+        return listed.output().lines().map(String::strip).filter(line -> line.matches("compute_\\d+")).map(line -> Integer.parseInt(line.substring("compute_".length()))).sorted().toList();
+    }
+
+    /**
+     * What to try building for, best first, given the GPU present and the architectures nvcc knows:
+     *
+     * <ul>
+     * <li>{@code sm_<cc>}, a cubin for exactly this GPU, when nvcc knows the architecture. An nvcc older
+     * than the card does not, and rejects the flag outright -- which is what a runner whose default
+     * toolkit predates its own GPU does;
+     * <li>{@code compute_<x>} for the newest architecture nvcc does know that this GPU can run, which
+     * leaves PTX for the driver to compile on load. Falling back to a lower {@code sm_} instead would
+     * build a cubin for another card; across a major version the GPU cannot load it at all, and within
+     * one it silently runs code built for the wrong chip.
+     * </ul>
+     *
+     * Neither is assumed to work: {@link #runs} tries them in this order and takes the first that does.
+     */
+    private static List<Arch> architecturesToTry(int deviceCc, List<Integer> known) {
+        var out = new ArrayList<Arch>();
+        if (known.isEmpty() || known.contains(deviceCc)) {
+            out.add(new Arch(deviceCc, "sm_" + deviceCc));
+        }
+        known.stream().filter(a -> a <= deviceCc).max(Integer::compare).ifPresent(a -> out.add(new Arch(a, "compute_" + a)));
+        return out;
+    }
+
+    /**
+     * Whether a program built for {@code arch} reaches this GPU, established by building a one-line kernel
+     * and reading back what it wrote. Nothing about a toolkit and a driver guarantees this: nvcc accepts
+     * an architecture it can generate for, whether or not the GPU can load the result, and a driver older
+     * than the toolkit refuses its PTX. Finding that out on a kernel whose answer is known keeps it from
+     * being discovered as a wrong answer from a kernel whose answer is the thing under test.
+     */
+    private static boolean runs(Path dir, Path nvcc, Arch arch) throws IOException, InterruptedException {
+        var file = dir.resolve("probe-" + arch.flag() + ".cu");
+        Files.writeString(file, """
+                #include <cstdio>
+                __global__ void probe(int *out) { *out = 1; }
+                int main() {
+                  int *d, h = 0;
+                  if (cudaMalloc(&d, sizeof(int)) != cudaSuccess) return 3;
+                  if (cudaMemcpy(d, &h, sizeof(int), cudaMemcpyHostToDevice) != cudaSuccess) return 3;
+                  probe<<<1, 1>>>(d);
+                  if (cudaGetLastError() != cudaSuccess || cudaDeviceSynchronize() != cudaSuccess) return 3;
+                  if (cudaMemcpy(&h, d, sizeof(int), cudaMemcpyDeviceToHost) != cudaSuccess) return 3;
+                  std::printf("%d\\n", h);
+                  return h == 1 ? 0 : 3;
+                }
+                """);
+        var exe = dir.resolve("probe-" + arch.flag());
+        var build = run(dir, List.of(nvcc.toString(), "-std=c++17", "-arch=" + arch.flag(), "-o", exe.toString(), file.toString()));
+        return build.exit() == 0 && run(dir, List.of(exe.toString())).exit() == 0;
+    }
+
+    /** What the test builds for: a compute capability nvcc accepts, and the {@code -arch} that names it. */
+    private record Arch(int cc, String flag) {
+    }
+
     @Test
     public void runsOnTheGpuAsInJava(@TempDir Path dir) throws Exception {
-        var nvcc = ExternalTool.find("nvcc", "/usr/local/cuda/bin");
+        var nvcc = nvcc();
         var cc = computeCapability(dir);
-        // Skipped without nvcc or a GPU, which is every machine without CUDA. A CI leg that has both sets
-        // TC_REQUIRE_GPU=1, so that losing either fails the build instead of skipping the check quietly.
+        var tried = new ArrayList<String>();
+        Optional<Arch> arch = Optional.empty();
+        if (nvcc.isPresent() && cc.isPresent()) {
+            for (var candidate : architecturesToTry(cc.get(), architectures(dir, nvcc.get()))) {
+                tried.add(candidate.flag());
+                if (runs(dir, nvcc.get(), candidate)) {
+                    arch = Optional.of(candidate);
+                    break;
+                }
+            }
+        }
+        var why = "nvcc " + nvcc.map(Path::toString).orElse("(none)") + ", GPU " + cc.map(c -> "sm_" + c).orElse("(none)") + ", tried " + tried;
+        // Skipped without nvcc or a GPU, which is every machine without CUDA, and when the two cannot be
+        // made to talk to each other. Set TC_REQUIRE_GPU=1 where all three are expected, so that losing
+        // one fails the build instead of skipping the check quietly.
         if (System.getenv("TC_REQUIRE_GPU") != null) {
-            assertTrue(nvcc.isPresent() && cc.isPresent(), "TC_REQUIRE_GPU is set, but nvcc (" + nvcc.isPresent() + ") or a GPU (" + cc.isPresent() + ") is missing");
+            assertTrue(arch.isPresent(), "TC_REQUIRE_GPU is set, but nothing here can build and run a CUDA kernel: " + why);
         }
         assumeTrue(nvcc.isPresent(), "no nvcc");
         assumeTrue(cc.isPresent(), "no GPU");
+        assumeTrue(arch.isPresent(), "nothing this nvcc builds reaches this GPU: " + why);
         try (var loader = new URLClassLoader(new URL[] { CLASSES.toUri().toURL() }, getClass().getClassLoader())) {
             var kernels = loader.loadClass(KERNELS);
-            var gpu = new Gpu(dir, nvcc.get(), cc.get());
+            var gpu = new Gpu(dir, nvcc.get(), arch.get());
             check(gpu, kernels, "collatz", TcOptions.DEFAULTS, rows(LONGS.size() + 200, i -> new Object[] { i < LONGS.size() ? LONGS.get(i) : (long) (i * 7919 + 1) }), 0);
             check(gpu, kernels, "bucket", TcOptions.DEFAULTS, rows(1000, i -> new Object[] { mixLong(i) }), 0);
             check(gpu, kernels, "mixed", TcOptions.DEFAULTS,
@@ -298,11 +400,13 @@ public class DeviceFunctionTest {
         };
     }
 
-    /** Where the GPU check builds and runs: a scratch directory, nvcc, and the compute capability of the GPU present. */
-    private record Gpu(Path dir, Path nvcc, int cc) {
+    /** Where the GPU check builds and runs: a scratch directory, nvcc, and the architecture it builds for. */
+    private record Gpu(Path dir, Path nvcc, Arch arch) {
+        /** TC generates for the compute capability nvcc builds for, so the two cannot disagree about the target. */
         TargetCaps target() {
             var b = TargetCaps.CUDA_SM89;
-            return new TargetCaps(b.dialect(), cc, b.fp64(), b.fp16(), b.arrayHeaderBytes(), b.maxWorkGroupSize(), b.localMemoryBytes(), b.warpSize(), b.deviceLaunch(), b.nvrtcVersion(), b.arch());
+            return new TargetCaps(b.dialect(), arch.cc(), b.fp64(), b.fp16(), b.arrayHeaderBytes(), b.maxWorkGroupSize(), b.localMemoryBytes(), b.warpSize(), b.deviceLaunch(), b.nvrtcVersion(),
+                    b.arch());
         }
     }
 
@@ -368,7 +472,13 @@ public class DeviceFunctionTest {
         for (int p = 0; p < params.length; p++) {
             cu.append(params[p] == byte[].class ? ", d" + p + "c, d" + p + "o" : ", d" + p);
         }
-        cu.append(", n);\n  if (cudaMemcpy(hout, dout, sizeof(hout), cudaMemcpyDeviceToHost) != cudaSuccess) { std::printf(\"NO-GPU\\n\"); return 3; }\n");
+        // cudaMemcpy alone does not report a launch that never happened: a kernel rejected by the driver
+        // leaves cudaDeviceSynchronize and the copy returning cudaSuccess, and hout holds whatever cudaMalloc
+        // handed back. Reading the launch's own error first is what keeps untouched memory out of the
+        // comparison, where it would read as a wrong answer from the compiler rather than as no answer.
+        cu.append(", n);\n");
+        cu.append("  if (cudaGetLastError() != cudaSuccess || cudaDeviceSynchronize() != cudaSuccess) { std::printf(\"NO-LAUNCH\\n\"); return 3; }\n");
+        cu.append("  if (cudaMemcpy(hout, dout, sizeof(hout), cudaMemcpyDeviceToHost) != cudaSuccess) { std::printf(\"NO-GPU\\n\"); return 3; }\n");
         cu.append("  for (int i = 0; i < n; i++) {\n");
         if (result == double.class) {
             cu.append("    unsigned long long b; std::memcpy(&b, &hout[i], 8); std::printf(\"%llu\\n\", b);\n");
@@ -379,9 +489,10 @@ public class DeviceFunctionTest {
         var file = dir.resolve(method + ".cu");
         Files.writeString(file, cu);
         var exe = dir.resolve(method);
-        var build = run(dir, List.of(gpu.nvcc().toString(), "-std=c++17", "-arch=sm_" + gpu.cc(), "-o", exe.toString(), file.toString()));
-        assertEquals(0, build.exit(), method + ": nvcc failed\n" + build.output() + "\n" + cu);
-        // A GPU is present (computeCapability), so a binary that cannot reach it is a failure, not a skip.
+        var build = run(dir, List.of(gpu.nvcc().toString(), "-std=c++17", "-arch=" + gpu.arch().flag(), "-o", exe.toString(), file.toString()));
+        assertEquals(0, build.exit(), method + ": nvcc failed (" + gpu.nvcc() + " -arch=" + gpu.arch().flag() + ")\n" + build.output() + "\n" + cu);
+        // This architecture already built and ran a kernel on this GPU (runs), so a binary that cannot
+        // reach it now is a failure, not a skip.
         var ran = run(dir, List.of(exe.toString()));
         assertEquals(0, ran.exit(), method + ": " + ran.output());
         var lines = ran.output().strip().lines().toList();
