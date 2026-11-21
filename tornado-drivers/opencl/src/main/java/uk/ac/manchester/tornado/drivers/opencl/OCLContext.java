@@ -103,7 +103,7 @@ public class OCLContext implements OCLContextInterface {
      * left zeroed here.
      */
     long allocateOffHeapMemory(long size, long alignment) {
-        Arena arena = Arena.ofShared();
+        Arena arena = FFMSupport.sharedArena();
         try {
             MemorySegment segment = arena.allocate(size, alignment);
             long address = segment.address();
