@@ -129,6 +129,7 @@ public final class OptTool {
             case "float-narrowing" -> new FloatNarrowing();
             case "no-wrap" -> new NoWrapInference();
             case "native-half" -> new NativeHalfArithmetic();
+            case "nan-guards" -> new uk.ac.manchester.tornado.tc.opt.NaNGuards();
             default -> throw new IllegalArgumentException("unknown pass '" + name + "'");
         };
     }
