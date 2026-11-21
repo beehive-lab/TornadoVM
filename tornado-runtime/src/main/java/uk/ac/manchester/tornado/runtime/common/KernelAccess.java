@@ -24,7 +24,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
 
 import uk.ac.manchester.tornado.api.common.Access;
 
@@ -57,7 +56,7 @@ public final class KernelAccess {
     public record Reductions(List<String> operations, int boundParameter, long boundConstant, long start) {
     }
 
-    private static final Provider PROVIDER = ServiceLoader.load(Provider.class).findFirst().orElse(null);
+    private static final Provider PROVIDER = RuntimeServiceLoader.load(Provider.class).findFirst().orElse(null);
 
     private KernelAccess() {
     }
