@@ -63,7 +63,7 @@ public class TornadoExecutionResult {
      * @since 0.15.0
      */
     public TornadoExecutionResult transferToHost(Object... objects) {
-        tornadoProfilerResult.getExecutor().transferToHost(objects);
+        tornadoProfilerResult.getExecutor().transferToHost(ObjectAdapters.adapt(objects));
         return this;
     }
 

@@ -239,6 +239,16 @@ public final class TileTyping {
             case "tile.broadcast", "tile.reshape" -> {
                 return tile(ops.get(0)).map(t -> new TileType(t.dtype(), shape(inst, ops.subList(1, ops.size())), false));
             }
+            case "tile.permute" -> {
+                var order = java.util.Arrays.stream(inst.immediates().requireString("order").split(",")).map(String::trim).map(Integer::parseInt).toList();
+                return tile(ops.get(0)).map(t -> {
+                    int rank = t.shape().size();
+                    if (order.size() != rank || !new java.util.TreeSet<>(order).equals(new java.util.TreeSet<>(java.util.stream.IntStream.range(0, rank).boxed().toList()))) {
+                        throw fail(inst, "permute needs each of the tile's " + rank + " axes once, got " + order);
+                    }
+                    return new TileType(t.dtype(), order.stream().map(t.shape()::get).toList(), false);
+                });
+            }
             case "tile.extract" -> {
                 int rank = (int) inst.immediates().requireInt("rank");
                 return tile(ops.get(0)).map(t -> new TileType(t.dtype(), shape(inst, ops.subList(1, 1 + rank)), false));

@@ -191,6 +191,9 @@ final class TileSpellings {
             case "tile.broadcast", "tile.reshape" -> {
                 return "ct::" + name.substring(5) + "(" + ops.get(0) + ", " + shapeType(type.shape()) + "{})";
             }
+            case "tile.permute" -> {
+                return "ct::permute(" + ops.get(0) + ", ct::dimension_map<" + inst.immediates().requireString("order").replace(",", ", ") + ">{})";
+            }
             case "tile.extract" -> {
                 int rank = type.shape().size();
                 return "ct::extract(" + ops.get(0) + ", " + shapeType(type.shape()) + "{}, " + join(ops.subList(1 + rank, ops.size())) + ")";
