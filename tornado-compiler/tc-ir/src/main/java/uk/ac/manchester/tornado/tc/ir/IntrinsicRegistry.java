@@ -80,6 +80,10 @@ public final class IntrinsicRegistry {
         pure("tornado.group_count", "number of work-groups", "dim");
         // Math (Java semantics; the spelling tables give each dialect's functions).
         pure("math.", "math functions of TornadoMath and java.lang.Math");
+        // A read-only table of constants (a static final primitive array such as FdLibm's two_over_pi):
+        // a pointer to constant memory holding them. elem is the element type, count the length, values
+        // the elements as comma-separated raw bits (Double/Float.doubleToRawLongBits, integers as they are).
+        pure("tc.table", "a pointer to a read-only table of constants", "elem", "count", "values");
         // Vector values.
         pure("tornado.vector.make", "a vector from its lanes");
         pure("tornado.vector.lane", "one lane of a vector", "lane");

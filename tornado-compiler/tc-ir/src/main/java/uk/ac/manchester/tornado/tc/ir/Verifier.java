@@ -293,6 +293,9 @@ public final class Verifier {
                         // A local array: its element type where the allocation is in sight (through an
                         // inlined helper's parameter the access gives the type).
                         allocaElement(ops.get(0)).ifPresent(e -> resultIs(inst, result.equals(e) || packs(result, e), "the local array element type " + e.text()));
+                    } else if (ops.get(0).type() instanceof PointerType(var space) && space == AddressSpace.CONSTANT) {
+                        // A constant table (tc.table) passed to an inlined helper: read like a local array.
+                        resultIs(inst, !(result instanceof Type.VoidType), "a value type");
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }
@@ -306,6 +309,8 @@ public final class Verifier {
                     } else if (isLocalPointer(ops.get(0).type())) {
                         // As for array.load.
                         allocaElement(ops.get(0)).ifPresent(e -> operandIs(inst, 2, ops.get(2).type().equals(e) || packs(ops.get(2).type(), e), "the local array element type " + e.text()));
+                    } else if (ops.get(0).type() instanceof PointerType(var space) && space == AddressSpace.CONSTANT) {
+                        error(inst, "TC-E2114", "store into a constant table");
                     } else {
                         operandIs(inst, 0, false, "an array");
                     }

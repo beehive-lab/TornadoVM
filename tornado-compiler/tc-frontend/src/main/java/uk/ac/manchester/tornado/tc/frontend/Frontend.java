@@ -81,10 +81,82 @@ public final class Frontend {
          * The value of a primitive {@code static final} field that is not a compile-time constant
          * (javac inlines those): one the class initialiser computes, such as
          * {@code static final double TO_RADIANS = Math.PI / 180}. A kernel reads it as a constant.
-         * Only a source backed by the host's classes knows it; booleans and chars come as ints.
+         * Booleans and chars come as ints. A source backed by the host's classes reads it directly;
+         * failing that, and for a source that is only class bytes, it is worked out from the class
+         * initialiser ({@link ConstantTables#scalar}), which is the only way to reach the JDK's own
+         * (reflection cannot: {@code java.base} does not open {@code java.lang}).
          */
         default Optional<Number> staticFinal(String ownerInternalName, String field) {
-            return Optional.empty();
+            return classFile(ownerInternalName).flatMap(cf -> ConstantTables.scalar(cf, field));
+        }
+
+        /**
+         * The contents of a {@code static final} primitive array a kernel reads as a constant table,
+         * taken from the class initialiser's bytecode ({@link ConstantTables}). Only the JDK's FdLibm
+         * classes qualify: their tables are never written after initialisation, which TC cannot prove
+         * of an arbitrary class (any code may store into a final array).
+         */
+        default Optional<ConstantTables.Table> staticFinalArray(String ownerInternalName, String field) {
+            if (!ConstantTables.trusted(ownerInternalName)) {
+                return Optional.empty();
+            }
+            return classFile(ownerInternalName).flatMap(cf -> ConstantTables.read(cf, field));
+        }
+
+        /**
+         * Java-exact math ({@code TcOptions.withJavaMath}): the functions {@code StrictMath} specifies
+         * are inlined from the JDK's FdLibm code instead of being bound to the device library.
+         */
+        default boolean javaMath() {
+            return false;
+        }
+
+        /** This source, with {@link #javaMath} on; everything else is forwarded. */
+        static BytecodeSource withJavaMath(BytecodeSource source) {
+            if (source.javaMath()) {
+                return source;
+            }
+            return new BytecodeSource() {
+                @Override
+                public Optional<byte[]> classBytes(String internalName) {
+                    return source.classBytes(internalName);
+                }
+
+                @Override
+                public Optional<ClassFile> classFile(String internalName) {
+                    return source.classFile(internalName);
+                }
+
+                @Override
+                public Optional<MethodRef> deviceKernel(String ownerInternalName, String field) {
+                    return source.deviceKernel(ownerInternalName, field);
+                }
+
+                @Override
+                public Optional<ClassLoader> loader() {
+                    return source.loader();
+                }
+
+                @Override
+                public Optional<EnumInfo> enumInfo(String internalName) {
+                    return source.enumInfo(internalName);
+                }
+
+                @Override
+                public Optional<Number> staticFinal(String ownerInternalName, String field) {
+                    return source.staticFinal(ownerInternalName, field);
+                }
+
+                @Override
+                public Optional<ConstantTables.Table> staticFinalArray(String ownerInternalName, String field) {
+                    return source.staticFinalArray(ownerInternalName, field);
+                }
+
+                @Override
+                public boolean javaMath() {
+                    return true;
+                }
+            };
         }
 
         /** Class files on a path of directories and jars, separated by the platform path separator. */
@@ -193,14 +265,19 @@ public final class Frontend {
                         var f = Class.forName(ownerInternalName.replace('/', '.'), true, loader).getDeclaredField(field);
                         int m = f.getModifiers();
                         if (!java.lang.reflect.Modifier.isStatic(m) || !java.lang.reflect.Modifier.isFinal(m) || !f.getType().isPrimitive()) {
-                            return Optional.empty();
+                            return fromBytecode(field, ownerInternalName);
                         }
                         f.setAccessible(true);
                         var v = f.get(null);
                         return Optional.of(v instanceof Boolean bool ? (bool ? 1 : 0) : v instanceof Character ch ? (int) ch : (Number) v);
                     } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-                        return Optional.empty();
+                        // A field of java.base, say: the module is not open to setAccessible, so read the bytecode.
+                        return fromBytecode(field, ownerInternalName);
                     }
+                }
+
+                private Optional<Number> fromBytecode(String field, String ownerInternalName) {
+                    return classFile(ownerInternalName).flatMap(cf -> ConstantTables.scalar(cf, field));
                 }
             };
         }
@@ -264,6 +341,9 @@ public final class Frontend {
 
     /** Parsed class files per class loader ({@link BytecodeSource#classLoader}). */
     private static final Map<ClassLoader, Map<String, Optional<ClassFile>>> PARSED = new WeakHashMap<>();
+
+    /** The most distinct methods a kernel's call graph may reach (TC-E1009 beyond). */
+    private static final int MAX_CALLEES = 256;
 
     private Frontend() {
     }
@@ -519,8 +599,10 @@ public final class Frontend {
             } catch (Translator.FrontendError e) {
                 return new ModuleResult(Optional.empty(), List.of(e.diagnostic), kernel.result().listing());
             }
-            if (seen.size() > 64) {
-                var why = "more than 64 distinct callees: recursion or an unbounded call graph";
+            // A bound on the call graph's size. 64 was too few for a kernel using a dozen of FdLibm's functions
+            // (Java-exact math), which share some helpers but bring their own: about 70 in all.
+            if (seen.size() > MAX_CALLEES) {
+                var why = "more than " + MAX_CALLEES + " distinct callees: recursion or an unbounded call graph";
                 return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1009", why, "", Loc.UNKNOWN)), kernel.result().listing());
             }
         }

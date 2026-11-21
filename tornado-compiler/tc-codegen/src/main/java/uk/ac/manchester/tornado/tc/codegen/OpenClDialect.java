@@ -99,6 +99,12 @@ final class OpenClDialect implements CDialect {
         return space == AddressSpace.SHARED ? "__local " : "";
     }
 
+    /** OpenCL C allows __constant variables in the outermost scope of a kernel, where TC declares them. */
+    @Override
+    public Optional<String> tableQualifier() {
+        return Optional.of("__constant ");
+    }
+
     @Override
     public String pointee(AddressSpace space, String element) {
         return switch (space) {

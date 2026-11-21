@@ -170,6 +170,14 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect, HipD
      */
     String pointee(AddressSpace space, String element);
 
+    /**
+     * How a read-only table of constants ({@code tc.table}) is declared inside the function, before
+     * its element type: {@code static const } on CUDA. Empty where the dialect cannot declare one there.
+     */
+    default Optional<String> tableQualifier() {
+        return Optional.empty();
+    }
+
     /** A type the C core does not spell itself (half, bfloat16, vectors); empty if unsupported. */
     Optional<String> typeName(Type type, Set<Feature> features);
 

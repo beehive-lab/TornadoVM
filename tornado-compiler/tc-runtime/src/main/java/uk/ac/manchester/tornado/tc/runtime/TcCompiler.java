@@ -324,10 +324,14 @@ public final class TcCompiler {
     private static Compiled compileJava(Frontend.BytecodeSource source, String className, String methodName, String descriptor, TargetCaps target, TcOptions options,
             List<ValueSpecialisation.Fact> facts, String rename) {
         long start = System.nanoTime();
+        // With Java-exact math, StrictMath's functions are inlined from FdLibm rather than bound
+        // (TcOptions.withJavaMath). A new final local, not a reassigned parameter: the translation
+        // below runs inside a lambda, which can only capture what does not change.
+        var bytecodeSource = options.javaMath() ? Frontend.BytecodeSource.withJavaMath(source) : source;
         String deviceDescriptor = null;
         List<ValueSpecialisation.Fact> deviceFacts = null;
         if (options.deviceFunction()) {
-            var signature = deviceFunctionSignature(source, className, methodName, descriptor, options.deviceFunctionModes().nullAware());
+            var signature = deviceFunctionSignature(bytecodeSource, className, methodName, descriptor, options.deviceFunctionModes().nullAware());
             if (signature instanceof Signature.Accepted(var accepted)) {
                 deviceDescriptor = accepted;
                 var merged = deviceFunctionFacts(accepted, facts, className, methodName);
@@ -344,7 +348,7 @@ public final class TcCompiler {
             }
         }
         var modes = options.deviceFunction() ? options.deviceFunctionModes() : Frontend.DeviceFunctionModes.NONE;
-        var translated = Frontend.withDeviceFunctionModes(modes, () -> Frontend.translateWithCallees(source, className, methodName, descriptor));
+        var translated = Frontend.withDeviceFunctionModes(modes, () -> Frontend.translateWithCallees(bytecodeSource, className, methodName, descriptor));
         java.util.Optional<Function> kernel = translated.module().map(m -> m.functions().get(0));
         if (rename != null) {
             kernel.ifPresent(k -> k.rename(rename));

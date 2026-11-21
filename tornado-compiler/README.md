@@ -159,7 +159,7 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--cp <class path>] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--java-math] [--cp <class path>] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
 ```
 
@@ -178,6 +178,26 @@ the target:
 
 `Math.fma` is unaffected on every target: it is an exact fused operation in Java too, and is still
 printed as `fma`.
+
+`--java-math` (at run time `-Dtornado.tc.javaMath=true`) makes the double functions `StrictMath`
+specifies (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log`, `log10`, `pow`,
+`cbrt`, `sinh`, `cosh` and `tanh`) bit-identical to `StrictMath`, whether called through `Math`,
+`StrictMath` or `TornadoMath`. They are compiled from the JDK's own FdLibm code instead of being
+mapped to the device's math library, and FdLibm's tables (such as `two_over_pi`) become read-only
+constant arrays. `sqrt` stays the device's, which is correctly rounded as Java's is. It implies
+`--strict-fp`, because FdLibm is exact only when every multiply and add rounds separately.
+
+- Measured on an RTX 4090 over 1M inputs per function (edge cases, random bit patterns, in-range
+  values), compiled by nvcc with its default flags: every result had `StrictMath`'s bits, where
+  the device library differs by 1 to 3 ulp on 1% to 25% of them (and pow on non-finite cases).
+- The target is `StrictMath`, not `Math` on HotSpot. HotSpot's intrinsics for `Math.sin`, `cos`,
+  `tan`, `exp`, `log`, `log10`, `pow`, `cbrt` and `tanh` may differ from `StrictMath` by 1 ulp
+  (2 for `log10` and `tanh`); its `asin`, `acos`, `atan`, `atan2`, `sinh` and `cosh` match it.
+- It costs time: on in-range inputs the RTX 4090 took 1.3x (`pow`) to 4.4x (`cosh`) the
+  device library's time, and about 8x for `sin` and `cos` (4x for `tan`), whose argument reduction
+  for large arguments makes the code much larger.
+- CUDA, HIP and OpenCL only. Metal cannot yet declare the constant tables, so kernels that need
+  them are refused there.
 
 **Device functions for other libraries.** `tc emit --device-fn` compiles a static method with
 primitive parameters and a primitive result, not a kernel, as one CUDA `__device__` function in the
@@ -285,6 +305,7 @@ plug in as a `Backend` service.
 | `tornado.tc.only=<Class.method>` | restrict dumps and reports to one kernel |
 | `tornado.tc.report=html` | a self-contained HTML report per kernel: bytecode, every stage, the source |
 | `tornado.tc.verify=each` | verify the IR after every pass and stage instead of once at the end (the default); names the pass that broke it |
+| `tornado.tc.javaMath=true` | Java-exact math: `Math`'s StrictMath-specified functions bit-identical to `StrictMath` (see `tc emit --java-math`) |
 | `tornado.tc.memoize=false` | compile every task, even when an earlier one had the same method and facts |
 | `tornado.tc.varyingScalars=<n>` | a scalar argument that takes `n` (default 3) different values across tasks of one kernel is compiled as a runtime value; `0` specialises every value |
 | `--printKernel` (launcher flag) | print the generated source |
