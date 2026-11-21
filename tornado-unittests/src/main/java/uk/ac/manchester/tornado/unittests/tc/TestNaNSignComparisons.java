@@ -52,7 +52,7 @@ public class TestNaNSignComparisons extends TornadoTestBase {
     // No subnormals: Apple GPUs flush float32 subnormals to zero even with strict floating point, so
     // abs(MIN_VALUE) > 0 is false there for a reason unrelated to NaN.
     private static final float[] FLOATS = { Float.NaN, -Float.NaN, 0.0f, -0.0f, 1.5f, -1.5f, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.MIN_NORMAL, -3.0e38f };
-    private static final int CASES = 9;
+    private static final int CASES = 11;
 
     /** Each comparison as one bit of the result, so one kernel checks them all. */
     private static int bits(float x, float y) {
@@ -66,6 +66,10 @@ public class TestNaNSignComparisons extends TornadoTestBase {
         r |= (!(Math.abs(x) <= -1.0f) ? 1 : 0) << 6;
         r |= (Math.abs(Math.min(x, x)) > -1.0f ? 1 : 0) << 7;
         r |= (Math.abs(x) > 0.0f ? 1 : 0) << 8;
+        // the other side is not a constant in the IR, but the device compiler evaluates it (seed 301998
+        // had -(float) Math.log(3.4e38f); sqrt keeps the kernel free of fp64)
+        r |= (-((float) Math.sqrt(4.0f)) < Math.abs((float) Math.sqrt(Math.abs(x))) ? 1 : 0) << 9;
+        r |= (x * x > -y * y - 1.0f ? 1 : 0) << 10;
         return r;
     }
 

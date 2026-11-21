@@ -404,7 +404,7 @@ public final class Canonicalizer implements Pass {
     }
 
     /** What is known about a floating-point value's sign: the value is NaN or in the given range. */
-    private enum Sign {
+    enum Sign {
         /** In [+0, +inf] or NaN (abs, sqrt, x * x, ...). */
         NON_NEGATIVE,
         /** In [-inf, -0] or NaN. */
@@ -418,7 +418,7 @@ public final class Canonicalizer implements Pass {
 
     private static final int SIGN_DEPTH = 8;
 
-    private static Sign sign(Value v, int depth) {
+    static Sign sign(Value v, int depth) {
         if (!v.type().isFloat() || depth > SIGN_DEPTH) {
             return Sign.UNKNOWN;
         }
