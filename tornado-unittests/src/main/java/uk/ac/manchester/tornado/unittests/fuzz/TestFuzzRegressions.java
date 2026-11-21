@@ -25,13 +25,11 @@ import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.enums.DataTransferMode;
-import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
 import uk.ac.manchester.tornado.api.exceptions.TornadoExecutionPlanException;
 import uk.ac.manchester.tornado.api.types.arrays.FloatArray;
 import uk.ac.manchester.tornado.api.types.arrays.IntArray;
 import uk.ac.manchester.tornado.api.types.arrays.LongArray;
 import uk.ac.manchester.tornado.unittests.common.TornadoTestBase;
-import uk.ac.manchester.tornado.unittests.common.TornadoVMOpenCLNotSupported;
 
 /**
  * Java semantics the phase-3 fuzzer (tornado-fuzz {@code phase=3}: typed programs with control
@@ -77,6 +75,71 @@ public class TestFuzzRegressions extends TornadoTestBase {
             out.set(4 * i + 1, (y + y) < 0 ? 1 : 0);
             out.set(4 * i + 2, (y * 2 > y) ? 1 : 0);
             out.set(4 * i + 3, (y + 1 > y) ? 1 : 0);
+        }
+    }
+
+    private static void rotateByAbs(IntArray x, IntArray a, IntArray out) {
+        for (@Parallel int i = 0; i < x.getSize(); i++) {
+            out.set(2 * i, Integer.rotateLeft(x.get(i), Math.abs(a.get(i))));
+            out.set(2 * i + 1, (int) Long.rotateRight(x.get(i) * 0x9E3779B97F4A7C15L, Math.abs(a.get(i))));
+        }
+    }
+
+    /**
+     * Integer.rotateLeft(x, Math.abs(a)) for negative a (tornado-fuzz seed 100045). Intel's OpenCL compiler
+     * (IGC 1.0.16510) lowered the rotate by a select-spelled abs(a) as a rotate by a: 40 for
+     * rotateLeft(5, abs(-29)) instead of 0xA0000000.
+     */
+    @Test
+    public void testRotateByAbs() throws TornadoExecutionPlanException {
+        IntArray x = IntArray.fromArray(new int[] { 5, 5, 5, -7, 123456789, 1, Integer.MIN_VALUE, 5 });
+        IntArray a = IntArray.fromArray(new int[] { -29, -3, -16157, 29, -1, Integer.MIN_VALUE, -31, 0 });
+        IntArray out = new IntArray(2 * x.getSize());
+        IntArray expected = new IntArray(2 * x.getSize());
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, a) //
+                .task("t0", TestFuzzRegressions::rotateByAbs, x, a, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.execute();
+        }
+        rotateByAbs(x, a, expected);
+        for (int i = 0; i < out.getSize(); i++) {
+            assertEquals(expected.get(i), out.get(i), "element " + i);
+        }
+    }
+
+    private static void floorModOfAbs(IntArray n, LongArray l, IntArray out, LongArray lout) {
+        for (@Parallel int i = 0; i < n.getSize(); i++) {
+            out.set(i, Math.floorMod(Math.abs(n.get(i)), 3) + 10 * Math.floorDiv(Math.abs(n.get(i)), 7));
+            lout.set(i, Math.floorMod(Math.abs(l.get(i)), 3L) + 10 * Math.floorDiv(Math.abs(l.get(i)), 7L));
+        }
+    }
+
+    /**
+     * Math.floorMod and floorDiv of Math.abs(MIN_VALUE), which is MIN_VALUE in Java (tornado-fuzz seeds
+     * 201746, 201753, 202375, 204749). NVRTC 12.6 (and NVIDIA's OpenCL compiler) took a select-spelled abs
+     * to be non-negative and skipped floorMod's sign adjustment: -2 instead of 1.
+     */
+    @Test
+    public void testFloorModOfAbs() throws TornadoExecutionPlanException {
+        IntArray n = IntArray.fromArray(new int[] { Integer.MIN_VALUE, -7, 0, 5, Integer.MAX_VALUE, -1 });
+        LongArray l = LongArray.fromArray(new long[] { Long.MIN_VALUE, -7, 0, 5, Long.MAX_VALUE, -1 });
+        IntArray out = new IntArray(n.getSize());
+        LongArray lout = new LongArray(n.getSize());
+        IntArray expected = new IntArray(n.getSize());
+        LongArray lexpected = new LongArray(n.getSize());
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, n, l) //
+                .task("t0", TestFuzzRegressions::floorModOfAbs, n, l, out, lout) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out, lout);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.execute();
+        }
+        floorModOfAbs(n, l, expected, lexpected);
+        for (int i = 0; i < n.getSize(); i++) {
+            assertEquals(expected.get(i), out.get(i), "int element " + i);
+            assertEquals(lexpected.get(i), lout.get(i), "long element " + i);
         }
     }
 
@@ -158,15 +221,11 @@ public class TestFuzzRegressions extends TornadoTestBase {
 
     /**
      * abs(MIN_VALUE) is MIN_VALUE in Java, so max(abs(MIN_VALUE), 2) is 2. Intel's OpenCL compiler
-     * recognises every absolute-value idiom (the built-in, a select, the xor-and-subtract trick) and
-     * then takes the result to be non-negative, returning MIN_VALUE: skipped there.
+     * recognises the built-in abs, a select and the xor-and-subtract trick, then takes the result to be
+     * non-negative and returns MIN_VALUE. TC spells abs as max(x, -x) on OpenCL, which it does not.
      */
     @Test
     public void testAbsOfMinValue() throws TornadoExecutionPlanException {
-        var device = getTornadoRuntime().getDefaultDevice();
-        if (device.getTornadoVMBackend() == TornadoVMBackendType.OPENCL && (device.getDescription() + device.getPlatformName()).contains("Intel")) {
-            throw new TornadoVMOpenCLNotSupported("Intel's OpenCL compiler assumes abs() is non-negative, also for MIN_VALUE");
-        }
         LongArray l = LongArray.fromArray(new long[] { Long.MIN_VALUE, -5, 0, 7, Long.MAX_VALUE });
         IntArray n = IntArray.fromArray(new int[] { Integer.MIN_VALUE, -5, 0, 7, Integer.MAX_VALUE });
         IntArray out = new IntArray(2 * n.getSize());
