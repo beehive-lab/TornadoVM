@@ -161,9 +161,11 @@ public final class Intrinsics {
         cudaTyped("math.min", "i64", "llmin($0, $1)");
         cudaTyped("math.max", "i64", "llmax($0, $1)");
         // Integer abs without the built-ins: Java wraps abs(MIN_VALUE) to MIN_VALUE; C leaves it undefined and
-        // device compilers assume a non-negative result (Intel OpenCL: max(abs(MIN_VALUE), 2) gave MIN_VALUE).
-        cudaTyped("math.abs", "i32", "($0 < 0 ? (int) (0u - (unsigned int) $0) : $0)");
-        cudaTyped("math.abs", "i64", "($0 < 0 ? (long long) (0ull - (unsigned long long) $0) : $0)");
+        // device compilers assume a non-negative result. A select is not enough either: NVRTC/nvcc 12.6
+        // recognise it as abs and drop the sign test of Math.floorMod(Math.abs(MIN_VALUE), 3) (-2, not 1).
+        // max(x, -x) is Java's abs including MIN_VALUE, and is not treated as non-negative.
+        cudaTyped("math.abs", "i32", "max($0, (int) (0u - (unsigned int) $0))");
+        cudaTyped("math.abs", "i64", "llmax($0, (long long) (0ull - (unsigned long long) $0))");
         openCl();
         metal();
         hip();

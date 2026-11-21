@@ -109,6 +109,40 @@ public class TestFuzzRegressions extends TornadoTestBase {
         }
     }
 
+    private static void floorModOfAbs(IntArray n, LongArray l, IntArray out, LongArray lout) {
+        for (@Parallel int i = 0; i < n.getSize(); i++) {
+            out.set(i, Math.floorMod(Math.abs(n.get(i)), 3) + 10 * Math.floorDiv(Math.abs(n.get(i)), 7));
+            lout.set(i, Math.floorMod(Math.abs(l.get(i)), 3L) + 10 * Math.floorDiv(Math.abs(l.get(i)), 7L));
+        }
+    }
+
+    /**
+     * Math.floorMod and floorDiv of Math.abs(MIN_VALUE), which is MIN_VALUE in Java (tornado-fuzz seeds
+     * 201746, 201753, 202375, 204749). NVRTC 12.6 (and NVIDIA's OpenCL compiler) took a select-spelled abs
+     * to be non-negative and skipped floorMod's sign adjustment: -2 instead of 1.
+     */
+    @Test
+    public void testFloorModOfAbs() throws TornadoExecutionPlanException {
+        IntArray n = IntArray.fromArray(new int[] { Integer.MIN_VALUE, -7, 0, 5, Integer.MAX_VALUE, -1 });
+        LongArray l = LongArray.fromArray(new long[] { Long.MIN_VALUE, -7, 0, 5, Long.MAX_VALUE, -1 });
+        IntArray out = new IntArray(n.getSize());
+        LongArray lout = new LongArray(n.getSize());
+        IntArray expected = new IntArray(n.getSize());
+        LongArray lexpected = new LongArray(n.getSize());
+        TaskGraph taskGraph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, n, l) //
+                .task("t0", TestFuzzRegressions::floorModOfAbs, n, l, out, lout) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out, lout);
+        try (TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            executionPlan.execute();
+        }
+        floorModOfAbs(n, l, expected, lexpected);
+        for (int i = 0; i < n.getSize(); i++) {
+            assertEquals(expected.get(i), out.get(i), "int element " + i);
+            assertEquals(lexpected.get(i), lout.get(i), "long element " + i);
+        }
+    }
+
     private static void absOfMinValue(LongArray l, IntArray n, IntArray out) {
         for (@Parallel int i = 0; i < l.getSize(); i++) {
             out.set(2 * i, Math.max(Math.abs(n.get(i)), 2));
