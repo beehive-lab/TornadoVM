@@ -24,6 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
 
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
@@ -107,9 +108,8 @@ public final class ShortArray extends TornadoNativeArray {
      */
     private static ShortArray createSegment(short[] values) {
         ShortArray array = new ShortArray(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
+        // one bulk copy rather than a bounds-checked store per element
+        MemorySegment.copy(values, 0, array.getSegment(), JAVA_SHORT, 0, values.length);
         return array;
     }
 
@@ -214,9 +214,8 @@ public final class ShortArray extends TornadoNativeArray {
      */
     public short[] toHeapArray() {
         short[] outputArray = new short[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
+        // one bulk copy rather than a bounds-checked load per element
+        MemorySegment.copy(getSegment(), JAVA_SHORT, 0, outputArray, 0, outputArray.length);
         return outputArray;
     }
 

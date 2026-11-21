@@ -28,6 +28,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
@@ -109,9 +110,8 @@ public final class ByteArray extends TornadoNativeArray {
      */
     private static ByteArray createSegment(byte[] values) {
         ByteArray array = new ByteArray(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
+        // one bulk copy rather than a bounds-checked store per element
+        MemorySegment.copy(values, 0, array.getSegment(), JAVA_BYTE, 0, values.length);
         return array;
     }
 
@@ -216,9 +216,8 @@ public final class ByteArray extends TornadoNativeArray {
      */
     public byte[] toHeapArray() {
         byte[] outputArray = new byte[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
+        // one bulk copy rather than a bounds-checked load per element
+        MemorySegment.copy(getSegment(), JAVA_BYTE, 0, outputArray, 0, outputArray.length);
         return outputArray;
     }
 
