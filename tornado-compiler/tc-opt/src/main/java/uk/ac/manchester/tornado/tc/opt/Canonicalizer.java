@@ -85,7 +85,11 @@ public final class Canonicalizer implements Pass {
                 if (ca.isPresent() && cb.isPresent()) {
                     yield fold(op, type, ca.get(), cb.get()).map(v -> make(inst, type, v));
                 }
-                yield identity(op, type, a, b, ca, cb);
+                var same = identity(op, type, a, b, ca, cb);
+                if (same.isEmpty() && op == BinaryOp.FDIV) {
+                    yield exactReciprocal(type, cb).map(r -> multiply(inst, r));
+                }
+                yield same;
             }
             case Opcode.Unary(var op) -> Constants.number(ops.get(0)).map(c -> switch (op) {
                 case NEG -> make(inst, type, wrap(-c.longValue(), type));
@@ -223,6 +227,33 @@ public final class Canonicalizer implements Pass {
             case FDIV -> isExactly(cb, 1.0) ? Optional.of(a) : Optional.empty();
             default -> Optional.empty();
         };
+    }
+
+    /**
+     * {@code 1 / c} when {@code c} is a power of two whose reciprocal is a normal number of the type:
+     * then {@code x / c} and {@code x * (1 / c)} round the same real number, so they are equal for every
+     * {@code x}, NaN, infinities and overflow included (the rewrite LLVM makes without fast-math flags).
+     * Besides being cheaper than a correctly rounded division, an explicit multiply is one that
+     * {@code FP_CONTRACT OFF} applies to: the NVIDIA OpenCL compiler rewrites {@code x / 0.5f + y} into a
+     * multiply itself and then fuses it into an FMA even under that pragma, so {@code -FLT_MAX / 0.5f +
+     * Infinity} gives Infinity instead of Java's NaN.
+     */
+    private static Optional<Double> exactReciprocal(Type type, Optional<Number> c) {
+        if (c.isEmpty() || !(c.get() instanceof Double d) || d == 0.0 || Double.isNaN(d) || Double.isInfinite(d)
+                || (Double.doubleToRawLongBits(d) & 0x000F_FFFF_FFFF_FFFFL) != 0) {
+            return Optional.empty();
+        }
+        int limit = type.equals(Type.F32) ? Float.MAX_EXPONENT - 1 : type.equals(Type.F64) ? Double.MAX_EXPONENT - 1 : -1;
+        int exponent = Math.getExponent(d);
+        return Math.abs(exponent) <= limit ? Optional.of(1.0 / d) : Optional.empty();
+    }
+
+    /** {@code x / c} as {@code x * (1 / c)}, before {@code div}. */
+    private static Value multiply(Inst div, double reciprocal) {
+        var b = IrBuilder.insertingBefore(div);
+        var product = b.binary(BinaryOp.FMUL, div.operand(0), b.constFloat(div.type(), reciprocal));
+        product.setName(div.name());
+        return product;
     }
 
     private static boolean isExactly(Optional<Number> c, double v) {
