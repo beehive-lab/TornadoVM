@@ -225,9 +225,8 @@ public final class CharArray extends TornadoNativeArray {
      */
     public char[] toHeapArray() {
         char[] outputArray = new char[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
+        // one bulk copy rather than a bounds-checked load per element
+        MemorySegment.copy(getSegment(), JAVA_CHAR, 0, outputArray, 0, outputArray.length);
         return outputArray;
     }
 

@@ -217,9 +217,8 @@ public final class FloatArray extends TornadoNativeArray {
      */
     public float[] toHeapArray() {
         float[] outputArray = new float[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
+        // one bulk copy rather than a bounds-checked load per element
+        MemorySegment.copy(getSegment(), JAVA_FLOAT, 0, outputArray, 0, outputArray.length);
         return outputArray;
     }
 

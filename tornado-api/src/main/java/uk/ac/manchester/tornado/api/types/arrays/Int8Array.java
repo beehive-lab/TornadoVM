@@ -194,9 +194,8 @@ public final class Int8Array extends TornadoNativeArray {
      */
     public byte[] toHeapArray() {
         byte[] outputArray = new byte[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
+        // one bulk copy rather than a bounds-checked load per element
+        MemorySegment.copy(getSegment(), JAVA_BYTE, 0, outputArray, 0, outputArray.length);
         return outputArray;
     }
 

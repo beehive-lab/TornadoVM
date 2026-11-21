@@ -216,9 +216,8 @@ public final class DoubleArray extends TornadoNativeArray {
      */
     public double[] toHeapArray() {
         double[] outputArray = new double[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
+        // one bulk copy rather than a bounds-checked load per element
+        MemorySegment.copy(getSegment(), JAVA_DOUBLE, 0, outputArray, 0, outputArray.length);
         return outputArray;
     }
 
