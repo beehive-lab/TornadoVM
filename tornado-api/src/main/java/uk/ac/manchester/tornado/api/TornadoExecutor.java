@@ -39,6 +39,7 @@ class TornadoExecutor {
 
     private final List<ImmutableTaskGraph> immutableTaskGraphList;
     private List<ImmutableTaskGraph> subgraphList;
+    private boolean cudaGraph;
 
     TornadoExecutor(ImmutableTaskGraph... immutableTaskGraphs) {
         immutableTaskGraphList = new ArrayList<>();
@@ -62,6 +63,7 @@ class TornadoExecutor {
 
     public void withCUDAGraph() {
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
+        cudaGraph = true;
     }
 
     void withCUDAPendingLaunchCount(int count) {
@@ -85,6 +87,10 @@ class TornadoExecutor {
     }
 
     void execute(ExecutorFrame executionPackage) {
+        if (cudaGraph && immutableTaskGraphList.size() > 1) {
+            executeWaitingOnce(executionPackage);
+            return;
+        }
         for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
             immutableTaskGraph.execute(executionPackage);
             // The next graph's consumeFromDevice without a producer name imports from the graph
@@ -94,6 +100,37 @@ class TornadoExecutor {
             if (immutableTaskGraphList.size() > 1) {
                 immutableTaskGraphList.forEach(other -> other.setLastExecutedTaskGraph(immutableTaskGraph));
             }
+        }
+    }
+
+    /**
+     * Runs a plan of several task-graphs replayed as CUDA graphs, waiting for the device once at the
+     * end instead of after every graph. The graphs of a plan share its command queue, which orders
+     * them, so the host has no reason to wait between them: each wait left the device idle for a
+     * launch latency per graph (9 graphs per call for a batch-1 ResNet-50). A graph that copies to
+     * the host still waits for its copies when it is launched.
+     */
+    private void executeWaitingOnce(ExecutorFrame executionPackage) {
+        List<TornadoTaskGraphInterface> launched = new ArrayList<>(immutableTaskGraphList.size());
+        try {
+            for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+                launched.add(immutableTaskGraph.executeWithoutWaiting(executionPackage));
+                immutableTaskGraphList.forEach(other -> other.setLastExecutedTaskGraph(immutableTaskGraph));
+            }
+        } catch (RuntimeException failure) {
+            // leave nothing running on the device behind the exception
+            for (TornadoTaskGraphInterface graph : launched) {
+                try {
+                    graph.waitOn();
+                } catch (RuntimeException e) {
+                    failure.addSuppressed(e);
+                }
+            }
+            throw failure;
+        }
+        // the first wait drains the shared queue; the others only cover graphs on other devices
+        for (TornadoTaskGraphInterface graph : launched) {
+            graph.waitOn();
         }
     }
 
