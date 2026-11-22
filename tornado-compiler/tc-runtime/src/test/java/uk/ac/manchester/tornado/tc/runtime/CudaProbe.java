@@ -39,17 +39,17 @@ import uk.ac.manchester.tornado.tc.check.ExternalTool;
  * without having run anything. The rules are the same for every such test, and belong in one place.
  * </p>
  */
-final class CudaProbe {
+public final class CudaProbe {
 
     private CudaProbe() {
     }
 
     /** What a built program did: its exit code and everything it wrote. */
-    record Ran(int exit, String output) {
+    public record Ran(int exit, String output) {
     }
 
     /** What to build for: a compute capability nvcc accepts, and the {@code -arch} that names it. */
-    record Arch(int cc, String flag) {
+    public record Arch(int cc, String flag) {
     }
 
     /**
@@ -62,7 +62,7 @@ final class CudaProbe {
      * @param libraryPath
      *         the {@code LD_LIBRARY_PATH} to run with, or {@code null} to inherit it.
      */
-    static Ran run(Path dir, List<String> command, String libraryPath) throws IOException, InterruptedException {
+    public static Ran run(Path dir, List<String> command, String libraryPath) throws IOException, InterruptedException {
         var log = dir == null ? Files.createTempFile("tc-run", ".log") : Files.createTempFile(dir, "run", ".log");
         var builder = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile());
         if (libraryPath != null) {
@@ -77,7 +77,7 @@ final class CudaProbe {
         return new Ran(finished ? process.exitValue() : 124, output);
     }
 
-    static Ran run(Path dir, List<String> command) throws IOException, InterruptedException {
+    public static Ran run(Path dir, List<String> command) throws IOException, InterruptedException {
         return run(dir, command, null);
     }
 
@@ -89,7 +89,7 @@ final class CudaProbe {
      * know the name of the card it is running on, nor to carry the CCCL headers null-aware output
      * includes.
      */
-    static Optional<Path> nvcc() {
+    public static Optional<Path> nvcc() {
         for (var variable : List.of("CUDA_PATH", "CUDA_HOME")) {
             var root = System.getenv(variable);
             if (root != null && !root.isBlank()) {
@@ -187,22 +187,22 @@ final class CudaProbe {
      * as there is. {@link #usable()} is the question the tests ask; {@link #why()} is what they say when
      * it is false.
      */
-    record Toolkit(Optional<Path> nvcc, Optional<Integer> cc, List<String> tried, Optional<Arch> arch) {
+    public record Toolkit(Optional<Path> nvcc, Optional<Integer> cc, List<String> tried, Optional<Arch> arch) {
 
-        boolean usable() {
+        public boolean usable() {
             return arch.isPresent();
         }
 
         /** The nvcc, the GPU and the architectures tried: enough to tell a missing GPU from a stale toolkit. */
-        String why() {
+        public String why() {
             return "nvcc " + nvcc.map(Path::toString).orElse("(none)") + ", GPU " + cc.map(c -> "sm_" + c).orElse("(none)") + ", tried " + tried;
         }
 
-        Path nvccPath() {
+        public Path nvccPath() {
             return nvcc.orElseThrow();
         }
 
-        Arch architecture() {
+        public Arch architecture() {
             return arch.orElseThrow();
         }
     }
@@ -212,7 +212,7 @@ final class CudaProbe {
      * {@code preamble} is what the generated code includes, so that a toolkit missing those headers is
      * found here rather than as a failure in every method under test.
      */
-    static Toolkit find(Path dir, String preamble) throws IOException, InterruptedException {
+    public static Toolkit find(Path dir, String preamble) throws IOException, InterruptedException {
         var nvcc = nvcc();
         var cc = computeCapability(dir);
         var tried = new ArrayList<String>();

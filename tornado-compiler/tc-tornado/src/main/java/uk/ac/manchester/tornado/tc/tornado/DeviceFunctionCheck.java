@@ -63,7 +63,14 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
 public final class DeviceFunctionCheck {
 
     /** Intrinsics a device function may use: values computed from values. */
-    private static final List<String> ALLOWED = List.of("math.", "tornado.vector.make", "tornado.vector.lane", "tornado.vector.insert", "tornado.dp4a", "tornado.devfn.", "tc.udf.");
+    private static final List<String> ALLOWED = List.of("math.", "tornado.vector.make", "tornado.vector.lane", "tornado.vector.insert", "tornado.dp4a", "tornado.devfn.", "tc.udf.",
+            // tc.table is a read-only table of constants, which Java-exact math needs for the FdLibm
+            // functions that reduce their argument through one (sin, cos, tan, atan, exp, sinh, ...).
+            // CUDA declares it `static const` at the top of the function that reads it, so it adds no
+            // second definition beside the entry and the translation unit stays one function. Writing
+            // into it is refused by the ArrayStore cases below, which allow stores only into a private
+            // array the function allocates.
+            "tc.table");
 
     /** The byte length of a string row ({@code byte[]} parameter): the emitter prints the view's {@code size_bytes()}. */
     public static final String STRING_LENGTH = "tornado.devfn.string_length";

@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.function.IntFunction;
 
 import org.junit.jupiter.api.Test;
@@ -192,6 +193,43 @@ public class DeviceFunctionTest {
         assertTrue(source("stringBucket").contains(", int "), source("stringBucket"));
     }
 
+    /**
+     * A device function may read a constant table, which is what FdLibm needs and so what every
+     * StrictMath function that reduces its argument needs: the declaration goes inside the function
+     * that reads it, so the source stays one function and cudf's single-function binding still finds
+     * the entry at the first {@code (}.
+     */
+    @Test
+    public void constantTablesAreDeclaredInsideTheFunction() {
+        var c = compile("strictMath", TcOptions.DEFAULTS);
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        var src = c.source();
+        assertTrue(src.startsWith("__device__ void UdfKernels_strictMath(double *out, double "), src);
+        assertTrue(src.contains("  static const double tc_table"), "the table is declared in the body:\n" + src);
+        // Nothing is defined beside the entry: the first ( in the whole source is the entry's own
+        // parameter list, which is the token cudf renames (parse_single_function_cuda).
+        assertEquals(src.indexOf('('), src.indexOf("UdfKernels_strictMath(") + "UdfKernels_strictMath".length(), src);
+        var renamed = new String[1];
+        cudfRename(src, "GENERIC_TRANSFORM_OP", renamed);
+        assertEquals("UdfKernels_strictMath", renamed[0], src);
+    }
+
+    /**
+     * {@code --java-math} and {@code --device-fn} together: every function StrictMath specifies, and
+     * not only the ones whose FdLibm code happens to need no table. sin, cos, tan, atan, atan2, exp,
+     * sinh and cosh were refused before the table could be declared inside the function.
+     */
+    @Test
+    public void javaExactMathCompilesAsADeviceFunction() {
+        var c = compile("mathAll", TcOptions.DEFAULTS.withJavaMath(true));
+        assertTrue(c.succeeded(), c.diagnostics().toString());
+        var src = c.source();
+        assertEquals(src.indexOf('('), src.indexOf("(double *out"), "first ( is not the entry's:\n" + src);
+        // Compiled from FdLibm, not called in the device library, and its tables are in the body.
+        assertFalse(Pattern.compile("[^_a-zA-Z0-9](sin|cos|tan|exp|pow|atan2)\\s*\\(").matcher(src).find(), src);
+        assertTrue(src.contains("  static const double tc_table"), src);
+    }
+
     // ---- on the GPU
 
     private static final List<Long> LONGS = List.of(1L, 2L, 3L, 7L, 27L, 97L, 871L, 6171L, 77031L, 837799L, 8400511L, 63728127L, 99999999L, 100000000L);
@@ -256,6 +294,15 @@ public class DeviceFunctionTest {
             check(gpu, kernels, "pickFirst", TcOptions.DEFAULTS, rows(300, i -> new Object[] { bytes(i * 41 + 1 + i % 40), bytes(i * 41 + 2 + i % 39), (int) mixLong(i) }), 0);
             // CUDA's sin, pow and exp are not Java's: within a few ulp.
             check(gpu, kernels, "fp", TcOptions.DEFAULTS, rows(1000, i -> new Object[] { i * 0.999 + 0.001 }), 4);
+            // StrictMath is ordinary Java since JDK 21, so TC compiles FdLibm for it whether or not
+            // --java-math is on, and FdLibm reduces sin, cos, tan, atan, exp and sinh through constant
+            // tables. A device function was refused outright for reading one (TC-E3502) until the table
+            // was declared inside the function that reads it; this is the check that it now runs, and
+            // that the declaration a device function gets is one the GPU really accepts. 0 ulp, because
+            // the same FdLibm code runs on both sides. Large and negative arguments are deliberate:
+            // nothing but the huge-argument reduction in sin/cos/tan reaches two_over_pi.
+            check(gpu, kernels, "strictMath", TcOptions.DEFAULTS,
+                    rows(1000, i -> new Object[] { i % 2 == 0 ? i * 0.999 + 0.001 : -(i * 7.3 + 0.5) }), 0);
         }
     }
 

@@ -68,6 +68,25 @@ public final class UdfKernels {
         return Math.log1p(x) * Math.sqrt(x) / (1 + Math.exp(-x)) + Math.sin(x) * Math.pow(x, 0.3);
     }
 
+    /**
+     * StrictMath's functions, chosen so that every one FdLibm reduces through a constant table is
+     * here: sin, cos and tan share two_over_pi and npio2_hw, atan has atanhi/atanlo, exp and sinh
+     * halF/twom1000. A device function could not use a table until it was declared inside the
+     * function that reads it, so this is the check that it now can -- and, with --java-math, every
+     * result must have StrictMath's own bits, not the device library's.
+     */
+    public static double strictMath(double x) {
+        double t = x / 64;
+        return StrictMath.sin(x) + StrictMath.cos(x) + StrictMath.tan(t) + StrictMath.atan(x) + StrictMath.exp(-Math.abs(t)) + StrictMath.sinh(t) + StrictMath.pow(Math.abs(x) + 1, 0.3);
+    }
+
+    /** Every function StrictMath specifies, called through Math, for --java-math. */
+    public static double mathAll(double x, double y) {
+        double t = x / 64;
+        return Math.sin(x) + Math.cos(x) + Math.tan(t) + Math.asin(t) + Math.acos(t) + Math.atan(x) + Math.atan2(x, y) + Math.exp(-Math.abs(t)) + Math.log(Math.abs(x) + 1)
+                + Math.log10(Math.abs(x) + 1) + Math.pow(Math.abs(x) + 1, 0.3) + Math.cbrt(x) + Math.sinh(t) + Math.cosh(t) + Math.tanh(x);
+    }
+
     public static double axpy(double a, double x, double y) {
         return a * x + y;
     }

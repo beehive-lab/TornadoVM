@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.function.DoubleBinaryOperator;
 import java.util.regex.Pattern;
 
@@ -41,6 +40,8 @@ import javax.tools.ToolProvider;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import uk.ac.manchester.tornado.tc.runtime.CudaProbe;
 
 /**
  * {@code tc emit --java-math}: the functions StrictMath specifies, called through Math, are compiled
@@ -163,25 +164,6 @@ public class JavaMathTest {
             -Double.MAX_VALUE, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN, 1, -1, 0.5, -0.5, 2, -2, 3, 1e-300, 1e300, Math.PI, -Math.PI, Math.PI / 2, Math.PI / 4,
             1e22, 0x1p19 * Math.PI / 2, 0x1p20 * Math.PI, 709.782712893384, -745.1332191019411, 710, -746, 1.0000000000000002, 0.9999999999999999, 0x1p53, 0x1p53 + 2, 0.1 };
 
-    private static Path nvcc() {
-        for (var dir : List.of(System.getenv().getOrDefault("CUDA_PATH", "/usr/local/cuda"), "/usr/local/cuda")) {
-            var p = Path.of(dir, "bin", "nvcc");
-            if (Files.isExecutable(p)) {
-                return p;
-            }
-        }
-        return null;
-    }
-
-    private static int exec(Path workDir, List<String> cmd) throws IOException, InterruptedException {
-        var p = new ProcessBuilder(cmd).directory(workDir.toFile()).redirectErrorStream(true).redirectOutput(workDir.resolve("log.txt").toFile()).start();
-        if (!p.waitFor(10, TimeUnit.MINUTES)) {
-            p.destroyForcibly();
-            return -1;
-        }
-        return p.exitValue();
-    }
-
     private static void write(Path p, double[] v) throws IOException {
         var buf = ByteBuffer.allocate(v.length * 8).order(ByteOrder.LITTLE_ENDIAN);
         buf.asDoubleBuffer().put(v);
@@ -195,17 +177,28 @@ public class JavaMathTest {
      */
     @Test
     public void javaMathIsBitIdenticalToStrictMathOnTheGpu(@TempDir Path dir) throws Exception {
-        var nvcc = nvcc();
-        assumeTrue(nvcc != null, "no nvcc");
+        var toolkit = CudaProbe.find(dir, "");
+        // Skipped without nvcc or a GPU, and when the two cannot be made to talk to each other. Set
+        // TC_REQUIRE_GPU=1 where all three are expected, so that losing one fails the build instead
+        // of skipping the check quietly.
+        if (System.getenv("TC_REQUIRE_GPU") != null) {
+            assertTrue(toolkit.usable(), "TC_REQUIRE_GPU is set, but nothing here can build and run a CUDA kernel: " + toolkit.why());
+        }
+        assumeTrue(toolkit.nvcc().isPresent(), "no nvcc");
+        assumeTrue(toolkit.cc().isPresent(), "no GPU");
+        assumeTrue(toolkit.usable(), "nothing this nvcc builds reaches this GPU: " + toolkit.why());
         var cp = classPath(dir);
         var exact = emit("emit", "--java-math", "--cp", cp, "JavaMath", "all");
         assertEquals(0, exact.status(), exact.err());
         Files.writeString(dir.resolve("kernel.cu"), exact.out());
         Files.writeString(dir.resolve("harness.cu"), HARNESS);
-        // -arch=native: build for the GPU that is here. Without it nvcc builds for its own default,
-        // which a newer card cannot load, and the kernel then never runs (see the launch check in HARNESS).
-        int built = exec(dir, List.of(nvcc.toString(), "-O3", "-arch=native", "-include", "kernel.cu", "-o", "harness", "harness.cu"));
-        assertEquals(0, built, () -> read(dir.resolve("log.txt")));
+        // The architecture comes from CudaProbe, which has already built and run something for it here.
+        // -arch=native would be nvcc's own guess, and it fails outright on a card this toolkit predates.
+        // Absolute paths throughout: CudaProbe.run does not set a working directory, by design -- it
+        // only decides where the log goes.
+        var built = CudaProbe.run(dir, List.of(toolkit.nvccPath().toString(), "-O3", "-arch=" + toolkit.architecture().flag(), "-include", dir.resolve("kernel.cu").toString(), "-o",
+                dir.resolve("harness").toString(), dir.resolve("harness.cu").toString()));
+        assertEquals(0, built.exit(), built::output);
 
         int n = 1 << 18;
         int w = FUNCTIONS.size();
@@ -237,9 +230,12 @@ public class JavaMathTest {
         }
         write(dir.resolve("x.bin"), x);
         write(dir.resolve("y.bin"), y);
-        int ran = exec(dir, List.of(dir.resolve("harness").toString(), String.valueOf(n), String.valueOf(w), "x.bin", "y.bin", "out.bin"));
-        assumeTrue(ran != 2 && ran != 4, "no usable GPU");
-        assertEquals(0, ran, () -> read(dir.resolve("log.txt")));
+        var ran = CudaProbe.run(dir, List.of(dir.resolve("harness").toString(), String.valueOf(n), String.valueOf(w), dir.resolve("x.bin").toString(), dir.resolve("y.bin").toString(),
+                dir.resolve("out.bin").toString()));
+        // Not an assumption any more: CudaProbe has already proved this toolkit and this GPU run a
+        // kernel together, so a failure here is a failure of the code under test. Exit 2 is cudaMalloc,
+        // 4 the launch or the sync -- the case that used to skip quietly and report success.
+        assertEquals(0, ran.exit(), ran::output);
         var out = ByteBuffer.wrap(Files.readAllBytes(dir.resolve("out.bin"))).order(ByteOrder.LITTLE_ENDIAN).asDoubleBuffer();
         var failures = new ArrayList<String>();
         for (int f = 0; f < w; f++) {
@@ -263,11 +259,4 @@ public class JavaMathTest {
         assertTrue(failures.isEmpty(), String.join("\n", failures));
     }
 
-    private static String read(Path p) {
-        try {
-            return Files.readString(p);
-        } catch (IOException e) {
-            return e.toString();
-        }
-    }
 }
