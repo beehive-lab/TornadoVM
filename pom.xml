@@ -497,6 +497,12 @@
                 <artifactId>flatten-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <configuration>
+                    <!-- Without this, install/deploy publishes the ORIGINAL pom.xml for the
+                         pom-packaged aggregators, placeholder and all: flatten writes a correct
+                         .flattened-pom.xml for them, and nothing picks it up. A consumer outside
+                         this reactor then fails on `tornado:pom:${revision} (absent)`, because
+                         ${revision} is only defined for builds of this project itself. -->
+                    <updatePomFile>true</updatePomFile>
                     <flattenMode>resolveCiFriendliesOnly</flattenMode>
                 </configuration>
                 <executions>
