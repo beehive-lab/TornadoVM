@@ -463,6 +463,22 @@ public final class Frontend {
         };
     }
 
+    /**
+     * The Java body of a {@code StrictMath} function that the running JDK declares {@code native}.
+     * OpenJ9's class library keeps sixteen of them ({@code sin}, {@code cos}, {@code log1p}, ...) as
+     * natives over its C fdlibm, where OpenJDK implements them in Java. Both JDKs ship the same
+     * algorithms as {@code java.lang.FdLibm$<Name>.compute}, and {@code StrictMath} specifies the
+     * fdlibm results, so translating that method gives the bits the native returns. Empty for any
+     * other method, or when the JDK has no such class.
+     */
+    static Optional<Map.Entry<ClassFile, ClassFile.Method>> strictMathBody(BytecodeSource source, String owner, String name, String descriptor) {
+        if (!owner.equals("java/lang/StrictMath") || name.isEmpty()) {
+            return Optional.empty();
+        }
+        var fdLibm = "java/lang/FdLibm$" + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+        return source.classFile(fdLibm).flatMap(cf -> cf.method("compute", descriptor).filter(m -> m.code().isPresent()).map(m -> Map.entry(cf, m)));
+    }
+
     public static String calleeName(String owner, String name, String descriptor) {
         return Translator.calleeName(owner, name, descriptor);
     }
@@ -478,6 +494,13 @@ public final class Frontend {
         }
         var classFile = parsed.get();
         var method = classFile.method(methodName, descriptor);
+        if (method.isEmpty() || method.get().code().isEmpty()) {
+            var body = strictMathBody(source, owner, methodName, descriptor);
+            if (body.isPresent()) {
+                classFile = body.get().getKey();
+                method = Optional.of(body.get().getValue());
+            }
+        }
         if (method.isEmpty() || method.get().code().isEmpty()) {
             return new ModuleResult(Optional.empty(), List.of(new Diagnostic("TC-E1003", "called method " + owner.replace('/', '.') + "." + methodName + descriptor + " has no bytecode", "", Loc.UNKNOWN)), () -> "");
         }
@@ -587,6 +610,13 @@ public final class Frontend {
                 }
                 calleeClass = superClass.get();
                 calleeMethod = calleeClass.method(ref.name(), ref.descriptor());
+            }
+            if (calleeMethod.isEmpty() || calleeMethod.get().code().isEmpty()) {
+                var body = strictMathBody(source, ref.owner(), ref.name(), ref.descriptor());
+                if (body.isPresent()) {
+                    calleeClass = body.get().getKey();
+                    calleeMethod = Optional.of(body.get().getValue());
+                }
             }
             if (calleeMethod.isEmpty() || calleeMethod.get().code().isEmpty()) {
                 var why = "called method " + ref.owner().replace('/', '.') + "." + ref.name() + ref.descriptor() + " has no bytecode";
