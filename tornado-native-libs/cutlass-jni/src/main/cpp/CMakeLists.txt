@@ -71,29 +71,76 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 # "unable to create file docs/...: Filename too long". Rather than keep
 # fighting the Windows path limit, avoid ever fetching docs/ at all: use git's
 # sparse-checkout (cone mode) to pull only the two subtrees this build uses.
-set(CUTLASS_SOURCE_DIR "${CMAKE_BINARY_DIR}/_deps/cutlass-src")
+#
+# The checkout is cached outside the build tree, because `make` runs
+# `mvn clean` and would otherwise re-download CUTLASS on every build. Cache
+# root: $TORNADOVM_DEPS_CACHE if set, else ~/.cache/tornadovm (Linux/macOS) or
+# %LOCALAPPDATA%\tornadovm (Windows), else the build directory.
+set(CUTLASS_VERSION "v3.5.1")
+if(DEFINED ENV{TORNADOVM_DEPS_CACHE} AND NOT "$ENV{TORNADOVM_DEPS_CACHE}" STREQUAL "")
+    set(_cutlass_cache_root "$ENV{TORNADOVM_DEPS_CACHE}")
+elseif(WIN32 AND DEFINED ENV{LOCALAPPDATA})
+    set(_cutlass_cache_root "$ENV{LOCALAPPDATA}/tornadovm")
+elseif(NOT WIN32 AND DEFINED ENV{HOME})
+    set(_cutlass_cache_root "$ENV{HOME}/.cache/tornadovm")
+else()
+    set(_cutlass_cache_root "${CMAKE_BINARY_DIR}/_deps")
+endif()
+file(TO_CMAKE_PATH "${_cutlass_cache_root}" _cutlass_cache_root)
+set(CUTLASS_SOURCE_DIR "${_cutlass_cache_root}/cutlass-${CUTLASS_VERSION}")
+
 if(NOT EXISTS "${CUTLASS_SOURCE_DIR}/include/cutlass/cutlass.h")
     find_package(Git REQUIRED)
-    file(REMOVE_RECURSE "${CUTLASS_SOURCE_DIR}")
-    file(MAKE_DIRECTORY "${CUTLASS_SOURCE_DIR}")
+    file(MAKE_DIRECTORY "${_cutlass_cache_root}")
+    # Several builds can share the cache (CI runners, parallel builds), so
+    # fetch under a lock into a temporary directory and only rename it into
+    # place once the checkout succeeded: the final directory is never partial.
+    file(LOCK "${CUTLASS_SOURCE_DIR}.lock" GUARD PROCESS TIMEOUT 1800)
+    if(NOT EXISTS "${CUTLASS_SOURCE_DIR}/include/cutlass/cutlass.h")
+        set(_cutlass_tmp "${CUTLASS_SOURCE_DIR}.tmp")
+        file(REMOVE_RECURSE "${_cutlass_tmp}" "${CUTLASS_SOURCE_DIR}")
+        file(MAKE_DIRECTORY "${_cutlass_tmp}")
+        message(STATUS "Fetching CUTLASS ${CUTLASS_VERSION} into ${CUTLASS_SOURCE_DIR}")
 
-    macro(cutlass_git)
-        execute_process(
-            COMMAND ${GIT_EXECUTABLE} ${ARGN}
-            WORKING_DIRECTORY "${CUTLASS_SOURCE_DIR}"
-            RESULT_VARIABLE _cutlass_git_rc
-        )
-        if(NOT _cutlass_git_rc EQUAL 0)
-            message(FATAL_ERROR "CUTLASS sparse checkout failed: git ${ARGN}")
-        endif()
-    endmacro()
-
-    cutlass_git(init -q)
-    cutlass_git(remote add origin https://github.com/NVIDIA/cutlass.git)
-    cutlass_git(sparse-checkout init --cone)
-    cutlass_git(sparse-checkout set include tools/util/include)
-    cutlass_git(fetch --depth 1 origin v3.5.1)
-    cutlass_git(checkout FETCH_HEAD)
+        # The CI runners intermittently stall or drop the GitHub connection
+        # mid-fetch ("RPC failed; curl 56 Recv failure", "fatal: early EOF",
+        # after hanging for minutes). Abort a transfer that stays below
+        # 1 KB/s for 60 s, and retry each step up to 3 times.
+        # --filter=blob:none makes it a partial clone: the fetch only pulls
+        # commit/tree objects and checkout downloads just the blobs under the
+        # sparse paths, instead of the whole tree (docs/ included).
+        set(_cutlass_git ${GIT_EXECUTABLE} -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=60)
+        # One git command per entry, arguments separated by spaces (a CMake
+        # list of lists would flatten).
+        set(_cutlass_steps
+            "init -q"
+            "remote add origin https://github.com/NVIDIA/cutlass.git"
+            "sparse-checkout init --cone"
+            "sparse-checkout set include tools/util/include"
+            "fetch --depth 1 --filter=blob:none origin ${CUTLASS_VERSION}"
+            "checkout -q FETCH_HEAD")
+        foreach(_cutlass_step_str IN LISTS _cutlass_steps)
+            separate_arguments(_cutlass_step UNIX_COMMAND "${_cutlass_step_str}")
+            foreach(_cutlass_attempt RANGE 1 3)
+                execute_process(
+                    COMMAND ${_cutlass_git} ${_cutlass_step}
+                    WORKING_DIRECTORY "${_cutlass_tmp}"
+                    RESULT_VARIABLE _cutlass_git_rc
+                )
+                if(_cutlass_git_rc EQUAL 0)
+                    break()
+                endif()
+                message(WARNING "CUTLASS: git ${_cutlass_step_str} failed (attempt ${_cutlass_attempt}/3)")
+                execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 10)
+            endforeach()
+            if(NOT _cutlass_git_rc EQUAL 0)
+                file(REMOVE_RECURSE "${_cutlass_tmp}")
+                message(FATAL_ERROR "CUTLASS sparse checkout failed: git ${_cutlass_step_str}")
+            endif()
+        endforeach()
+        file(RENAME "${_cutlass_tmp}" "${CUTLASS_SOURCE_DIR}")
+    endif()
+    file(LOCK "${CUTLASS_SOURCE_DIR}.lock" RELEASE)
 endif()
 set(cutlass_SOURCE_DIR "${CUTLASS_SOURCE_DIR}")
 
