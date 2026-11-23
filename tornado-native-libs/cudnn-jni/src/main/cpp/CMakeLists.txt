@@ -141,11 +141,11 @@ if(NOT CUDA_INCLUDE_DIR OR NOT CUDNN_LIB)
     return()
 endif()
 
-# Only the fused SDPA path still needs a compiled shim: it is built on cudnn-frontend, a
-# header-only C++ graph API with no C ABI, so java.lang.foreign cannot call it. The rest of the
-# cuDNN surface is bound directly from Java (see CuDnnNativeLib), and its former translation
-# unit has been deleted.
-set(SOURCE_FILES "source/tornado-cudnn-sdpa.cpp")
+# Only the graph-API paths (fused SDPA and fused convolutions) still need a compiled shim: they are
+# built on cudnn-frontend, a header-only C++ graph API with no C ABI, so java.lang.foreign cannot
+# call it. The rest of the cuDNN surface is bound directly from Java (see CuDnnNativeLib), and its
+# former translation unit has been deleted.
+set(SOURCE_FILES "source/tornado-cudnn-sdpa.cpp" "source/tornado-cudnn-conv.cpp")
 # Keeps the shim loadable on a glibc older than the build host's (see source/glibc_compat.cpp).
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND SOURCE_FILES "source/glibc_compat.cpp")

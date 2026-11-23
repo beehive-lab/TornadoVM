@@ -36,6 +36,7 @@ NVIDIA apt repository).
 | `cudnnConv2d(in, filter, out, n, c, h, w, k, r, s, pad, stride)` | `cudnnConvolutionForward` (IMPLICIT_PRECOMP_GEMM) | 2D cross-correlation, input NCHW, filter KCRS, square pad/stride |
 | `cudnnConv2dFP16(...)` | `cudnnConvolutionForward` (heuristic algorithm, tensor-core maths) | as `cudnnConv2d` on **FP16** `HalfFloatArray`, FP32 accumulation |
 | `cudnnConv2dNHWC(...)`, `cudnnConv2dNHWCFP16(...)` | `cudnnConvolutionForward` (heuristic algorithm) | channels-last: input and output NHWC, filter KRSC; same size arguments as `cudnnConv2d` |
+| `cudnnConv2dNHWCFused(in, filter, bias, residual, out, n, c, h, w, k, r, s, pad, stride, epilogue, plans)`, `cudnnConv2dNHWCFusedFP16(...)` | graph API convolution with pointwise epilogue via cudnn-frontend | as `cudnnConv2dNHWC`, plus `relu(conv + bias + residual)` in the same kernel; `epilogue` ORs `CONV_BIAS`, `CONV_RESIDUAL`, `CONV_RELU`; FP32 bias (one per output channel); the first run of a shape times the first `plans` candidate engines (0: all) and keeps the fastest; CUDA 12+ |
 | `sdpaForward(q, k, v, o, b, h, sQ, sKv, d, scale, causal)` | graph API fused SDPA (flash attention) via cudnn-frontend | **FP16** `HalfFloatArray`, packed BHSD, FP32 accumulate, inference; optional causal mask; d multiple of 8, <= 256, Ampere+ |
 
 Convolution descriptors, the algorithm, and the (grow-only) device workspace are
