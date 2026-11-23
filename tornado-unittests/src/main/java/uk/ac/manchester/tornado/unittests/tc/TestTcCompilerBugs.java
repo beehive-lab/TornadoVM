@@ -511,4 +511,48 @@ public class TestTcCompilerBugs extends TornadoTestBase {
             assertEquals(Double.doubleToRawLongBits(a.get(i) / b.get(i)), Double.doubleToRawLongBits(out.get(i)), "index " + i);
         }
     }
+
+    public static void divideByPowerOfTwoThenAdd(FloatArray x, FloatArray y, FloatArray out) {
+        for (@Parallel int i = 0; i < x.getSize(); i++) {
+            out.set(3 * i, x.get(i) / 0.5f + y.get(i));
+            out.set(3 * i + 1, -(x.get(i) / 0.25f + y.get(i)));
+            out.set(3 * i + 2, x.get(i) / -4.0f - y.get(i));
+        }
+    }
+
+    /**
+     * S-1: a division by a power of two followed by an add is not fused under a strict plan. The NVIDIA
+     * OpenCL compiler (driver 610.57) turns {@code x / 0.5f} into {@code x * 2.0f} and fuses that with
+     * the add even under {@code FP_CONTRACT OFF}, so {@code -Float.MAX_VALUE / 0.5f + Infinity}, which
+     * is {@code -Infinity + Infinity}, came out as Infinity instead of NaN (tornado-fuzz seed 401571).
+     */
+    @Test
+    public void testStrictFloatingPointDivisionByPowerOfTwoIsNotFused() throws TornadoExecutionPlanException {
+        float[] xs = { -Float.MAX_VALUE, Float.MAX_VALUE, -Float.MAX_VALUE, 3.0e38f, 1.5f, -7.25f, Float.MIN_NORMAL, 1.0e-30f };
+        float[] ys = { Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.MAX_VALUE, -Float.MAX_VALUE, 0.1f, 3.0f, -1.0e-38f, 1.0e-37f };
+        FloatArray x = FloatArray.fromArray(xs);
+        FloatArray y = FloatArray.fromArray(ys);
+        FloatArray out = new FloatArray(3 * xs.length);
+        TaskGraph graph = new TaskGraph("s0") //
+                .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, y) //
+                .task("t0", TestTcCompilerBugs::divideByPowerOfTwoThenAdd, x, y, out) //
+                .transferToHost(DataTransferMode.EVERY_EXECUTION, out);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(graph.snapshot())) {
+            plan.withStrictFloatingPoint().execute();
+        }
+        FloatArray expected = new FloatArray(out.getSize());
+        divideByPowerOfTwoThenAdd(x, y, expected);
+        boolean flushesSubnormals = !getTornadoRuntime().getDefaultDevice().getPhysicalDevice().isDeviceSingleFPDenormSupported();
+        for (int i = 0; i < out.getSize(); i++) {
+            float e = expected.get(i);
+            if (flushesSubnormals && e != 0.0f && Math.abs(e) < Float.MIN_NORMAL) {
+                continue;
+            }
+            if (Float.isNaN(e)) {
+                assertTrue(Float.isNaN(out.get(i)), "index " + i + ": " + out.get(i));
+            } else {
+                assertEquals(Integer.toHexString(Float.floatToRawIntBits(e)), Integer.toHexString(Float.floatToRawIntBits(out.get(i))), "index " + i);
+            }
+        }
+    }
 }
