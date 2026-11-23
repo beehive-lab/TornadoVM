@@ -180,6 +180,7 @@ public class TestDeviceView extends TornadoTestBase {
     @BeforeEach
     public void requireDeviceViews() {
         super.before();
+        assertNotBackend(TornadoVMBackendType.OPENCL, "Device views are not implemented for the OpenCL backend");
         switch (backend()) {
             case CUDA -> {
                 if (!CudaMemory.isAvailable()) {
