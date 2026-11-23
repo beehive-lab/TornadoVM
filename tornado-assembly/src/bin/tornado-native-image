@@ -54,6 +54,6 @@ if [ $trace = 1 ]; then
   done
 fi
 
-"$GRAALVM_HOME/bin/native-image" --no-fallback -H:+UnlockExperimentalVMOptions -H:+ForeignAPISupport -H:+SharedArenaSupport \
+"$GRAALVM_HOME/bin/native-image" --no-fallback -H:+UnlockExperimentalVMOptions -H:+ForeignAPISupport \
   -H:ConfigurationFileDirectories="$config" "${jvm[@]}" -cp "$cp" -o "$out" "$main"
 echo "[native-image] built ./$out"
