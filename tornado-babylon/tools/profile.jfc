@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration version="2.0" label="tornado-babylon" description="HAT dispatches, Babylon translations, TornadoVM compilations, CPU samples">
+  <event name="tornado.hat.Dispatch"><setting name="enabled">true</setting></event>
+  <event name="tornado.babylon.Translate"><setting name="enabled">true</setting></event>
+  <event name="tornado.Compile"><setting name="enabled">true</setting></event>
+  <event name="jdk.ExecutionSample"><setting name="enabled">true</setting><setting name="period">5 ms</setting></event>
+  <event name="jdk.NativeMethodSample"><setting name="enabled">true</setting><setting name="period">5 ms</setting></event>
+  <event name="jdk.GarbageCollection"><setting name="enabled">true</setting></event>
+</configuration>
