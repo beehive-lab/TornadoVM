@@ -40,6 +40,13 @@ TornadoVM currently supports:
 -  JDK 21 (e.g. OpenJDK 21, Red Hat Mandrel 21, Amazon Corretto 21, Azul Zulu JDK 21), via the ``jdk21`` build profile.
 -  JDK 22 and newer, including JDK 27, via the single ``jdk22plus`` build profile. TornadoVM no longer depends on JVMCI, so this SDK is built once and runs on any JDK from 22 upwards rather than being tied to one release.
 -  Any JDK 21 distribution, GraalVM included, with the ``jdk21`` build profile.
+-  Eclipse OpenJ9 (IBM Semeru Runtimes) 25, with the ``jdk22plus`` build profile. The unit tests pass on
+   CUDA and OpenCL as on HotSpot, and kernels run at the same speed. Two differences to know about:
+   OpenJ9's JIT is slower at per-element ``MemorySegment`` access, which TornadoVM's off-heap types
+   (``FloatArray``, ``VectorFloat4``, ...) use when host code reads or writes them one element at a time,
+   so prefer the bulk operations (``init``, ``fromArray``, ``toHeapArray``) there. HotSpot-only
+   ``-XX:`` options such as ``-XX:AOTCache`` are ignored by OpenJ9; use ``-Xshareclasses`` for faster
+   start-up instead.
 
 Windows
 ~~~~~~~~~~
