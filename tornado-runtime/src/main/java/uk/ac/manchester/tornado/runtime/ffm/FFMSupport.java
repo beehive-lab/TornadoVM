@@ -326,4 +326,37 @@ public final class FFMSupport {
     public static MemorySegment asSegment(long address, long byteSize) {
         return MemorySegment.ofAddress(address).reinterpret(byteSize);
     }
+
+    /**
+     * An arena for memory that outlives the allocating call and is used from any thread, closed
+     * explicitly by its owner. On the JVM this is {@link Arena#ofShared()}. In a GraalVM native
+     * image it is an automatic arena whose {@code close()} leaves the memory to the garbage
+     * collector: shared arenas there need {@code -H:+SharedArenaSupport}, which the image builder
+     * cannot combine with its Vector API support.
+     */
+    public static Arena sharedArena() {
+        if (System.getProperty("org.graalvm.nativeimage.imagecode") == null) {
+            return Arena.ofShared();
+        }
+        return new AutoArena();
+    }
+
+    private static final class AutoArena implements Arena {
+        private final Arena arena = Arena.ofAuto();
+
+        @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
+            return arena.allocate(byteSize, byteAlignment);
+        }
+
+        @Override
+        public MemorySegment.Scope scope() {
+            return arena.scope();
+        }
+
+        @Override
+        public void close() {
+            // freed by the garbage collector once unreachable
+        }
+    }
 }

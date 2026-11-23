@@ -289,7 +289,7 @@ $GRAALVM_HOME/bin/java -agentlib:native-image-agent=config-merge-dir=app.native-
 
 # 2. build
 $GRAALVM_HOME/bin/native-image --no-fallback -H:+UnlockExperimentalVMOptions \
-    -H:+ForeignAPISupport -H:+SharedArenaSupport -H:ConfigurationFileDirectories=app.native-config \
+    -H:+ForeignAPISupport -H:ConfigurationFileDirectories=app.native-config \
     $JVM -cp app.jar -o app com.example.Main
 ```
 
