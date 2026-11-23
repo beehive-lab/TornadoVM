@@ -178,4 +178,97 @@ public final class CuBlasLt {
                 .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
                 .withAccess(readOnlyExcept(14, 11, beta));
     }
+
+    /**
+     * FP32 matmul with fused bias add: C = alpha * op(A) * op(B) + beta * C + bias, computed in
+     * FP32. The bias vector has {@code m} elements, as in {@link #ltMatmulBiasFP16}.
+     */
+    public static LibraryTaskDescriptor ltMatmulBiasFP32(int transa, int transb, int m, int n, int k, //
+            float alpha, FloatArray matrixA, int lda, FloatArray matrixB, int ldb, //
+            float beta, FloatArray matrixC, int ldc, FloatArray bias) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulBiasFP32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
+                .withAccess(readOnlyExcept(14, 11, beta));
+    }
+
+    /**
+     * FP32 matmul with fused bias add and GELU (tanh approximation), computed in FP32.
+     */
+    public static LibraryTaskDescriptor ltMatmulGeluBiasFP32(int transa, int transb, int m, int n, int k, //
+            float alpha, FloatArray matrixA, int lda, FloatArray matrixB, int ldb, //
+            float beta, FloatArray matrixC, int ldc, FloatArray bias) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulGeluBiasFP32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
+                .withAccess(readOnlyExcept(14, 11, beta));
+    }
+
+    /**
+     * FP32 matmul with fused bias add and ReLU, computed in FP32.
+     */
+    public static LibraryTaskDescriptor ltMatmulReluBiasFP32(int transa, int transb, int m, int n, int k, //
+            float alpha, FloatArray matrixA, int lda, FloatArray matrixB, int ldb, //
+            float beta, FloatArray matrixC, int ldc, FloatArray bias) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulReluBiasFP32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
+                .withAccess(readOnlyExcept(14, 11, beta));
+    }
+
+    /**
+     * FP32 matmul on TF32 Tensor Cores ({@code CUBLAS_COMPUTE_32F_FAST_TF32}): FP32 inputs and
+     * output, inputs rounded to TF32 (10-bit mantissa), FP32 accumulation.
+     */
+    public static LibraryTaskDescriptor ltMatmulTF32(int transa, int transb, int m, int n, int k, //
+            float alpha, FloatArray matrixA, int lda, FloatArray matrixB, int ldb, //
+            float beta, FloatArray matrixC, int ldc) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulTF32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc }) //
+                .withAccess(readOnlyExcept(13, 11, beta));
+    }
+
+    /**
+     * {@link #ltMatmulBiasFP32} on TF32 Tensor Cores.
+     */
+    public static LibraryTaskDescriptor ltMatmulBiasTF32(int transa, int transb, int m, int n, int k, //
+            float alpha, FloatArray matrixA, int lda, FloatArray matrixB, int ldb, //
+            float beta, FloatArray matrixC, int ldc, FloatArray bias) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulBiasTF32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
+                .withAccess(readOnlyExcept(14, 11, beta));
+    }
+
+    /**
+     * {@link #ltMatmulGeluBiasFP32} on TF32 Tensor Cores.
+     */
+    public static LibraryTaskDescriptor ltMatmulGeluBiasTF32(int transa, int transb, int m, int n, int k, //
+            float alpha, FloatArray matrixA, int lda, FloatArray matrixB, int ldb, //
+            float beta, FloatArray matrixC, int ldc, FloatArray bias) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulGeluBiasTF32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
+                .withAccess(readOnlyExcept(14, 11, beta));
+    }
+
+    /**
+     * {@link #ltMatmulReluBiasFP32} on TF32 Tensor Cores.
+     */
+    public static LibraryTaskDescriptor ltMatmulReluBiasTF32(int transa, int transb, int m, int n, int k, //
+            float alpha, FloatArray matrixA, int lda, FloatArray matrixB, int ldb, //
+            float beta, FloatArray matrixC, int ldc, FloatArray bias) {
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction("ltMatmulReluBiasTF32") //
+                .withParameters(new Object[] { transa, transb, m, n, k, alpha, matrixA, lda, matrixB, ldb, beta, matrixC, ldc, bias }) //
+                .withAccess(readOnlyExcept(14, 11, beta));
+    }
 }

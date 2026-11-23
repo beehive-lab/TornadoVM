@@ -483,4 +483,91 @@ public class TestCuBlasLt extends TornadoTestBase {
             }
         }
     }
+
+    /** The FP32 epilogue functions are cuBLASLt only (hipBLASLt has no counterpart yet). */
+    private static void requireCuBlasLt() {
+        if (getTornadoRuntime().getDefaultDevice().getTornadoVMBackend() != TornadoVMBackendType.CUDA) {
+            throw new TornadoVMHIPNotSupported("the FP32 epilogues are cuBLASLt functions");
+        }
+    }
+
+    /**
+     * An FP32 matmul with a fused epilogue against the row-major reference: strict FP32 compute is
+     * held to 1e-4, TF32 (10-bit mantissa inputs) to 1e-2, relative.
+     */
+    private void checkLtMatmulFP32(String function, Activation activation, boolean bias, boolean tf32) throws TornadoExecutionPlanException {
+        requireCuBlasLt();
+        FloatArray matrixA = new FloatArray(SIZE * SIZE);
+        FloatArray matrixB = new FloatArray(SIZE * SIZE);
+        FloatArray matrixC = new FloatArray(SIZE * SIZE);
+        FloatArray biasArray = new FloatArray(SIZE);
+        float[] biasF = bias ? new float[SIZE] : null;
+        FloatArray expected = new FloatArray(SIZE * SIZE);
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            matrixA.set(i, random.nextFloat() - 0.5f);
+            matrixB.set(i, random.nextFloat() - 0.5f);
+        }
+        for (int i = 0; i < SIZE; i++) {
+            biasArray.set(i, random.nextFloat() - 0.5f);
+            if (bias) {
+                biasF[i] = biasArray.get(i);
+            }
+        }
+        int op = CuBlasOperation.CUBLAS_OP_N.operation();
+        TaskGraph taskGraph = new TaskGraph("g").transferToDevice(DataTransferMode.EVERY_EXECUTION, matrixA, matrixB, biasArray);
+        taskGraph = switch (function) {
+            case "ltMatmulTF32" -> taskGraph.libraryTask("lt", CuBlasLt::ltMatmulTF32, op, op, SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE);
+            case "ltMatmulBiasFP32" -> taskGraph.libraryTask("lt", CuBlasLt::ltMatmulBiasFP32, op, op, SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE, biasArray);
+            case "ltMatmulGeluBiasFP32" -> taskGraph.libraryTask("lt", CuBlasLt::ltMatmulGeluBiasFP32, op, op, SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE, biasArray);
+            case "ltMatmulReluBiasFP32" -> taskGraph.libraryTask("lt", CuBlasLt::ltMatmulReluBiasFP32, op, op, SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE, biasArray);
+            case "ltMatmulBiasTF32" -> taskGraph.libraryTask("lt", CuBlasLt::ltMatmulBiasTF32, op, op, SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE, biasArray);
+            case "ltMatmulGeluBiasTF32" -> taskGraph.libraryTask("lt", CuBlasLt::ltMatmulGeluBiasTF32, op, op, SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE, biasArray);
+            case "ltMatmulReluBiasTF32" -> taskGraph.libraryTask("lt", CuBlasLt::ltMatmulReluBiasTF32, op, op, SIZE, SIZE, SIZE, 1.0f, matrixB, SIZE, matrixA, SIZE, 0.0f, matrixC, SIZE, biasArray);
+            default -> throw new IllegalArgumentException(function);
+        };
+        taskGraph.transferToHost(DataTransferMode.EVERY_EXECUTION, matrixC);
+        try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+            plan.execute();
+        }
+        reference(matrixA, matrixB, expected, biasF, activation, SIZE);
+        float tolerance = tf32 ? 1e-2f : 1e-4f;
+        for (int i = 0; i < SIZE * SIZE; i++) {
+            assertEquals(expected.get(i), matrixC.get(i), tolerance * Math.max(1.0f, Math.abs(expected.get(i))), function + ", element " + i);
+        }
+    }
+
+    @Test
+    public void testLtMatmulBiasFP32() throws TornadoExecutionPlanException {
+        checkLtMatmulFP32("ltMatmulBiasFP32", Activation.NONE, true, false);
+    }
+
+    @Test
+    public void testLtMatmulGeluBiasFP32() throws TornadoExecutionPlanException {
+        checkLtMatmulFP32("ltMatmulGeluBiasFP32", Activation.GELU, true, false);
+    }
+
+    @Test
+    public void testLtMatmulReluBiasFP32() throws TornadoExecutionPlanException {
+        checkLtMatmulFP32("ltMatmulReluBiasFP32", Activation.RELU, true, false);
+    }
+
+    @Test
+    public void testLtMatmulTF32() throws TornadoExecutionPlanException {
+        checkLtMatmulFP32("ltMatmulTF32", Activation.NONE, false, true);
+    }
+
+    @Test
+    public void testLtMatmulBiasTF32() throws TornadoExecutionPlanException {
+        checkLtMatmulFP32("ltMatmulBiasTF32", Activation.NONE, true, true);
+    }
+
+    @Test
+    public void testLtMatmulGeluBiasTF32() throws TornadoExecutionPlanException {
+        checkLtMatmulFP32("ltMatmulGeluBiasTF32", Activation.GELU, true, true);
+    }
+
+    @Test
+    public void testLtMatmulReluBiasTF32() throws TornadoExecutionPlanException {
+        checkLtMatmulFP32("ltMatmulReluBiasTF32", Activation.RELU, true, true);
+    }
 }
