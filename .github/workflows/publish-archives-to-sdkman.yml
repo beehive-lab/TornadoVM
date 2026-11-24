@@ -305,12 +305,12 @@ jobs:
           done
 
       # docker-tornadovm's build-test-push-docker.yml is workflow_dispatch-only (it
-      # needs explicit platform/push_images/build_jdk22plus inputs and runs on
-      # self-hosted GPU runners, so a bare repository_dispatch listener isn't a fit).
-      # push_images=true here means a successful run also pushes the new images
-      # publicly to the beehivelab Docker Hub org and commits the version bump back to
-      # that repo — intentional, not a dry run. build_jdk22plus stays off: those images
-      # remain best-effort/experimental (see that repo's jdk22plus Dockerfiles).
+      # needs explicit version/push_images inputs and runs on self-hosted GPU runners,
+      # so a bare repository_dispatch listener isn't a fit). It takes only those two
+      # inputs and builds every image it knows (NVIDIA cuda/opencl x JDK 21/25/27); any
+      # other -f is rejected with HTTP 422. push_images=true here means a successful run
+      # also pushes the new images publicly to the beehivelab Docker Hub org and commits
+      # the version bump back to that repo — intentional, not a dry run.
       - name: Dispatch docker-tornadovm build/test/push
         env:
           GH_TOKEN: ${{ secrets.SITE_DISPATCH_TOKEN }}
@@ -321,6 +321,4 @@ jobs:
           gh workflow run build-test-push-docker.yml \
             --repo beehive-lab/docker-tornadovm \
             -f version="${TAG}" \
-            -f platform=all \
-            -f build_jdk22plus=false \
             -f push_images=true
