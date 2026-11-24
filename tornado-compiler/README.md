@@ -274,14 +274,15 @@ tc emit --device-fn --null-aware --errors --cp udfs.jar com.example.Udfs safeAdd
   null there.
 
 `CudfTransformTest` runs these functions through the real `cudf::transform_extended` and compares
-every row with the Java method. It is opt-in: set `CUDF_HOME` to a libcudf prefix (with `include/`
+every row with the Java method. It is opt-in: set `TC_CUDF_TEST=1` (`CUDF_HOME` alone, as the release
+builds set it for the cuDF shim, does not run it) and `CUDF_HOME` to a libcudf prefix (with `include/`
 and `lib64/`; `RMM_HOME` and `RAPIDS_LOGGER_HOME` default to `librmm` and `rapids_logger` beside it,
 `CUDA_HOME` to `/usr/local/cuda`, and `CUDF_LD_LIBRARY_PATH` adds libcudf's own dependencies). It
 needs g++ and a GPU, builds `tc-runtime/src/test/resources/cudf/transform_check.cpp`, and prints a
 table of the cases (`CUDF_ROWS` sets the size of the large ones, default 10M):
 
 ```bash
-CUDF_HOME=<prefix>/libcudf CUDF_LD_LIBRARY_PATH=<kvikio, nvcomp, ... lib dirs> \
+TC_CUDF_TEST=1 CUDF_HOME=<prefix>/libcudf CUDF_LD_LIBRARY_PATH=<kvikio, nvcomp, ... lib dirs> \
   ./mvnw -o -Pjdk22plus -pl tornado-compiler/tc-runtime -am test -Dtest=CudfTransformTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
