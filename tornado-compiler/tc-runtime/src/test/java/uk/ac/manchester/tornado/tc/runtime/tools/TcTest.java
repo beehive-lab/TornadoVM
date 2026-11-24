@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.tools.ToolProvider;
 
@@ -122,6 +123,35 @@ public class TcTest {
         assertTrue(r.err().matches("(?s)TileKernels\\.java:\\d+: error: TC-E4010 .*"), r.err());
     }
 
+    @Test
+    public void deviceFunctionIsOneCudaFunctionForCudfTransform(@TempDir Path dir) throws IOException {
+        classes(dir, "UdfKernels");
+        var cp = dir + File.pathSeparator + API;
+        var r = run("emit", "--device-fn", "--cp", cp, "uk.ac.manchester.tornado.tc.frontend.kernels.UdfKernels", "bucket");
+        assertEquals(0, r.status(), r.err());
+        assertTrue(r.out().startsWith("__device__ void UdfKernels_bucket(int *out, long long "), r.out());
+        var refused = run("emit", "--device-fn", "--cp", cp, "uk.ac.manchester.tornado.tc.frontend.kernels.UdfKernels", "sum");
+        assertEquals(1, refused.status());
+        assertTrue(refused.err().contains("TC-E3501"), refused.err());
+        assertEquals(2, run("emit", "--device-fn", "--all", "--cp", cp).status());
+    }
+
+    @Test
+    public void nullAwareAndErrorsAreModesOfDeviceFunctions(@TempDir Path dir) throws IOException {
+        classes(dir, "NullableUdfKernels");
+        var cp = dir + File.pathSeparator + API;
+        var k = "uk.ac.manchester.tornado.tc.frontend.kernels.NullableUdfKernels";
+        var r = run("emit", "--device-fn", "--null-aware", "--errors", "--cp", cp, k, "safeAdd");
+        assertEquals(0, r.status(), r.err());
+        assertTrue(r.out().contains("__device__ int NullableUdfKernels_safeAdd(cuda::std::optional<int> *out, cuda::std::optional<int> a_opt, cuda::std::optional<int> b_opt)"), r.out());
+        assertTrue(r.out().contains("return 1;"), r.out());
+        var refused = run("emit", "--device-fn", "--cp", cp, k, "addExact");
+        assertEquals(1, refused.status());
+        assertTrue(refused.err().contains("TC-E3506"), refused.err());
+        assertEquals(2, run("emit", "--null-aware", "--cp", cp, k, "plusOne").status());
+        assertEquals(2, run("emit", "--errors", "--cp", cp, k, "addExact").status());
+    }
+
     /**
      * The offsets the runtime's FieldLayout gives these API classes (read from it with the SDK): the
      * class-only layout tc emit uses must agree, or kernels would read object fields at the wrong place.
@@ -182,6 +212,85 @@ public class TcTest {
         var r = run("emit", "--arg", "m=64", "--cp", dir + File.pathSeparator + API, "--all");
         assertEquals(0, r.status(), r.err());
         assertFalse(r.err().contains("note:"), r.err());
+    }
+
+    private static final String AXPY_KERNEL = String.join("\n", //
+            "import uk.ac.manchester.tornado.api.annotations.Parallel;", //
+            "import uk.ac.manchester.tornado.api.types.arrays.DoubleArray;", //
+            "import uk.ac.manchester.tornado.api.types.arrays.FloatArray;", //
+            "class Axpy {", //
+            "    static void axpy(FloatArray x, FloatArray y, float a, DoubleArray d) {", //
+            "        for (@Parallel int i = 0; i < y.getSize(); i++) {", //
+            "            y.set(i, a * x.get(i) + y.get(i));", //
+            "            d.set(i, d.get(i) * d.get(i) + 1.0);", //
+            "        }", //
+            "    }", //
+            "    static void saxpy(FloatArray x, FloatArray y, float a) {", //
+            "        for (@Parallel int i = 0; i < y.getSize(); i++) {", //
+            "            y.set(i, a * x.get(i) + y.get(i));", //
+            "        }", //
+            "    }", //
+            "    static void fused(FloatArray x, FloatArray y, float a) {", //
+            "        for (@Parallel int i = 0; i < y.getSize(); i++) {", //
+            "            y.set(i, Math.fma(a, x.get(i), y.get(i)));", //
+            "        }", //
+            "    }", //
+            "}", "");
+
+    /** A call to fma/fmaf in printed source; a substring test would also match an identifier such as fmaxValue. */
+    private static final Pattern FMA_CALL = Pattern.compile("\\bfmaf?\\s*\\(");
+
+    /**
+     * --strict-fp: the printed CUDA is strict by itself, whatever flags the compiler that takes it uses
+     * (NVRTC contracts a * b + c by default and has no pragma against it); OpenCL says so in a pragma.
+     */
+    @Test
+    public void strictFloatingPointKeepsMultipliesOutOfFusedMultiplyAdds(@TempDir Path dir) throws IOException {
+        javac(dir, "Axpy", AXPY_KERNEL);
+        var cp = dir + File.pathSeparator + API;
+        var plain = run("emit", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, plain.status(), plain.err());
+        assertFalse(plain.out().contains("__fmul_rn") || plain.out().contains("__dmul_rn"), plain.out());
+
+        var strict = run("emit", "--strict-fp", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, strict.status(), strict.err());
+        assertTrue(strict.out().contains("__fmul_rn("), strict.out());
+        assertTrue(strict.out().contains("__dmul_rn("), strict.out());
+        assertFalse(FMA_CALL.matcher(strict.out()).find(), strict.out());
+        assertFalse(strict.err().contains("note:"), strict.err());
+
+        // Elsewhere the guarantee is a pragma the build can override, and tc says so rather than succeeding quietly.
+        var opencl = run("emit", "--target", "opencl", "--strict-fp", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, opencl.status(), opencl.err());
+        assertTrue(opencl.out().contains("#pragma OPENCL FP_CONTRACT OFF"), opencl.out());
+        assertTrue(opencl.err().contains("-cl-fast-relaxed-math"), opencl.err());
+        var hip = run("emit", "--target", "hip", "--strict-fp", "--cp", cp, "Axpy", "axpy");
+        assertEquals(0, hip.status(), hip.err());
+        assertTrue(hip.out().contains("#pragma clang fp contract(off)"), hip.out());
+        assertTrue(hip.err().contains("-ffast-math"), hip.err());
+        var metal = run("emit", "--target", "metal", "--strict-fp", "--cp", cp, "Axpy", "saxpy");
+        assertEquals(0, metal.status(), metal.err());
+        assertTrue(metal.out().contains("#pragma clang fp contract(off)"), metal.out());
+        assertTrue(metal.err().contains("-ffast-math"), metal.err());
+        for (var target : List.of("hip", "metal", "opencl")) {
+            var relaxed = run("emit", "--target", target, "--cp", cp, "Axpy", "saxpy");
+            assertEquals(0, relaxed.status(), relaxed.err());
+            assertFalse(relaxed.out().contains("contract(off)") || relaxed.out().contains("FP_CONTRACT OFF"), target + ": " + relaxed.out());
+            assertFalse(relaxed.err().contains("note:"), relaxed.err());
+        }
+    }
+
+    /** Java's Math.fma is an exact fused operation: --strict-fp must not unfuse it, on any target. */
+    @Test
+    public void strictFloatingPointKeepsMathFma(@TempDir Path dir) throws IOException {
+        javac(dir, "Axpy", AXPY_KERNEL);
+        var cp = dir + File.pathSeparator + API;
+        for (var target : List.of("cuda", "opencl", "hip", "metal")) {
+            var r = run("emit", "--target", target, "--strict-fp", "--cp", cp, "Axpy", "fused");
+            assertEquals(0, r.status(), target + ": " + r.err());
+            assertTrue(FMA_CALL.matcher(r.out()).find(), target + ": " + r.out());
+            assertFalse(r.out().contains("__fmul_rn"), target + ": " + r.out());
+        }
     }
 
     @Test

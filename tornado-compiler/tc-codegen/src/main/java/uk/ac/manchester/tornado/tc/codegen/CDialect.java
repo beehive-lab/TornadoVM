@@ -120,6 +120,15 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect, HipD
         return Optional.empty();
     }
 
+    /**
+     * Under {@link Feature#NO_CONTRACT}, the function for a {@code float} ({@code dbl} false) or
+     * {@code double} multiply that the device compiler must not contract into an fma, or empty when the
+     * preamble already forbids contraction for the whole source (a pragma) and the operator is printed.
+     */
+    default Optional<String> strictMultiply(boolean dbl) {
+        return Optional.empty();
+    }
+
     default boolean printf() {
         return true;
     }
@@ -160,6 +169,14 @@ sealed interface CDialect permits CudaDialect, OpenClDialect, MetalDialect, HipD
      * address-space qualifier: {@code float} on CUDA; the core adds the {@code *}.
      */
     String pointee(AddressSpace space, String element);
+
+    /**
+     * How a read-only table of constants ({@code tc.table}) is declared inside the function, before
+     * its element type: {@code static const } on CUDA. Empty where the dialect cannot declare one there.
+     */
+    default Optional<String> tableQualifier() {
+        return Optional.empty();
+    }
 
     /** A type the C core does not spell itself (half, bfloat16, vectors); empty if unsupported. */
     Optional<String> typeName(Type type, Set<Feature> features);

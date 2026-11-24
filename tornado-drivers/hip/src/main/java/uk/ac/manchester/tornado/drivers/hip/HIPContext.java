@@ -198,7 +198,7 @@ public class HIPContext implements HIPContextInterface {
      * is read and written from whichever thread the runtime later stages a transfer on.
      */
     public long allocateOffHeapMemory(long size, long alignment) {
-        Arena arena = Arena.ofShared();
+        Arena arena = FFMSupport.sharedArena();
         try {
             MemorySegment segment = arena.allocate(size, alignment);
             long address = segment.address();

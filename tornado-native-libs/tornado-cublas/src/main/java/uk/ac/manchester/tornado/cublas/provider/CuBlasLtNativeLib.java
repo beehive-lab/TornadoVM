@@ -201,7 +201,7 @@ final class CuBlasLtNativeLib {
             return 0;
         }
         // Shared, because a plan outlives this call and is replayed until the Java side drops it.
-        Arena arena = Arena.ofShared();
+        Arena arena = FFMSupport.sharedArena();
         try {
             MemorySegment out = FFMSupport.allocatePointer(arena);
             if ((int) MATMUL_DESC_CREATE.invokeExact(out, computeType, scaleType) != CUBLAS_STATUS_SUCCESS) {

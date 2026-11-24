@@ -88,6 +88,12 @@ final class CudaDialect implements CDialect {
         return space == AddressSpace.SHARED ? "__shared__ " : "";
     }
 
+    /** A function-scope static: initialised once with the module, not per thread. */
+    @Override
+    public Optional<String> tableQualifier() {
+        return Optional.of("static const ");
+    }
+
     @Override
     public String pointee(AddressSpace space, String element) {
         return element; // generic addressing: CUDA pointers carry no address space
@@ -232,6 +238,17 @@ final class CudaDialect implements CDialect {
             lines.add("#include <cuda_fp8.h>");
         }
         return lines;
+    }
+
+    /**
+     * NVRTC contracts {@code a * b + c} unless it is given {@code --fmad=false}, and has no pragma to
+     * forbid it in the source. The runtime adds the flag for a strict plan, but source printed by
+     * {@code tc emit} is compiled by whoever takes it (cudf's JIT, say) with their own flags, so the
+     * source has to be strict by itself: the {@code _rn} multiplies are never contracted.
+     */
+    @Override
+    public Optional<String> strictMultiply(boolean dbl) {
+        return Optional.of(dbl ? "__dmul_rn" : "__fmul_rn");
     }
 
     @Override

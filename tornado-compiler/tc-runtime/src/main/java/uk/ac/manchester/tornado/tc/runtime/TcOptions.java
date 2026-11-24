@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
 
+import uk.ac.manchester.tornado.tc.frontend.Frontend;
+
 /**
  * Options of a TC compilation, read from {@code -Dtornado.tc.*} system properties.
  *
@@ -36,10 +38,39 @@ import java.util.Set;
  * <li>{@code tornado.tc.report}: {@code html} writes a self-contained HTML report per compilation.</li>
  * <li>{@code tornado.enable.fma} (the runtime's switch, default on): fused multiply-adds; a plan
  * with {@code withStrictFloatingPoint()} turns them off for its tasks.</li>
+ * <li>{@code tornado.tc.javaMath} (default off): Java-exact math. {@code Math.sin}, {@code exp},
+ * {@code pow} and the other functions {@code StrictMath} specifies are compiled from the JDK's own
+ * FdLibm code instead of the device library, so their results are bit-identical to
+ * {@code StrictMath}'s. Implies strict floating point (no fused multiply-adds). See
+ * {@link #withJavaMath}.</li>
  * </ul>
+ *
+ * <p>
+ * {@code deviceFunction} (no system property; {@link #withDeviceFunction}, {@code tc emit --device-fn}):
+ * compile a scalar method as a CUDA {@code __device__} function in the shape {@code cudf::transform}
+ * calls, {@code void f(R *out, A0 in0, ...)}, rather than as a kernel. A device function stands in for a
+ * CPU UDF, so it is strict floating point unless asked otherwise: {@link #withDeviceFunction} turns
+ * fused multiply-adds off, and {@link #withFusedMultiplyAdd} after it turns them back on.
  */
 public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task,
-        boolean fuseMultiplyAdd) {
+        boolean fuseMultiplyAdd, boolean deviceFunction, Frontend.DeviceFunctionModes deviceFunctionModes, boolean javaMath) {
+
+    /** A kernel, not a device function. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, false);
+    }
+
+    /** As compiled before null-aware and error modes existed: neither. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd,
+            boolean deviceFunction) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction, Frontend.DeviceFunctionModes.NONE);
+    }
+
+    /** No Java-exact math. */
+    public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task, boolean fuseMultiplyAdd,
+            boolean deviceFunction, Frontend.DeviceFunctionModes deviceFunctionModes) {
+        this(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction, deviceFunctionModes, false);
+    }
 
     /** Fused multiply-adds on. */
     public TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Optional<String> only, boolean htmlReport, boolean mathOptimizations, String task) {
@@ -64,7 +95,7 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
                 Optional.ofNullable(System.getProperty("tornado.tc.only")), "html".equals(System.getProperty("tornado.tc.report")),
                 // The runtime's own switch for math optimisations (default on), honoured by TC too.
                 Boolean.parseBoolean(System.getProperty("tornado.enable.mathOptimizations", "true")), "?",
-                Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true")));
+                Boolean.parseBoolean(System.getProperty("tornado.enable.fma", "true"))).withJavaMath(Boolean.getBoolean("tornado.tc.javaMath"));
     }
 
     public boolean dumps(String stage) {
@@ -76,16 +107,68 @@ public record TcOptions(Set<String> dump, Path dumpDir, boolean verifyEach, Opti
     }
 
     public TcOptions withReport(boolean html, Path dir) {
-        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd);
+        return new TcOptions(dump, dir, verifyEach, only, html, mathOptimizations, task, fuseMultiplyAdd, deviceFunction, deviceFunctionModes, javaMath);
     }
 
     /** The task being compiled, as the runtime names it (device-launch reports print it, as on the Graal path). */
     public TcOptions withTask(String id) {
-        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd);
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, id, fuseMultiplyAdd, deviceFunction, deviceFunctionModes, javaMath);
     }
 
     /** A plan with strict floating point: the multiply and the add round separately, as on the host. */
     public TcOptions withStrictFloatingPoint(boolean strict) {
-        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false) : this;
+        return strict ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction, deviceFunctionModes, javaMath) : this;
+    }
+
+    /**
+     * Compile as a device function ({@code __device__ void f(R *out, A0 in0, ...)}) instead of a kernel.
+     * Turning it on also makes the compilation strict floating point: a device function replaces a CPU
+     * UDF, and a product contracted into an fma would differ from the CPU's result in the last bits.
+     * Call {@link #withFusedMultiplyAdd} afterwards to allow contraction anyway.
+     */
+    public TcOptions withDeviceFunction(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on ? false : fuseMultiplyAdd, on, deviceFunctionModes, javaMath);
+    }
+
+    /**
+     * Java-exact math: the functions {@code StrictMath} specifies ({@code sin}, {@code cos}, {@code tan},
+     * {@code asin}, {@code acos}, {@code atan}, {@code atan2}, {@code exp}, {@code log}, {@code log10},
+     * {@code pow}, {@code cbrt}, {@code sinh}, {@code cosh}, {@code tanh}), called through {@code Math}
+     * or {@code StrictMath}, are compiled from the JDK's FdLibm code rather than mapped to the device
+     * library, so each result is bit-identical to {@code StrictMath}'s. The FdLibm code is exact only
+     * when every multiply and add rounds separately, so this also turns fused multiply-adds off, as
+     * {@link #withStrictFloatingPoint} does. {@code sqrt} stays the device's, which is correctly
+     * rounded as Java's is.
+     */
+    public TcOptions withJavaMath(boolean on) {
+        return on ? new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, false, deviceFunction, deviceFunctionModes, true) : this;
+    }
+
+    /** Fused multiply-adds on or off, whatever was chosen before (the opposite of {@link #withStrictFloatingPoint}). */
+    public TcOptions withFusedMultiplyAdd(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, on, deviceFunction, deviceFunctionModes, javaMath);
+    }
+
+    /**
+     * A null-aware device function ({@code tc emit --null-aware}), for {@code cudf::transform} with
+     * {@code null_aware::YES}: each input arrives as a {@code cuda::std::optional}, boxed parameters and
+     * results ({@code Integer}, {@code Long}, {@code Double}, ...) are SQL values that may be null, and the
+     * output is a {@code cuda::std::optional} too. A primitive parameter that is null makes the result
+     * null without running the method (Spark's rule for a primitive UDF argument).
+     */
+    public TcOptions withNullAwareDeviceFunction(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction,
+                new Frontend.DeviceFunctionModes(on, deviceFunctionModes.errors()), javaMath);
+    }
+
+    /**
+     * A device function that reports {@code ArithmeticException}s ({@code tc emit --errors}): overflow in
+     * {@code Math.*Exact} and integer division by zero end the row with cudf's error code, and
+     * {@code cudf::transform} throws {@code cudf::evaluation_error} for the call (Spark ANSI mode's
+     * failure), instead of the compilation being refused.
+     */
+    public TcOptions withDeviceFunctionErrors(boolean on) {
+        return new TcOptions(dump, dumpDir, verifyEach, only, htmlReport, mathOptimizations, task, fuseMultiplyAdd, deviceFunction,
+                new Frontend.DeviceFunctionModes(deviceFunctionModes.nullAware(), on), javaMath);
     }
 }

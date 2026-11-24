@@ -159,8 +159,130 @@ capability (`TargetCaps::fp64`, `TargetCaps::mma`, ...) a device must have to ru
 **`tc emit`**, the headless compiler, ships in the SDK's `bin/`. It needs no GPU:
 
 ```bash
-tc emit [--target cuda|opencl|metal] [--cp <class path>] [--stats] <Class> <method>
+tc emit [--target cuda|opencl|metal|hip] [--strict-fp] [--java-math] [--cp <class path>] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] <Class> <method>
 tc emit --target opencl --cp my-kernels.jar com.example.Kernels saxpy
+```
+
+`--strict-fp` compiles as a plan with `withStrictFloatingPoint()` does: no multiply is fused with
+an add, so results round as Java's do. How far that holds once the source leaves `tc` depends on
+the target:
+
+- **CUDA**: strict by construction. Every `float` and `double` multiply is printed as
+  `__fmul_rn`/`__dmul_rn`, which no CUDA compiler contracts (NVRTC contracts `a * b + c` by
+  default and has no pragma against it), so the source stays strict whichever compiler and flags
+  build it later, such as cudf's JIT.
+- **OpenCL, HIP, Metal**: a request. The source carries `#pragma OPENCL FP_CONTRACT OFF` or
+  `#pragma clang fp contract(off)`, and build options can override it: `-cl-mad-enable` and
+  `-cl-fast-relaxed-math` on OpenCL, `-ffp-contract=fast` and `-ffast-math` under clang. `tc emit`
+  says so on stderr for these targets. Whoever builds the source must not pass those options.
+
+`Math.fma` is unaffected on every target: it is an exact fused operation in Java too, and is still
+printed as `fma`.
+
+`--java-math` (at run time `-Dtornado.tc.javaMath=true`) makes the double functions `StrictMath`
+specifies (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `exp`, `log`, `log10`, `pow`,
+`cbrt`, `sinh`, `cosh` and `tanh`) bit-identical to `StrictMath`, whether called through `Math`,
+`StrictMath` or `TornadoMath`. They are compiled from the JDK's own FdLibm code instead of being
+mapped to the device's math library, and FdLibm's tables (such as `two_over_pi`) become read-only
+constant arrays. `sqrt` stays the device's, which is correctly rounded as Java's is. It implies
+`--strict-fp`, because FdLibm is exact only when every multiply and add rounds separately.
+
+- Measured on an RTX 4090 over 1M inputs per function (edge cases, random bit patterns, in-range
+  values), compiled by nvcc with its default flags: every result had `StrictMath`'s bits, where
+  the device library differs by 1 to 3 ulp on 1% to 25% of them (and pow on non-finite cases).
+- The target is `StrictMath`, not `Math` on HotSpot. HotSpot's intrinsics for `Math.sin`, `cos`,
+  `tan`, `exp`, `log`, `log10`, `pow`, `cbrt` and `tanh` may differ from `StrictMath` by 1 ulp
+  (2 for `log10` and `tanh`); its `asin`, `acos`, `atan`, `atan2`, `sinh` and `cosh` match it.
+- It costs time: on in-range inputs the RTX 4090 took 1.3x (`pow`) to 4.4x (`cosh`) the
+  device library's time, and about 8x for `sin` and `cos` (4x for `tan`), whose argument reduction
+  for large arguments makes the code much larger.
+- CUDA, HIP and OpenCL only. Metal cannot yet declare the constant tables, so kernels that need
+  them are refused there.
+
+**Device functions for other libraries.** `tc emit --device-fn` compiles a static method with
+primitive parameters and a primitive result, not a kernel, as one CUDA `__device__` function in the
+shape `cudf::transform` calls: the output pointer first, then the row's values. The source can be
+passed to `cudf::transform` with `udf_source_type::CUDA` as it is printed. The Java API is
+`TcCompiler.compileDeviceFunction` (or `TcOptions.withDeviceFunction`).
+
+```bash
+tc emit --device-fn --cp udfs.jar com.example.Udfs collatz
+# __device__ void Udfs_collatz(int *out, long long x)
+# { ... *out = steps; }
+```
+
+- The C types are as narrow as the Java ones (`byte` is `signed char`, `char` is `unsigned short`),
+  so `out` matches the output column's element type. There are no array headers and no launch
+  parameters.
+- A `byte[]` parameter is one row of a strings column: cudf passes it as a `cudf::string_view`, and
+  the method sees the row's UTF-8 bytes, `s[i]` read from `data()` and `s.length` as
+  `size_bytes()`. This is how string hashes such as Murmur3 with a seed (standard tail) or FNV-1a
+  run in `transform`. The row is read-only: a store into it is refused (`TC-E3502`).
+- Everything is in that one function, because cudf takes the source's first `(` as the function's
+  parameter list. Java-semantics helpers (`int` division, `Math.min` on doubles) become lambdas at
+  the top of the body.
+- **A device function is strict floating point by default.** `float` and `double` products are
+  written as `__fmul_rn`/`__dmul_rn`, which the CUDA compiler never fuses into an `fma`, so the
+  results are the CPU's to the last bit even though cudf compiles the function with its own flags.
+  Without that, NVRTC contracts `a * x + y` and the GPU column differs from the Java one in the last
+  bits. `--no-strict-fp` (or `TcOptions.withFusedMultiplyAdd(true)` after `withDeviceFunction`) allows
+  contraction, for a UDF that does not need the CPU's exact results.
+- TC refuses what a per-row function cannot do, with the reason: arrays, objects or `void`
+  (`TC-E3501`); thread indices, `@Parallel` loops, barriers, atomics, shared memory, device
+  launches, tiles or `printf` (`TC-E3502`); and any target other than CUDA (`TC-E3504`).
+  Private arrays (`new int[4]`) are allowed; a store must go directly into one, so a store into an
+  array chosen at run time (`byte[] a = c ? s : t`) is refused too (`TC-E3502`). The
+  string row is also declared `const`, so the CUDA compiler rejects any store into it.
+- **Accepted, but not Java's behaviour.** A device function has no way to report an error and knows
+  nothing of nulls, so what Java would throw becomes a wrong value in that row rather than a failed
+  query:
+  - `int` and `long` division or remainder by zero gives an undefined value; Java throws
+    `ArithmeticException`. (`MIN_VALUE / -1` is Java's.) Guard the divisor in the UDF.
+  - An index outside a string row or a private array reads or writes out of bounds; Java throws
+    `ArrayIndexOutOfBoundsException`.
+  - There is no null: the function cannot tell a null row from a value, and cannot return null.
+  - `Math.sin`, `Math.pow`, `Math.exp` and the like are CUDA's, within a few ulp of Java's, not
+    bit-exact.
+
+**Nulls and errors.** Two modes follow what libcudf 26.08's transform kernel
+(`cpp/src/transform/jit/kernel.cu`) accepts: a UDF may return an `int`, which it reads as a
+`cudf::errc`, takes the largest over the rows, and throws `cudf::evaluation_error` for the call if
+that is not `SUCCESS`; with `null_aware::YES` each argument is a `cuda::std::optional<T>` and the
+output a `cuda::std::optional<R> *`, whose `has_value()` is the row's validity.
+
+```bash
+tc emit --device-fn --null-aware --errors --cp udfs.jar com.example.Udfs safeAdd
+# #include <cuda/std/optional>
+# __device__ int Udfs_safeAdd(cuda::std::optional<int> *out, cuda::std::optional<int> a_opt, cuda::std::optional<int> b_opt)
+```
+
+- `--null-aware` (`TcOptions.withNullAwareDeviceFunction`), for `transform(..., null_aware::YES)`:
+  boxed parameters and results (`Integer`, `Long`, `Short`, `Byte`, `Character`, `Boolean`,
+  `Float`, `Double`) are SQL values that may be null. They are used as Java uses them: `valueOf`
+  (autoboxing), the `xxxValue()` getters (unboxing), `== null`, and `null`; anything else on a box,
+  such as `equals`, is refused (`TC-E3505`). Unboxing a null is Java's `NullPointerException`: the
+  row fails with code 3, which cudf reports as `UNKNOWN_ERROR` (26.08's `errc` has no code for it).
+  A primitive or `byte[]` parameter that is null makes the result null without running the method,
+  Spark's rule for a primitive UDF argument.
+- `--errors` (`TcOptions.withDeviceFunctionErrors`): an `ArithmeticException` fails the row with
+  cudf's code: `Math.addExact`/`multiplyExact`/`toIntExact`/... overflow and `throw new
+  ArithmeticException(...)` are `OVERFLOW` (1), integer `/` and `%` by zero (and `floorMod`) are
+  `DIVISION_BY_ZERO` (2). This is how Spark's ANSI mode fails a query. Without `--errors` these are
+  refused (`TC-E3506`), as is any other exception in either mode.
+- Either mode makes the function return the code (`int`, 0 for success); without them it is
+  `void`, as before. Without `--null-aware`, cudf skips a row with a null input and the result is
+  null there.
+
+`CudfTransformTest` runs these functions through the real `cudf::transform_extended` and compares
+every row with the Java method. It is opt-in: set `CUDF_HOME` to a libcudf prefix (with `include/`
+and `lib64/`; `RMM_HOME` and `RAPIDS_LOGGER_HOME` default to `librmm` and `rapids_logger` beside it,
+`CUDA_HOME` to `/usr/local/cuda`, and `CUDF_LD_LIBRARY_PATH` adds libcudf's own dependencies). It
+needs g++ and a GPU, builds `tc-runtime/src/test/resources/cudf/transform_check.cpp`, and prints a
+table of the cases (`CUDF_ROWS` sets the size of the large ones, default 10M):
+
+```bash
+CUDF_HOME=<prefix>/libcudf CUDF_LD_LIBRARY_PATH=<kvikio, nvcomp, ... lib dirs> \
+  ./mvnw -o -Pjdk22plus -pl tornado-compiler/tc-runtime -am test -Dtest=CudfTransformTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
 `build-tc-native` (with `GRAALVM_HOME` set to a GraalVM for JDK 25+) builds it as a native image,
@@ -183,6 +305,7 @@ plug in as a `Backend` service.
 | `tornado.tc.only=<Class.method>` | restrict dumps and reports to one kernel |
 | `tornado.tc.report=html` | a self-contained HTML report per kernel: bytecode, every stage, the source |
 | `tornado.tc.verify=each` | verify the IR after every pass and stage instead of once at the end (the default); names the pass that broke it |
+| `tornado.tc.javaMath=true` | Java-exact math: `Math`'s StrictMath-specified functions bit-identical to `StrictMath` (see `tc emit --java-math`) |
 | `tornado.tc.memoize=false` | compile every task, even when an earlier one had the same method and facts |
 | `tornado.tc.varyingScalars=<n>` | a scalar argument that takes `n` (default 3) different values across tasks of one kernel is compiled as a runtime value; `0` specialises every value |
 | `--printKernel` (launcher flag) | print the generated source |

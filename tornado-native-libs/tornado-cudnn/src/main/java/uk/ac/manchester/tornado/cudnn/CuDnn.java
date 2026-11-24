@@ -183,6 +183,56 @@ public final class CuDnn {
                 .withAccess(accesses);
     }
 
+    /** Epilogue flag of {@link #cudnnConv2dNHWCFused}: add a per-output-channel FP32 bias. */
+    public static final int CONV_BIAS = 1;
+
+    /** Epilogue flag of {@link #cudnnConv2dNHWCFused}: add a residual of the output's shape and layout. */
+    public static final int CONV_RESIDUAL = 2;
+
+    /** Epilogue flag of {@link #cudnnConv2dNHWCFused}: apply a ReLU last. */
+    public static final int CONV_RELU = 4;
+
+    /**
+     * {@link #cudnnConv2dNHWC} with its epilogue in the same kernel (cuDNN graph API):
+     * {@code output = relu(conv(input, filter) + bias + residual)}, where the {@code epilogue} flags
+     * {@link #CONV_BIAS}, {@link #CONV_RESIDUAL} and {@link #CONV_RELU} select the terms. The bias
+     * holds {@code k} values, one per output channel; the residual has the output's shape, NHWC.
+     * An array whose flag is off is not read: pass any array of its type, such as the input (never
+     * the output).
+     *
+     * <p>
+     * cuDNN's heuristics rank the engines of a fused convolution poorly, so the first time a shape
+     * runs, the first {@code plans} candidate engines (all of them when 0) are timed and the
+     * fastest is kept; timing them all finds the fastest kernel but takes longer, from tenths of a
+     * second to seconds per shape. Requires CUDA 12 or newer and, for most shapes, a Volta or newer
+     * GPU.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dNHWCFused(FloatArray input, FloatArray filter, FloatArray bias, FloatArray residual, FloatArray output, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride, int epilogue, int plans) {
+        return convFused("cudnnConv2dNHWCFused", input, filter, bias, residual, output, n, c, h, w, k, r, s, pad, stride, epilogue, plans);
+    }
+
+    /**
+     * {@link #cudnnConv2dNHWCFused} on FP16 tensors with an FP32 bias, accumulated in FP32 on the
+     * tensor cores.
+     */
+    public static LibraryTaskDescriptor cudnnConv2dNHWCFusedFP16(HalfFloatArray input, HalfFloatArray filter, FloatArray bias, HalfFloatArray residual, HalfFloatArray output, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride, int epilogue, int plans) {
+        return convFused("cudnnConv2dNHWCFusedFP16", input, filter, bias, residual, output, n, c, h, w, k, r, s, pad, stride, epilogue, plans);
+    }
+
+    private static LibraryTaskDescriptor convFused(String function, Object input, Object filter, FloatArray bias, Object residual, Object output, //
+            int n, int c, int h, int w, int k, int r, int s, int pad, int stride, int epilogue, int plans) {
+        Access[] accesses = new Access[16];
+        java.util.Arrays.fill(accesses, Access.READ_ONLY);
+        accesses[4] = Access.WRITE_ONLY;
+        return new LibraryTaskDescriptor() //
+                .withLibrary(LIBRARY_NAME) //
+                .withFunction(function) //
+                .withParameters(new Object[] { input, filter, bias, residual, output, n, c, h, w, k, r, s, pad, stride, epilogue, plans }) //
+                .withAccess(accesses);
+    }
+
     /**
      * The gradient of the input of a {@link #cudnnConv2d}: {@code dInput (n,c,h,w)} from
      * the filter {@code (k,c,r,s)} and {@code dOutput}, NCHW. The sizes are those of the forward

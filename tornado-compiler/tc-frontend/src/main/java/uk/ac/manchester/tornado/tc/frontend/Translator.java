@@ -127,6 +127,9 @@ final class Translator {
     /** Vector parameters of a kernel (hidden SSA variable → parameter): setters on them reach the host. */
     private final Map<VectorParam, BlockArg> vectorParams = new java.util.LinkedHashMap<>();
 
+    /** A read-only table of constants ({@link #constantTable}). */
+    static final String TABLE = "tc.table";
+
     private Translator(Frontend.BytecodeSource source, ClassFile classFile, ClassFile.Method method, Function.Kind kind) {
         this(source, classFile, method, kind, null);
     }
@@ -145,7 +148,7 @@ final class Translator {
         }
         var returnDescriptor = method.descriptor().substring(method.descriptor().indexOf(')') + 1);
         var functionName = name != null ? name : kind == Function.Kind.KERNEL ? simpleClass + "." + method.name() : calleeName(classFile.name(), method.name(), method.descriptor());
-        this.function = new Function(functionName, kind, kind == Function.Kind.KERNEL ? Bindings.type(returnDescriptor) : typeOf(returnDescriptor));
+        this.function = new Function(functionName, kind, kind == Function.Kind.KERNEL && boxType(returnDescriptor).isEmpty() ? Bindings.type(returnDescriptor) : typeOf(returnDescriptor));
         this.ssa = new SsaVariables(function, preds, (key, block) -> error("TC-E1006", "read of " + SsaVariables.describe(key) + " before it is assigned", insns.get(startIndex.getOrDefault(block, 0)).bci()));
     }
 
@@ -195,6 +198,23 @@ final class Translator {
             // Enum values are ordinals inside the kernel; a kernel's own parameters come from the host.
             var type = function.kind() == Function.Kind.KERNEL ? Bindings.type(descriptor) : typeOf(descriptor);
             var name = code.localAt(slot, 0).map(ClassFile.LocalVariable::name).orElse("arg" + slot);
+            var box = boxType(descriptor);
+            if (box.isPresent()) {
+                Value value;
+                if (function.kind() == Function.Kind.KERNEL) {
+                    // The device function's own parameter: its validity and value arrive as two
+                    // parameters (the emitted function takes one cuda::std::optional for both).
+                    var valid = entry.addArg(box.get().element(), name + "_valid");
+                    var present = entry.addArg(box.get().element(), name);
+                    value = makeBox(box.get(), valid, present);
+                    value.setDerivedName(name);
+                } else {
+                    value = entry.addArg(box.get(), name); // a helper's: a value like any other, never written back
+                }
+                ssa.write(localKey(slot, 'A'), entry, value);
+                slot++;
+                continue;
+            }
             // A kernel's byte, boolean, char and short parameters arrive at their own width (the runtime sets
             // 1- and 2-byte kernel arguments, and OpenCL checks the size); the body sees Java's int.
             var narrow = function.kind() == Function.Kind.KERNEL ? narrowParameter(descriptor) : null;
@@ -475,7 +495,19 @@ final class Translator {
         switch (op) {
             case NOP -> {
             }
-            case ACONST_NULL -> push(nullVector(i).orElseThrow(() -> error("TC-E1002", "null references are not supported in kernels", insn.bci())));
+            case ACONST_NULL -> {
+                if (Frontend.deviceFunctionModes().nullAware()) {
+                    var vector = nullVector(i);
+                    if (vector.isPresent()) {
+                        push(vector.get());
+                    } else {
+                        var box = nullBoxType(i).orElseThrow(() -> error("TC-E3505", "the type of this null cannot be told: compile the class with -g", insn.bci()));
+                        push(makeBox(box, laneConstant(box.element(), 0), laneConstant(box.element(), 0)));
+                    }
+                } else {
+                    push(nullVector(i).orElseThrow(() -> error("TC-E1002", "null references are not supported in kernels", insn.bci())));
+                }
+            }
             case BIPUSH, SIPUSH -> push(b.constInt(Type.I32, insn.index()));
             case LDC, LDC_W, LDC2_W -> push(switch (classFile.constants().loadable(insn.index())) {
                 case Integer v -> b.constInt(Type.I32, v);
@@ -520,6 +552,75 @@ final class Translator {
                     push(v1);
                 }
             }
+            // The remaining dup forms (JVMS 6.5), by the categories of the values under the top: javac
+            // emits them for chained assignments such as y[0] = r = a - b on longs and doubles.
+            case DUP_X2 -> {
+                var v1 = pop();
+                var v2 = pop();
+                if (category(v2) == 2) {
+                    push(v1);
+                    push(v2);
+                    push(v1);
+                } else {
+                    var v3 = pop();
+                    push(v1);
+                    push(v3);
+                    push(v2);
+                    push(v1);
+                }
+            }
+            case DUP2_X1 -> {
+                var v1 = pop();
+                if (category(v1) == 2) {
+                    var v2 = pop();
+                    push(v1);
+                    push(v2);
+                    push(v1);
+                } else {
+                    var v2 = pop();
+                    var v3 = pop();
+                    push(v2);
+                    push(v1);
+                    push(v3);
+                    push(v2);
+                    push(v1);
+                }
+            }
+            case DUP2_X2 -> {
+                var v1 = pop();
+                if (category(v1) == 2) {
+                    var v2 = pop();
+                    if (category(v2) == 2) {
+                        push(v1);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        var v3 = pop();
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                } else {
+                    var v2 = pop();
+                    var v3 = pop();
+                    if (category(v3) == 2) {
+                        push(v2);
+                        push(v1);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    } else {
+                        var v4 = pop();
+                        push(v2);
+                        push(v1);
+                        push(v4);
+                        push(v3);
+                        push(v2);
+                        push(v1);
+                    }
+                }
+            }
             case SWAP -> {
                 var v1 = pop();
                 var v2 = pop();
@@ -548,7 +649,26 @@ final class Translator {
                 }
                 conditionalBranch(block, b.icmp(op == IF_ACMPEQ ? IntPredicate.EQ : IntPredicate.NE, lhs, rhs), insn);
             }
-            case IFNULL, IFNONNULL -> throw error("TC-E1002", "reference comparisons are not supported in kernels", insn.bci());
+            case IFNULL, IFNONNULL -> {
+                if (stack.isEmpty() || !isBox(stack.peek().type())) {
+                    throw error("TC-E1002", "reference comparisons are not supported in kernels", insn.bci());
+                }
+                var isNull = isNull(pop());
+                conditionalBranch(block, op == IFNULL ? isNull : b.icmp(IntPredicate.EQ, isNull, b.constInt(Type.I1, 0)), insn);
+            }
+            case ATHROW -> {
+                var thrown = pop();
+                var errorCode = exceptionCodes.get(thrown);
+                if (errorCode == null) {
+                    throw error("TC-E3506", "throwing is not supported in kernels", insn.bci());
+                }
+                failIf(b.constInt(Type.I1, 1), errorCode);
+                if (function.returnType() instanceof Type.VoidType) {
+                    b.ret();
+                } else {
+                    b.ret(zeroOf(function.returnType()));
+                }
+            }
             case GOTO, GOTO_W -> {
                 var target = blockAt.get(insn.targets()[0]);
                 leaveTo(block, List.of(target));
@@ -627,6 +747,13 @@ final class Translator {
                         break;
                     }
                 }
+                if (op == GETSTATIC && ref.descriptor().length() == 2 && ref.descriptor().charAt(0) == '[' && Bindings.field(ref.owner(), ref.name()).isEmpty()) {
+                    var table = source.staticFinalArray(ref.owner(), ref.name());
+                    if (table.isPresent()) {
+                        push(constantTable(table.get()));
+                        break;
+                    }
+                }
                 var binding = Bindings.field(ref.owner(), ref.name()).orElseThrow(() -> error("TC-E1003", "field " + ref.owner().replace('/', '.') + "." + ref.name() + " is not supported in kernels yet", insn.bci()));
                 if (binding instanceof Intrinsic(var name, var type, var immediates)) {
                     push(b.intrinsic(name, immediates, type, List.of()));
@@ -670,6 +797,8 @@ final class Translator {
                 var array = pop();
                 if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Alloca(var space, var element, var count)) {
                     push(b.constInt(Type.I32, count));
+                } else if (array instanceof Inst inst && inst.opcode() instanceof Opcode.Intrinsic(var name) && name.equals(TABLE)) {
+                    push(b.constInt(Type.I32, inst.immediates().requireInt("count")));
                 } else if (array instanceof Inst inst && LocalArrays.isPending(inst)) {
                     push(inst.operand(0));
                 } else if (array.type() instanceof Type.PointerType) {
@@ -732,6 +861,14 @@ final class Translator {
                     // An API matrix made in the kernel: only its constructor and setters may use it
                     // (see writeOnly), so it is never observed and is dropped with them.
                     push(b.intrinsic(WRITE_ONLY, new Type.ObjectType(classFile.constants().className(insn.index())), List.of()));
+                } else if (op == NEW && classFile.constants().className(insn.index()).equals(ARITHMETIC_EXCEPTION)) {
+                    if (!Frontend.deviceFunctionModes().errors()) {
+                        throw error("TC-E3506", "an ArithmeticException (overflow, division by zero) is not supported in kernels; a device function can report it with --errors", insn.bci());
+                    }
+                    // Only thrown: athrow turns it into the device function's error code (see exceptionCodes).
+                    var exception = new Inst(new Opcode.Intrinsic("tc.uninitialised"), new Type.ObjectType(ARITHMETIC_EXCEPTION));
+                    exceptionCodes.put(exception, ERRC_OVERFLOW);
+                    push(exception);
                 } else if (op == NEW) {
                     throw error("TC-E1011", "allocating an object (" + classFile.constants().className(insn.index()).replace('/', '.') + ") is not supported in kernels", insn.bci());
                 } else if (op >= IRETURN && op <= DRETURN || op == ARETURN && !stack.isEmpty()) {
@@ -1025,10 +1162,170 @@ final class Translator {
 
     /** The descriptor's type, with enum classes as their ordinal ({@code i32}). */
     private Type typeOf(String descriptor) {
+        var box = boxType(descriptor);
+        if (box.isPresent()) {
+            return box.get();
+        }
         if (descriptor.startsWith("L") && source.enumInfo(descriptor.substring(1, descriptor.length() - 1)).isPresent()) {
             return Type.I32;
         }
         return Bindings.type(descriptor);
+    }
+
+    // ---------------------------------------------------------------- null-aware device functions
+
+    /** The boxed classes a null-aware device function takes, returns and computes with, by their lane type. */
+    private static final Map<String, Type> BOXES = Map.of("java/lang/Integer", Type.I32, "java/lang/Long", Type.I64, "java/lang/Short", Type.I16, "java/lang/Byte", Type.I8,
+            "java/lang/Character", Type.I16, "java/lang/Boolean", Type.I8, "java/lang/Float", Type.F32, "java/lang/Double", Type.F64);
+    /** Error codes of a device function's result, as cudf::errc (cudf/errc.hpp) numbers them; 3 is past its last. */
+    static final int ERRC_OVERFLOW = 1, ERRC_DIVISION_BY_ZERO = 2, ERRC_NULL_POINTER = 3;
+    private static final String FAIL = "tc.udf.fail";
+    private static final String ARITHMETIC_EXCEPTION = "java/lang/ArithmeticException";
+    /** The error code of each {@code new ArithmeticException(message)} on the stack, by the message. */
+    private final Map<Value, Integer> exceptionCodes = new IdentityHashMap<>();
+
+    /**
+     * A boxed class's value in a null-aware device function (see {@link Frontend.DeviceFunctionModes}):
+     * two lanes of its primitive type, lane 0 the validity (1, or 0 for null) and lane 1 the value.
+     */
+    private static Optional<Type.VectorType> boxType(String descriptor) {
+        if (!Frontend.deviceFunctionModes().nullAware() || !descriptor.startsWith("L") || !descriptor.endsWith(";")) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(BOXES.get(descriptor.substring(1, descriptor.length() - 1))).map(lane -> new Type.VectorType(lane, 2));
+    }
+
+    private static boolean isBox(Type type) {
+        return Frontend.deviceFunctionModes().nullAware() && type instanceof Type.VectorType(var lane, var length) && length == 2 && BOXES.containsValue(lane);
+    }
+
+    private Value lane(Value box, int lane) {
+        var element = ((Type.VectorType) box.type()).element();
+        return builder.intrinsic("tornado.vector.lane", Immediates.of("lane", lane), element, List.of(box));
+    }
+
+    private Value laneConstant(Type lane, long v) {
+        return lane.isFloat() ? builder.constFloat(lane, v) : builder.constInt(lane, v);
+    }
+
+    /** {@code null}, or a present value, of a box type. */
+    private Value makeBox(Type.VectorType box, Value valid, Value value) {
+        return builder.intrinsic("tornado.vector.make", box, List.of(valid, value));
+    }
+
+    /** Whether a box is null: its validity lane is zero. */
+    private Value isNull(Value box) {
+        var element = ((Type.VectorType) box.type()).element();
+        var valid = lane(box, 0);
+        return element.isFloat() ? builder.fcmp(FloatPredicate.OEQ, valid, laneConstant(element, 0)) : builder.icmp(IntPredicate.EQ, valid, laneConstant(element, 0));
+    }
+
+    /** Fails the row with {@code code} when {@code condition} holds (see {@link Frontend.DeviceFunctionModes}). */
+    private void failIf(Value condition, int code) {
+        builder.intrinsic(FAIL, Immediates.of("code", code), Type.VOID, List.of(condition));
+    }
+
+    /**
+     * The type of the {@code null} at instruction {@code index}: bytecode does not say, so it is read
+     * from where it goes -- returned, stored to a local the class file describes (javac -g), or
+     * returned after a jump -- else from the method's descriptor when that has a single box type.
+     */
+    private Optional<Type.VectorType> nullBoxType(int index) {
+        var returnDescriptor = method.descriptor().substring(method.descriptor().indexOf(')') + 1);
+        for (int k = index + 1, hops = 0; k < insns.size() && hops < 4; hops++) {
+            var next = insns.get(k);
+            int op = next.opcode();
+            if (op == ARETURN) {
+                return boxType(returnDescriptor);
+            }
+            int slot = op == ASTORE ? next.index() : op >= ASTORE_0 && op <= ASTORE_3 ? op - ASTORE_0 : -1;
+            if (slot >= 0) {
+                var local = code.localAt(slot, k + 1 < insns.size() ? insns.get(k + 1).bci() : next.bci());
+                if (local.isPresent()) {
+                    return boxType(local.get().descriptor());
+                }
+                break;
+            }
+            if ((op == GOTO || op == GOTO_W) && indexOfBci.containsKey(next.targets()[0])) {
+                k = indexOfBci.get(next.targets()[0]);
+                continue;
+            }
+            break;
+        }
+        var kinds = new java.util.LinkedHashSet<Type.VectorType>();
+        parameterDescriptors(method.descriptor()).forEach(d -> boxType(d).ifPresent(kinds::add));
+        boxType(returnDescriptor).ifPresent(kinds::add);
+        return kinds.size() == 1 ? Optional.of(kinds.iterator().next()) : Optional.empty();
+    }
+
+    /**
+     * A call on a boxed class in a null-aware device function: {@code valueOf} boxes, the
+     * {@code xxxValue()} getters unbox (failing the row on null, as Java throws a
+     * NullPointerException), and anything else that takes or returns a box is refused.
+     * Returns false for a call that has nothing to do with boxes.
+     */
+    private boolean boxCall(uk.ac.manchester.tornado.tc.frontend.classfile.ConstantPool.MemberRef ref, List<Value> args, int opcode, int bci) {
+        var owner = ref.owner();
+        boolean ownerIsBox = BOXES.containsKey(owner) || owner.equals("java/lang/Number");
+        boolean mentionsBox = BOXES.keySet().stream().anyMatch(b -> ref.descriptor().contains("L" + b + ";"));
+        if (!ownerIsBox && !mentionsBox) {
+            return false;
+        }
+        var returnDescriptor = ref.descriptor().substring(ref.descriptor().indexOf(')') + 1);
+        if (opcode == INVOKESTATIC && ref.name().equals("valueOf") && args.size() == 1 && !args.get(0).type().equals(ApiTypes.STRING) && boxType(returnDescriptor).isPresent()) {
+            var box = boxType(returnDescriptor).get();
+            var value = args.get(0);
+            var lane = box.element();
+            if (!value.type().equals(lane)) {
+                value = builder.convert(ConvertOp.TRUNC, value, lane); // byte, short, char, boolean: an int on the JVM stack
+            }
+            push(makeBox(box, laneConstant(lane, 1), value));
+            return true;
+        }
+        if (opcode != INVOKESTATIC && ref.name().endsWith("Value") && ref.descriptor().startsWith("()") && args.size() == 1 && isBox(args.get(0).type())) {
+            var box = args.get(0);
+            failIf(isNull(box), ERRC_NULL_POINTER);
+            var lane = ((Type.VectorType) box.type()).element();
+            Value value = lane(box, 1);
+            // On the JVM stack: an int for the narrow lanes (char and boolean unsigned).
+            char from = lane.equals(Type.I64) ? 'J' : lane.equals(Type.F32) ? 'F' : lane.equals(Type.F64) ? 'D' : 'I';
+            if (lane.equals(Type.I8) || lane.equals(Type.I16)) {
+                boolean unsigned = owner.equals("java/lang/Character") || owner.equals("java/lang/Boolean");
+                value = builder.convert(unsigned ? ConvertOp.ZEXT : ConvertOp.SEXT, value, Type.I32);
+            }
+            push(value);
+            char to = returnDescriptor.charAt(0);
+            char wide = "BSCZ".indexOf(to) >= 0 ? 'I' : to;
+            if (from != wide) {
+                convert(conversion(from, wide), bci);
+            }
+            if ("BSC".indexOf(to) >= 0) {
+                convert(conversion('I', to), bci); // byteValue() and the like: idempotent on a lane that is already that width
+            }
+            return true;
+        }
+        throw error("TC-E3505", "call to " + owner.replace('/', '.') + "." + ref.name() + ref.descriptor()
+                + ": boxed values are used through valueOf, the xxxValue() getters and comparisons with null", bci);
+    }
+
+    /** The opcode of the JVM conversion {@code from}2{@code to} ({@code i2l}, {@code d2i}, {@code i2b}, ...). */
+    private static int conversion(char from, char to) {
+        var names = List.of("i2l", "i2f", "i2d", "l2i", "l2f", "l2d", "f2i", "f2l", "f2d", "d2i", "d2l", "d2f", "i2b", "i2c", "i2s");
+        // Descriptor letters to the mnemonics' (J is long: l2d).
+        var name = (from == 'J' ? 'l' : Character.toLowerCase(from)) + "2" + (to == 'J' ? 'l' : Character.toLowerCase(to));
+        int k = names.indexOf(name);
+        if (k < 0) {
+            throw new IllegalArgumentException("no conversion " + name);
+        }
+        return I2L + k;
+    }
+
+    /** The zero of a type, for the return after a failure (never stored: the function has ended). */
+    private Value zeroOf(Type type) {
+        return switch (type) {
+            case Type.VectorType vec -> builder.intrinsic("tornado.vector.make", vec, java.util.Collections.nCopies(vec.length(), laneConstant(vec.element(), 0)));
+            default -> laneConstant(type, 0);
+        };
     }
 
     /** A primitive field of an enum value (an ordinal): the constants' values, selected by ordinal. */
@@ -1108,6 +1405,10 @@ final class Translator {
             case 3 -> isFloat ? BinaryOp.FDIV : BinaryOp.DIV;
             default -> isFloat ? BinaryOp.FREM : BinaryOp.REM;
         };
+        if ((binary == BinaryOp.DIV || binary == BinaryOp.REM) && Frontend.deviceFunctionModes().errors()) {
+            // Java throws ArithmeticException("/ by zero"): the device function fails the row.
+            failIf(builder.icmp(IntPredicate.EQ, rhs, builder.constInt(rhs.type(), 0)), ERRC_DIVISION_BY_ZERO);
+        }
         push(builder.binary(binary, lhs, rhs));
     }
 
@@ -1211,13 +1512,26 @@ final class Translator {
 
     private void invoke(Insn insn) {
         var ref = classFile.constants().member(insn.index());
-        var binding = Bindings.method(ref.owner(), ref.name(), ref.descriptor());
+        // Java-exact math: the StrictMath-specified functions are inlined (to FdLibm), not bound.
+        var binding = source.javaMath() && Bindings.javaExact(ref.owner(), ref.name(), ref.descriptor()) ? Optional.<Bindings.Binding>empty()
+                : Bindings.method(ref.owner(), ref.name(), ref.descriptor());
         int argCount = parameterDescriptors(ref.descriptor()).size() + (insn.opcode() == INVOKESTATIC ? 0 : 1);
         var args = new ArrayList<Value>();
         for (int k = 0; k < argCount; k++) {
             args.add(0, pop());
         }
         var returnType = typeOf(ref.descriptor().substring(ref.descriptor().indexOf(')') + 1));
+        if (ref.owner().equals(ARITHMETIC_EXCEPTION) && ref.name().equals("<init>") && !args.isEmpty() && exceptionCodes.containsKey(args.get(0))) {
+            // new ArithmeticException(message): the message says which error code it is ("/ by zero").
+            if (args.size() > 1 && args.get(1) instanceof Inst m && m.opcode() instanceof Opcode.Intrinsic(var n) && n.equals(STRING)
+                    && m.immediates().requireString("value").contains("by zero")) {
+                exceptionCodes.put(args.get(0), ERRC_DIVISION_BY_ZERO);
+            }
+            return;
+        }
+        if (Frontend.deviceFunctionModes().nullAware() && boxCall(ref, args, insn.opcode(), insn.bci())) {
+            return;
+        }
         var enumOwner = source.enumInfo(ref.owner());
         if (enumOwner.isPresent() && ref.name().equals("ordinal") && ref.descriptor().equals("()I")) {
             push(args.get(0));
@@ -1402,6 +1716,32 @@ final class Translator {
             return builder.alloca(space, element, (int) v);
         }
         return builder.intrinsic(LocalArrays.PENDING, LocalArrays.pendingImmediates(space, element), new Type.PointerType(space), List.of(length));
+    }
+
+    /**
+     * A constant table ({@link ConstantTables}): a pointer to constant memory holding its values
+     * ({@code tc.table}), which the dialects declare once as a read-only array. Reads go through it as
+     * through any array.
+     */
+    private Value constantTable(ConstantTables.Table table) {
+        var element = switch (table.newarrayType()) {
+            case 4, 8 -> Type.I8;
+            case 5, 9 -> Type.I16;
+            case 6 -> Type.F32;
+            case 7 -> Type.F64;
+            case 10 -> Type.I32;
+            default -> Type.I64;
+        };
+        var bits = new StringBuilder();
+        for (var v : table.values()) {
+            if (!bits.isEmpty()) {
+                bits.append(',');
+            }
+            // Raw bits for floating point, so -0.0, NaN payloads and every last digit survive the text.
+            bits.append(v instanceof Double d ? Double.doubleToRawLongBits(d) : v instanceof Float f ? Float.floatToRawIntBits(f) : v.longValue());
+        }
+        return builder.intrinsic(TABLE, Immediates.of("elem", element.text(), "count", (long) table.values().size(), "values", bits.toString()),
+                new Type.PointerType(AddressSpace.CONSTANT), List.of());
     }
 
     // ---------------------------------------------------------------- helpers

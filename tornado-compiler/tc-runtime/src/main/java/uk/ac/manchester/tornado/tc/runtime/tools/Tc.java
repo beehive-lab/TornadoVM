@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -52,8 +53,9 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * or MSL and prints them. No GPU and no TornadoVM runtime are needed.
  *
  * <pre>
- *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--cp PATH] [--stats] Class method
+ *   tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--java-math] [--cp PATH] [--stats] [--device-fn] Class method
  *   tc emit [same options] --all
+ *   tc emit [--cc N] [--cp PATH] [--stats] [--no-strict-fp] --device-fn [--null-aware] [--errors] Class method
  *   tc --version
  *   ... [--arg name=value]...
  * </pre>
@@ -64,6 +66,18 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * except {@code main}, synthetic methods and the children of {@code DeviceKernel.of} (compiled with
  * the kernel that launches them). Each kernel's code follows a {@code // ===== Class.method =====}
  * header, in source order; a refused kernel prints its diagnostics and the others still compile.
+ *
+ * <p>
+ * {@code --java-math} makes the functions {@code StrictMath} specifies ({@code sin}, {@code exp},
+ * {@code pow}, ...) bit-identical to {@code StrictMath}: they are compiled from the JDK's FdLibm code
+ * instead of the device library ({@code TcOptions.withJavaMath}). It implies {@code --strict-fp}.
+ *
+ * <p>
+ * {@code --strict-fp} compiles as a plan with {@code withStrictFloatingPoint()} does: no multiply is
+ * fused with an add, so floating-point results round as Java's do. On CUDA the source is strict by
+ * itself ({@code __fmul_rn}/{@code __dmul_rn}), so it stays strict whichever compiler and flags later
+ * build it. Elsewhere it carries a contraction pragma, which build options such as
+ * {@code -cl-fast-relaxed-math} or {@code -ffast-math} override; a note on stderr says so.
  *
  * <p>
  * {@code --cc} is the CUDA compute capability (default 89: an RTX 4090), as {@code major * 10 + minor}.
@@ -80,6 +94,19 @@ import uk.ac.manchester.tornado.tc.tornado.ValueSpecialisation;
  * {@code static final DeviceKernel} fields, enum constants such as {@code DType.FP8_E4M3} and computed
  * constants resolve as when TornadoVM compiles a task. As a GraalVM native image, class bytes are
  * only read, and kernels that need those are refused.
+ *
+ * <p>
+ * {@code --device-fn} compiles a static method with primitive parameters and a primitive result, not
+ * a kernel, as a CUDA {@code __device__} function in the shape {@code cudf::transform} calls:
+ * {@code __device__ void f(R *out, A0 in0, ...)}, everything in that one function (see
+ * {@code TcCompiler.compileDeviceFunction}). It is CUDA only and takes one method, not {@code --all}.
+ * With {@code --null-aware} it is for {@code cudf::transform} with {@code null_aware::YES}: the
+ * arguments and result are {@code cuda::std::optional}s, and boxed parameters and results
+ * ({@code Integer}, {@code Long}, {@code Double}, ...) are values that may be null. With
+ * {@code --errors}, an {@code ArithmeticException} (Math.*Exact overflow, integer division by zero)
+ * fails the row with cudf's error code. Either makes the function return that code, an {@code int}.
+ * It implies {@code --strict-fp}, since a device function stands in for a CPU UDF and should give the
+ * CPU's results; {@code --no-strict-fp} lets the compiler contract products into fmas anyway.
  *
  * <p>
  * The default class path is {@code .}; {@code $TORNADOVM_HOME/share/java/tornado/tornado-api*.jar}
@@ -119,6 +146,12 @@ public final class Tc {
         String classPath = ".";
         boolean stats = false;
         boolean all = false;
+        boolean strictFp = false;
+        boolean javaMath = false;
+        boolean deviceFunction = false;
+        boolean nullAware = false;
+        boolean errors = false;
+        boolean noStrictFp = false;
         var given = new LinkedHashMap<String, String>();
         var positional = new ArrayList<String>();
         try {
@@ -139,6 +172,12 @@ public final class Tc {
                     case "--cp", "-cp", "--classpath" -> classPath = value(args, ++i);
                     case "--stats" -> stats = true;
                     case "--all" -> all = true;
+                    case "--strict-fp" -> strictFp = true;
+                    case "--java-math" -> javaMath = true;
+                    case "--device-fn" -> deviceFunction = true;
+                    case "--null-aware" -> nullAware = true;
+                    case "--errors" -> errors = true;
+                    case "--no-strict-fp" -> noStrictFp = true;
                     case "--arg" -> {
                         var nameValue = value(args, ++i).split("=", 2);
                         if (nameValue.length != 2) {
@@ -156,7 +195,30 @@ public final class Tc {
         if (all ? !positional.isEmpty() : positional.size() != 2) {
             return usage(err);
         }
+        if ((nullAware || errors) && !deviceFunction) {
+            err.println("tc: --null-aware and --errors are modes of --device-fn");
+            return usage(err);
+        }
+        if (deviceFunction && all) {
+            err.println("tc: --device-fn compiles one method: name it instead of --all");
+            return usage(err);
+        }
+        if (noStrictFp && (strictFp || !deviceFunction)) {
+            err.println("tc: --no-strict-fp only turns off the strict floating point --device-fn implies");
+            return usage(err);
+        }
         var target = target(dialect, cc, fp16, fp64);
+        // --device-fn implies strict floating point (TcOptions.withDeviceFunction); --no-strict-fp undoes it.
+        var options = TcOptions.DEFAULTS.withStrictFloatingPoint(strictFp).withDeviceFunction(deviceFunction).withNullAwareDeviceFunction(nullAware).withDeviceFunctionErrors(errors)
+                .withJavaMath(javaMath);
+        if (noStrictFp) {
+            options = options.withFusedMultiplyAdd(true);
+        }
+        if (strictFp && dialect != TargetCaps.Dialect.CUDA) {
+            err.println("tc: note: --strict-fp on " + dialect.name().toLowerCase(Locale.ROOT) + " is a contraction pragma in the source, which "
+                    + (dialect == TargetCaps.Dialect.OPENCL ? "-cl-mad-enable and -cl-fast-relaxed-math" : "-ffp-contract=fast and -ffast-math")
+                    + " override: build it without them");
+        }
         var path = withApi(classPath);
         var source = source(path);
         List<Kernel> kernels = all ? kernels(classPath) : List.of(named(source, positional.get(0).replace('.', '/'), positional.get(1)));
@@ -169,14 +231,14 @@ public final class Tc {
             var assumed = new ArrayList<String>();
             TcCompiler.Compilation c;
             try {
-                c = compile(source, kernel, target, method, given, false, assumed);
+                c = compile(source, kernel, target, method, given, false, assumed, options);
             } catch (TypeLayouts.BadArgument e) {
                 err.println("tc: " + e.getMessage());
                 return usage(err);
             }
             if (!c.succeeded() && method != null && c.diagnostics().stream().anyMatch(d -> NEEDS_VALUES.contains(d.code()))) {
                 // The runtime knows every argument when it compiles a task; here, assume what the domain needs.
-                var retry = compile(source, kernel, target, method, given, true, assumed);
+                var retry = compile(source, kernel, target, method, given, true, assumed, options);
                 if (retry.succeeded()) {
                     c = retry;
                     var note = location(kernel) + "note: compiled for " + String.join(", ", assumed) + ": these values must be known when the kernel is compiled,"
@@ -243,11 +305,15 @@ public final class Tc {
     private static final Set<String> NEEDS_VALUES = Set.of("TC-E3103", "TC-E3101");
 
     private static TcCompiler.Compilation compile(Frontend.BytecodeSource source, Kernel kernel, TargetCaps target, Method method, Map<String, String> given, boolean assume,
-            List<String> assumed) {
+            List<String> assumed, TcOptions options) {
         // Facts need the loaded class (parameter types and names, object constructors): none in a native image.
         // Without values given or assumed, no facts at all: the kernel TC compiles before any argument is seen.
         List<ValueSpecialisation.Fact> facts = method == null || (given.isEmpty() && !assume) ? List.of() : TypeLayouts.facts(method, given, assume, assumed);
-        return TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, TcOptions.DEFAULTS, facts);
+        if (options.deviceFunction()) {
+            // A device function has no launch or array facts, but a value given with --arg still specialises it.
+            return TcCompiler.compileDeviceFunction(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options, facts);
+        }
+        return TcCompiler.compileJava(source, kernel.owner().replace('/', '.'), kernel.name(), kernel.descriptor(), target, options, facts);
     }
 
     /** The kernel as a loaded method, when the source loads classes and the class loads. */
@@ -442,7 +508,8 @@ public final class Tc {
     }
 
     private static int usage(PrintStream err) {
-        err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--arg name=value]... [--cp PATH] [--stats] (Class method | --all)");
+        err.println("usage: tc emit [--target cuda|opencl|metal|hip] [--cc N] [--fp16 on|off] [--fp64 on|off] [--strict-fp] [--java-math]"
+                + " [--arg name=value]... [--cp PATH] [--stats] [--device-fn [--no-strict-fp] [--null-aware] [--errors]] (Class method | --all)");
         return 2;
     }
 }

@@ -80,6 +80,10 @@ public final class IntrinsicRegistry {
         pure("tornado.group_count", "number of work-groups", "dim");
         // Math (Java semantics; the spelling tables give each dialect's functions).
         pure("math.", "math functions of TornadoMath and java.lang.Math");
+        // A read-only table of constants (a static final primitive array such as FdLibm's two_over_pi):
+        // a pointer to constant memory holding them. elem is the element type, count the length, values
+        // the elements as comma-separated raw bits (Double/Float.doubleToRawLongBits, integers as they are).
+        pure("tc.table", "a pointer to a read-only table of constants", "elem", "count", "values");
         // Vector values.
         pure("tornado.vector.make", "a vector from its lanes");
         pure("tornado.vector.lane", "one lane of a vector", "lane");
@@ -114,6 +118,7 @@ public final class IntrinsicRegistry {
         add("tornado.varargs.set", EnumSet.of(Effect.WRITES), "an element of a varargs array", "index");
         add("tornado.dp4a.packed", EnumSet.noneOf(Effect.class), "dot product of packed int8 words");
         add("tornado.dp4a", EnumSet.of(Effect.READS), "dot product of int8 words read from memory");
+        pure("tornado.devfn.string_length", "the byte length of a string row in a device function");
         // CUDA Tile (TileContext): block geometry, views (element type an immediate or a DType operand) and extracts.
         pure("tile.bid", "tile block index", "dim");
         pure("tile.num_blocks", "number of tile blocks", "dim");
@@ -131,6 +136,9 @@ public final class IntrinsicRegistry {
         pure("tile.", "tile values, views and arithmetic (CUDA Tile)");
         // Frontend markers that never reach code generation.
         add("tc.vector_param_unchanged", EnumSet.of(Effect.SIDE_EFFECT), "frontend check: a device function must not change a vector argument");
+        // A device function (cudf::transform UDF) that fails the row: returns the error code when its
+        // operand is true. It ends the function, so it may not be moved, merged or dropped.
+        add("tc.udf.fail", EnumSet.of(Effect.SIDE_EFFECT), "device function: return an error code (cudf::errc) when the condition holds", "code");
         // Longest match first, so a specific entry wins over its family.
         DEFS.sort(Comparator.comparingInt((Def d) -> d.name().length()).reversed());
     }

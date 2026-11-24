@@ -488,6 +488,99 @@ public class TestCuDnn extends TornadoTestBase {
     }
 
     /**
+     * A fused channels-last convolution against a direct NHWC reference:
+     * {@code relu(conv(x, w) + bias + residual)} with the terms the epilogue flags select.
+     */
+    private static void checkConv2dNHWCFused(boolean half, int epilogue, int plans, int n, int c, int h, int w, int k, int r, int s, int pad, int stride)
+            throws TornadoExecutionPlanException {
+        final int outH = (h + 2 * pad - r) / stride + 1;
+        final int outW = (w + 2 * pad - s) / stride + 1;
+        final int outSize = n * outH * outW * k;
+        FloatArray input = half ? toFloat(randomHalfArray(n * h * w * c)) : randomArray(n * h * w * c);
+        FloatArray filter = half ? toFloat(randomHalfArray(k * r * s * c)) : randomArray(k * r * s * c);
+        FloatArray bias = randomArray(k);
+        FloatArray residual = half ? toFloat(randomHalfArray(outSize)) : randomArray(outSize);
+        FloatArray output;
+        if (half) {
+            HalfFloatArray x = toHalf(input);
+            HalfFloatArray f = toHalf(filter);
+            HalfFloatArray res = toHalf(residual);
+            HalfFloatArray y = new HalfFloatArray(outSize);
+            TaskGraph taskGraph = new TaskGraph("g") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, x, f, bias, res) //
+                    .libraryTask("conv", CuDnn::cudnnConv2dNHWCFusedFP16, x, f, bias, res, y, n, c, h, w, k, r, s, pad, stride, epilogue, plans) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, y);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+            output = toFloat(y);
+        } else {
+            output = new FloatArray(outSize);
+            TaskGraph taskGraph = new TaskGraph("g") //
+                    .transferToDevice(DataTransferMode.EVERY_EXECUTION, input, filter, bias, residual) //
+                    .libraryTask("conv", CuDnn::cudnnConv2dNHWCFused, input, filter, bias, residual, output, n, c, h, w, k, r, s, pad, stride, epilogue, plans) //
+                    .transferToHost(DataTransferMode.EVERY_EXECUTION, output);
+            try (TornadoExecutionPlan plan = new TornadoExecutionPlan(taskGraph.snapshot())) {
+                plan.execute();
+            }
+        }
+        // FP16 output keeps about 3 significant digits; FP32 may run as TF32 on Ampere and later
+        float tolerance = half ? 1e-2f : 5e-3f;
+        for (int in = 0; in < n; in++) {
+            for (int oy = 0; oy < outH; oy++) {
+                for (int ox = 0; ox < outW; ox++) {
+                    for (int ok = 0; ok < k; ok++) {
+                        float sum = 0;
+                        for (int fr = 0; fr < r; fr++) {
+                            for (int fs = 0; fs < s; fs++) {
+                                int iy = oy * stride - pad + fr;
+                                int ix = ox * stride - pad + fs;
+                                if (iy < 0 || iy >= h || ix < 0 || ix >= w) {
+                                    continue;
+                                }
+                                for (int ic = 0; ic < c; ic++) {
+                                    sum += input.get(((in * h + iy) * w + ix) * c + ic) * filter.get(((ok * r + fr) * s + fs) * c + ic);
+                                }
+                            }
+                        }
+                        int o = ((in * outH + oy) * outW + ox) * k + ok;
+                        if ((epilogue & CuDnn.CONV_BIAS) != 0) {
+                            sum += bias.get(ok);
+                        }
+                        if ((epilogue & CuDnn.CONV_RESIDUAL) != 0) {
+                            sum += residual.get(o);
+                        }
+                        if ((epilogue & CuDnn.CONV_RELU) != 0) {
+                            sum = Math.max(sum, 0f);
+                        }
+                        assertEquals(sum, output.get(o), tolerance * Math.max(1.0f, Math.abs(sum)));
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testConv2dNHWCFused() throws TornadoExecutionPlanException {
+        int all = CuDnn.CONV_BIAS | CuDnn.CONV_RESIDUAL | CuDnn.CONV_RELU;
+        // every candidate timed, then only the first three
+        checkConv2dNHWCFused(false, all, 0, 2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dNHWCFused(false, CuDnn.CONV_BIAS | CuDnn.CONV_RELU, 3, 2, 64, 14, 14, 128, 1, 1, 0, 2);
+        checkConv2dNHWCFused(false, CuDnn.CONV_BIAS, 3, 2, 32, 8, 8, 64, 1, 1, 0, 1);
+        checkConv2dNHWCFused(false, CuDnn.CONV_RELU, 3, 1, 3, 32, 32, 64, 7, 7, 3, 2);
+    }
+
+    @Test
+    public void testConv2dNHWCFusedFP16() throws TornadoExecutionPlanException {
+        int all = CuDnn.CONV_BIAS | CuDnn.CONV_RESIDUAL | CuDnn.CONV_RELU;
+        checkConv2dNHWCFused(true, all, 0, 2, 16, 14, 14, 32, 3, 3, 1, 1);
+        checkConv2dNHWCFused(true, CuDnn.CONV_BIAS | CuDnn.CONV_RELU, 3, 2, 64, 14, 14, 128, 1, 1, 0, 2);
+        checkConv2dNHWCFused(true, CuDnn.CONV_BIAS | CuDnn.CONV_RESIDUAL, 3, 2, 32, 8, 8, 64, 1, 1, 0, 1);
+        // the 7x7 stem of ResNet, three input channels
+        checkConv2dNHWCFused(true, CuDnn.CONV_BIAS | CuDnn.CONV_RELU, 3, 1, 3, 32, 32, 64, 7, 7, 3, 2);
+    }
+
+    /**
      * CNN-style mixed pipeline: cuDNN convolution -> JIT bias-like task ->
      * cuDNN ReLU -> cuDNN max pooling, all on shared device buffers.
      */

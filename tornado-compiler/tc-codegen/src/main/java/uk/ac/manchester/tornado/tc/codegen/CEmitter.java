@@ -20,12 +20,14 @@ package uk.ac.manchester.tornado.tc.codegen;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import uk.ac.manchester.tornado.tc.ir.AddressSpace;
@@ -192,6 +194,8 @@ public final class CEmitter {
     private final Set<String> helpers = new LinkedHashSet<>();
     private final Map<S.Var, String> names = new IdentityHashMap<>();
     private final Map<S.Alloca, String> allocaNames = new IdentityHashMap<>();
+    /** Read-only tables of constants ({@code tc.table}), each declared once at the top of the function. */
+    private final Map<Inst, String> tableNames = new IdentityHashMap<>();
     private Map<S.Var, Type> elementTypes = Map.of();
     private final CDialect dialect;
     private final Set<CDialect.Feature> features = java.util.EnumSet.noneOf(CDialect.Feature.class);
@@ -207,16 +211,67 @@ public final class CEmitter {
     /** Labelled blocks found to need wrapping; non-empty means emit again. */
     private final Set<String> toWrap = new HashSet<>();
     private String jumpFlag;
+    /** Device-function output (null for a kernel): see {@link DeviceFunction}. */
+    private final DeviceFunction deviceFunction;
+
+    /** The C type of a device function's string-row ({@code byte[]}) parameter. */
+    static final String STRING_VIEW = "cudf::string_view";
+
+    /** DeviceFunctionCheck's intrinsic for a string row's byte length. */
+    private static final String STRING_LENGTH = "tornado.devfn.string_length";
+
+    /** A device function's string rows: each {@code byte[]} parameter, to the name of its length. */
+    private final Map<S.Var, String> stringRows = new HashMap<>();
+
+    /** The declarations that open a device function with string rows: each row's bytes and length. */
+    private final List<String> stringRowLines = new ArrayList<>();
+    /** The device function's last statement when it is its return (printed without {@code return;}). */
+    private S.Stmt finalReturn;
+    /** The device function's result pointer parameter. */
+    private static final String OUT = "out";
     /** The index of the loops that zero private arrays allocated inside the kernel's control flow. */
     private String zeroIndex;
     private int flagJumps;
 
-    private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped) {
+    private CEmitter(TargetCaps target, boolean lineComments, String task, Set<String> wrapped, DeviceFunction deviceFunction) {
         this.dialect = CDialect.of(target.dialect());
         this.target = target;
         this.lineComments = lineComments;
         this.task = task;
         this.wrapped = wrapped;
+        this.deviceFunction = deviceFunction;
+    }
+
+    /**
+     * Emit a CUDA {@code __device__} function for a host library to call once per row, instead of a
+     * kernel: {@code __device__ void f(R *out, A0 in0, ...)}, the shape {@code cudf::transform} calls
+     * (output pointers first, then the row's input values; its JIT renames the first function of the
+     * source). {@code descriptor} is the Java method's JVM descriptor, whose parameter and return types
+     * are all primitive: they name the C types of the signature, as narrow as the Java types
+     * ({@code byte} is {@code signed char}, {@code char} {@code unsigned short}), so that the out
+     * pointer matches the output column's element type.
+     *
+     * <p>
+     * Everything is in the one function, because the library takes the first {@code (} of the source
+     * to be its parameter list: helpers become lambdas at the top of the body, and includes may only
+     * be lines without a parenthesis. On a strict-floating-point compilation, float and double
+     * multiplications are {@code __fmul_rn} and {@code __dmul_rn}, which the CUDA compiler never
+     * contracts into an fma, since the library compiles the function with flags of its own.
+     */
+    public record DeviceFunction(String descriptor, boolean nullAware, boolean errors) {
+        /** Neither null-aware nor reporting errors. */
+        public DeviceFunction(String descriptor) {
+            this(descriptor, false, false);
+        }
+
+        /**
+         * Whether the function returns an error code: {@code int}, 0 for success, else a cudf::errc
+         * (1 OVERFLOW, 2 DIVISION_BY_ZERO; 3, a null unboxed, past its last, which cudf reports as
+         * UNKNOWN_ERROR). cudf's kernel takes either a void or an int result.
+         */
+        public boolean returnsError() {
+            return nullAware || errors;
+        }
     }
 
     public static Result emit(S.Kernel kernel, TargetCaps target) {
@@ -237,9 +292,14 @@ public final class CEmitter {
      * and OpenCL C lets the compiler contract unless the kernel says otherwise.
      */
     public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task, boolean contract) {
+        return emit(kernel, target, lineComments, task, contract, null);
+    }
+
+    /** As above; a non-null {@code deviceFunction} emits a device function instead of a kernel ({@link DeviceFunction}). */
+    public static Result emit(S.Kernel kernel, TargetCaps target, boolean lineComments, String task, boolean contract, DeviceFunction deviceFunction) {
         var wrapped = new HashSet<String>();
         while (true) {
-            var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped));
+            var emitter = new CEmitter(target, lineComments, task, Set.copyOf(wrapped), deviceFunction);
             if (!contract) {
                 emitter.features.add(CDialect.Feature.NO_CONTRACT);
             }
@@ -286,6 +346,9 @@ public final class CEmitter {
     private Result kernel(S.Kernel k) {
         elementTypes = k.elementTypes();
         var used = new HashSet<String>();
+        if (deviceFunction != null) {
+            used.add(OUT); // the result pointer's name, taken first so that no parameter gets it
+        }
         k.params().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.locals().forEach(v -> names.put(v, cIdentifier(v.name(), used)));
         k.allocas().forEach(a -> allocaNames.put(a, cIdentifier(a.name(), used)));
@@ -299,7 +362,62 @@ public final class CEmitter {
         if (tiles) {
             tileFeatures(f);
         }
-        if (f.kind() == Function.Kind.KERNEL) {
+        if (deviceFunction != null) {
+            if (tiles) {
+                throw new EmitException("TC-E3503", "a device function cannot use tiles");
+            }
+            var java = deviceFunctionTypes(deviceFunction.descriptor());
+            var tokens = deviceFunctionTokens(deviceFunction.descriptor());
+            boolean nullAware = deviceFunction.nullAware();
+            int irParams = tokens.stream().skip(1).mapToInt(t -> t.startsWith("L") ? 2 : 1).sum();
+            if (irParams != k.params().size()) {
+                throw new EmitException("TC-E3503", "the device function has " + k.params().size() + " parameters where " + deviceFunction.descriptor() + " has " + irParams);
+            }
+            // null-aware: a null primitive or string argument makes the result null (Spark's rule for a
+            // primitive argument); the function has ended, so nothing else runs.
+            var nullResult = "{ *" + OUT + " = cuda::std::nullopt; return 0; }";
+            header.append("__device__ ").append(deviceFunction.returnsError() ? "int " : "void ").append(entry).append('(');
+            header.append(nullAware ? optional(java.get(0)) : java.get(0)).append(" *").append(OUT);
+            int p = 0;
+            for (int i = 1; i < tokens.size(); i++) {
+                var param = k.params().get(p++);
+                var name = names.get(param);
+                if (tokens.get(i).startsWith("L")) {
+                    // A box: one optional argument, given to the body as its validity and value parameters.
+                    var value = k.params().get(p++);
+                    var argument = cIdentifier(names.get(value) + "_opt", used);
+                    header.append(", ").append(optional(java.get(i))).append(' ').append(argument);
+                    stringRowLines.add(declaration(param.type(), name) + " = " + argument + ".has_value() ? 1 : 0;");
+                    stringRowLines.add(declaration(value.type(), names.get(value)) + " = " + argument + ".has_value() ? (" + typeName(value.type()) + ") *" + argument + " : 0;");
+                } else if (java.get(i).equals(STRING_VIEW)) {
+                    // A string row: the view is the parameter; its bytes and length are named for the body.
+                    var view = cIdentifier(name + "_sv", used);
+                    var length = cIdentifier(name + "_len", used);
+                    stringRows.put(param, length);
+                    if (nullAware) {
+                        var argument = cIdentifier(name + "_opt", used);
+                        header.append(", ").append(optional(STRING_VIEW)).append(' ').append(argument);
+                        stringRowLines.add("if (!" + argument + ".has_value()) " + nullResult);
+                        stringRowLines.add(STRING_VIEW + " " + view + " = *" + argument + ";");
+                    } else {
+                        header.append(", ").append(STRING_VIEW).append(' ').append(view);
+                    }
+                    // const: the row is the caller's strings column. DeviceFunctionCheck refuses a store into
+                    // it; const makes the C++ compiler refuse one too, should the IR check ever miss it
+                    // (stores through a device function's pointers are printed with reinterpret_cast, which
+                    // cannot cast const away).
+                    stringRowLines.add("const " + declaration(param.type(), name) + " = (const " + typeName(param.type()) + ") " + view + ".data();");
+                    stringRowLines.add("const int " + length + " = (int) " + view + ".size_bytes();");
+                } else if (nullAware) {
+                    var argument = cIdentifier(name + "_opt", used);
+                    header.append(", ").append(optional(java.get(i))).append(' ').append(argument);
+                    stringRowLines.add("if (!" + argument + ".has_value()) " + nullResult);
+                    stringRowLines.add(java.get(i) + " " + name + " = *" + argument + ";");
+                } else {
+                    header.append(", ").append(java.get(i)).append(' ').append(name);
+                }
+            }
+        } else if (f.kind() == Function.Kind.KERNEL) {
             header.append(dialect.kernelPrefix(tiles)).append(entry).append('(').append(dialect.abiParameters());
             int index = dialect.abiParameterCount();
             for (var p : k.params()) {
@@ -312,11 +430,27 @@ public final class CEmitter {
         }
         header.append(")\n{\n");
 
+        stringRowLines.forEach(l -> line(1, l));
         for (var alloca : k.allocas()) {
             var a = alloca.kind();
             // Java zero-fills `new T[n]` (private arrays); KernelContext local arrays start undefined, as on Graal.
-            var init = a.space() == AddressSpace.PRIVATE ? " = {}" : "";
+            // An allocation outside the entry block is zeroed where it runs (S.ZeroFill), every time: zeroing
+            // its declaration too would only cost every thread the stores up front (FdLibm's 20-element
+            // arrays for sin's rare huge arguments cost 3x the whole function that way).
+            var init = a.space() == AddressSpace.PRIVATE && f.entry().insts().stream().anyMatch(i -> i == alloca.inst()) ? " = {}" : "";
             line(1, dialect.arrayQualifier(a.space()) + typeName(a.element()) + " " + allocaNames.get(alloca) + "[" + a.count() + "]" + init + ";");
+        }
+        for (var block : f.blocks()) {
+            for (var inst : block.insts()) {
+                if (inst.opcode() instanceof Opcode.Intrinsic(var n) && n.equals(TABLE)) {
+                    var qualifier = dialect.tableQualifier().orElseThrow(() -> unsupported(inst, "constant tables, which Java-exact math needs, are not supported on " + target.dialect() + " yet"));
+                    var name = cIdentifier("tc_table", used);
+                    tableNames.put(inst, name);
+                    var element = tableElement(inst.immediates().requireString("elem"));
+                    line(1, qualifier + typeName(element) + " " + name + "[" + inst.immediates().requireInt("count") + "] = { " + tableValues(element, inst.immediates().requireString("values"))
+                            + " };");
+                }
+            }
         }
         // Locals of one type share a declaration (`float x, v;`, `float *a_data, *b_data;`), in first-use order.
         var groups = new java.util.LinkedHashMap<String, List<String>>();
@@ -344,6 +478,9 @@ public final class CEmitter {
         if (f.returnType() instanceof Type.VoidType && !body.isEmpty() && body.get(body.size() - 1) instanceof S.Return(var value) && value.isEmpty()) {
             body = body.subList(0, body.size() - 1); // a void function ends anyway
         }
+        if (deviceFunction != null && !body.isEmpty() && body.get(body.size() - 1) instanceof S.Return) {
+            finalReturn = body.get(body.size() - 1); // stores the result and ends anyway: no `return;` after it
+        }
         int declarations = out.length();
         int declarationLines = origins.size();
         statements(body, Set.of(), 1);
@@ -354,6 +491,9 @@ public final class CEmitter {
         out.append("}\n");
 
         var emitted = out.toString();
+        if (deviceFunction != null) {
+            return deviceFunctionResult(header.toString(), emitted, entry);
+        }
         var source = new StringBuilder();
         var includes = dialect.preamble(features);
         includes.forEach(i -> source.append(i).append('\n'));
@@ -370,13 +510,184 @@ public final class CEmitter {
         return new Result(source.toString(), entry, List.copyOf(includes), List.copyOf(helpers), definition, declaration, java.util.Collections.unmodifiableList(new ArrayList<>(origins)));
     }
 
+    // ---------------------------------------------------------------- device function
+
+    /** The C types of a device function's signature: the result first, then each parameter. */
+    static List<String> deviceFunctionTypes(String descriptor) {
+        return deviceFunctionTokens(descriptor).stream().map(t -> t.equals("[B") ? STRING_VIEW : t.startsWith("L") ? BOX_TYPES.get(t) : deviceFunctionType(t.charAt(0), descriptor)).toList();
+    }
+
+    /** The descriptor's types, the result first: a primitive's letter, {@code [B} or a box's {@code Ljava/lang/Integer;}. */
+    static List<String> deviceFunctionTokens(String descriptor) {
+        var tokens = new ArrayList<String>();
+        int close = descriptor.indexOf(')');
+        tokens.add(token(descriptor, close + 1));
+        for (int i = 1; i < close;) {
+            var t = token(descriptor, i);
+            tokens.add(t);
+            i += t.length();
+        }
+        return tokens;
+    }
+
+    private static String token(String descriptor, int i) {
+        char c = descriptor.charAt(i);
+        if (c == '[' && i + 1 < descriptor.length() && descriptor.charAt(i + 1) == 'B') {
+            return "[B"; // one row of a strings column, its UTF-8 bytes
+        }
+        if (c == 'L') {
+            var box = descriptor.substring(i, descriptor.indexOf(';', i) + 1);
+            if (!BOX_TYPES.containsKey(box)) {
+                throw new EmitException("TC-E3501", "a device function takes and returns primitives, byte[] strings and, when null-aware, boxes: not " + box);
+            }
+            return box;
+        }
+        return String.valueOf(c);
+    }
+
+    /** The C type of each box a null-aware device function takes or returns (its column's element type). */
+    private static final java.util.Map<String, String> BOX_TYPES = java.util.Map.of("Ljava/lang/Integer;", "int", "Ljava/lang/Long;", "long long", "Ljava/lang/Short;", "short",
+            "Ljava/lang/Byte;", "signed char", "Ljava/lang/Character;", "unsigned short", "Ljava/lang/Boolean;", "bool", "Ljava/lang/Float;", "float", "Ljava/lang/Double;", "double");
+
+    private static String optional(String type) {
+        return "cuda::std::optional<" + type + ">";
+    }
+
+    private static String deviceFunctionType(char c, String descriptor) {
+        return switch (c) {
+            case 'Z' -> "bool";
+            case 'B' -> "signed char";
+            case 'C' -> "unsigned short";
+            case 'S' -> "short";
+            case 'I' -> "int";
+            case 'J' -> "long long";
+            case 'F' -> "float";
+            case 'D' -> "double";
+            default -> throw new EmitException("TC-E3501", "a device function takes and returns primitives only, not " + descriptor);
+        };
+    }
+
+    /** A C helper, {@code __device__ static inline T name(params) { body }}: its result type, name, parameters and body. */
+    private static final Pattern HELPER = Pattern
+            .compile("\\s*__device__\\s+static\\s+inline\\s+([A-Za-z_][A-Za-z0-9_ ]*?)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(([^)]*)\\)\\s*\\{(.*)\\}\\s*", Pattern.DOTALL);
+
+    /**
+     * The device function as one translation unit (see {@link DeviceFunction}): the includes the
+     * dialect needs (each a line without a parenthesis), then the function, with the helpers it uses
+     * as lambdas at the top of its body, dependencies first.
+     */
+    private Result deviceFunctionResult(String header, String body, String entry) {
+        var includes = new ArrayList<>(dialect.preamble(features));
+        if (deviceFunction.nullAware()) {
+            includes.add("#include <cuda/std/optional>");
+        }
+        for (var include : includes) {
+            if (include.indexOf('(') >= 0) {
+                throw new EmitException("TC-E3503", "a device function cannot have a preamble with declarations: " + include.lines().findFirst().orElse(include));
+            }
+        }
+        var lambdas = new StringBuilder();
+        for (var m : helperLambdas()) {
+            lambdas.append("  auto ").append(m.group(2)).append(" = [&](").append(m.group(3).strip()).append(") -> ").append(m.group(1).strip()).append(" {\n");
+            m.group(4).strip().lines().forEach(l -> lambdas.append("    ").append(l.strip()).append('\n'));
+            lambdas.append("  };\n");
+        }
+        var definition = header + lambdas + body;
+        var source = new StringBuilder();
+        includes.forEach(i -> source.append(i).append('\n'));
+        source.append(definition);
+        var declaration = header.substring(0, header.length() - "\n{\n".length()) + ";\n";
+        // bodyOrigins: one entry per line after the header; the lambdas print no statement.
+        var lineOrigins = new ArrayList<S.Stmt>();
+        lambdas.toString().lines().forEach(l -> lineOrigins.add(null));
+        lineOrigins.addAll(origins);
+        return new Result(source.toString(), entry, List.copyOf(includes), List.of(), definition, declaration, java.util.Collections.unmodifiableList(lineOrigins));
+    }
+
+    /**
+     * The helpers the function uses, parsed, in an order in which each comes after every helper its body
+     * calls. A C++ lambda can only name what is declared above it, unlike a function at file scope, so
+     * insertion order is not enough once a helper calls another one.
+     */
+    private List<java.util.regex.MatchResult> helperLambdas() {
+        var parsed = new java.util.LinkedHashMap<String, java.util.regex.MatchResult>();
+        for (var helper : helpers) {
+            var m = HELPER.matcher(Helpers.source(helper, target.dialect()));
+            if (!m.matches()) {
+                throw new EmitException("TC-E3503", "helper " + helper + " cannot be written as a lambda in a device function");
+            }
+            parsed.put(m.group(2), m.toMatchResult());
+        }
+        var ordered = new ArrayList<java.util.regex.MatchResult>();
+        var placed = new HashSet<String>();
+        while (ordered.size() < parsed.size()) {
+            boolean progress = false;
+            for (var entry : parsed.entrySet()) {
+                if (placed.contains(entry.getKey())) {
+                    continue;
+                }
+                var body = entry.getValue().group(4);
+                boolean ready = parsed.keySet().stream().allMatch(other -> other.equals(entry.getKey()) || placed.contains(other) || !calls(body, other));
+                if (ready) {
+                    ordered.add(entry.getValue());
+                    placed.add(entry.getKey());
+                    progress = true;
+                }
+            }
+            if (!progress) {
+                throw new EmitException("TC-E3503", "helpers " + parsed.keySet() + " call each other in a cycle: they cannot be lambdas in a device function");
+            }
+        }
+        return ordered;
+    }
+
+    /** Whether C source {@code body} calls {@code name}: the identifier followed by {@code (}. */
+    private static boolean calls(String body, String name) {
+        return Pattern.compile("(?<![A-Za-z0-9_])" + Pattern.quote(name) + "\\s*\\(").matcher(body).find();
+    }
+
     // ---------------------------------------------------------------- statements
 
     /** {@code fallthrough}: labels whose position is reached by falling off the end of {@code body}. */
     private void statements(List<S.Stmt> body, Set<String> fallthrough, int depth) {
         for (int i = 0; i < body.size(); i++) {
             statement(body.get(i), i == body.size() - 1 ? fallthrough : Set.of(), depth);
+            if (failsAlways(body.get(i))) {
+                return; // the device function has returned its error code: what follows never runs
+            }
         }
+    }
+
+    /** The two lanes of {@code make_T2(a, b)} as printed, or empty for any other expression. */
+    private static java.util.Optional<List<String>> madeLanes(String text) {
+        int open = text.indexOf('(');
+        if (!text.startsWith("make_") || open < 0 || !text.endsWith(")") || !text.substring(5, open).matches("[a-z]+2")) {
+            return java.util.Optional.empty();
+        }
+        var lanes = new ArrayList<String>();
+        int depth = 0;
+        int start = open + 1;
+        for (int i = open + 1; i < text.length() - 1; i++) {
+            char c = text.charAt(i);
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                if (--depth < 0) {
+                    return java.util.Optional.empty(); // the first ( does not close at the end
+                }
+            } else if (c == ',' && depth == 0) {
+                lanes.add(text.substring(start, i).strip());
+                start = i + 1;
+            }
+        }
+        lanes.add(text.substring(start, text.length() - 1).strip());
+        return lanes.size() == 2 && depth == 0 ? java.util.Optional.of(lanes) : java.util.Optional.empty();
+    }
+
+    /** A device function's unconditional failure ({@code throw}): {@code return code;}. */
+    private boolean failsAlways(S.Stmt stmt) {
+        return deviceFunction != null && stmt instanceof S.Effect(var op, var loc) && op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tc.udf.fail")
+                && op.operands().get(0) instanceof S.Const c && c.inst().opcode() instanceof Opcode.ConstInt(var v) && v != 0;
     }
 
     private void statement(S.Stmt stmt, Set<String> fallthrough, int depth) {
@@ -411,6 +722,13 @@ public final class CEmitter {
                 }
                 op.operands().forEach(o -> args.append(", ").append(expr(o).text));
                 line(depth, "printf(\"tornado[%3d,%3d,%3d]> " + format + "\"" + args + ");" + comment(loc));
+            }
+            case S.Effect(var op, var loc) when deviceFunction != null && op.inst().opcode() instanceof Opcode.Intrinsic(var name) && name.equals("tc.udf.fail") -> {
+                // The row fails: the function returns cudf's error code (cudf::errc), and transform throws.
+                var code = op.inst().immediates().requireInt("code");
+                var condition = expr(op.operands().get(0)).text;
+                boolean always = condition.equals("true") || condition.equals("1");
+                line(depth, (always ? "" : "if (" + condition + ") ") + "return " + code + ";" + comment(loc));
             }
             case S.Effect(var op, var loc) -> line(depth, effect(op) + ";" + comment(loc));
             case S.ZeroFill(var alloca, var loc) -> {
@@ -456,6 +774,30 @@ public final class CEmitter {
                 line(depth, "}");
                 frames.pop();
                 repeatFlagged(frame.flagged(), depth);
+            }
+            case S.Return(var value) when deviceFunction != null && value.isPresent() -> {
+                var result = expr(value.get()).text;
+                var type = deviceFunctionTypes(deviceFunction.descriptor()).get(0);
+                if (deviceFunctionTokens(deviceFunction.descriptor()).get(0).startsWith("L")) {
+                    // A box: present, or null (lane 0, the validity, is zero).
+                    var lanes = madeLanes(result);
+                    if (lanes.isPresent() && lanes.get().get(0).matches("0+(\\.0+)?(LL)?f?")) {
+                        line(depth, "*" + OUT + " = cuda::std::nullopt;");
+                    } else if (lanes.isPresent() && lanes.get().get(0).matches("1(\\.0+)?(LL)?f?")) {
+                        line(depth, "*" + OUT + " = (" + type + ") (" + lanes.get().get(1) + ");");
+                    } else {
+                        line(depth, "if ((" + result + ").x != 0) *" + OUT + " = (" + type + ") (" + result + ").y; else *" + OUT + " = cuda::std::nullopt;");
+                    }
+                } else {
+                    // A narrow Java result (boolean, byte, char, short) is an int in TC: store it as the column's type.
+                    var narrow = !type.equals("int") && !type.equals("long long") && !type.equals("float") && !type.equals("double");
+                    line(depth, "*" + OUT + " = " + (narrow ? "(" + type + ") (" + result + ")" : result) + ";");
+                }
+                if (deviceFunction.returnsError()) {
+                    line(depth, "return 0;");
+                } else if (current != finalReturn) {
+                    line(depth, "return;");
+                }
             }
             case S.Return(var value) -> line(depth, value.map(v -> "return " + expr(v).text + ";").orElse("return;"));
             case S.Unreachable _u -> line(depth, dialect.unreachable());
@@ -807,6 +1149,7 @@ public final class CEmitter {
         var inst = op.inst();
         var ops = op.operands();
         return switch (inst.opcode()) {
+            case Opcode.Store _s when deviceFunction != null -> storeTarget(ops.get(0), ops.get(1).type()) + " = " + expr(ops.get(1)).text;
             case Opcode.Store _s -> deref(ops.get(0), ops.get(1).type()).text + " = " + expr(ops.get(1)).text;
             case Opcode.Intrinsic(var name) -> intrinsic(name, inst, ops).text;
             default -> expr(op).text;
@@ -870,9 +1213,17 @@ public final class CEmitter {
                 return new R(function.get() + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
             }
         }
+        if (op == BinaryOp.FMUL && features.contains(CDialect.Feature.NO_CONTRACT) && (type.equals(Type.F32) || type.equals(Type.F64))) {
+            // A strict plan: Java rounds the product before any add, so it may not become an fma.
+            var function = dialect.strictMultiply(type.equals(Type.F64));
+            if (function.isPresent()) {
+                return new R(function.get() + "(" + expr(a).text + ", " + expr(b).text + ")", ATOM);
+            }
+        }
         return switch (op) {
             case ADD, FADD -> infix(a, "+", b, ADD);
             case SUB, FSUB -> infix(a, "-", b, ADD);
+            // A strict product on CUDA was already printed as __fmul_rn / __dmul_rn above (strictMultiply).
             case MUL, FMUL -> infix(a, "*", b, MUL);
             case DIV -> javaDivision(type, a, "/", b, type.equals(Type.I64) ? "java_ldiv" : "java_idiv");
             case REM -> javaDivision(type, a, "%", b, type.equals(Type.I64) ? "java_lrem" : "java_irem");
@@ -1098,6 +1449,16 @@ public final class CEmitter {
     }
 
     private R intrinsic(String name, Inst inst, List<S.Expr> ops) {
+        if (name.equals(TABLE)) {
+            return new R("(" + pointer(AddressSpace.CONSTANT, "unsigned char") + ") " + tableNames.get(inst), UNARY);
+        }
+        if (name.equals(STRING_LENGTH)) {
+            var length = ops.get(0) instanceof S.VarRef(var row) ? stringRows.get(row) : null;
+            if (length == null) {
+                throw new EmitException("TC-E3503", "the length of a string row is read through something other than its parameter");
+            }
+            return new R(length, ATOM);
+        }
         if (name.startsWith("tile.")) {
             // Tile values are always named variables; the result is a whole statement's expression.
             return new R(dialect.tileExpression(name, inst, ops.stream().map(o -> wrap(expr(o), UNARY)).toList()), COND);
@@ -1139,6 +1500,16 @@ public final class CEmitter {
     private R deref(S.Expr pointer, Type type) {
         var element = element(pointer, type);
         return element != null ? new R(element, ATOM) : new R("*((" + pointerTo(pointer, type) + ") " + wrap(expr(pointer), UNARY) + ")", UNARY);
+    }
+
+    /**
+     * The target of a store in a device function: as {@link #deref}, but the cast is a
+     * {@code reinterpret_cast}, which cannot drop {@code const}. So a store through a string row
+     * (declared {@code const}) does not compile, whatever the IR check let through.
+     */
+    private String storeTarget(S.Expr pointer, Type type) {
+        var element = element(pointer, type);
+        return element != null ? element : "*reinterpret_cast<" + pointerTo(pointer, type) + ">(" + expr(pointer).text + ")";
     }
 
     /** The address an atomic or helper takes: {@code &a_data[i]}, or a typed cast of the pointer. */
@@ -1280,10 +1651,12 @@ public final class CEmitter {
         var name = names.get(v);
         var element = elementTypes.get(v);
         if (element != null) {
-            return new Declarator(dialect.pointee(space(v.type()), typeName(element)), true, name);
+            return new Declarator((deviceFunction != null ? "const " : "") + dialect.pointee(space(v.type()), typeName(element)), true, name);
         }
         if (v.type() instanceof Type.PointerType(var space)) {
-            return new Declarator(dialect.pointee(space, "unsigned char"), true, name);
+            // In a device function a pointer local may hold a string row, which is const; the only stores
+            // DeviceFunctionCheck lets through go directly into private arrays, never through a local.
+            return new Declarator((deviceFunction != null ? "const " : "") + dialect.pointee(space, "unsigned char"), true, name);
         }
         return new Declarator(typeName(v.type()), false, name);
     }
@@ -1314,6 +1687,50 @@ public final class CEmitter {
 
     private String cIdentifier(String name, Set<String> used) {
         return Naming.of(target.dialect()).identifier(name, used);
+    }
+
+    /** The intrinsic of a read-only table of constants (the frontend's constant tables). */
+    static final String TABLE = "tc.table";
+
+    private static Type tableElement(String text) {
+        return switch (text) {
+            case "i8" -> Type.I8;
+            case "i16" -> Type.I16;
+            case "i32" -> Type.I32;
+            case "i64" -> Type.I64;
+            case "f32" -> Type.F32;
+            case "f64" -> Type.F64;
+            default -> throw new EmitException("TC-E4001", "constant table of " + text);
+        };
+    }
+
+    /**
+     * A table's initialiser, from the raw bits the frontend recorded: floating point as exact hex literals,
+     * integers cast to the element type (so INT_MIN is not a narrowing conversion in a brace list).
+     */
+    private String tableValues(Type element, String bits) {
+        var out = new ArrayList<String>();
+        for (var word : bits.isEmpty() ? new String[0] : bits.split(",")) {
+            long raw = Long.parseLong(word);
+            if (element.equals(Type.F64)) {
+                double d = Double.longBitsToDouble(raw);
+                if (Double.isNaN(d) || Double.isInfinite(d)) {
+                    throw new EmitException("TC-E4001", "constant table holding " + d);
+                }
+                out.add(Double.toHexString(d));
+            } else if (element.equals(Type.F32)) {
+                float f = Float.intBitsToFloat((int) raw);
+                if (Float.isNaN(f) || Float.isInfinite(f)) {
+                    throw new EmitException("TC-E4001", "constant table holding " + f);
+                }
+                out.add(Float.toHexString(f) + "f");
+            } else if (element.equals(Type.I64)) {
+                out.add("(" + typeName(element) + ") 0x" + Long.toHexString(raw) + "ULL");
+            } else {
+                out.add("(" + typeName(element) + ") " + raw);
+            }
+        }
+        return String.join(", ", out);
     }
 
     private static EmitException unsupported(Inst inst, String why) {

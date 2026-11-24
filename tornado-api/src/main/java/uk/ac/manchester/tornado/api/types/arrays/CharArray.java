@@ -24,6 +24,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 /**
@@ -105,9 +106,8 @@ public final class CharArray extends TornadoNativeArray {
      */
     private static CharArray createSegment(char[] values) {
         CharArray array = new CharArray(values.length);
-        for (int i = 0; i < values.length; i++) {
-            array.set(i, values[i]);
-        }
+        // one bulk copy rather than a bounds-checked store per element
+        MemorySegment.copy(values, 0, array.getSegment(), JAVA_CHAR, 0, values.length);
         return array;
     }
 
@@ -225,9 +225,8 @@ public final class CharArray extends TornadoNativeArray {
      */
     public char[] toHeapArray() {
         char[] outputArray = new char[getSize()];
-        for (int i = 0; i < getSize(); i++) {
-            outputArray[i] = get(i);
-        }
+        // one bulk copy rather than a bounds-checked load per element
+        MemorySegment.copy(getSegment(), JAVA_CHAR, 0, outputArray, 0, outputArray.length);
         return outputArray;
     }
 

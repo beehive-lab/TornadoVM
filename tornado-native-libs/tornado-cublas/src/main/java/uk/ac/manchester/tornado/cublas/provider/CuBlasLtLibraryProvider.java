@@ -58,22 +58,37 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
         }
     }
 
-    private record LtCall(CudaDataType inputType, CudaDataType outputType, CuBlasLtEpilogue epilogue, boolean hasBias) {
+    private record LtCall(CudaDataType inputType, CudaDataType outputType, CuBlasLtEpilogue epilogue, boolean hasBias, CublasComputeType computeType) {
+
+        private LtCall(CudaDataType inputType, CudaDataType outputType, CuBlasLtEpilogue epilogue, boolean hasBias) {
+            this(inputType, outputType, epilogue, hasBias, CublasComputeType.CUBLAS_COMPUTE_32F);
+        }
     }
+
+    private static final CudaDataType F32 = CudaDataType.CUDA_R_32F;
+    private static final CudaDataType F16 = CudaDataType.CUDA_R_16F;
+    private static final CublasComputeType TF32 = CublasComputeType.CUBLAS_COMPUTE_32F_FAST_TF32;
 
     /**
      * Dispatch registry: function name -> type/epilogue configuration. All
      * configurations share one marshaller ({@code ltMatmul}).
      */
-    private static final Map<String, LtCall> FUNCTIONS = Map.of(//
-            "ltMatmulFP32", new LtCall(CudaDataType.CUDA_R_32F, CudaDataType.CUDA_R_32F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
-            "ltMatmulFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
-            "ltMatmulFP8", new LtCall(CudaDataType.CUDA_R_8F_E4M3, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false), //
-            "ltMatmulBiasFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_BIAS, true), //
-            "ltMatmulGeluBiasFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_GELU_BIAS, true), //
-            "ltMatmulReluFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_RELU, false), //
-            "ltMatmulGeluFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_GELU, false), //
-            "ltMatmulReluBiasFP16", new LtCall(CudaDataType.CUDA_R_16F, CudaDataType.CUDA_R_16F, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_RELU_BIAS, true));
+    private static final Map<String, LtCall> FUNCTIONS = Map.ofEntries(//
+            Map.entry("ltMatmulFP32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false)), //
+            Map.entry("ltMatmulFP16", new LtCall(F16, F16, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false)), //
+            Map.entry("ltMatmulFP8", new LtCall(CudaDataType.CUDA_R_8F_E4M3, F16, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false)), //
+            Map.entry("ltMatmulBiasFP16", new LtCall(F16, F16, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_BIAS, true)), //
+            Map.entry("ltMatmulGeluBiasFP16", new LtCall(F16, F16, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_GELU_BIAS, true)), //
+            Map.entry("ltMatmulReluFP16", new LtCall(F16, F16, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_RELU, false)), //
+            Map.entry("ltMatmulGeluFP16", new LtCall(F16, F16, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_GELU, false)), //
+            Map.entry("ltMatmulReluBiasFP16", new LtCall(F16, F16, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_RELU_BIAS, true)), //
+            Map.entry("ltMatmulBiasFP32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_BIAS, true)), //
+            Map.entry("ltMatmulGeluBiasFP32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_GELU_BIAS, true)), //
+            Map.entry("ltMatmulReluBiasFP32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_RELU_BIAS, true)), //
+            Map.entry("ltMatmulTF32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_DEFAULT, false, TF32)), //
+            Map.entry("ltMatmulBiasTF32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_BIAS, true, TF32)), //
+            Map.entry("ltMatmulGeluBiasTF32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_GELU_BIAS, true, TF32)), //
+            Map.entry("ltMatmulReluBiasTF32", new LtCall(F32, F32, CuBlasLtEpilogue.CUBLASLT_EPILOGUE_RELU_BIAS, true, TF32)));
 
     @Override
     public String libraryName() {
@@ -165,7 +180,7 @@ public final class CuBlasLtLibraryProvider implements TornadoLibraryProvider {
         if (plan == null) {
             plan = CuBlasLtNativeLib.ltCreatePlan(context.handle, transa, transb, m, n, k, lda, ldb, ldc, //
                     call.inputType().value(), call.inputType().value(), call.outputType().value(), //
-                    CublasComputeType.CUBLAS_COMPUTE_32F.value(), CudaDataType.CUDA_R_32F.value(), //
+                    call.computeType().value(), CudaDataType.CUDA_R_32F.value(), //
                     call.epilogue().value(), WORKSPACE_BYTES);
             if (plan == 0) {
                 if (isFP8(call.inputType()) && !hasFP8Support(context)) {

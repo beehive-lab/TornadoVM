@@ -52,6 +52,7 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         private long stream;
         private final Map<String, Long> convPlanCache = new HashMap<>();
         private final Map<String, Long> sdpaPlanCache = new HashMap<>();
+        private final Map<String, Long> convFusedPlanCache = new HashMap<>();
         private long workspacePtr;
         private long workspaceBytes;
         /** Workspaces outgrown by later plans, kept until the context is destroyed. */
@@ -127,6 +128,7 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
                     "cudnnConv2dBackwardFilterFP16" -> getOrCreateConvPlan((CuDnnContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10],
                             (int) p[11], descriptor.getFunctionName().endsWith("FP16"), descriptor.getFunctionName().contains("NHWC"), direction(descriptor.getFunctionName()));
             case "sdpaForward" -> getOrCreateSdpaPlan((CuDnnContext) context, (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (float) p[9], (boolean) p[10]);
+            case "cudnnConv2dNHWCFused", "cudnnConv2dNHWCFusedFP16" -> getOrCreateConvFusedPlan((CuDnnContext) context, p, 5, descriptor.getFunctionName().endsWith("FP16"));
             case "sdpaForwardPackedQkv" -> getOrCreatePackedSdpaPlan((CuDnnContext) context, (int) p[2], (int) p[3], (int) p[4], (int) p[5], (float) p[6], (boolean) p[7]);
             default -> {
                 // simple ops have no per-shape native state
@@ -164,6 +166,8 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             case "cudnnConv2dNHWCFP16" -> conv2d(context, invocation, true, true);
             case "cudnnConv2dBackwardData", "cudnnConv2dBackwardDataFP16", "cudnnConv2dBackwardFilter", "cudnnConv2dBackwardFilterFP16" -> conv2dBackward(context, invocation,
                     functionName.endsWith("FP16"), direction(functionName));
+            case "cudnnConv2dNHWCFused" -> conv2dFused(context, invocation, false);
+            case "cudnnConv2dNHWCFusedFP16" -> conv2dFused(context, invocation, true);
             case "sdpaForward" -> sdpa(context, invocation);
             case "sdpaForwardPackedQkv" -> sdpaPacked(context, invocation);
             default -> throw new TornadoRuntimeException("[ERROR] cuDNN function not supported: " + functionName);
@@ -185,6 +189,39 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
         return CuDnnNativeLib.convForward(context.handle, plan, //
                 invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), //
                 context.workspacePtr, context.workspaceBytes);
+    }
+
+    /** (input, filter, bias, residual, output, n, c, h, w, k, r, s, pad, stride, epilogue, plans). */
+    private static int conv2dFused(CuDnnContext context, LibraryInvocation invocation, boolean half) {
+        Object[] args = new Object[16];
+        for (int i = 5; i < args.length; i++) {
+            args[i] = invocation.getArg(i);
+        }
+        long plan = getOrCreateConvFusedPlan(context, args, 5, half);
+        return CuDnnNativeLib.executeConvFusedPlan(context.handle, plan, //
+                invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), invocation.getDevicePointer(3), invocation.getDevicePointer(4), //
+                context.workspacePtr);
+    }
+
+    /** The plan of a fused convolution whose sizes, epilogue and plan count start at {@code p[first]}. */
+    private static long getOrCreateConvFusedPlan(CuDnnContext context, Object[] p, int first, boolean half) {
+        int[] v = new int[11];
+        for (int i = 0; i < v.length; i++) {
+            v[i] = (int) p[first + i];
+        }
+        String planKey = java.util.Arrays.toString(v) + (half ? ":f16" : ":f32");
+        Long plan = context.convFusedPlanCache.get(planKey);
+        if (plan == null) {
+            CuDnnNativeLib.loadSdpaShim();
+            plan = CuDnnNativeLib.createConvFusedPlan(context.handle, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], half, v[9], v[10]);
+            if (plan == 0) {
+                throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] cuDNN takes no fused convolution for (n, c, h, w, k, r, s, pad, stride, epilogue, plans) = " + planKey
+                        + " (requires libtornado-cudnn built against CUDA 12.0+)");
+            }
+            context.growWorkspace(CuDnnNativeLib.convFusedPlanWorkspaceBytes(plan));
+            context.convFusedPlanCache.put(planKey, plan);
+        }
+        return plan;
     }
 
     private static int direction(String functionName) {
@@ -313,6 +350,10 @@ public final class CuDnnLibraryProvider implements TornadoLibraryProvider {
             CuDnnNativeLib.destroySdpaPlan(plan);
         }
         cuDnnContext.sdpaPlanCache.clear();
+        for (Long plan : cuDnnContext.convFusedPlanCache.values()) {
+            CuDnnNativeLib.destroyConvFusedPlan(plan);
+        }
+        cuDnnContext.convFusedPlanCache.clear();
         for (long retired : cuDnnContext.retiredWorkspaces) {
             CuDnnNativeLib.freeDeviceMemory(retired);
         }

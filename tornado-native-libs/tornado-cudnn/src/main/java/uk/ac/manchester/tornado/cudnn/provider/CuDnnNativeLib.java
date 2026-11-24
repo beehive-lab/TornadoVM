@@ -202,7 +202,8 @@ final class CuDnnNativeLib {
     }
 
     /**
-     * Checks that cuDNN itself is reachable. Everything except the fused SDPA path talks to cuDNN
+     * Checks that cuDNN itself is reachable. Everything except the graph-API paths (fused SDPA and
+     * fused convolutions) talks to cuDNN
      * through the bindings above, so this is a question about the cuDNN installation and no longer
      * about a TornadoVM artifact.
      */
@@ -213,11 +214,11 @@ final class CuDnnNativeLib {
     }
 
     /**
-     * Loads the small remaining JNI shim, which exists only for the fused scaled-dot-product
-     * attention path.
+     * Loads the small remaining JNI shim, which exists only for the graph-API paths: fused
+     * scaled-dot-product attention and fused convolutions.
      *
      * <p>
-     * SDPA is built on cudnn-frontend, a header-only C++ graph API, so it cannot be called through
+     * They are built on cudnn-frontend, a header-only C++ graph API, so it cannot be called through
      * java.lang.foreign the way the rest of cuDNN can -- there is no C ABI to bind. It is loaded
      * lazily and separately so that the ops above keep working on a build where the shim is absent,
      * which is the case whenever the toolkit is too old for cudnn-frontend.
@@ -230,7 +231,7 @@ final class CuDnnNativeLib {
             System.loadLibrary("tornado-cudnn");
             sdpaShimLoaded = true;
         } catch (UnsatisfiedLinkError e) {
-            throw new TornadoRuntimeException("[ERROR] Unable to load libtornado-cudnn, which provides the fused SDPA path. "
+            throw new TornadoRuntimeException("[ERROR] Unable to load libtornado-cudnn, which provides the fused SDPA and convolution paths. "
                     + "Build TornadoVM with the CUDA backend against CUDA 12 or newer: " + e.getMessage());
         }
     }
@@ -636,7 +637,7 @@ final class CuDnnNativeLib {
     }
 
     /*
-     * The five methods below are the only ones still crossing into a TornadoVM JNI library. They
+     * The methods below are the only ones still crossing into a TornadoVM JNI library. They
      * are built on cudnn-frontend, a header-only C++ graph API with no C ABI, so java.lang.foreign
      * cannot reach them; see loadSdpaShim.
      */
@@ -656,6 +657,20 @@ final class CuDnnNativeLib {
     static native int executeSdpaPlan(long handle, long planPtr, long dQ, long dK, long dV, long dO, long workspacePtr);
 
     static native void destroySdpaPlan(long planPtr);
+
+    /**
+     * A channels-last convolution forward with its epilogue fused (see CuDnn#cudnnConv2dNHWCFused):
+     * times the first {@code plans} candidate plans (all when 0) and keeps the fastest. Returns 0
+     * when cuDNN takes no plan for the shape.
+     */
+    static native long createConvFusedPlan(long handle, int n, int c, int h, int w, int k, int r, int s, int pad, int stride, boolean half, int epilogue, int plans);
+
+    static native long convFusedPlanWorkspaceBytes(long planPtr);
+
+    /** Returns 0 on success; the bias and residual are ignored when the plan has none. */
+    static native int executeConvFusedPlan(long handle, long planPtr, long dX, long dW, long dBias, long dResidual, long dY, long workspacePtr);
+
+    static native void destroyConvFusedPlan(long planPtr);
 
     static long allocateDeviceMemory(long bytes) {
         if (CUDA_MALLOC == null) {
