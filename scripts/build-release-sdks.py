@@ -46,6 +46,7 @@ Temurin or an explicit --jdk21-home/--jdk22plus-home override):
   - Linux   : opencl, cuda, full
   - Linux aarch64 : cuda
   - Windows : opencl, cuda   (--jdk21-home/--jdk22plus-home required)
+  - Linux HIP (--hip) : hip  (needs ROCm, so it runs on its own amd-builder machine)
 
 "full" means opencl+cuda combined into a single archive.
 
@@ -63,6 +64,9 @@ match the build JDK gpu-ci-platform.yml already pins for reproducibility
 Usage:
   python3 scripts/build-release-sdks.py --version v4.0.0
   python3 scripts/build-release-sdks.py --version v4.0.0 --output-dir /path/to/output
+
+  # HIP SDKs only, on a Linux machine with ROCm (ROCM_PATH set):
+  python3 scripts/build-release-sdks.py --version v4.0.0 --hip
 
   # Windows (JDK paths required up front for both profiles):
   python scripts\\build-release-sdks.py --version v4.0.0 ^
@@ -239,7 +243,9 @@ def resolve_jdk_home(profile, build_major, override):
 # On Windows it is:  nmake /f Makefile.mak sdk BACKEND=<value>
 # opencl+cuda is labelled "full" automatically by bin/compile.
 # A "<platform>-<arch>" key (arch as in the output dir name) overrides the
-# per-platform entry for that architecture only.
+# per-platform entry for that architecture only. A "<platform>-hip" key is used
+# instead of both when --hip is given: the HIP SDKs need ROCm, so they are built
+# on a separate machine (the amd-builder runner) and never with the others.
 BUILDS = {
     "macos": [
         "opencl",
@@ -252,6 +258,9 @@ BUILDS = {
     ],
     "linux-aarch64": [
         "cuda",
+    ],
+    "linux-hip": [
+        "hip",
     ],
     "windows": [
         "opencl",
@@ -1098,6 +1107,14 @@ def parse_args():
             "the tornado.exe smoke checks."
         ),
     )
+    parser.add_argument(
+        "--hip",
+        action="store_true",
+        help=(
+            "Build only the HIP SDKs (BUILDS['<platform>-hip']) instead of the "
+            "platform's usual ones. Needs ROCm on the build machine (ROCM_PATH)."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -1182,7 +1199,14 @@ def main():
         error("No JDK homes could be resolved. Nothing to build.")
         sys.exit(1)
 
-    backends_for_platform = BUILDS.get(f"{current_platform}-{arch}", BUILDS[current_platform])
+    if args.hip:
+        hip_key = f"{current_platform}-hip"
+        if hip_key not in BUILDS:
+            error(f"--hip: no HIP SDKs are built on {current_platform}.")
+            sys.exit(1)
+        backends_for_platform = BUILDS[hip_key]
+    else:
+        backends_for_platform = BUILDS.get(f"{current_platform}-{arch}", BUILDS[current_platform])
     info(f"Backends : {', '.join(backends_for_platform)}")
     results = []  # list of (label, success)
 

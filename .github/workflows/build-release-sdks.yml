@@ -46,6 +46,11 @@ on:
         required: false
         type: boolean
         default: true
+      include_linux_hip:
+        description: 'Run the Linux x64 HIP build job on the amd-builder runner (skipped if no such runner is online).'
+        required: false
+        type: boolean
+        default: true
       upload_to_release:
         description: 'Upload built archives to the v<version> GitHub Release (must already exist).'
         required: false
@@ -82,6 +87,7 @@ jobs:
       include_linux: ${{ steps.derive.outputs.include_linux }}
       include_windows: ${{ steps.derive.outputs.include_windows }}
       include_linux_arm: ${{ steps.derive.outputs.include_linux_arm }}
+      include_linux_hip: ${{ steps.amd-builder.outputs.include_linux_hip }}
       upload_to_release: ${{ steps.derive.outputs.upload_to_release }}
       draft_release_test: ${{ steps.derive.outputs.draft_release_test }}
       marker_tag: ${{ steps.gate.outputs.marker_tag }}
@@ -100,6 +106,7 @@ jobs:
           INCLUDE_LINUX="${{ inputs.include_linux }}"
           INCLUDE_WIN="${{ inputs.include_windows }}"
           INCLUDE_LINUX_ARM="${{ inputs.include_linux_arm }}"
+          INCLUDE_LINUX_HIP="${{ inputs.include_linux_hip }}"
           UPLOAD="${{ inputs.upload_to_release }}"
           if [ "${{ inputs.draft_release_test }}" = "true" ]; then
             echo "Draft release (test): forcing upload_to_release=false (still building for real, nothing gets uploaded/un-drafted/published)."
@@ -111,9 +118,43 @@ jobs:
           echo "include_linux=$INCLUDE_LINUX" >> "$GITHUB_OUTPUT"
           echo "include_windows=$INCLUDE_WIN" >> "$GITHUB_OUTPUT"
           echo "include_linux_arm=$INCLUDE_LINUX_ARM" >> "$GITHUB_OUTPUT"
+          echo "include_linux_hip=$INCLUDE_LINUX_HIP" >> "$GITHUB_OUTPUT"
           echo "upload_to_release=$UPLOAD" >> "$GITHUB_OUTPUT"
           echo "draft_release_test=${{ inputs.draft_release_test }}" >> "$GITHUB_OUTPUT"
-          echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN include_linux_arm=$INCLUDE_LINUX_ARM upload=$UPLOAD"
+          echo "Derived: version=$VERSION include_macos=$INCLUDE_MACOS include_linux=$INCLUDE_LINUX include_windows=$INCLUDE_WIN include_linux_arm=$INCLUDE_LINUX_ARM include_linux_hip=$INCLUDE_LINUX_HIP upload=$UPLOAD"
+
+      - name: Check for an online amd-builder runner
+        # The HIP SDKs need ROCm and are built only on a self-hosted runner labelled amd-builder.
+        # A job whose runs-on matches no online runner sits queued (for up to 24 hours) instead of
+        # failing, and would hold up the Release behind it, so build-linux-hip runs only when such a
+        # runner is online now; otherwise it is skipped and the other SDKs ship without HIP.
+        # GITHUB_TOKEN cannot list runners: RUNNER_STATUS_TOKEN must be a token that can read this
+        # repository's (or the organisation's) self-hosted runners. Without it HIP is skipped too.
+        id: amd-builder
+        env:
+          GH_TOKEN: ${{ secrets.RUNNER_STATUS_TOKEN }}
+        run: |
+          set -uo pipefail
+          INCLUDE="${{ steps.derive.outputs.include_linux_hip }}"
+          if [ "$INCLUDE" = "true" ]; then
+            if [ -z "$GH_TOKEN" ]; then
+              echo "::warning::RUNNER_STATUS_TOKEN is not set, so the amd-builder runner cannot be looked up. Skipping the HIP SDKs."
+              INCLUDE="false"
+            else
+              query='.runners[] | select(.status == "online") | select(any(.labels[]; .name == "amd-builder")) | .name'
+              online=$( {
+                gh api "repos/${{ github.repository }}/actions/runners" --paginate -q "$query" 2>/dev/null
+                gh api "orgs/${{ github.repository_owner }}/actions/runners" --paginate -q "$query" 2>/dev/null
+              } | sort -u )
+              if [ -n "$online" ]; then
+                echo "amd-builder runner(s) online: $(echo $online)"
+              else
+                echo "::warning::No amd-builder runner is online. Skipping the HIP SDKs."
+                INCLUDE="false"
+              fi
+            fi
+          fi
+          echo "include_linux_hip=$INCLUDE" >> "$GITHUB_OUTPUT"
 
       - name: Gate on Release existing / already built
         id: gate
@@ -354,7 +395,6 @@ jobs:
         env:
           GLIBC_FLOOR: "2.34"
         run: |
-          failed=0
           work=$(mktemp -d)
           while IFS= read -r archive; do
             rm -rf "$work"/*
@@ -368,7 +408,6 @@ jobs:
             done < <(find "$work" -name '*.so')
           done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' \( -name '*cuda*' -o -name '*full*' \))
           rm -rf "$work"
-          exit $failed
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
@@ -498,7 +537,6 @@ jobs:
         env:
           GLIBC_FLOOR: "2.34"
         run: |
-          failed=0
           work=$(mktemp -d)
           while IFS= read -r archive; do
             rm -rf "$work"/*
@@ -512,7 +550,6 @@ jobs:
             done < <(find "$work" -name '*.so')
           done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*.tar.gz' -name '*cuda*')
           rm -rf "$work"
-          exit $failed
 
       - name: List produced archives
         run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
@@ -532,6 +569,128 @@ jobs:
             uploaded=$((uploaded + 1))
           done < <(find "$src_dir" -type f \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
           echo "Uploaded $uploaded archive(s) from Linux arm64."
+
+      - name: Clean up test build archives
+        if: needs.preflight.outputs.draft_release_test == 'true'
+        run: |
+          echo "Draft release (test): removing built archives from this runner — nothing was uploaded."
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+  build-linux-hip:
+    needs: preflight
+    if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux_hip == 'true'
+    name: Linux x64 HIP (jdk21+jdk22plus × hip)
+    # Only the HIP SDK is built here (BUILDS["linux-hip"] in scripts/build-release-sdks.py, --hip).
+    # Preflight runs this job only when an amd-builder runner is online (see its runner check).
+    runs-on: [self-hosted, Linux, x64, amd-builder]
+    # The HIP build compiles the Composable Kernel libraries (ck-hip) for every GPU target.
+    timeout-minutes: 360
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.preflight.outputs.version }}
+      VERSION_TAG: ${{ needs.preflight.outputs.version_tag }}
+      DRAFT_RELEASE_TEST: ${{ needs.preflight.outputs.draft_release_test }}
+      # Set per runner as repository variables; when unset, the script picks the Temurin 21 and 25
+      # JDKs from the runner's sdkman. jdk22plus builds the same SDK with any JDK >= 22.
+      JDK21_HOME: ${{ vars.AMD_BUILDER_JDK21_HOME }}
+      JDK22PLUS_HOME: ${{ vars.AMD_BUILDER_JDK22PLUS_HOME }}
+      # Not /opt/release-archives itself: if one machine is both sdk-builder and amd-builder, the
+      # script writes this job's and build-linux's archives to the same <dir>/<tag>/linux-amd64, and
+      # each job empties that directory before it builds.
+      RELEASE_ARCHIVES_DIR: ${{ vars.AMD_BUILDER_RELEASE_ARCHIVES_DIR || '/opt/release-archives/hip' }}
+      PLATFORM_DIR: linux-amd64
+      VENV_PATH: ${{ github.workspace }}/venv-build-sdks
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify build script is present
+        run: |
+          if [ ! -f scripts/build-release-sdks.py ]; then
+            echo "::error::scripts/build-release-sdks.py is missing on the dispatched branch."
+            exit 1
+          fi
+
+      - name: Check ROCm is installed
+        # ROCM_PATH comes from the runner's environment (its .env file); /opt/rocm otherwise.
+        run: |
+          ROCM="${ROCM_PATH:-/opt/rocm}"
+          if [ ! -x "$ROCM/bin/hipcc" ] && ! command -v hipcc >/dev/null; then
+            echo "::error::No ROCm found (ROCM_PATH=${ROCM_PATH:-unset}, no hipcc). Set ROCM_PATH in the amd-builder runner's .env."
+            exit 1
+          fi
+          echo "ROCM_PATH=$ROCM" >> "$GITHUB_ENV"
+          echo "ROCm: $ROCM"
+
+      - name: Prepare output directory
+        run: |
+          mkdir -p "$RELEASE_ARCHIVES_DIR"
+          rm -rf "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+
+      - name: Setup Python venv
+        run: |
+          python3 -m venv "$VENV_PATH"
+          # shellcheck disable=SC1091
+          source "$VENV_PATH/bin/activate"
+          pip install --upgrade pip tqdm psutil
+          # Make the venv interpreter the default for subsequent steps
+          echo "$VENV_PATH/bin" >> "$GITHUB_PATH"
+
+      - name: Build SDKs
+        run: |
+          jdk_args=()
+          [ -n "$JDK21_HOME" ] && jdk_args+=(--jdk21-home "$JDK21_HOME")
+          [ -n "$JDK22PLUS_HOME" ] && jdk_args+=(--jdk22plus-home "$JDK22PLUS_HOME")
+          python3 scripts/build-release-sdks.py \
+            --version "$VERSION_TAG" \
+            --output-dir "$RELEASE_ARCHIVES_DIR" \
+            --draft-release-test "$DRAFT_RELEASE_TEST" \
+            --hip \
+            "${jdk_args[@]}"
+
+      - name: Check the native libraries load with an older libstdc++
+        # libtornado-ck is C++; built with GCC 13 or newer it references GLIBCXX_3.4.31/3.4.32
+        # symbols (std::ios_base_library_init, std::string::_M_replace_cold) and then fails to load
+        # on Ubuntu 22.04 (3.4.30) and RHEL 9 (3.4.29), the same floor the CUDA jobs hold glibc to.
+        # Only a warning for now: the JIT-compiled HIP kernels still run there, just not the CK calls.
+        env:
+          GLIBCXX_FLOOR: "3.4.29"
+        run: |
+          work=$(mktemp -d)
+          while IFS= read -r archive; do
+            rm -rf "$work"/*
+            tar -xzf "$archive" -C "$work" --wildcards '*/lib/*.so'
+            while IFS= read -r so; do
+              needed=$(objdump -T "$so" | grep -o 'GLIBCXX_3\.[0-9.]*' | sed 's/GLIBCXX_//' | sort -uV | tail -1)
+              if [ -n "$needed" ] && [ "$(printf '%s\n%s\n' "$GLIBCXX_FLOOR" "$needed" | sort -V | tail -1)" != "$GLIBCXX_FLOOR" ]; then
+                symbols=$(objdump -T "$so" | grep -E "GLIBCXX_$(echo "$needed" | sed 's/\./\\./g')[) ]" | awk '{print $NF}' | c++filt | paste -sd ',' -)
+                echo "::warning::$(basename "$archive"): $(basename "$so") needs libstdc++ GLIBCXX_$needed (floor $GLIBCXX_FLOOR), so it will not load on older distros: $symbols"
+              fi
+            done < <(find "$work" -name '*.so')
+          done < <(find "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR" -name '*-hip-*.tar.gz')
+          rm -rf "$work"
+
+      - name: List produced archives
+        run: ls -lh "$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR/"
+
+      - name: Upload archives to Release
+        if: needs.preflight.outputs.upload_to_release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          uploaded=0
+          src_dir="$RELEASE_ARCHIVES_DIR/$VERSION_TAG/$PLATFORM_DIR"
+          while IFS= read -r archive; do
+            fname=$(basename "$archive")
+            echo "→ $fname  →  release $VERSION_TAG"
+            gh release upload "$VERSION_TAG" "$archive" --clobber --repo "${{ github.repository }}"
+            uploaded=$((uploaded + 1))
+          done < <(find "$src_dir" -type f -name '*-hip-*' \( -name '*.zip' -o -name '*.tar.gz' \) | sort)
+          echo "Uploaded $uploaded archive(s) from Linux x64 HIP."
 
       - name: Clean up test build archives
         if: needs.preflight.outputs.draft_release_test == 'true'
@@ -650,7 +809,7 @@ jobs:
 
   publish-releases:
     name: Un-draft Release and dispatch SDKMAN publish
-    needs: [preflight, build-macos, build-linux, build-linux-arm, build-windows]
+    needs: [preflight, build-macos, build-linux, build-linux-arm, build-linux-hip, build-windows]
     if: |
       always() &&
       needs.preflight.outputs.proceed == 'true' &&
@@ -658,6 +817,7 @@ jobs:
       needs.build-macos.result == 'success' &&
       needs.build-linux.result == 'success' &&
       (needs.build-linux-arm.result == 'success' || needs.build-linux-arm.result == 'skipped') &&
+      (needs.build-linux-hip.result == 'success' || needs.build-linux-hip.result == 'skipped') &&
       (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped')
     runs-on: [self-hosted, Linux, x64]
     permissions:
@@ -689,7 +849,7 @@ jobs:
 
   mark-version-built:
     name: Mark this version as built
-    needs: [preflight, build-macos, build-linux, build-linux-arm, build-windows]
+    needs: [preflight, build-macos, build-linux, build-linux-arm, build-linux-hip, build-windows]
     # Only mark it once every requested platform actually succeeded (a
     # platform job shows 'skipped' only when its include_* flag was false,
     # since this job itself requires proceed == 'true'). On a partial/full
@@ -705,6 +865,7 @@ jobs:
       (needs.build-macos.result == 'success' || needs.build-macos.result == 'skipped') &&
       (needs.build-linux.result == 'success' || needs.build-linux.result == 'skipped') &&
       (needs.build-linux-arm.result == 'success' || needs.build-linux-arm.result == 'skipped') &&
+      (needs.build-linux-hip.result == 'success' || needs.build-linux-hip.result == 'skipped') &&
       (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped')
     runs-on: [self-hosted, Linux, x64]
     permissions:
