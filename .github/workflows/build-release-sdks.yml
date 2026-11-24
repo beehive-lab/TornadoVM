@@ -584,7 +584,9 @@ jobs:
     name: Linux x64 HIP (jdk21+jdk22plus × hip)
     # Only the HIP SDK is built here (BUILDS["linux-hip"] in scripts/build-release-sdks.py, --hip).
     # Preflight runs this job only when an amd-builder runner is online (see its runner check).
-    runs-on: [self-hosted, Linux, x64, amd-builder]
+    # amd-builder alone: register that runner with --no-default-labels --labels amd-builder, so it
+    # does not also match the many jobs that ask only for [self-hosted, Linux, x64].
+    runs-on: [amd-builder]
     # The HIP build compiles the Composable Kernel libraries (ck-hip) for every GPU target.
     timeout-minutes: 360
     permissions:
