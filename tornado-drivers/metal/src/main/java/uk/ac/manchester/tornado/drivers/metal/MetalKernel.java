@@ -95,6 +95,10 @@ public class MetalKernel {
         }
     }
 
+    public void setBorrowedArgRef(int index, long buffer, long offset) {
+        MetalObjects.setBorrowedKernelArgRef(metalKernelID, index, buffer, offset);
+    }
+
     public void setArgUnused(int index) {
         try {
             metalSetKernelArg(metalKernelID, index, 8, null);

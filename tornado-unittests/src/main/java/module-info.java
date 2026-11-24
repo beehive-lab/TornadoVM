@@ -65,5 +65,6 @@ open module tornado.unittests {
     exports uk.ac.manchester.tornado.unittests.memory.leak;
 
     provides uk.ac.manchester.tornado.runtime.library.spi.TornadoLibraryProvider with //
-            uk.ac.manchester.tornado.unittests.tasks.TestLibraryNativeBuffers.NativeBufferTestProvider;
+            uk.ac.manchester.tornado.unittests.tasks.TestLibraryNativeBuffers.NativeBufferTestProvider, //
+            uk.ac.manchester.tornado.unittests.deviceview.TestDeviceView.HostCopyProvider;
 }

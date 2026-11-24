@@ -133,6 +133,12 @@ public interface TornadoTaskGraphInterface extends ProfilerInterface {
 
     Set<Object> getArgumentsLookup();
 
+    /**
+     * Whether a task of this graph takes a device view. {@link #getArgumentsLookup()} cannot say: it
+     * only holds objects declared for a transfer, and a view usually has none.
+     */
+    boolean hasDeviceViews();
+
     Collection<?> getOutputs();
 
     TornadoTaskGraphInterface createImmutableTaskGraph();

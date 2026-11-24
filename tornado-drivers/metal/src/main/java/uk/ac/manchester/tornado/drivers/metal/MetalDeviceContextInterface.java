@@ -50,6 +50,12 @@ public interface MetalDeviceContextInterface extends TornadoDeviceContext {
 
     void flush(long executionPlanId);
 
+    /**
+     * Returns once the work the calling thread launched for this plan has finished, for the owner of
+     * a borrowed buffer, whom the plan gives nothing to wait on for its queue.
+     */
+    void finishDeviceViewWork(long executionPlanId);
+
     MetalMemoryManager getMemoryManager();
 
     TornadoBufferProvider getBufferProvider();

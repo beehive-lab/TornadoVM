@@ -31,12 +31,14 @@ import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import uk.ac.manchester.tornado.api.exceptions.TornadoMemoryException;
+import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoUnifiedMemoryNotSupported;
 import uk.ac.manchester.tornado.drivers.metal.exceptions.MetalException;
 import uk.ac.manchester.tornado.runtime.ffm.FFMSupport;
@@ -118,8 +120,10 @@ public final class MetalObjects {
     private static final class Arg {
         int kind;
         long buffer;
-        /** Byte offset the device buffer is bound at; non-zero only for a no-copy buffer. */
+        /** Byte offset the device buffer is bound at; non-zero only for a no-copy or a borrowed buffer. */
         long offset;
+        /** Whether another library owns the device buffer. */
+        boolean borrowed;
         byte[] bytes;
         long size;
     }
@@ -308,6 +312,8 @@ public final class MetalObjects {
         QueueEvent queueEvent = QUEUE_EVENTS.remove(queue);
         if (queueEvent != null) {
             synchronized (queueEvent) {
+                // Empty after any execution that reached awaitBorrowedBuffers, which is what reports a failure.
+                forgetBorrowedWork(queueEvent);
                 if (queueEvent.lastCommitted != 0) {
                     ObjCRuntime.release(queueEvent.lastCommitted);
                     queueEvent.lastCommitted = 0;
@@ -570,6 +576,23 @@ public final class MetalObjects {
         placeArg(state, index, arg);
     }
 
+    /**
+     * Binds an MTLBuffer that another library owns. The offset is this argument's: another argument
+     * can bind the same buffer at a different one.
+     */
+    public static void setBorrowedKernelArgRef(long kernel, int index, long buffer, long offset) {
+        KernelState state = KERNELS.get(kernel);
+        if (state == null) {
+            return;
+        }
+        Arg arg = new Arg();
+        arg.kind = 0;
+        arg.buffer = buffer;
+        arg.offset = offset;
+        arg.borrowed = true;
+        placeArg(state, index, arg);
+    }
+
     private static void placeArg(KernelState state, int index, Arg arg) {
         while (state.args.size() <= index) {
             state.args.add(null);
@@ -689,7 +712,11 @@ public final class MetalObjects {
                         case 0 -> {
                             if (arg.buffer != 0) {
                                 MetalAPI.setBuffer(encoder, arg.buffer, arg.offset, i);
-                                BUFFER_USES.put(arg.buffer, new BufferUse(queue, value));
+                                BufferUse use = new BufferUse(queue, value);
+                                BUFFER_USES.put(arg.buffer, use);
+                                if (arg.borrowed) {
+                                    recordBorrowedUse(queueEvent, arg.buffer, use, commandBuffer);
+                                }
                             }
                         }
                         case 1 -> {
@@ -813,6 +840,10 @@ public final class MetalObjects {
         Batch open;
         /** The last committed command buffer, retained, for blocking waits. Guarded by this object's lock. */
         long lastCommitted;
+        /** The last use of each borrowed buffer bound since the last wait for them. Guarded by this object's lock. */
+        final Map<Long, BufferUse> borrowedUses = new HashMap<>();
+        /** The command buffers that bound them, each retained once. Guarded by this object's lock. */
+        final List<Long> borrowedCommandBuffers = new ArrayList<>();
         /**
          * Whether the last wait on this queue took longer than {@link #SPIN_BUDGET_NS}. The next wait
          * then blocks right away: for long kernels, polling cannot save a meaningful share of the time,
@@ -978,6 +1009,65 @@ public final class MetalObjects {
             return;
         }
         waitForValue(queueEvent, use.value());
+    }
+
+    /** Records a dispatch that binds a borrowed buffer. Caller holds the queue event's lock. */
+    private static void recordBorrowedUse(QueueEvent queueEvent, long buffer, BufferUse use, long commandBuffer) {
+        queueEvent.borrowedUses.put(buffer, use);
+        // A batch binds many buffers in one command buffer, which is retained once. Being retained, its
+        // address cannot come back as a later command buffer's.
+        if (queueEvent.borrowedCommandBuffers.isEmpty() || queueEvent.borrowedCommandBuffers.getLast() != commandBuffer) {
+            queueEvent.borrowedCommandBuffers.add(ObjCRuntime.retain(commandBuffer));
+        }
+    }
+
+    /**
+     * Returns once everything encoded on {@code queue} has finished, for the owner of a borrowed
+     * buffer, and stops tracking what it borrowed: no {@link #releaseMemObject} ends the use of a
+     * buffer TornadoVM does not own. It covers library work too, which binds no kernel argument.
+     *
+     * <p>
+     * A queue is encoded on by the one thread it belongs to, which is the thread calling this, so
+     * nothing joins the queue while this waits, and what it forgets has finished. Another queue's use
+     * of the same buffer has its own {@link BufferUse}, which {@link #forgetBorrowedWork} leaves alone.
+     * </p>
+     *
+     * @throws TornadoRuntimeException
+     *     if a command buffer of this backend that bound a borrowed buffer failed. A library's own
+     *     command buffers are not known here, and its failures are its provider's to report.
+     */
+    public static void awaitBorrowedBuffers(long queue) {
+        finish(queue);
+        QueueEvent queueEvent = QUEUE_EVENTS.get(queue);
+        if (queueEvent == null) {
+            return;
+        }
+        boolean failed;
+        synchronized (queueEvent) {
+            failed = forgetBorrowedWork(queueEvent);
+        }
+        if (failed) {
+            throw new TornadoRuntimeException("A kernel that bound a borrowed MTLBuffer failed on the GPU: the buffer does not hold its results");
+        }
+    }
+
+    /**
+     * Drops the tracking of a queue whose work has finished, returning whether any of its command
+     * buffers failed. A use another queue has made since stays in {@link #BUFFER_USES}. Caller holds
+     * the queue event's lock.
+     */
+    private static boolean forgetBorrowedWork(QueueEvent queueEvent) {
+        for (Map.Entry<Long, BufferUse> entry : queueEvent.borrowedUses.entrySet()) {
+            BUFFER_USES.remove(entry.getKey(), entry.getValue());
+        }
+        queueEvent.borrowedUses.clear();
+        boolean failed = false;
+        for (long commandBuffer : queueEvent.borrowedCommandBuffers) {
+            failed |= MetalAPI.commandBufferStatus(commandBuffer) == MetalAPI.MTL_COMMAND_BUFFER_STATUS_ERROR;
+            ObjCRuntime.release(commandBuffer);
+        }
+        queueEvent.borrowedCommandBuffers.clear();
+        return failed;
     }
 
     private static MemorySegment mtlSize(Arena arena, long width, long height, long depth) {

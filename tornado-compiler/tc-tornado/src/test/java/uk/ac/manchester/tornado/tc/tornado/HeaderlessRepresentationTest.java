@@ -70,6 +70,13 @@ public class HeaderlessRepresentationTest {
     }
 
     @Test
+    public void aCycleOfHeaderlessArraysIsAcceptedForMetal() {
+        var function = IrParser.parseFunction(SWAP);
+        var problems = AbiLowering.run(function, TargetCaps.METAL_APPLE, List.of(), Set.of(0, 1));
+        assertTrue(problems.isEmpty(), "headerless layouts do not depend on the target: " + problems);
+    }
+
+    @Test
     public void aCycleOfOrdinaryArraysIsAlsoAccepted() {
         var function = IrParser.parseFunction(SWAP);
         var problems = AbiLowering.run(function, TargetCaps.CUDA_SM89, List.of(), Set.of());

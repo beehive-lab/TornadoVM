@@ -61,7 +61,20 @@ class TornadoExecutor {
     }
 
     public void withCUDAGraph() {
+        refuseDeviceViews("withCUDAGraph");
         immutableTaskGraphList.forEach(ImmutableTaskGraph::withCUDAGraph);
+    }
+
+    /**
+     * Refuses a mode that device views do not support before any task-graph of this plan takes it, so
+     * that the refusal leaves all of them as they were.
+     */
+    private void refuseDeviceViews(String mode) {
+        for (ImmutableTaskGraph immutableTaskGraph : immutableTaskGraphList) {
+            if (immutableTaskGraph.getTaskGraphImplementation().hasDeviceViews()) {
+                throw new TornadoRuntimeException("Device views do not support " + mode + ", and task graph " + immutableTaskGraph.getTaskGraph().getTaskGraphName() + " of this plan has some");
+            }
+        }
     }
 
     void withCUDAPendingLaunchCount(int count) {
@@ -122,6 +135,7 @@ class TornadoExecutor {
     }
 
     void withBatch(String batchSize) {
+        refuseDeviceViews("withBatch");
         immutableTaskGraphList.forEach(immutableTaskGraph -> immutableTaskGraph.withBatch(batchSize));
     }
 

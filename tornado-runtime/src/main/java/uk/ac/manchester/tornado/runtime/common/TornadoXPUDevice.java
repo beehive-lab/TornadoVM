@@ -23,9 +23,11 @@ package uk.ac.manchester.tornado.runtime.common;
 import uk.ac.manchester.tornado.api.common.Access;
 import uk.ac.manchester.tornado.api.common.SchedulableTask;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.exceptions.TornadoDeviceViewNotSupported;
 import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
 import uk.ac.manchester.tornado.api.exceptions.TornadoUnifiedMemoryNotSupported;
 import uk.ac.manchester.tornado.api.memory.XPUBuffer;
+import uk.ac.manchester.tornado.api.types.arrays.TornadoNativeArray;
 import uk.ac.manchester.tornado.runtime.tasks.CompilableTask;
 
 /**
@@ -52,6 +54,34 @@ public interface TornadoXPUDevice extends TornadoDevice {
         } catch (TornadoUnifiedMemoryNotSupported e) {
             return false;
         }
+    }
+
+    /**
+     * Checks the current binding of a device view before this device uses it. It runs on every
+     * execution, because a view can be rebound between executions. A backend that implements device
+     * views overrides this method.
+     *
+     * @param view
+     *     the device view
+     * @param access
+     *     what the task does to the view
+     * @throws TornadoDeviceViewNotSupported
+     *     if this backend has not implemented device views, or the view is bound for another backend
+     */
+    default void checkDeviceView(TornadoNativeArray view, Access access) {
+        throw new TornadoDeviceViewNotSupported("Device views are not implemented for the " + getTornadoVMBackend() + " backend. Use an ordinary array instead.");
+    }
+
+    /**
+     * Returns once the work this plan launched from the calling thread has finished, on a backend that
+     * promises the owner of a borrowed device buffer that {@code execute()} waits for it. Called on the
+     * interpreter thread at the end of an execution that uses a device view, whether it succeeded or
+     * failed. By default it does nothing: the owner synchronises with the device by itself.
+     *
+     * @param executionPlanId
+     *     the execution plan
+     */
+    default void finishDeviceViewWork(long executionPlanId) {
     }
 
     /**
