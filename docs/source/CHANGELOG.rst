@@ -7,6 +7,39 @@ This file summarizes the new features and major changes for each *TornadoVM* ver
 
 CHANGELOG
 
+TornadoVM 8.2.0
+---------------
+24/11/26
+
+Compatibility
+~~~~~~~~~~~~
+
+- `#1348 <https://github.com/beehive-lab/TornadoVM/pull/1348>`_: [build] Cache the CUTLASS checkout outside target/ and retry stalled fetches
+
+Other Changes
+~~~~~~~~~~~~
+
+- `#1334 <https://github.com/beehive-lab/TornadoVM/pull/1334>`_: [API][TC] KernelContext.simdShuffle: read a value from any lane of the warp
+- `#1325 <https://github.com/beehive-lab/TornadoVM/pull/1325>`_: [metal] Extend foreign device views API to Metal
+- `#1350 <https://github.com/beehive-lab/TornadoVM/pull/1350>`_: Add channels-last cuDNN convolutions with a fused bias, residual and ReLU epilogue
+- `#1349 <https://github.com/beehive-lab/TornadoVM/pull/1349>`_: [cublas] FP32 and TF32 cuBLASLt products with bias, GELU and ReLU epilogues
+- `#1347 <https://github.com/beehive-lab/TornadoVM/pull/1347>`_: [tc] Run on Eclipse OpenJ9 / IBM Semeru: translate FdLibm for natively declared StrictMath functions
+- `#1343 <https://github.com/beehive-lab/TornadoVM/pull/1343>`_: Use automatic arenas instead of shared arenas in a native image
+- `#1345 <https://github.com/beehive-lab/TornadoVM/pull/1345>`_: [TC] Let a device function read a constant table, and probe CUDA once in the math test
+- `#1344 <https://github.com/beehive-lab/TornadoVM/pull/1344>`_: [build] Publish the aggregator POMs with ${revision} resolved
+- `#1342 <https://github.com/beehive-lab/TornadoVM/pull/1342>`_: Copy between Java arrays and native arrays in one bulk copy
+- `#1336 <https://github.com/beehive-lab/TornadoVM/pull/1336>`_: [TC] Java-exact math (tc emit --java-math): StrictMath's functions bit-identical on the device
+- `#1335 <https://github.com/beehive-lab/TornadoVM/pull/1335>`_: [TC] Device functions: null-aware rows and error codes for cudf::transform (tc emit --null-aware --errors)
+- `#1333 <https://github.com/beehive-lab/TornadoVM/pull/1333>`_: [TC] Device-function output: compile a scalar Java method as a cudf::transform CUDA UDF (tc emit --device-fn)
+- `#1332 <https://github.com/beehive-lab/TornadoVM/pull/1332>`_: [TC] tc emit --strict-fp, and CUDA source that stays strict under any compiler
+- `#1331 <https://github.com/beehive-lab/TornadoVM/pull/1331>`_: [cuDF] Leave a host's RMM resource alone, drop the per-call sync, lock the regex cache
+- `#1330 <https://github.com/beehive-lab/TornadoVM/pull/1330>`_: [docs] List the HIP backend and its flags
+- `#1326 <https://github.com/beehive-lab/TornadoVM/pull/1326>`_: Let a task graph consume device buffers persisted by another execution plan
+- `#1327 <https://github.com/beehive-lab/TornadoVM/pull/1327>`_: [ROCm] Add a HIP backend for AMD GPUs
+- `#1329 <https://github.com/beehive-lab/TornadoVM/pull/1329>`_: [cuDF] Read and write INT8/INT16 Parquet columns; read files of differing writers together
+- `#1328 <https://github.com/beehive-lab/TornadoVM/pull/1328>`_: [API][TC] KernelContext.mmaFragmentA/B: tensor-core fragments from registers (CUDA)
+
+
 TornadoVM 8.1.0
 ---------------
 06/11/26
