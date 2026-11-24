@@ -226,7 +226,7 @@ Pick a backend-specific build if you prefer a smaller install. Candidate version
 | OpenCL *(default)* | `8.2.0-opencl` | NVIDIA / AMD / Intel GPUs, multi-core CPUs, FPGAs |
 | CUDA | `8.2.0-cuda` | **NVIDIA GPUs (CUDA) — codegen, Tensor Cores, cuBLAS/cuFFT/cuDNN/cuDF library tasks** |
 | Metal 🆕 | `8.2.0-metal` | Apple Silicon GPUs (M1–M4), natively via MSL |
-| All backends | `8.2.0-full` | Everything above |
+| HIP | `8.2.0-hip` | AMD GPUs on Linux x64 (ROCm 7) |
 
 Binaries are also on the [official website](https://www.tornadovm.org/downloads). For [Docker](https://github.com/beehive-lab/docker-tornado#docker-for-tornadovm) and [AWS (CPUs/GPUs)](https://tornadovm.readthedocs.io/en/latest/cloud.html) see the linked guides.
 

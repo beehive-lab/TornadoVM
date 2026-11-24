@@ -296,7 +296,7 @@ jobs:
   build-linux:
     needs: preflight
     if: needs.preflight.outputs.proceed == 'true' && needs.preflight.outputs.include_linux == 'true'
-    name: Linux x64 (jdk21+jdk22plus × opencl+cuda+full)
+    name: Linux x64 (jdk21+jdk22plus × opencl+cuda)
     runs-on: [self-hosted, Linux, x64, sdk-builder]
     timeout-minutes: 240
     permissions:

@@ -43,12 +43,13 @@ filename.
 SDKs built per platform (jdk21 + jdk22plus profiles x backend, via sdkman
 Temurin or an explicit --jdk21-home/--jdk22plus-home override):
   - macOS   : opencl, metal
-  - Linux   : opencl, cuda, full
+  - Linux   : opencl, cuda
   - Linux aarch64 : cuda
   - Windows : opencl, cuda   (--jdk21-home/--jdk22plus-home required)
   - Linux HIP (--hip) : hip  (needs ROCm, so it runs on its own amd-builder machine)
 
-"full" means opencl+cuda combined into a single archive.
+No combined "full" (opencl+cuda) SDK is released: its name suggested every
+backend, HIP included. BACKEND=opencl,cuda still builds one by hand.
 
 A profile whose JDK home can't be resolved (not installed via sdkman, or an
 invalid --jdkXX-home) is skipped with a warning rather than aborting the
@@ -241,7 +242,7 @@ def resolve_jdk_home(profile, build_major, override):
 # Backends to build per platform.  Each entry becomes BACKEND=<value> in make.
 # On macOS/Linux the Makefile target is:  make sdk BACKEND=<value>
 # On Windows it is:  nmake /f Makefile.mak sdk BACKEND=<value>
-# opencl+cuda is labelled "full" automatically by bin/compile.
+# opencl+cuda would be labelled "full" by bin/compile; it is no longer released.
 # A "<platform>-<arch>" key (arch as in the output dir name) overrides the
 # per-platform entry for that architecture only. A "<platform>-hip" key is used
 # instead of both when --hip is given: the HIP SDKs need ROCm, so they are built
@@ -254,7 +255,6 @@ BUILDS = {
     "linux": [
         "opencl",
         "cuda",
-        "opencl,cuda",
     ],
     "linux-aarch64": [
         "cuda",

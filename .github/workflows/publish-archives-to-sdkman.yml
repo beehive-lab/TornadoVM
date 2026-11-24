@@ -57,10 +57,6 @@ jobs:
         include:
           # ---- jdk21 ----
           - jdk: jdk21
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
-          - jdk: jdk21
             sdk_suffix: opencl
             platform: LINUX_64
             variant: opencl-linux-amd64
@@ -85,10 +81,6 @@ jobs:
             optional: true
 
           # ---- jdk22plus (one SDK, covers every JDK from 22 up) ----
-          - jdk: jdk22plus
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
           - jdk: jdk22plus
             sdk_suffix: opencl
             platform: LINUX_64

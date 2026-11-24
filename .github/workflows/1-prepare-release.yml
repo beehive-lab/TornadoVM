@@ -125,7 +125,7 @@ jobs:
           # (e.g. `5.2.0-opencl`). The table lists one row per backend without a JDK
           # token, so match `<version>-<backend>` and bump only the leading version,
           # preserving the "-backend" suffix (captured as \1).
-          sed -i -E 's/`[0-9]+\.[0-9]+\.[0-9]+(-(opencl|cuda|metal|full))`/`${{ env.VERSION }}\1`/g' README.md
+          sed -i -E 's/`[0-9]+\.[0-9]+\.[0-9]+(-(opencl|cuda|metal|hip|full))`/`${{ env.VERSION }}\1`/g' README.md
 
           # Update the tornado-examples jar version in the "Run your first program" snippet
           sed -i 's/tornado-examples-[0-9]\+\.[0-9]\+\.[0-9]\+\.jar/tornado-examples-${{ env.VERSION }}.jar/g' README.md
@@ -164,7 +164,7 @@ jobs:
 
             # Update the SDKMAN `sdk install tornadovm X.Y.Z-jdkNN-backend` examples,
             # preserving the existing -jdkNN-backend suffix the same way.
-            sed -i -E 's/(sdk install tornadovm )[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*-(opencl|cuda|metal|full))/\1${{ env.VERSION }}\2/g' docs/source/installation.rst
+            sed -i -E 's/(sdk install tornadovm )[0-9]+\.[0-9]+\.[0-9]+(-jdk[0-9]+[a-z]*-(opencl|cuda|metal|hip|full))/\1${{ env.VERSION }}\2/g' docs/source/installation.rst
 
             # Add new version to "Versions available" list (insert before previous version)
             sed -i "/^\* ${{ env.PREV_VERSION }}$/i\\ * ${{ env.VERSION }}" docs/source/installation.rst
