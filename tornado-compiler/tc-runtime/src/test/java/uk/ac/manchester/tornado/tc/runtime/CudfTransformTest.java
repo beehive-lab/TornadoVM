@@ -50,8 +50,9 @@ import uk.ac.manchester.tornado.tc.ir.target.TargetCaps;
  * ({@code null_aware::YES}) and the error result ({@code cudf::evaluation_error}).
  *
  * <p>
- * Opt-in: it runs only when {@code CUDF_HOME} names a libcudf prefix (with {@code include/} and
- * {@code lib64/}), with g++ and a GPU. {@code RMM_HOME} and {@code RAPIDS_LOGGER_HOME} default to the
+ * Opt-in: it runs only when {@code TC_CUDF_TEST=1} and {@code CUDF_HOME} names a libcudf prefix (with
+ * {@code include/} and {@code lib64/}), with g++ and a GPU. {@code CUDF_HOME} alone does not turn it on:
+ * the release builds set it to build the cuDF shim, without libcudf's dependencies on the library path. {@code RMM_HOME} and {@code RAPIDS_LOGGER_HOME} default to the
  * {@code librmm} and {@code rapids_logger} next to it (the layout of the RAPIDS wheels), {@code CUDA_HOME}
  * to {@code /usr/local/cuda}; {@code CUDF_LD_LIBRARY_PATH} is added to the library path libcudf runs
  * with (its own dependencies: kvikio, nvcomp, ...), and {@code CUDF_ROWS} sets the rows of the large
@@ -87,6 +88,7 @@ public class CudfTransformTest {
 
     @Test
     public void transformsAsInJava(@TempDir Path dir) throws Exception {
+        assumeTrue("1".equals(System.getenv("TC_CUDF_TEST")), "TC_CUDF_TEST is not 1: the cudf::transform integration test is opt-in");
         var cudfHome = System.getenv("CUDF_HOME");
         assumeTrue(cudfHome != null && !cudfHome.isBlank(), "CUDF_HOME is not set: the cudf::transform integration test is opt-in");
         var gxx = ExternalTool.find("g++");
