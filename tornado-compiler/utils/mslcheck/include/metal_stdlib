@@ -107,6 +107,7 @@ TC_ATOMICS(device) TC_ATOMICS(threadgroup)
 
 template <typename T> T simd_sum(T v) { return v; }
 template <typename T> T simd_shuffle_down(T v, ushort) { return v; }
+template <typename T> T simd_shuffle(T v, ushort) { return v; }
 template <typename T> T simd_broadcast_first(T v) { return v; }
 inline bool simd_any(bool v) { return v; }
 inline bool simd_all(bool v) { return v; }

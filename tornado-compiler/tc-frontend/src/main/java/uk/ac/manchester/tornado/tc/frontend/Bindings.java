@@ -213,6 +213,8 @@ final class Bindings {
         // Warp (SIMD group) operations: all lanes of the warp take part; not pure (never moved or merged).
         METHODS.put(KERNEL_CONTEXT + ".simdSum(F)F", new Intrinsic("tornado.simd.sum", Type.F32));
         METHODS.put(KERNEL_CONTEXT + ".simdShuffleDown(FI)F", new Intrinsic("tornado.simd.shuffle_down", Type.F32));
+        METHODS.put(KERNEL_CONTEXT + ".simdShuffle(II)I", new Intrinsic("tornado.simd.shuffle", Type.I32));
+        METHODS.put(KERNEL_CONTEXT + ".simdShuffle(FI)F", new Intrinsic("tornado.simd.shuffle", Type.F32));
         METHODS.put(KERNEL_CONTEXT + ".simdBroadcastFirst(F)F", new Intrinsic("tornado.simd.broadcast_first", Type.F32));
         METHODS.put(KERNEL_CONTEXT + ".simdAny(Z)Z", new Intrinsic("tornado.simd.any", Type.I32));
         METHODS.put(KERNEL_CONTEXT + ".simdAll(Z)Z", new Intrinsic("tornado.simd.all", Type.I32));
