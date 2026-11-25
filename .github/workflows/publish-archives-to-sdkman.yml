@@ -57,10 +57,6 @@ jobs:
         include:
           # ---- jdk21 ----
           - jdk: jdk21
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
-          - jdk: jdk21
             sdk_suffix: opencl
             platform: LINUX_64
             variant: opencl-linux-amd64
@@ -76,13 +72,16 @@ jobs:
             sdk_suffix: cuda
             platform: LINUX_64
             variant: cuda-linux-amd64
+          - jdk: jdk21
+            sdk_suffix: hip
+            platform: LINUX_64
+            variant: hip-linux-amd64
+            # Built only when an amd-builder runner was online (build-release-sdks.yml), so a
+            # release may have no HIP archive: then this leg is skipped, not failed.
+            optional: true
 
           # ---- jdk22plus (one SDK, covers every JDK from 22 up) ----
           - jdk: jdk22plus
-            sdk_suffix: full
-            platform: LINUX_64
-            variant: full-linux-amd64
-          - jdk: jdk22plus
             sdk_suffix: opencl
             platform: LINUX_64
             variant: opencl-linux-amd64
@@ -98,6 +97,13 @@ jobs:
             sdk_suffix: cuda
             platform: LINUX_64
             variant: cuda-linux-amd64
+          - jdk: jdk22plus
+            sdk_suffix: hip
+            platform: LINUX_64
+            variant: hip-linux-amd64
+            # Built only when an amd-builder runner was online (build-release-sdks.yml), so a
+            # release may have no HIP archive: then this leg is skipped, not failed.
+            optional: true
 
     steps:
       - name: Derive versions and URLs
@@ -124,6 +130,7 @@ jobs:
           echo "  URL:            ${URL}"
 
       - name: Verify asset exists on the Release
+        id: asset
         # Deliberately gated on draft_release_test, NOT on publish: a plain
         # manual dry run (publish=false against a real, already-uploaded tag)
         # should still verify the asset — that's the whole point of a dry
@@ -138,13 +145,18 @@ jobs:
         run: |
           set -euo pipefail
           if ! curl -fsSL -I "${{ steps.vars.outputs.url }}" > /dev/null; then
+            if [ "${{ matrix.optional }}" = "true" ]; then
+              echo "::warning::No asset at ${{ steps.vars.outputs.url }}. This SDK is optional (its builder may have been offline), so it is not published to SDKMAN."
+              echo "missing=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             echo "::error::Asset not found at ${{ steps.vars.outputs.url }} — the archive-naming contract between scripts/build-release-sdks.py and this workflow has drifted, or build-release-sdks.yml hasn't uploaded it yet."
             exit 1
           fi
           echo "Asset confirmed present."
 
       - name: Release to SDKMAN!
-        if: ${{ github.event_name == 'release' || inputs.publish == 'true' }}
+        if: ${{ (github.event_name == 'release' || inputs.publish == 'true') && steps.asset.outputs.missing != 'true' }}
         uses: sdkman/sdkman-release-action@v0.2.0
         with:
           consumer-key: ${{ secrets.SDKMAN_CONSUMER_KEY }}

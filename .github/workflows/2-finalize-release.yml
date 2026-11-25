@@ -114,12 +114,12 @@ jobs:
           # @@VERSION@@ is substituted afterwards via sed. Archives are
           # JDK-qualified (see build-release-sdks.py); jdk21/opencl is shown
           # as the example — swap jdk21 for jdk25/jdk26/jdk27, and opencl for
-          # cuda/metal/full, for the other combinations on this Release.
+          # cuda/metal/hip, for the other combinations on this Release.
           cat >> /tmp/release_notes.md <<'EOF'
 
           ## How to use TornadoVM SDK
 
-          Select the archive matching your JDK (21, 25, 26, or 27) and target accelerator backend (opencl, cuda, metal, or full) from this Release's assets. Ensure `JAVA_HOME` points to a matching JDK installation before running. The example below uses jdk21 + opencl for Linux/macOS/Windows — swap `jdk21-opencl` for e.g. `jdk26-cuda` or `jdk27-metal` as needed.
+          Select the archive matching your JDK (21, 25, 26, or 27) and target accelerator backend (opencl, cuda, metal, or hip) from this Release's assets. Ensure `JAVA_HOME` points to a matching JDK installation before running. The example below uses jdk21 + opencl for Linux/macOS/Windows — swap `jdk21-opencl` for e.g. `jdk26-cuda` or `jdk27-metal` as needed.
 
           ### Linux Systems
 

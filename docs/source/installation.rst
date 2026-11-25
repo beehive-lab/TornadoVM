@@ -6,7 +6,7 @@ Installation & Configuration
 Quick Install (recommended)
 ****************************
 
-Most users do not need to build TornadoVM from source. Prebuilt SDKs (OpenCL, CUDA, Metal, or a full bundle) are available from the official website:
+Most users do not need to build TornadoVM from source. Prebuilt SDKs (OpenCL, CUDA, Metal or HIP) are available from the official website:
 
 `tornadovm.org/downloads <https://www.tornadovm.org/downloads>`__
 
@@ -21,7 +21,7 @@ Via SDKMAN!:
    sdk install tornadovm 8.2.0-jdk22plus-metal
    sdk install tornadovm 8.2.0-jdk22plus-opencl
 
-To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (``<backend>`` is ``opencl``, ``cuda``, ``metal``, or ``full`` for all backends). Run ``sdk list tornadovm`` to see all available combinations.
+To install a specific JDK and/or backend combination, pass the candidate version as ``<version>-<jdk-version>-<backend>`` (``<backend>`` is ``opencl``, ``cuda``, ``metal``, or ``hip``). Run ``sdk list tornadovm`` to see all available combinations.
 
 There are two SDK families, and ``<jdk-version>`` selects between them:
 
