@@ -220,7 +220,10 @@ the ported portions.
   NVIDIA cuda-samples                                  BSD-3-Clause
   https://github.com/NVIDIA/cuda-samples
     tornado-examples/src/main/java/uk/ac/manchester/tornado/examples/
-        kernelcontext/cdp/Cdp*.java
+        kernelcontext/cdp/CdpBezierTessellation.java
+        kernelcontext/cdp/CdpQuadtree.java
+        kernelcontext/cdp/CdpSimplePrint.java
+        kernelcontext/cdp/CdpSimpleQuicksort.java
     tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/
         kernelcontext/api/TestCudaSamplesDynamicParallelism.java
 
@@ -230,7 +233,16 @@ the ported portions.
   directory, so they are used under the MIT License, Section A of TileGym's
   LICENSE.)
     tornado-unittests/src/main/java/uk/ac/manchester/tornado/unittests/
-        tile/TestTile*.java
+        tile/TestTileAttention.java
+        tile/TestTileAttentionVariants.java
+        tile/TestTileGemmVariants.java
+        tile/TestTileLlmKernels.java
+        tile/TestTileMasking.java
+        tile/TestTileMatmul.java
+        tile/TestTileRecurrence.java
+        tile/TestTileRowKernels.java
+    The other TestTile*.java files are TornadoVM's own work and are not
+    derived from TileGym.
 
 Code compiled into the native libraries of binary distributions
 ---------------------------------------------------------------
