@@ -4,7 +4,7 @@
  *
  * Portions of this file are derived from NVIDIA TileGym (https://github.com/NVIDIA/TileGym),
  * Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * Used under the MIT License; see THIRD_PARTY_NOTICES.
+ * Used under the MIT License; see the LICENSE file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

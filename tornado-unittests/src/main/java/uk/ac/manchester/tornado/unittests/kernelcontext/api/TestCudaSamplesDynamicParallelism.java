@@ -7,7 +7,7 @@
  *
  * Portions of this file are derived from NVIDIA cuda-samples
  * (https://github.com/NVIDIA/cuda-samples), Copyright (c) 2022, NVIDIA CORPORATION.
- * All rights reserved. Used under the BSD 3-Clause License; see THIRD_PARTY_NOTICES.
+ * All rights reserved. Used under the BSD 3-Clause License; see the LICENSE file.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
