@@ -21,7 +21,7 @@
             <directory>../</directory>
             <!-- License file in root directory -->
             <includes>
-                <include>LICENSE_APACHE2</include>
+                <include>LICENSE</include>
                 <include>THIRD_PARTY_NOTICES</include>
             </includes>
             <outputDirectory>./</outputDirectory>
