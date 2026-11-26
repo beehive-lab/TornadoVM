@@ -549,6 +549,13 @@ public final class TcCompiler {
                     && NativeHalfArithmetic.applies(c.function), c -> {
                 new NativeHalfArithmetic().run(c.function);
                 return List.of();
+            }, Verifier.Stage.POST_ABI),
+            // Last, once: NaN tests beside comparisons of sign-known values with non-constant operands, which
+            // NVIDIA's compilers fold without the NaN case once they evaluate the other side (see NaNGuards).
+            new Step("nan-guards", c -> (cudaLike(c.target) || c.target.dialect() == TargetCaps.Dialect.OPENCL)
+                    && uk.ac.manchester.tornado.tc.opt.NaNGuards.applies(c.function), c -> {
+                new uk.ac.manchester.tornado.tc.opt.NaNGuards().run(c.function);
+                return List.of();
             }, Verifier.Stage.POST_ABI));
 
     /**
