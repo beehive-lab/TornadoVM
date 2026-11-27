@@ -1,4 +1,5 @@
 import uk.ac.manchester.tornado.runtime.TornadoBackendProvider;
+import uk.ac.manchester.tornado.runtime.autotune.spi.AutoTuneSearchStrategy;
 
 module tornado.drivers.metal {
     requires transitive tornado.api;
@@ -17,7 +18,10 @@ module tornado.drivers.metal {
     exports uk.ac.manchester.tornado.drivers.metal.power;
     exports uk.ac.manchester.tornado.drivers.metal.scheduler;
     exports uk.ac.manchester.tornado.drivers.metal.natives;
+    exports uk.ac.manchester.tornado.drivers.metal.autotune;
 
     provides TornadoBackendProvider with
             uk.ac.manchester.tornado.drivers.metal.MetalTornadoDriverProvider;
+    provides AutoTuneSearchStrategy with
+            uk.ac.manchester.tornado.drivers.metal.autotune.MetalAutoTuneSearchStrategy;
 }
