@@ -40,7 +40,9 @@ import uk.ac.manchester.tornado.runtime.library.spi.TornadoNativeStreamSupport;
  * {@link #prepare} before graph capture, and a grow-only workspace whose outgrown predecessors stay
  * allocated until the context is destroyed). The fused SDPA functions run on the FP16 attention
  * kernels of AMD Composable Kernel that TornadoVM builds into libtornado-ck ({@link CkAttentionNativeLib}),
- * because MIOpen's attention operation has no FP16 solution on these GPUs.
+ * because MIOpen's attention operation has no FP16 solution on these GPUs. The fused NHWC
+ * convolutions run as a MIOpen convolution followed by libtornado-ck's epilogue kernel
+ * ({@link CkConvEpilogueNativeLib}), because MIOpen fuses no residual add.
  */
 public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
 
@@ -117,6 +119,11 @@ public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
             case "cudnnConv2d", "cudnnConv2dFP16", "cudnnConv2dNHWC", "cudnnConv2dNHWCFP16", "cudnnConv2dBackwardData", "cudnnConv2dBackwardDataFP16", "cudnnConv2dBackwardFilter",
                     "cudnnConv2dBackwardFilterFP16" -> getOrCreateConvPlan((MIOpenContext) context, (int) p[3], (int) p[4], (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10],
                             (int) p[11], descriptor.getFunctionName().endsWith("FP16"), descriptor.getFunctionName().contains("NHWC"), direction(descriptor.getFunctionName()));
+            case "cudnnConv2dNHWCFused", "cudnnConv2dNHWCFusedFP16" -> {
+                checkConvEpilogueAvailable(descriptor.getFunctionName(), (int) p[14]);
+                getOrCreateConvPlan((MIOpenContext) context, (int) p[5], (int) p[6], (int) p[7], (int) p[8], (int) p[9], (int) p[10], (int) p[11], (int) p[12], (int) p[13],
+                        descriptor.getFunctionName().endsWith("FP16"), true, CuDnnNativeLib.CONV_FORWARD);
+            }
             case "sdpaForward", "sdpaForwardPackedQkv" -> checkSdpaAvailable(descriptor.getFunctionName());
             default -> {
                 // simple ops have no per-shape native state
@@ -152,6 +159,8 @@ public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
             case "cudnnConv2dFP16" -> conv2d(context, invocation, true, false);
             case "cudnnConv2dNHWC" -> conv2d(context, invocation, false, true);
             case "cudnnConv2dNHWCFP16" -> conv2d(context, invocation, true, true);
+            case "cudnnConv2dNHWCFused" -> conv2dFused(context, invocation, false);
+            case "cudnnConv2dNHWCFusedFP16" -> conv2dFused(context, invocation, true);
             case "cudnnConv2dBackwardData", "cudnnConv2dBackwardDataFP16", "cudnnConv2dBackwardFilter", "cudnnConv2dBackwardFilterFP16" -> conv2dBackward(context, invocation,
                     functionName.endsWith("FP16"), direction(functionName));
             case "sdpaForward" -> sdpa(context, invocation);
@@ -175,6 +184,52 @@ public final class MIOpenLibraryProvider implements TornadoLibraryProvider {
         return MIOpenNativeLib.convForward(context.handle, plan, //
                 invocation.getDevicePointer(0), invocation.getDevicePointer(1), invocation.getDevicePointer(2), //
                 context.workspacePtr, context.workspaceBytes);
+    }
+
+    /**
+     * (input, filter, bias, residual, output, n, c, h, w, k, r, s, pad, stride, epilogue, plans).
+     * MIOpen fuses no residual add, so the NHWC convolution writes the output and libtornado-ck's
+     * epilogue then adds the bias and the residual and applies the ReLU in place, in FP32, on the
+     * same stream. MIOpen picks the convolution's solution itself, so {@code plans} is not used.
+     */
+    private static int conv2dFused(MIOpenContext context, LibraryInvocation invocation, boolean half) {
+        int n = (int) invocation.getArg(5);
+        int c = (int) invocation.getArg(6);
+        int h = (int) invocation.getArg(7);
+        int w = (int) invocation.getArg(8);
+        int k = (int) invocation.getArg(9);
+        int r = (int) invocation.getArg(10);
+        int s = (int) invocation.getArg(11);
+        int pad = (int) invocation.getArg(12);
+        int stride = (int) invocation.getArg(13);
+        int epilogue = (int) invocation.getArg(14);
+        long plan = getOrCreateConvPlan(context, n, c, h, w, k, r, s, pad, stride, half, true, CuDnnNativeLib.CONV_FORWARD);
+        long output = invocation.getDevicePointer(4);
+        int status = MIOpenNativeLib.convForward(context.handle, plan, invocation.getDevicePointer(0), invocation.getDevicePointer(1), output, context.workspacePtr,
+                context.workspaceBytes);
+        if (status != 0 || epilogue == 0) {
+            return status;
+        }
+        long total = (long) n * ((h + 2 * pad - r) / stride + 1) * ((w + 2 * pad - s) / stride + 1) * k;
+        long bias = (epilogue & CuDnn.CONV_BIAS) != 0 ? invocation.getDevicePointer(2) : 0;
+        long residual = (epilogue & CuDnn.CONV_RESIDUAL) != 0 ? invocation.getDevicePointer(3) : 0;
+        int result = CkConvEpilogueNativeLib.convEpilogue(context.stream, half, output, bias, residual, total, k, epilogue);
+        return switch (result) {
+            case CkConvEpilogueNativeLib.SUCCESS -> 0;
+            case CkConvEpilogueNativeLib.NO_KERNEL -> throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] fused convolution: libtornado-ck was not built for this GPU");
+            case CkConvEpilogueNativeLib.HIP_FAILURE -> throw new TornadoRuntimeException("[ERROR] fused convolution: the epilogue kernel failed to launch (HIP error)");
+            default -> throw new TornadoRuntimeException("[ERROR] fused convolution: invalid epilogue arguments (k=" + k + ", flags=" + epilogue + ")");
+        };
+    }
+
+    private static void checkConvEpilogueAvailable(String functionName, int epilogue) {
+        if ((epilogue & ~(CuDnn.CONV_BIAS | CuDnn.CONV_RESIDUAL | CuDnn.CONV_RELU)) != 0) {
+            throw new TornadoRuntimeException("[ERROR] " + functionName + ": unknown epilogue flags " + epilogue);
+        }
+        if (epilogue != 0 && !CkConvEpilogueNativeLib.isAvailable()) {
+            throw new TornadoLibraryTaskNotSupported("[UNSUPPORTED] " + functionName + " on HIP devices needs libtornado-ck for its epilogue (bias, residual, ReLU); "
+                    + "this TornadoVM build does not include it");
+        }
     }
 
     private static int direction(String functionName) {

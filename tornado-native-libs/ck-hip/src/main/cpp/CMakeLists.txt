@@ -199,6 +199,7 @@ set(SOURCE_FILES
     "source/tornado-ck-gemm-bias-sigmoid.cpp"
     "source/tornado-ck-gemm-bias-tanh.cpp"
     "source/tornado-ck-gemm-bias-hardswish.cpp"
+    "source/tornado-ck-conv-epilogue.cpp"
     ${CK_FMHA_SOURCES})
 set_source_files_properties(${SOURCE_FILES} PROPERTIES LANGUAGE HIP)
 # the processor names, without target features such as ":xnack+"
@@ -208,12 +209,12 @@ foreach(target ${TORNADO_CK_GPU_TARGETS})
     list(APPEND CK_COMPILED_TARGETS "${target}")
 endforeach()
 string(REPLACE ";" "," CK_COMPILED_TARGETS "${CK_COMPILED_TARGETS}")
-set_source_files_properties("source/tornado-ck-sdpa.cpp" "source/tornado-ck-gemm.cpp" PROPERTIES COMPILE_DEFINITIONS
+set_source_files_properties("source/tornado-ck-sdpa.cpp" "source/tornado-ck-gemm.cpp" "source/tornado-ck-conv-epilogue.cpp" PROPERTIES COMPILE_DEFINITIONS
     "TORNADO_CK_COMPILED_TARGETS=\"${CK_COMPILED_TARGETS}\"")
 if(WIN32)
     # The DLL exports the C entry points that tornado-cudnn and tornado-cutlass look up.
     file(WRITE "${CMAKE_BINARY_DIR}/tornado-ck.def"
-        "EXPORTS\n  tornado_ck_sdpa_forward\n  tornado_ck_gemm\n  tornado_ck_gemm_bias_act\n  tornado_ck_hgemm_batched\n")
+        "EXPORTS\n  tornado_ck_sdpa_forward\n  tornado_ck_gemm\n  tornado_ck_gemm_bias_act\n  tornado_ck_hgemm_batched\n  tornado_ck_conv_epilogue\n")
     list(APPEND SOURCE_FILES "${CMAKE_BINARY_DIR}/tornado-ck.def")
 endif()
 add_library(tornado-ck SHARED ${SOURCE_FILES})
