@@ -50,6 +50,10 @@ public class ImmutableTaskGraph {
         this.taskGraph.execute(executionPackage);
     }
 
+    TornadoTaskGraphInterface executeWithoutWaiting(ExecutorFrame executionPackage) {
+        return this.taskGraph.executeWithoutWaiting(executionPackage);
+    }
+
     void withPreCompilation(ExecutorFrame executionPackage) {
         taskGraph.withPreCompilation(executionPackage);
     }
