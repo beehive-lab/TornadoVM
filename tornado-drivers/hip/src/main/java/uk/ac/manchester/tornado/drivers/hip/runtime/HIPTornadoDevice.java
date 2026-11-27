@@ -64,6 +64,7 @@ import uk.ac.manchester.tornado.drivers.hip.mm.HIPAtomicsBuffer;
 import uk.ac.manchester.tornado.drivers.hip.mm.HIPByteArrayWrapper;
 import uk.ac.manchester.tornado.drivers.hip.mm.HIPCharArrayWrapper;
 import uk.ac.manchester.tornado.drivers.hip.mm.HIPDoubleArrayWrapper;
+import uk.ac.manchester.tornado.drivers.hip.mm.HIPExternalDeviceBuffer;
 import uk.ac.manchester.tornado.drivers.hip.mm.HIPFieldBuffer;
 import uk.ac.manchester.tornado.drivers.hip.mm.HIPFloatArrayWrapper;
 import uk.ac.manchester.tornado.drivers.hip.mm.HIPIntArrayWrapper;
@@ -131,6 +132,11 @@ public class HIPTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSu
     public String getDescription() {
         final String availability = (device.isDeviceAvailable()) ? "available" : "not available";
         return String.format("%s %s (%s)", device.getDeviceName(), device.getDeviceType(), availability);
+    }
+
+    @Override
+    public void checkDeviceView(TornadoNativeArray view, Access access) {
+        HIPExternalDeviceBuffer.validateBinding(view.deviceViewBinding(), getDeviceContext().getDeviceIndex(), access);
     }
 
     @Override
@@ -404,6 +410,11 @@ public class HIPTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSu
                 }
             }
         } else if (!type.isPrimitive()) {
+            // A device view stands for memory another library owns: borrow its address instead of
+            // allocating, transferring or freeing anything (see HIPExternalDeviceBuffer).
+            if (object instanceof TornadoNativeArray nativeArray && nativeArray.isDeviceView()) {
+                return new HIPExternalDeviceBuffer(deviceContext, nativeArray, access);
+            }
             if (object instanceof AtomicInteger) {
                 result = new HIPAtomicsBuffer(new int[] {}, deviceContext, access);
             } else if (object.getClass().getAnnotation(Vector.class) != null) {
@@ -504,12 +515,22 @@ public class HIPTornadoDevice implements TornadoXPUDevice, TornadoNativeStreamSu
             if (batchSize != 0) {
                 buffer.setSizeSubRegion(batchSize);
             }
+            if (buffer instanceof HIPExternalDeviceBuffer external) {
+                // Reusing a locked buffer skips allocate(), which is where a borrowed view's access
+                // contract was checked. The binding can have changed since; check it again here, so
+                // that every execution is validated rather than only the first.
+                external.validateForAccess(access);
+            }
         } else {
             buffer = newDeviceBufferAllocation(object, batchSize, state, access);
         }
 
         if (buffer.getClass() == HIPAtomicsBuffer.class) {
             state.setAtomicRegion();
+        }
+        if (buffer instanceof HIPExternalDeviceBuffer) {
+            // Borrowed: none of its bytes were allocated by the runtime.
+            return 0;
         }
         return state.getXPUBuffer().size();
     }

@@ -70,7 +70,8 @@ import uk.ac.manchester.tornado.unittests.tools.Exceptions.UnsupportedConfigurat
  * is allocated in the device's primary context (see {@link CudaMemory}), which is the situation the
  * Spark/RAPIDS adapter is in: cuDF allocates through RMM on the primary context and hands TornadoVM
  * an address it must read in place, with no native-array header in front of it and no copy either
- * way. On Metal it is an {@code MTLBuffer} of the same device (see {@link MetalMemory}).
+ * way. On HIP it is allocated through the HIP runtime in the same primary context (see
+ * {@link HipMemory}). On Metal it is an {@code MTLBuffer} of the same device (see {@link MetalMemory}).
  * </p>
  *
  * <p>
@@ -188,6 +189,13 @@ public class TestDeviceView extends TornadoTestBase {
                 }
                 CudaMemory.enterPrimaryContext();
                 memory = new CudaMemory();
+            }
+            case HIP -> {
+                if (!HipMemory.isAvailable()) {
+                    throw new UnsupportedConfigurationException("The HIP runtime library is not loadable: " + HipMemory.unavailableCause());
+                }
+                HipMemory.enterPrimaryContext();
+                memory = new HipMemory();
             }
             case METAL -> {
                 if (!MetalMemory.isAvailable()) {
