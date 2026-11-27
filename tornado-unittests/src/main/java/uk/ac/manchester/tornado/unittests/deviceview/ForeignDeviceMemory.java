@@ -20,7 +20,7 @@ package uk.ac.manchester.tornado.unittests.deviceview;
 /**
  * Device memory allocated outside TornadoVM, through the backend's own API, standing in for a library
  * that owns its device memory. A {@code buffer} is what the backend binds to a view: a device address
- * on CUDA, an {@code id<MTLBuffer>} on Metal.
+ * on CUDA and HIP, an {@code id<MTLBuffer>} on Metal.
  */
 interface ForeignDeviceMemory {
 

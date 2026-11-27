@@ -39,9 +39,9 @@ import uk.ac.manchester.tornado.api.exceptions.TornadoRuntimeException;
  * </p>
  *
  * <p>
- * What identifies the buffer depends on the backend: a device address on CUDA, an
+ * What identifies the buffer depends on the backend: a device address on CUDA and HIP, an
  * {@code id<MTLBuffer>} on Metal, whose backend binds a kernel argument as a buffer and an offset.
- * In both, element 0 of the view is {@link #byteOffset()} bytes into the buffer. A handle means
+ * In each, element 0 of the view is {@link #byteOffset()} bytes into the buffer. A handle means
  * nothing outside its backend, so a binding records the {@link #backend()} it was made for, and
  * {@link #validateForLaunch} refuses any other before the backend touches the handle. This class
  * does arithmetic on offsets and lengths only: whether a handle itself is well formed is for its

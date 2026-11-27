@@ -282,8 +282,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * </p>
      *
      * <p>
-     * CUDA and Metal backends. A plan that runs on any other backend refuses the binding with
-     * {@link TornadoDeviceViewNotSupported} here, rather than at execution. On CUDA,
+     * CUDA, HIP and Metal backends. A plan that runs on any other backend refuses the binding with
+     * {@link TornadoDeviceViewNotSupported} here, rather than at execution. On CUDA and HIP,
      * {@code deviceBuffer} is a device address. On Metal, it is an {@code id<MTLBuffer>} of the
      * plan's device, and {@link #execute()} returns once the task graph's work has finished, because
      * a plan gives the caller nothing to wait on for the command queue it uses. Work that produces the
@@ -298,13 +298,13 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @param view
      *     An array created by a {@code deviceView} factory, e.g. {@code FloatArray.deviceView(n)}.
      * @param deviceBuffer
-     *     The device allocation: a CUDA device address, or a Metal {@code id<MTLBuffer>}.
+     *     The device allocation: a CUDA or HIP device address, or a Metal {@code id<MTLBuffer>}.
      * @param byteLength
      *     How many bytes are valid from the start of the allocation; must be a whole number of
      *     elements and must fit in the view's capacity.
      * @return {@link TornadoExecutionPlan}
      * @throws TornadoDeviceViewNotSupported
-     *     if this plan does not run on the CUDA or Metal backend.
+     *     if this plan does not run on the CUDA, HIP or Metal backend.
      * @since 8.1.1
      */
     public TornadoExecutionPlan bindDeviceBuffer(TornadoNativeArray view, long deviceBuffer, long byteLength) {
@@ -319,7 +319,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @param view
      *     An array created by a {@code deviceView} factory.
      * @param deviceBuffer
-     *     The device allocation: a CUDA device address, or a Metal {@code id<MTLBuffer>}.
+     *     The device allocation: a CUDA or HIP device address, or a Metal {@code id<MTLBuffer>}.
      * @param byteLength
      *     How many bytes are valid from the start of the allocation.
      * @param logicalLength
@@ -346,7 +346,7 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
      * @param view
      *     An array created by a {@code deviceView} factory.
      * @param deviceBuffer
-     *     The device allocation: a CUDA device address, or a Metal {@code id<MTLBuffer>}.
+     *     The device allocation: a CUDA or HIP device address, or a Metal {@code id<MTLBuffer>}.
      * @param byteOffset
      *     Where element 0 of the view starts in the allocation; must align to the element size.
      * @param byteLength
@@ -374,8 +374,8 @@ public sealed class TornadoExecutionPlan implements AutoCloseable permits Execut
         // Per device, not per build: a single installation may be built with several backends
         // (make BACKEND=opencl,cuda), so what matters is the backend this plan runs on.
         TornadoVMBackendType backend = planDevice.getTornadoVMBackend();
-        if (backend != TornadoVMBackendType.CUDA && backend != TornadoVMBackendType.METAL) {
-            throw new TornadoDeviceViewNotSupported("Device views are implemented for the CUDA and Metal backends, and this plan runs on " + backend + ". Use an ordinary array instead.");
+        if (backend != TornadoVMBackendType.CUDA && backend != TornadoVMBackendType.HIP && backend != TornadoVMBackendType.METAL) {
+            throw new TornadoDeviceViewNotSupported("Device views are implemented for the CUDA, HIP and Metal backends, and this plan runs on " + backend + ". Use an ordinary array instead.");
         }
         checkBoundDevice(planDevice, deviceIndex);
         view.deviceViewBinding().bind(backend, deviceBuffer, byteOffset, byteLength, logicalLength, deviceIndex, readOnly, rootNode.executionFrame);
