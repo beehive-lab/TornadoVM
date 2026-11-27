@@ -25,7 +25,6 @@ on:
       - '!.claude/**'
       - '!**/LICENSE*'
       - '!**/NOTICE*'
-      - '!**/THIRD_PARTY_NOTICES*'
       # Images (README logos, docs figures): nothing a build or test reads.
       - '!**/*.png'
       - '!**/*.svg'

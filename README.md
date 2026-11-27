@@ -369,7 +369,7 @@ For **Tornado 0.1** (initial release), cite [Clarkson et al., ManLang '18](https
 
 ## License
 
-TornadoVM is licensed under the [Apache License, Version 2.0](LICENSE_APACHE2). Third-party components bundled in the native libraries are listed in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+TornadoVM is licensed under the [Apache License, Version 2.0](LICENSE). Third-party components and their licences, including code compiled into the native libraries, are listed at the end of [LICENSE](LICENSE).
 
 ## Acknowledgments
 
